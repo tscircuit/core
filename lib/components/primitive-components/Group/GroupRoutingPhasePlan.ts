@@ -1,13 +1,13 @@
+import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   TestPointOptions,
   TestPointRequest,
 } from "@tscircuit/test-point-rerouter"
-import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
 import type {
   PcbGroupId,
+  SimpleRouteBounds,
   SimpleRouteJson,
   SimplifiedPcbTrace,
-  SimpleRouteBounds,
 } from "lib/utils/autorouting/SimpleRouteJson"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Net } from "../Net"
@@ -34,7 +34,10 @@ export interface PrecomputedRoutingResult {
 export interface RoutingPhasePlan {
   autoroutingPhase?: AutoroutingPhase
   /** Automatically routes connections not assigned to an explicit phase. */
+  /** Automatically routes connections not assigned to an explicit phase. */
   isImplicitRemainingPhase?: boolean
+  /** Splits a phase into sequential layer-constrained cohorts when traces/nets specify different pcbAllowedLayers. */
+  isLayerConstraintSubphase?: boolean
   getPrecomputedRoutingResult?: (
     input: SimpleRouteJson,
   ) => PrecomputedRoutingResult

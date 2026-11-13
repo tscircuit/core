@@ -3,8 +3,9 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
 } from "lib/utils/autorouting/SimpleRouteJson"
-import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
+import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
+import { getDisallowedLayerObstaclesForConnections } from "lib/utils/autorouting/getUnbrokenCopperPourObstacles"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import type {
   RoutingPhaseDrcTolerances,
@@ -44,6 +45,7 @@ export function Group_hasPhasedAutorouting(
   for (const plan of routingPhasePlans) {
     if (plan.routingPcbGroupId) return true
     if (plan.routingPhaseIndex !== null) return true
+    if (plan.isLayerConstraintSubphase) return true
   }
   return false
 }
@@ -139,6 +141,16 @@ export function Group_filterSimpleRouteJsonForPhase(
     ...simpleRouteJson,
     bounds,
     outline: getSrjOutlineForRoutingBounds(simpleRouteJson, bounds),
+    obstacles: [
+      ...simpleRouteJson.obstacles,
+      ...getDisallowedLayerObstaclesForConnections({
+        connections,
+        layerCount: simpleRouteJson.layerCount,
+        bounds,
+        outline: getSrjOutlineForRoutingBounds(simpleRouteJson, bounds),
+        existingObstacles: simpleRouteJson.obstacles,
+      }),
+    ],
     connections,
     differentialPairs:
       differentialPairs.length > 0 ? differentialPairs : undefined,

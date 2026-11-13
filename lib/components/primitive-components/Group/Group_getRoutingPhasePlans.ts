@@ -4,12 +4,11 @@ import type {
   AutoroutingPhaseProps,
   BreakoutProps,
 } from "@tscircuit/props"
-import type { z } from "zod"
-import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import type { z } from "zod"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
-import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
+import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -20,6 +19,7 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
 
 type GroupFanoutProps = Pick<
   BreakoutProps,
@@ -292,6 +292,105 @@ function getDrcTolerancesFromAutoroutingPhaseProps(
     minViaHoleDiameter: toParsedDistance(minViaHoleDiameter),
     minViaPadDiameter: toParsedDistance(minViaPadDiameter),
   }
+}
+
+function splitPlansByLayerConstraints(
+  plans: RoutingPhasePlan[],
+): RoutingPhasePlan[] {
+  const normalizeLayerList = (
+    layers?: ReadonlyArray<string | { name: string }>,
+  ): string[] | undefined => {
+    if (!layers || layers.length === 0) return undefined
+    return Array.from(
+      new Set(
+        layers.map((layer) => (typeof layer === "string" ? layer : layer.name)),
+      ),
+    ).sort()
+  }
+  const intersectLayerLists = (
+    layerLists: ReadonlyArray<readonly string[] | undefined>,
+  ): string[] | undefined => {
+    const definedLists = layerLists.filter(
+      (list): list is readonly string[] =>
+        Array.isArray(list) && list.length > 0,
+    )
+    if (definedLists.length === 0) return undefined
+    const [firstList, ...restLists] = definedLists
+    return firstList.filter((layer) =>
+      restLists.every((list) => list.includes(layer)),
+    )
+  }
+
+  return plans.flatMap((plan) => {
+    if (
+      plan.reroute ||
+      plan.routingPcbGroupId ||
+      plan.getPrecomputedRoutingResult ||
+      plan.testPointOptions
+    ) {
+      return [plan]
+    }
+
+    const netKeyByNet = new Map<Net, string>()
+    for (const net of plan.nets) {
+      const connectedTraces = plan.traces.filter((trace) =>
+        trace._isExplicitlyConnectedToNet(net),
+      )
+      const effectiveLayers = intersectLayerLists([
+        normalizeLayerList((net._parsedProps as any)?.pcbAllowedLayers),
+        ...connectedTraces.map((trace) =>
+          normalizeLayerList((trace._parsedProps as any)?.pcbAllowedLayers),
+        ),
+      ])
+      netKeyByNet.set(net, effectiveLayers ? effectiveLayers.join(",") : "")
+    }
+
+    const traceKeyByTrace = new Map<Trace, string>()
+    for (const trace of plan.traces) {
+      const connectedNetsInPlan = plan.nets.filter((net) =>
+        trace._isExplicitlyConnectedToNet(net),
+      )
+      if (connectedNetsInPlan.length > 0) {
+        traceKeyByTrace.set(
+          trace,
+          netKeyByNet.get(connectedNetsInPlan[0]) ?? "",
+        )
+        continue
+      }
+      const connectedNets = trace._findConnectedNets().nets
+      const effectiveLayers = intersectLayerLists([
+        normalizeLayerList((trace._parsedProps as any)?.pcbAllowedLayers),
+        ...connectedNets.map((net) =>
+          normalizeLayerList((net._parsedProps as any)?.pcbAllowedLayers),
+        ),
+      ])
+      traceKeyByTrace.set(
+        trace,
+        effectiveLayers ? effectiveLayers.join(",") : "",
+      )
+    }
+
+    const distinctKeys = new Set<string>([
+      ...netKeyByNet.values(),
+      ...traceKeyByTrace.values(),
+    ])
+    if (distinctKeys.size <= 1) {
+      return [plan]
+    }
+
+    const sortedKeys = Array.from(distinctKeys).sort((a, b) => {
+      if (a === "") return 1
+      if (b === "") return -1
+      return a.split(",").length - b.split(",").length || a.localeCompare(b)
+    })
+
+    return sortedKeys.map((key) => ({
+      ...plan,
+      isLayerConstraintSubphase: true,
+      nets: plan.nets.filter((net) => netKeyByNet.get(net) === key),
+      traces: plan.traces.filter((trace) => traceKeyByTrace.get(trace) === key),
+    }))
+  })
 }
 
 export function Group_getRoutingPhasePlans(
@@ -658,5 +757,5 @@ export function Group_getRoutingPhasePlans(
     ]
   }
 
-  return [...breakoutPlans, ...plans]
+  return splitPlansByLayerConstraints([...breakoutPlans, ...plans])
 }

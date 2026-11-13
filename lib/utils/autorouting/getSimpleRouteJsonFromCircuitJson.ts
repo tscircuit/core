@@ -40,7 +40,10 @@ import {
 import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTraceIds"
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
-import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
+import {
+  getDisallowedLayerObstaclesForConnections,
+  getUnbrokenCopperPourObstacles,
+} from "./getUnbrokenCopperPourObstacles"
 import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 
 /**
@@ -361,6 +364,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       subcircuitComponent,
       board,
       group: pcbGroup,
+      sourceNets: db.source_net.list(),
     }),
   )
 
@@ -575,6 +579,58 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   // For cross-boundary traces, add breakout points as additional
   // waypoints so the autorouter routes through the boundary.
   const sourceTraces = db.source_trace.list()
+  const normalizeLayerList = (
+    layers?: ReadonlyArray<string | { name: string }>,
+  ): string[] | undefined => {
+    if (!layers || layers.length === 0) return undefined
+    return Array.from(
+      new Set(
+        layers.map((layer) => (typeof layer === "string" ? layer : layer.name)),
+      ),
+    )
+  }
+  const intersectLayerLists = (
+    layerLists: ReadonlyArray<readonly string[] | undefined>,
+  ): string[] | undefined => {
+    const definedLists = layerLists.filter(
+      (list): list is readonly string[] =>
+        Array.isArray(list) && list.length > 0,
+    )
+    if (definedLists.length === 0) return undefined
+    const [firstList, ...restLists] = definedLists
+    return firstList.filter((layer) =>
+      restLists.every((list) => list.includes(layer)),
+    )
+  }
+  const allowedLayersBySourceTraceId = new Map<string, string[]>()
+  for (const traceComponent of (subcircuitComponent?.selectAll("trace") ??
+    []) as Array<{
+    source_trace_id?: string | null
+    _parsedProps?: { pcbAllowedLayers?: Array<string | { name: string }> }
+  }>) {
+    const allowedLayers = normalizeLayerList(
+      traceComponent._parsedProps?.pcbAllowedLayers,
+    )
+    if (traceComponent.source_trace_id && allowedLayers) {
+      allowedLayersBySourceTraceId.set(
+        traceComponent.source_trace_id,
+        allowedLayers,
+      )
+    }
+  }
+  const allowedLayersBySourceNetId = new Map<string, string[]>()
+  for (const netComponent of (subcircuitComponent?.selectAll("net") ??
+    []) as Array<{
+    source_net_id?: string
+    _parsedProps?: { pcbAllowedLayers?: Array<string | { name: string }> }
+  }>) {
+    const allowedLayers = normalizeLayerList(
+      netComponent._parsedProps?.pcbAllowedLayers,
+    )
+    if (netComponent.source_net_id && allowedLayers) {
+      allowedLayersBySourceNetId.set(netComponent.source_net_id, allowedLayers)
+    }
+  }
   const differentialPairs: DifferentialPair[] =
     subcircuitComponent?.selectAll<DifferentialPair>("differentialpair") ?? []
   const differentialPairSourceTraceIds = getDifferentialPairSourceTraceIds({
@@ -708,6 +764,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           "",
         source_trace_id: trace.source_trace_id,
         nominalTraceWidth: trace.min_trace_thickness,
+        ...(trace.source_trace_id &&
+        intersectLayerLists([
+          allowedLayersBySourceTraceId.get(trace.source_trace_id),
+          ...(trace.connected_source_net_ids ?? []).map((netId) =>
+            allowedLayersBySourceNetId.get(netId),
+          ),
+        ])
+          ? {
+              allowedLayers: intersectLayerLists([
+                allowedLayersBySourceTraceId.get(trace.source_trace_id),
+                ...(trace.connected_source_net_ids ?? []).map((netId) =>
+                  allowedLayersBySourceNetId.get(netId),
+                ),
+              ]),
+            }
+          : {}),
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
         // source trace endpoint in the autorouter input.
@@ -848,6 +920,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
 
     // Explicit paths preserve their identity, but still inherit net width rules.
+    const allowedLayersForConnection = intersectLayerLists([
+      ...connectedSourceNets.map((sourceNet) =>
+        allowedLayersBySourceNetId.get(sourceNet.source_net_id),
+      ),
+      ...connectedSourceTraces.map((sourceTrace) =>
+        allowedLayersBySourceTraceId.get(sourceTrace.source_trace_id),
+      ),
+    ])
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
@@ -856,6 +936,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       connection.netConnectionName = net.source_net_id
       connection.nominalTraceWidth = nominalTraceWidthForConnection
       connection.width = nominalTraceWidthForConnection
+      if (allowedLayersForConnection && !connection.allowedLayers) {
+        connection.allowedLayers = allowedLayersForConnection
+      }
     }
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
@@ -889,6 +972,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
       nominalTraceWidth: nominalTraceWidthForConnection,
+      ...(allowedLayersForConnection
+        ? { allowedLayers: allowedLayersForConnection }
+        : {}),
       width: nominalTraceWidthForConnection,
       pointsToConnect,
     }
@@ -1112,6 +1198,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     minPadEdgeToPadEdgeClearance ?? board?.min_pad_edge_to_pad_edge_clearance
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
+  const srjOutline = getSrjOutlineForRoutingBounds(
+    {
+      bounds: boardBounds ?? bounds,
+      outline: board?.outline?.map((point) => ({ ...point })),
+    },
+    bounds,
+  )
+  obstacles.push(
+    ...getDisallowedLayerObstaclesForConnections({
+      connections: allConns,
+      layerCount: board?.num_layers ?? 2,
+      bounds,
+      outline: srjOutline,
+      existingObstacles: obstacles,
+    }),
+  )
 
   return {
     simpleRouteJson: {
