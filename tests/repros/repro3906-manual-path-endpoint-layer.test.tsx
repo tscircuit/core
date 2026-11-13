@@ -113,14 +113,11 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
 
-test.failing(
-  "manual paths to an explicit bottom port use bottom copper in both endpoint orders",
-  () => {
-    expect(observedLayers).toEqual([
-      { api: "pcbPath", reverse: false, layers: ["bottom"] },
-      { api: "pcbPath", reverse: true, layers: ["bottom"] },
-      { api: "pcbPaths", reverse: false, layers: ["bottom"] },
-      { api: "pcbPaths", reverse: true, layers: ["bottom"] },
-    ])
-  },
-)
+test("manual paths to an explicit bottom port use bottom copper in both endpoint orders", () => {
+  expect(observedLayers).toEqual([
+    { api: "pcbPath", reverse: false, layers: ["bottom"] },
+    { api: "pcbPath", reverse: true, layers: ["bottom"] },
+    { api: "pcbPaths", reverse: false, layers: ["bottom"] },
+    { api: "pcbPaths", reverse: true, layers: ["bottom"] },
+  ])
+})

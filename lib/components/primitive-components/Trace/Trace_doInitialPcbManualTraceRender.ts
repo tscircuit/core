@@ -1,24 +1,25 @@
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import {
-  pcb_via,
   type LayerRef,
   type PcbTraceRoutePoint,
   type PcbVia,
+  pcb_via,
 } from "circuit-json"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
-import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
+import { TraceConnectionError } from "lib/errors"
+import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
+import { applyToPoint, identity } from "transformation-matrix"
+import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
+import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
-import { applyToPoint, identity } from "transformation-matrix"
-import { clipTraceEndAtPad } from "../../../utils/trace-clipping/clipTraceEndAtPad"
-import { getViaDiameterDefaults } from "../../../utils/pcbStyle/getViaDiameterDefaults"
-import type { ManualPcbPathPoint } from "lib/utils/pcbTraceRouteToPcbPath"
-import { TraceConnectionError } from "lib/errors"
+import { getSharedPcbPathLayer } from "./get-shared-pcb-path-layer"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
-import { renderPcbPaths } from "./render-pcb-paths"
+import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
+import { renderPcbPaths } from "./render-pcb-paths"
+import { getTraceLength } from "./trace-utils/compute-trace-length"
 
 const findInflatedPcbViaForPoint = (
   vias: PcbVia[] | undefined,
@@ -371,7 +372,14 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
   }
   const otherPort = ports.find((p) => p !== anchorPort) ?? ports[1]
 
-  const layer = anchorPort.getAvailablePcbLayers()[0] || "top"
+  const layer =
+    getSharedPcbPathLayer({
+      path: props.pcbPath,
+      connectedPorts: otherPort ? [anchorPort, otherPort] : [anchorPort],
+      subcircuit,
+    }) ??
+    anchorPort.getAvailablePcbLayers()[0] ??
+    "top"
   let currentLayer = layer as LayerRef
 
   const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout()
