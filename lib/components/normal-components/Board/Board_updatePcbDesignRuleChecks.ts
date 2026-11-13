@@ -1,13 +1,13 @@
-import { getBoardCircuitJsonForDrc } from "lib/utils/panels/get-board-circuit-json-for-drc"
 import {
-  dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
+  dedupePcbDrcErrors,
   runAllNetlistChecks,
   runAllPlacementChecks,
   runAllRoutingChecks,
   runAllSchematicChecks,
 } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
+import { getBoardCircuitJsonForDrc } from "lib/utils/panels/get-board-circuit-json-for-drc"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
 import type { Board } from "./Board"
 
@@ -63,7 +63,8 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
   // wait so routing DRC sees final routed traces and doesn't mark DRC complete early.
   if (
     (shouldRunRoutingChecks || shouldRunFabricatorChecks) &&
-    board._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbTraceRender")
+    (board._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbTraceRender") ||
+      board._hasIncompleteAsyncEffectsInSubtreeForPhase("PcbPostRoutingHook"))
   )
     return
 
