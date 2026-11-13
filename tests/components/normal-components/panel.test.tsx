@@ -16,7 +16,9 @@ test("panel can only contain boards, subpanels, or traces", () => {
         <resistor name="R1" resistance={100} />
       </panel>,
     ),
-  ).toThrow("<panel> can only contain <board>, <subpanel>, or <trace> elements")
+  ).toThrow(
+    "<panel> can only contain <board>, <subpanel>, <trace>, <hole>, or <fiducial> elements",
+  )
 })
 
 test("panel must be a root element", () => {
