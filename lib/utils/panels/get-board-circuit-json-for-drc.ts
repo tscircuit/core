@@ -1,6 +1,7 @@
 import { su } from "@tscircuit/circuit-json-util"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import { getDescendantSubcircuitIds } from "lib/utils/autorouting/getAncestorSubcircuitIds"
+import { getPanelMouseBiteHolesForBoard } from "./get-panel-mouse-bite-holes-for-board"
 
 /** Keep panel connectivity from pulling sibling boards into a board's DRC. */
 export const getBoardCircuitJsonForDrc = (board: Board) => {
@@ -21,7 +22,19 @@ export const getBoardCircuitJsonForDrc = (board: Board) => {
     }
     return true
   })
-  return su(boardCircuitJson)
+  const scopedCircuitJson = su(boardCircuitJson)
     .subtree({ subcircuit_id: board.subcircuit_id })
     .toArray()
+  const pcbBoard = db.pcb_board.get(board.pcb_board_id!)!
+  return [
+    ...scopedCircuitJson,
+    ...getPanelMouseBiteHolesForBoard(db.toArray(), pcbBoard).filter(
+      (hole) =>
+        !scopedCircuitJson.some(
+          (element) =>
+            element.type === "pcb_hole" &&
+            element.pcb_hole_id === hole.pcb_hole_id,
+        ),
+    ),
+  ]
 }

@@ -10,13 +10,19 @@ import type {
 } from "circuit-json"
 import { generateContinuousPanelRoutingSlots } from "./generate-continuous-panel-routing-slots"
 import {
+  type PanelMouseBiteCandidate,
   type PanelTabMouseBite,
-  getPanelMouseBitePositions,
+  getPanelMouseBiteCandidates,
 } from "./get-panel-mouse-bite-positions"
 import { preservePanelTabBridges } from "./preserve-panel-tab-bridges"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
+const MIN_MOUSE_BITE_DIAMETER = 0.5
+const MIN_MOUSE_BITE_WEB = 0.3
+// Leave room for both attachment rows and a small outward clearance adjustment.
+const MIN_MOUSE_BITE_TAB_WIDTH =
+  MIN_MOUSE_BITE_DIAMETER + 2 * MIN_MOUSE_BITE_WEB
 
 export const PANEL_GRID_SPACING = DEFAULT_TAB_WIDTH
 
@@ -267,6 +273,7 @@ export function generatePanelTabsAndMouseBites(
 ): {
   tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
+  mouseBiteCandidates: PanelMouseBiteCandidate[]
 } {
   const finalTabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
   const allMouseBites: PanelTabMouseBite[] = []
@@ -297,7 +304,10 @@ export function generatePanelTabsAndMouseBites(
     const scaleFactor = minBoardDimension / 20 // mm
     tabWidth = Math.min(
       tabWidth,
-      DEFAULT_TAB_WIDTH * Math.max(scaleFactor, 0.3),
+      Math.max(
+        useMouseBites ? MIN_MOUSE_BITE_TAB_WIDTH : 0,
+        DEFAULT_TAB_WIDTH * Math.max(scaleFactor, 0.3),
+      ),
     )
     tabLength = Math.min(
       tabLength,
@@ -326,10 +336,10 @@ export function generatePanelTabsAndMouseBites(
     return board
   })
 
-  const mouseBiteDiameter = tabWidth * 0.45
-  // Leave half a drill diameter of material between adjacent holes.
-  // The former 10% web was only 0.063 mm on a 14 mm board.
-  const mouseBiteSpacing = mouseBiteDiameter * 0.5
+  const mouseBiteDiameter = Math.max(MIN_MOUSE_BITE_DIAMETER, tabWidth * 0.45)
+  // A relative web alone still produces 0.27 mm drills / 0.135 mm webs on
+  // 6 mm boards. Keep a manufacturable minimum as well as the relative web.
+  const mouseBiteSpacing = Math.max(MIN_MOUSE_BITE_WEB, mouseBiteDiameter * 0.5)
   for (const board of processedBoards) {
     if (board.outline && board.outline.length > 0) {
       const generated = generateCutoutsAndMousebitesForOutline(board.outline, {
@@ -354,9 +364,9 @@ export function generatePanelTabsAndMouseBites(
     pcb_cutout_id: `panel_tab_${index}`,
   }))
 
-  let mouseBitePositions: Point[] = []
+  let mouseBiteCandidates: PanelMouseBiteCandidate[] = []
   if (useMouseBites) {
-    mouseBitePositions = getPanelMouseBitePositions({
+    mouseBiteCandidates = getPanelMouseBiteCandidates({
       mouseBites: allMouseBites,
       routingCutouts: generatePanelOutlineRoutingCutouts(processedBoards, {
         cutoutWidth: tabWidth,
@@ -364,20 +374,21 @@ export function generatePanelTabsAndMouseBites(
       minimumDrillPitch: mouseBiteDiameter + mouseBiteSpacing,
     })
   }
-  const mouseBiteHoles: PcbHoleCircle[] = mouseBitePositions.map(
-    (bite, index) => ({
+  const mouseBiteHoles: PcbHoleCircle[] = mouseBiteCandidates.map(
+    ({ position }, index) => ({
       type: "pcb_hole",
       pcb_hole_id: `panel_mouse_bite_${index}`,
       hole_shape: "circle",
       hole_diameter: mouseBiteDiameter,
-      x: bite.x,
-      y: bite.y,
+      x: position.x,
+      y: position.y,
     }),
   )
 
   return {
     tabCutouts,
     mouseBiteHoles,
+    mouseBiteCandidates,
   }
 }
 
