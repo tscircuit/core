@@ -29,9 +29,9 @@ type SupplierPartOrientationAnalysis = {
   pin1Polarity: Pin1Polarity | null
 }
 
-// v5 invalidates null two-pad frames cached before circuit-json-util 0.0.128.
+// v6 invalidates orientations inferred before parts engines could supply assembly pin 1.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v5:${SupplierName}:${string}`
+  `part-orientation-analysis:v6:${SupplierName}:${string}`
 
 type CachedSupplierPartOrientationAnalysis = {
   pin1_location: PcbPin1Location | null
@@ -183,7 +183,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v5:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:v6:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
@@ -261,7 +261,15 @@ const analyzeSupplierPartOrientation = async ({
       return { pin1Location: null, pin1Polarity: null }
     }
 
-    const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
+    const supplierPcbComponent = supplierCircuitJson.find(
+      (element) => element.type === "pcb_component",
+    )
+    const assemblyPin1Location =
+      supplierPcbComponent?.supplier_pin1_location_map?.[
+        supplierPartCandidate.supplierName
+      ]
+    const pin1Location =
+      assemblyPin1Location ?? analyzePcbPin1Location(supplierCircuitJson)
     const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
