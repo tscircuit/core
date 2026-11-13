@@ -32,17 +32,30 @@ export class PushButton extends NormalComponent<
 
   override initPorts() {
     super.initPorts({
-      pinCount: 2,
+      pinCount: this._getAllPortsFromChildren().some(
+        (port) => port._getSymbolAncestor() !== null,
+      )
+        ? undefined
+        : 2,
       ignoreSymbolPorts: true,
     })
+
+    const ports = this.selectAll<Port>("port")
+    if (
+      ports.length === 0 ||
+      ports.some((port) => port._getSymbolAncestor() !== null)
+    ) {
+      return
+    }
 
     const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
 
     const symPort1 = symbol.ports.find((p) => p.labels.includes("1"))
     const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
 
-    const ports = this.selectAll<Port>("port")
-    const pin1Port = ports.find((port) => port.props.pinNumber === 1)!
+    const pin1Port =
+      ports.find((port) => port.props.pinNumber === 1) ?? ports[0]
+    if (!pin1Port) return
     pin1Port.schematicSymbolPortDef = symPort1!
 
     // Each symbol terminal has one physical owner. Other pads inherit that
