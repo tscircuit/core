@@ -16,6 +16,7 @@ test("cathode-first LED footprint marks the connected cathode pad on silkscreen"
   await circuit.renderUntilSettled()
 
   const cathode = circuit.db.source_port.getWhere({ name: "cathode" })!
+  expect(cathode.pin_number).toBe(1)
   const cathodePort = circuit.db.pcb_port.getWhere({
     source_port_id: cathode.source_port_id,
   })!
