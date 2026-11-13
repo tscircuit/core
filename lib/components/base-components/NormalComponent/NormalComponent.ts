@@ -2056,8 +2056,18 @@ export class NormalComponent<
     const { db } = this.root!
     const { boardThickness = 0 } = this._getBoard() ?? {}
     const cadModelProp = this._parsedProps.cadModel
-    const cadModel =
+    const cadModelOrFootprinterString =
       cadModelProp === undefined ? this._asyncFootprintCadModel : cadModelProp
+    // A string cadModel is a footprinter string that procedurally generates
+    // the model, independently of the component's PCB footprint.
+    const cadModelFootprinterString =
+      typeof cadModelOrFootprinterString === "string"
+        ? cadModelOrFootprinterString
+        : undefined
+    const cadModel =
+      typeof cadModelOrFootprinterString === "string"
+        ? undefined
+        : cadModelOrFootprinterString
     const footprintString = this.getFootprinterString() ?? undefined
 
     let footprintIsFootprinterString = false
@@ -2074,10 +2084,6 @@ export class NormalComponent<
 
     // Use post-layout bounds
     const bounds = this._getPcbCircuitJsonBounds()
-
-    if (typeof cadModel === "string") {
-      throw new Error("String cadModel not yet implemented")
-    }
 
     const sourceRotationOffset =
       cadModel?.pcbRotationOffset ?? cadModel?.rotationOffset
@@ -2121,7 +2127,11 @@ export class NormalComponent<
         : preLayoutRotation
     const isBottomLayer = computedLayer === "bottom"
 
-    if (!cadModel && !footprintIsFootprinterString) {
+    if (
+      !cadModel &&
+      !cadModelFootprinterString &&
+      !footprintIsFootprinterString
+    ) {
       let cadComponentPlacement = {
         position: {
           x: bounds.center.x,
@@ -2154,8 +2164,12 @@ export class NormalComponent<
       return
     }
 
-    let footprinterStringForCadComponent: string | undefined
-    if (!cadModel && footprintIsFootprinterString) {
+    let footprinterStringForCadComponent = cadModelFootprinterString
+    if (
+      !footprinterStringForCadComponent &&
+      !cadModel &&
+      footprintIsFootprinterString
+    ) {
       footprinterStringForCadComponent = footprintString
     }
 
