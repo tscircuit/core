@@ -25,10 +25,13 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
 
     const pcb_component_id =
       this.parent?.pcb_component_id ??
-      this.getPrimitiveContainer()?.pcb_component_id!
+      this.getPrimitiveContainer()?.pcb_component_id ??
+      undefined
 
     const pcb_smtpad = db.pcb_smtpad.insert({
       pcb_component_id,
+      subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+      pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       layer: maybeFlipLayer(props.layer || "top"),
       shape: "circle",
       x: position.x,
