@@ -180,7 +180,7 @@ export type SimpleRouteJson = Omit<
   connections: SimpleRouteConnection[]
   bounds: SimpleRouteBounds
   outline?: Array<{ x: number; y: number }>
-  // NOTE: this is only present after an autorouter solves the input
+  // Existing copper on input, plus newly routed copper on output.
   traces?: SimplifiedPcbTrace[]
   jumpers?: Array<{
     jumper_footprint: "0603" | "1206x4"
