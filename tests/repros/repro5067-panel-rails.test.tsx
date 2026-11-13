@@ -32,5 +32,16 @@ test("a tooling rail sits in the panel edge padding", async () => {
           ]
         : [],
     ),
-  ).toMatchInlineSnapshot(`[]`)
+  ).toMatchInlineSnapshot(`
+    [
+      {
+        "center": {
+          "x": -9.5,
+          "y": 0,
+        },
+        "height": 28,
+        "width": 5,
+      },
+    ]
+  `)
 })

@@ -2,6 +2,9 @@ import { panelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import { Subpanel } from "./Subpanel"
 
+/** Edge padding (mm) on each side of a panel that sets none. */
+const DEFAULT_PANEL_EDGE_PADDING = 5
+
 /**
  * Panel is the root-level panel component for organizing multiple boards.
  * It extends Subpanel but uses pcb_panel instead of pcb_group for the
@@ -50,51 +53,48 @@ export class Panel extends Subpanel {
     this.pcb_panel_id = inserted.pcb_panel_id
   }
 
+  /** Edge padding on each side of the panel, in mm. */
+  _getEdgePadding() {
+    const {
+      edgePadding = DEFAULT_PANEL_EDGE_PADDING,
+      edgePaddingLeft = edgePadding,
+      edgePaddingRight = edgePadding,
+      edgePaddingTop = edgePadding,
+      edgePaddingBottom = edgePadding,
+    } = this._parsedProps
+    return {
+      left: edgePaddingLeft,
+      right: edgePaddingRight,
+      top: edgePaddingTop,
+      bottom: edgePaddingBottom,
+    }
+  }
+
+  /**
+   * Finished panel width and height in mm: explicit dimensions, or the grid
+   * size plus edge padding. Undefined when neither is available, e.g. a
+   * "pack" or "none" layout without explicit dimensions.
+   */
+  _getPanelSize(): { width: number; height: number } | undefined {
+    const { width, height } = this._parsedProps
+    if (width !== undefined && height !== undefined) return { width, height }
+    if (this._cachedGridWidth <= 0 && this._cachedGridHeight <= 0) return
+    const edgePadding = this._getEdgePadding()
+    return {
+      width:
+        width ?? this._cachedGridWidth + edgePadding.left + edgePadding.right,
+      height:
+        height ?? this._cachedGridHeight + edgePadding.top + edgePadding.bottom,
+    }
+  }
+
   /**
    * Panel updates pcb_panel dimensions instead of pcb_group
    */
   protected _updatePanelDimensions() {
-    const { db } = this.root!
-    const hasExplicitWidth = this._parsedProps.width !== undefined
-    const hasExplicitHeight = this._parsedProps.height !== undefined
-    const gridWidth = this._cachedGridWidth
-    const gridHeight = this._cachedGridHeight
-
     if (!this.pcb_panel_id) return
-
-    if (hasExplicitWidth && hasExplicitHeight) {
-      db.pcb_panel.update(this.pcb_panel_id, {
-        width: distance.parse(this._parsedProps.width),
-        height: distance.parse(this._parsedProps.height),
-      })
-    } else if (gridWidth > 0 || gridHeight > 0) {
-      const {
-        edgePadding: edgePaddingProp,
-        edgePaddingLeft: edgePaddingLeftProp,
-        edgePaddingRight: edgePaddingRightProp,
-        edgePaddingTop: edgePaddingTopProp,
-        edgePaddingBottom: edgePaddingBottomProp,
-      } = this._parsedProps
-
-      const edgePadding = distance.parse(edgePaddingProp ?? 5)
-      const edgePaddingLeft = distance.parse(edgePaddingLeftProp ?? edgePadding)
-      const edgePaddingRight = distance.parse(
-        edgePaddingRightProp ?? edgePadding,
-      )
-      const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
-      const edgePaddingBottom = distance.parse(
-        edgePaddingBottomProp ?? edgePadding,
-      )
-
-      db.pcb_panel.update(this.pcb_panel_id, {
-        width: hasExplicitWidth
-          ? distance.parse(this._parsedProps.width)
-          : gridWidth + edgePaddingLeft + edgePaddingRight,
-        height: hasExplicitHeight
-          ? distance.parse(this._parsedProps.height)
-          : gridHeight + edgePaddingTop + edgePaddingBottom,
-      })
-    }
+    const panelSize = this._getPanelSize()
+    if (panelSize) this.root!.db.pcb_panel.update(this.pcb_panel_id, panelSize)
   }
 
   updatePcbComponentRender() {
