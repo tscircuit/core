@@ -19,7 +19,7 @@ import { Bus } from "lib/components/primitive-components/Bus"
 import { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import type { Trace } from "lib/components/primitive-components/Trace/Trace"
-import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
+import { getViaBoardLayers, getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { findFloatingCopper } from "../copper-pour-connectivity/find-floating-copper"
 import { getObstaclesFromCircuitJson } from "../obstacles/getObstaclesFromCircuitJson"
 import type {
@@ -1051,6 +1051,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
 
   const srjBuses = getBusesForSimpleRouteJson({
+    boardLayers: getViaBoardLayers(board?.num_layers ?? 2),
     srjConnections: allConns,
     buses,
     sourceTraces: db.source_trace.list(),
