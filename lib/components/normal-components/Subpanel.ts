@@ -14,6 +14,11 @@ import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board/Board"
 
+/** Fabrication layer that carries V-score lines. */
+const V_SCORE_LINE_LAYER = "top"
+/** Stroke width (mm) of a V-score line on the fabrication layer. */
+const V_SCORE_LINE_STROKE_WIDTH = 0.1
+
 /**
  * Subpanel is a nested panel that can be placed inside a Panel.
  * It allows organizing boards into groups within a larger panel.
@@ -68,10 +73,11 @@ export class Subpanel extends Group<typeof subpanelProps> {
       component.lowercaseComponentName !== "subpanel" &&
       component.lowercaseComponentName !== "trace" &&
       component.lowercaseComponentName !== "hole" &&
-      component.lowercaseComponentName !== "fiducial"
+      component.lowercaseComponentName !== "fiducial" &&
+      component.lowercaseComponentName !== "silkscreentext"
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <hole>, or <fiducial> elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, or <silkscreentext> elements`,
       )
     }
     super.add(component)
@@ -420,15 +426,14 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles } = generatePanelTabsAndMouseBites(
-          boardsInPanel,
-          {
+        const { tabCutouts, mouseBiteHoles, vScoreLines } =
+          generatePanelTabsAndMouseBites(boardsInPanel, {
             boardGap,
             tabWidth,
             tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
             mouseBites: props.mouseBites ?? true,
-          },
-        )
+            vScore: props.vScore ?? false,
+          })
 
         for (const tabCutout of tabCutouts) {
           db.pcb_cutout.insert({
@@ -442,6 +447,16 @@ export class Subpanel extends Group<typeof subpanelProps> {
           db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
+          })
+        }
+
+        for (const route of vScoreLines) {
+          db.pcb_fabrication_note_path.insert({
+            route,
+            layer: V_SCORE_LINE_LAYER,
+            stroke_width: V_SCORE_LINE_STROKE_WIDTH,
+            subcircuit_id: this.subcircuit_id ?? undefined,
+            pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
           })
         }
       }
