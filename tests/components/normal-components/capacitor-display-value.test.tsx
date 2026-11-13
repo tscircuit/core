@@ -173,7 +173,7 @@ test("capacitor with numeric values handles display correctly", () => {
   )
 })
 
-test("capacitor with invalid capacitance string outputs NaNpF display_capacitance", () => {
+test("capacitor with invalid capacitance string rejects invalid value instead of outputting NaNpF", () => {
   const { project } = getTestFixture()
 
   project.add(
@@ -192,11 +192,10 @@ test("capacitor with invalid capacitance string outputs NaNpF display_capacitanc
 
   const capacitors = project.db.source_component.list({
     ftype: "simple_capacitor",
-  }) as Array<{
-    ftype: "simple_capacitor"
-    display_capacitance?: string
-  }>
+  })
 
-  expect(capacitors).toHaveLength(1)
-  expect(capacitors[0].display_capacitance).toBe("NaNpF")
+  expect(capacitors).toHaveLength(0)
+  const errors = project.db.source_failed_to_create_component_error.list()
+  expect(errors).toHaveLength(1)
+  expect(errors[0]?.message).toMatch(/capacitance/i)
 })
