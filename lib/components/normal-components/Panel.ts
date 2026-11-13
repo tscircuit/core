@@ -115,55 +115,39 @@ export class Panel extends Subpanel {
   }
 
   /**
+   * Finished panel width and height in mm: explicit dimensions, or the grid
+   * size plus edge padding, grown to minWidth/minHeight around the centred
+   * grid. Undefined when neither is available, e.g. a "pack" or "none" layout
+   * without explicit dimensions.
+   */
+  _getPanelSize(): { width: number; height: number } | undefined {
+    const { width, height, minWidth = 0, minHeight = 0 } = this._parsedProps
+    if (width !== undefined && height !== undefined) return { width, height }
+    if (this._cachedGridWidth <= 0 && this._cachedGridHeight <= 0) return
+    const edgePadding = this._getEdgePadding()
+    return {
+      width:
+        width ??
+        Math.max(
+          this._cachedGridWidth + edgePadding.left + edgePadding.right,
+          minWidth,
+        ),
+      height:
+        height ??
+        Math.max(
+          this._cachedGridHeight + edgePadding.top + edgePadding.bottom,
+          minHeight,
+        ),
+    }
+  }
+
+  /**
    * Panel updates pcb_panel dimensions instead of pcb_group
    */
   protected _updatePanelDimensions() {
-    const { db } = this.root!
-    const hasExplicitWidth = this._parsedProps.width !== undefined
-    const hasExplicitHeight = this._parsedProps.height !== undefined
-    const gridWidth = this._cachedGridWidth
-    const gridHeight = this._cachedGridHeight
-
     if (!this.pcb_panel_id) return
-
-    if (hasExplicitWidth && hasExplicitHeight) {
-      db.pcb_panel.update(this.pcb_panel_id, {
-        width: distance.parse(this._parsedProps.width),
-        height: distance.parse(this._parsedProps.height),
-      })
-    } else if (gridWidth > 0 || gridHeight > 0) {
-      const {
-        edgePadding: edgePaddingProp,
-        edgePaddingLeft: edgePaddingLeftProp,
-        edgePaddingRight: edgePaddingRightProp,
-        edgePaddingTop: edgePaddingTopProp,
-        edgePaddingBottom: edgePaddingBottomProp,
-      } = this._parsedProps
-
-      const edgePadding = distance.parse(edgePaddingProp ?? 5)
-      const edgePaddingLeft = distance.parse(edgePaddingLeftProp ?? edgePadding)
-      const edgePaddingRight = distance.parse(
-        edgePaddingRightProp ?? edgePadding,
-      )
-      const edgePaddingTop = distance.parse(edgePaddingTopProp ?? edgePadding)
-      const edgePaddingBottom = distance.parse(
-        edgePaddingBottomProp ?? edgePadding,
-      )
-
-      // An auto-sized panel grows to minWidth/minHeight around the centred grid.
-      const { minWidth = 0, minHeight = 0 } = this._parsedProps
-      db.pcb_panel.update(this.pcb_panel_id, {
-        width: hasExplicitWidth
-          ? distance.parse(this._parsedProps.width)
-          : Math.max(gridWidth + edgePaddingLeft + edgePaddingRight, minWidth),
-        height: hasExplicitHeight
-          ? distance.parse(this._parsedProps.height)
-          : Math.max(
-              gridHeight + edgePaddingTop + edgePaddingBottom,
-              minHeight,
-            ),
-      })
-    }
+    const panelSize = this._getPanelSize()
+    if (panelSize) this.root!.db.pcb_panel.update(this.pcb_panel_id, panelSize)
   }
 
   updatePcbComponentRender() {
