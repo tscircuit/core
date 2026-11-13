@@ -70,11 +70,13 @@ export class Subpanel extends Group<typeof subpanelProps> {
       component.lowercaseComponentName !== "board" &&
       component.lowercaseComponentName !== "subpanel" &&
       component.lowercaseComponentName !== "trace" &&
+      component.lowercaseComponentName !== "hole" &&
+      component.lowercaseComponentName !== "fiducial" &&
       component.lowercaseComponentName !== "paneltab" &&
       component.lowercaseComponentName !== "paneltabkeepout"
     ) {
       throw new Error(
-        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <paneltab>, or <paneltabkeepout> elements`,
+        `<${this._errorComponentName}> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, <paneltab>, or <paneltabkeepout> elements`,
       )
     }
     super.add(component)

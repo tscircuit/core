@@ -17,7 +17,7 @@ test("panel can only contain boards, subpanels, or traces", () => {
       </panel>,
     ),
   ).toThrow(
-    "<panel> can only contain <board>, <subpanel>, <trace>, <paneltab>, or <paneltabkeepout> elements",
+    "<panel> can only contain <board>, <subpanel>, <trace>, <hole>, <fiducial>, <paneltab>, or <paneltabkeepout> elements",
   )
 })
 
