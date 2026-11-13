@@ -1,26 +1,20 @@
-import { getElementId } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElementInput,
   SimulationExperiment,
+  SimulationSignal,
   SourceComponentBase,
   SourceNet,
   SourcePort,
 } from "circuit-json"
+import { PcbChannel } from "lib/components/primitive-components/PcbChannel"
+import { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-const ibisSimulationTypes = [
-  "simulation_ibis_model",
-  "simulation_ibis_pin_state",
-  "simulation_digital_stimulus",
-  "simulation_eye_diagram",
-] as const
-
-// Dependencies must precede records that reference them.
 const simulationTypes = [
-  "simulation_experiment",
-  "simulation_voltage_probe",
-  ...ibisSimulationTypes,
+  "simulation_ibis_model",
+  "simulation_signal_integrity",
+  "simulation_signal",
 ] as const
 
 type SimulationReferenceId =
@@ -51,15 +45,6 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
-  const eyes = injectionDb.simulation_eye_diagram.list()
-  const experimentIds = new Set(
-    [
-      ...injectionDb.simulation_ibis_pin_state.list(),
-      ...injectionDb.simulation_digital_stimulus.list(),
-      ...eyes,
-    ].map((record) => record.simulation_experiment_id),
-  )
-  const probeIds = new Set(eyes.map((eye) => eye.simulation_voltage_probe_id))
   const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
   const remapId = (
@@ -150,32 +135,65 @@ function restoreSimulationRecords({
     return value
   }
 
-  for (const type of simulationTypes) {
-    for (const record of injectionDb[type].list()) {
-      // Main ignores cached simulation records. Restore only IBIS dependencies.
-      if (
-        (record.type === "simulation_experiment" &&
-          !experimentIds.has(record.simulation_experiment_id)) ||
-        (record.type === "simulation_voltage_probe" &&
-          !probeIds.has(record.simulation_voltage_probe_id))
-      )
-        continue
-      const primaryIdField = `${type}_id`
-      const fields = Object.fromEntries(
-        Object.entries(record).filter(([key]) => key !== primaryIdField),
-      )
-      // Only identifiers change; all other circuit-json fields are preserved.
-      const restored = db.insert(
-        remapReferences(fields, "") as AnyCircuitElementInput,
-      )
-      restoredIds.set(getElementId(record), getElementId(restored))
+  for (const record of injectionDb.simulation_ibis_model.list()) {
+    const { simulation_ibis_model_id, ...fields } = record
+    db.insert(remapReferences(fields, "") as AnyCircuitElementInput)
+  }
+  const endpointSelector = (endpoint: SimulationSignal["driver"]) => {
+    const describe = (portId: SourcePort["source_port_id"]) => {
+      const port = db.source_port.get(portId)!
+      const chip = db.source_component.get(port.source_component_id!)!
+      return `.${chip.name} > .${port.name}`
+    }
+    const pin =
+      "source_port_id" in endpoint
+        ? describe(endpoint.source_port_id)
+        : {
+            p: describe(endpoint.p_source_port_id),
+            n: describe(endpoint.n_source_port_id),
+          }
+    return pin
+  }
+  for (const record of injectionDb.simulation_signal_integrity.list()) {
+    const block = new PcbTransientChannelSimulation({
+      name: record.name,
+      bitRate: record.bit_rate_bps,
+      duration: record.duration_s,
+      allowUnroutedTraces: record.allow_unrouted_traces,
+    })
+    subcircuit.add(block)
+    for (const recordSignal of injectionDb.simulation_signal.list({
+      simulation_signal_integrity_id: record.simulation_signal_integrity_id,
+    })) {
+      const endpoints = {
+        driver: remapReferences(
+          recordSignal.driver,
+          "",
+        ) as SimulationSignal["driver"],
+        receivers: recordSignal.receivers.map(
+          (receiver) =>
+            remapReferences(receiver, "") as SimulationSignal["driver"],
+        ),
+      }
+      const signal = new PcbChannel({
+        name: recordSignal.name,
+        driverRef: endpointSelector(endpoints.driver),
+        receiverRef: endpoints.receivers.map(endpointSelector),
+        bitRate: recordSignal.bit_rate_bps,
+        pattern: recordSignal.pattern,
+        seed: recordSignal.seed,
+        offset: recordSignal.offset_s,
+        driverDisabled: recordSignal.driver_disabled,
+      })
+      signal.restoredEndpoints = endpoints
+      block.add(signal)
     }
   }
 }
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
   if (
-    !ibisSimulationTypes.some(
+    !simulationTypes.some(
       (type) => inflationCtx.injectionDb[type].list().length > 0,
     )
   )

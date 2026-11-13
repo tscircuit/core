@@ -1,3 +1,4 @@
+import { getSignalIntegrityBlocks } from "lib/utils/simulation/get-signal-integrity-blocks"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -244,7 +245,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
   get _isIsolatedSubcircuit(): boolean {
-    return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))
+    // SI depends on the destination board's stackup, copper and other blocks.
+    // Keep these declarations in that board instead of caching an isolated run.
+    return (
+      Boolean(this.getInheritedProperty("_subcircuitCachingEnabled")) &&
+      getSignalIntegrityBlocks(this).length === 0
+    )
   }
 
   _normalComponentNameMap: Map<string, NormalComponent[]> | null = null
