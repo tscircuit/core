@@ -17,6 +17,7 @@ export class SilkscreenText extends PrimitiveComponent<
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
   _footprinterFontSize?: number
+  _hasExplicitPcbPosition = false
 
   get config() {
     return {
@@ -78,6 +79,9 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     })
 
+    const inheritedPcbStyle = this.getInheritedProperty("pcbStyle")
+    const silkscreenTextPosition = inheritedPcbStyle?.silkscreenTextPosition
+
     const resolvedPcbSxVisibility = resolvePcbProperty({
       propertyName: "visibility",
       resolvedPcbSx: this.getResolvedPcbSx(),
@@ -85,7 +89,14 @@ export class SilkscreenText extends PrimitiveComponent<
       component: this,
     }) as PcbStyle["silkscreenTextVisibility"]
 
-    if (resolvedPcbSxVisibility === "hidden") return
+    if (
+      resolvedPcbSxVisibility === "hidden" ||
+      (this._footprinterFontSize !== undefined &&
+        silkscreenTextPosition === "none" &&
+        resolvedPcbSxVisibility === undefined)
+    ) {
+      return
+    }
 
     const fontSize =
       props.fontSize ??
@@ -97,26 +108,51 @@ export class SilkscreenText extends PrimitiveComponent<
     const hasResolvedPcbSxPosition =
       resolvedPcbSxPcbX !== undefined || resolvedPcbSxPcbY !== undefined
 
+    const hasPcbStyleExplicitPosition =
+      this._footprinterFontSize !== undefined &&
+      (silkscreenTextPosition === "centered" ||
+        (typeof silkscreenTextPosition === "object" &&
+          silkscreenTextPosition !== null))
+
+    this._hasExplicitPcbPosition =
+      hasResolvedPcbSxPosition || hasPcbStyleExplicitPosition
+
+    const parentTransform = compose(
+      this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+      isFlipped ? flipY() : identity(),
+    )
+
     const position =
       hasResolvedPcbSxPosition && this._footprinterFontSize !== undefined
-        ? applyToPoint(
-            compose(
-              this.parent?._computePcbGlobalTransformBeforeLayout() ??
-                identity(),
-              isFlipped ? flipY() : identity(),
-            ),
-            {
-              x: this.resolvePcbCoordinate({
-                rawValue: resolvedPcbSxPcbX ?? props.pcbX ?? 0,
-                axis: "pcbX",
-              }),
-              y: this.resolvePcbCoordinate({
-                rawValue: resolvedPcbSxPcbY ?? props.pcbY ?? 0,
-                axis: "pcbY",
-              }),
-            },
-          )
-        : this._getGlobalPcbPositionBeforeLayout()
+        ? applyToPoint(parentTransform, {
+            x: this.resolvePcbCoordinate({
+              rawValue: resolvedPcbSxPcbX ?? props.pcbX ?? 0,
+              axis: "pcbX",
+            }),
+            y: this.resolvePcbCoordinate({
+              rawValue: resolvedPcbSxPcbY ?? props.pcbY ?? 0,
+              axis: "pcbY",
+            }),
+          })
+        : this._footprinterFontSize !== undefined &&
+            silkscreenTextPosition === "centered"
+          ? applyToPoint(parentTransform, { x: 0, y: 0 })
+          : this._footprinterFontSize !== undefined &&
+              typeof silkscreenTextPosition === "object" &&
+              silkscreenTextPosition !== null
+            ? applyToPoint(parentTransform, {
+                x:
+                  this.resolvePcbCoordinate({
+                    rawValue: props.pcbX ?? 0,
+                    axis: "pcbX",
+                  }) + silkscreenTextPosition.offsetX,
+                y:
+                  this.resolvePcbCoordinate({
+                    rawValue: props.pcbY ?? 0,
+                    axis: "pcbY",
+                  }) + silkscreenTextPosition.offsetY,
+              })
+            : this._getGlobalPcbPositionBeforeLayout()
 
     // Build knockout padding object from uniform or individual padding props
     const uniformPadding = props.knockoutPadding ?? 0

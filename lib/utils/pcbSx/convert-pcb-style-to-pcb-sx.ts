@@ -7,6 +7,7 @@ import type { PcbStyle, PcbSx } from "@tscircuit/props"
  * Mapping:
  *   silkscreenFontSize        -> "& silkscreentext": { fontSize }
  *   silkscreenTextVisibility  -> "& silkscreentext": { visibility }
+ *   silkscreenTextPosition: "none" -> "& silkscreentext": { visibility: "hidden" }
  */
 export function convertPcbStyleToPcbSx(
   pcbStyle: PcbStyle | undefined,
@@ -22,6 +23,8 @@ export function convertPcbStyleToPcbSx(
 
   if (pcbStyle.silkscreenTextVisibility !== undefined) {
     silkscreenTextSx.visibility = pcbStyle.silkscreenTextVisibility
+  } else if (pcbStyle.silkscreenTextPosition === "none") {
+    silkscreenTextSx.visibility = "hidden"
   }
 
   if (Object.keys(silkscreenTextSx).length > 0) {
