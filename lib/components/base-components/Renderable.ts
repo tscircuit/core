@@ -45,6 +45,7 @@ export const orderedRenderPhases = [
   "SchematicComponentSizeCalculation",
   "SchematicLayout",
   "SchematicSectionRender",
+  "SchematicGroupPortLayout",
   "SchematicTraceRender",
   "SchematicSheetRender",
   "SchematicReplaceNetLabelsWithSymbols",
@@ -124,6 +125,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   ],
   SchematicLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicSectionRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
+  SchematicGroupPortLayout: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicSheetRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SchematicReplaceNetLabelsWithSymbols: [

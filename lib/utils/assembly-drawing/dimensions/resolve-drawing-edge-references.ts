@@ -1,10 +1,10 @@
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
-import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import type { AssemblyDrawingView } from "../drawing-view"
 import type { DrawingModelFeature } from "../geometry/get-drawing-model-features"
 import type { createDrawingReferenceSelector } from "./create-drawing-reference-selector"
 
 export function resolveDrawingEdgeReferences(
-  view: AssemblyDrawingPartView,
+  view: AssemblyDrawingView,
   dimensions: AssemblyDrawingDimension[],
   select: ReturnType<typeof createDrawingReferenceSelector>,
 ) {

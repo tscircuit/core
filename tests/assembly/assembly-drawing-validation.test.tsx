@@ -64,7 +64,7 @@ test("drawing references and structure reject missing, ambiguous, self and cycli
       <assembly.drawing.page width={100} height={100}>
         <assembly.part name="invalid-child" />
       </assembly.drawing.page>,
-      "only part views and a title block",
+      "only drawing views, notes and a title block",
     ],
   ] as const) {
     const { circuit } = getTestFixture()

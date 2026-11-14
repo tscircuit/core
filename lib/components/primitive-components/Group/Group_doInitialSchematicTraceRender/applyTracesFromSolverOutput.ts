@@ -11,6 +11,7 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { isValidElement } from "react"
 import { Port } from "../../Port"
+import type { SolverInputContext } from "./createSchematicTraceSolverInputProblem"
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
@@ -121,6 +122,7 @@ export function applyTracesFromSolverOutput(args: {
   userNetIdToConnKey: Map<string, string>
   schematicPortIdsWithPreExistingNetLabels: Set<SchematicPortId>
   schematicSheetId?: SchematicTrace["schematic_sheet_id"]
+  sourceTraceIdByPinPairKey?: SolverInputContext["sourceTraceIdByPinPairKey"]
 }) {
   const {
     group,
@@ -203,6 +205,7 @@ export function applyTracesFromSolverOutput(args: {
     edges: SchematicTrace["edges"]
     subcircuit_connectivity_map_key?: string
     schematic_sheet_id?: string
+    boundarySourceTraceId?: SchematicTrace["source_trace_id"]
   }> = []
 
   const terminals: SchematicRoutingTerminal[] = []
@@ -330,7 +333,15 @@ export function applyTracesFromSolverOutput(args: {
       schematicSheetId = group._resolveSchematicSheetId()
     }
 
+    const boundarySourceTraceId = solvedTraceSchematicPortIds.some(
+      (id) => db.schematic_port.get(id)?.boundary_position,
+    )
+      ? args.sourceTraceIdByPinPairKey?.get(
+          [...solvedTraceSchematicPortIds].sort().join("::"),
+        )
+      : undefined
     pendingTraces.push({
+      boundarySourceTraceId,
       source_trace_id,
       edges,
       subcircuit_connectivity_map_key,
@@ -455,7 +466,7 @@ export function applyTracesFromSolverOutput(args: {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
     db.schematic_trace.insert({
-      source_trace_id: t.source_trace_id,
+      source_trace_id: pendingTrace?.boundarySourceTraceId ?? t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],
       subcircuit_connectivity_map_key:

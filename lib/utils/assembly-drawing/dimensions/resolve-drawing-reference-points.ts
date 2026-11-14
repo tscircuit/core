@@ -4,7 +4,7 @@ import type { Board } from "lib/components/normal-components/Board/Board"
 import type { Hole } from "lib/components/primitive-components/Hole"
 import type { PlatedHole } from "lib/components/primitive-components/PlatedHole"
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
-import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import type { AssemblyDrawingView } from "../drawing-view"
 import { getDrawingScenePoints } from "../geometry/get-drawing-scene-points"
 import { getBoardDrawCalls } from "../geometry/get-drawing-draw-calls"
 import type {
@@ -17,7 +17,7 @@ import type {
  * Native features use the same model placement as edgeRef dimensions.
  */
 export async function resolveDrawingReferencePoints(
-  view: AssemblyDrawingPartView,
+  view: AssemblyDrawingView,
   dimensions: AssemblyDrawingDimension[],
   selected: AnyCircuitElement[],
   select: ReturnType<typeof createDrawingReferenceSelector>,
