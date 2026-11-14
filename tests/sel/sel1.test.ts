@@ -98,3 +98,13 @@ test("sel1 - sel.U1.N_CS = .U1 > .N_CS", () => {
 test("sel1 - sel.TP1.pin1 = .TP1 > .pin1", () => {
   expect(sel.TP1.pin1).toBe(".TP1 > .pin1")
 })
+
+test("sel1 - designators above 40 (e.g. R535, C403, U501)", () => {
+  expect(sel.R535.pos).toBe(".R535 > .pos")
+  expect(sel.C403.pos).toBe(".C403 > .pos")
+  expect(sel.U501.VCC).toBe(".U501 > .VCC")
+  expect(sel.subcircuit.S100.U501.pin1).toBe("subcircuit.S100 > .U501 > .pin1")
+
+  // @ts-expect-error
+  const invalidPin = sel.R535.pin3
+})
