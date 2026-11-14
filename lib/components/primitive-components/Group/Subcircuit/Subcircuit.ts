@@ -2,11 +2,13 @@ import { subcircuitProps } from "@tscircuit/props"
 import type { z } from "zod"
 import { inflateCircuitJson } from "../../../../utils/circuit-json/inflate-circuit-json"
 import { Net } from "../../Net"
+import { Port } from "../../Port"
 import { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import type { SubcircuitI } from "./SubcircuitI"
 import { Subcircuit_doInitialRenderIsolatedSubcircuits } from "./Subcircuit_doInitialRenderIsolatedSubcircuits"
 import { Subcircuit_getSubcircuitPropHash } from "../Subcircuit_getSubcircuitPropHash"
+import { Subcircuit_doInitialSchematicGroupPortLayout } from "./Subcircuit_doInitialSchematicGroupPortLayout"
 
 export class Subcircuit
   extends Group<typeof subcircuitProps>
@@ -46,6 +48,27 @@ export class Subcircuit
   private _createTracesForExposedConnections(): void {
     const exposedNets = this._getNetNamesToExpose()
     if (!exposedNets?.length) return
+
+    // A standalone subcircuit has no parent net to bridge to. Represent its
+    // declared net interface with ordinary public ports connected to local nets.
+    // This is independent of whether the schematic is expanded or collapsed.
+    if (
+      this.root?.isRootCircuit &&
+      this.root.children.length === 1 &&
+      this.root.children[0] === this
+    ) {
+      for (const exposedNetName of exposedNets) {
+        const name = normalizeExposedNetName(exposedNetName)
+        if (
+          this.children.some(
+            (child) => child instanceof Port && child.name === name,
+          )
+        )
+          continue
+        this.add(new Port({ name, connectsTo: `net.${name}` }))
+      }
+      return
+    }
 
     const parentSubcircuit = this.parent?.getSubcircuit?.()
     if (!parentSubcircuit) return
@@ -98,6 +121,10 @@ export class Subcircuit
       .map((net) => net._parsedProps.name)
 
     return Array.from(new Set([...explicitExposedNets, ...childNetNames]))
+  }
+
+  doInitialSchematicGroupPortLayout(): void {
+    Subcircuit_doInitialSchematicGroupPortLayout(this)
   }
 
   /**
