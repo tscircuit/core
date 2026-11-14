@@ -7,15 +7,22 @@ import {
   FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { symbols } from "schematic-symbols"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
+import { symbols } from "schematic-symbols"
+import { z } from "zod"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
+const capacitorPropsWithLegacySchSize = capacitorProps.extend({
+  schSize: z
+    .union([capacitorProps.shape.schSize, z.literal("small")])
+    .optional(),
+})
+
 export class Capacitor extends NormalComponent<
-  typeof capacitorProps,
+  typeof capacitorPropsWithLegacySchSize,
   PolarizedPassivePorts
 > {
   _adjustSilkscreenTextAutomatically = true
@@ -73,9 +80,11 @@ export class Capacitor extends NormalComponent<
   get config() {
     const baseSymbolName = this.props.symbolName ?? "capacitor"
     const compactSize =
-      this.props.schSize === "sm" || this.props.schSize === "xs"
-        ? this.props.schSize
-        : undefined
+      this.props.schSize === "small"
+        ? "sm"
+        : this.props.schSize === "sm" || this.props.schSize === "xs"
+          ? this.props.schSize
+          : undefined
     const compactSymbolName =
       compactSize && baseSymbolName === "capacitor"
         ? (`capacitor_${compactSize}` as BaseSymbolName)
@@ -90,7 +99,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: capacitorPropsWithLegacySchSize,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
@@ -133,7 +142,7 @@ export class Capacitor extends NormalComponent<
 
     if (
       this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      !Number.isNaN(this._parsedProps.capacitance)
     ) {
       capacitanceDisplay =
         typeof inputCapacitance === "string"
