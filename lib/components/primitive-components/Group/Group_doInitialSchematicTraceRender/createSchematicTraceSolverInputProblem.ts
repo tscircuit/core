@@ -70,6 +70,7 @@ export type SolverInputContext = {
    * )
    */
   userNetIdToConnKey: Map<string, string>
+  branchedDisplayLabelTraceConnKeys: Set<SubcircuitConnectivityMapKey>
 
   /** Exact source trace for each cross-scope port-only solver label. */
   crossScopeSourceTraceIdBySchematicPortIdAndNetId: Map<
@@ -662,6 +663,75 @@ export function createSchematicTraceSolverInputProblem(
         ),
       )
 
+  /**
+   * Subcircuit connectivity map key to schematic port ids
+   */
+  const connKeyToSchematicPortIds = new Map<string, SchematicPortId[]>()
+  for (const [schId, srcPortId] of schPortIdToSourcePortId) {
+    if (schematicPortIdsWithExternallyRoutedRepresentations.has(schId)) continue
+    const sp = db.source_port.get(srcPortId)
+    if (!sp?.subcircuit_connectivity_map_key) continue
+    const connKey = sp.subcircuit_connectivity_map_key
+    if (!connKeyToSchematicPortIds.has(connKey)) {
+      connKeyToSchematicPortIds.set(connKey, [])
+    }
+    const routedSchematicPortId = resolveRoutedSchematicPortId(schId)
+    const netSchematicPortIds = connKeyToSchematicPortIds.get(connKey)!
+    if (!netSchematicPortIds.includes(routedSchematicPortId)) {
+      netSchematicPortIds.push(routedSchematicPortId)
+    }
+  }
+
+  const maxMspDistForScope =
+    group._parsedProps.schMaxTraceDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
+  const hasPortWithTraceSchDisplayLabel = (portIds: SchematicPortId[]) =>
+    portIds.some((schematicPortId) =>
+      componentPortBySchematicPortId
+        .get(schematicPortId)
+        ?._getDirectlyConnectedTraces()
+        .some((trace) => Boolean(trace._parsedProps.schDisplayLabel)),
+    )
+  const areAllSchematicPortsConnectedWithinMaxDistance = (
+    portIds: SchematicPortId[],
+  ): boolean => {
+    if (portIds.length <= 1) return true
+    const visited = new Set<SchematicPortId>([portIds[0]!])
+    const queue: SchematicPortId[] = [portIds[0]!]
+    while (queue.length > 0) {
+      const currentId = queue.shift()!
+      const currentPort = db.schematic_port.get(currentId)
+      if (!currentPort) return false
+      for (const candidateId of portIds) {
+        if (visited.has(candidateId)) continue
+        if (
+          areSchematicPortsInDifferentSectionsOnSameSheet(
+            currentId,
+            candidateId,
+          )
+        ) {
+          continue
+        }
+        const candidatePort = db.schematic_port.get(candidateId)
+        if (!candidatePort) continue
+        if (
+          currentPort.schematic_component_id &&
+          currentPort.schematic_component_id ===
+            candidatePort.schematic_component_id
+        ) {
+          continue
+        }
+        const distance =
+          Math.abs(currentPort.center.x - candidatePort.center.x) +
+          Math.abs(currentPort.center.y - candidatePort.center.y)
+        if (distance <= maxMspDistForScope) {
+          visited.add(candidateId)
+          queue.push(candidateId)
+        }
+      }
+    }
+    return visited.size === portIds.length
+  }
+
   for (const st of tracesInScope) {
     const connected = Array.from(
       new Set(
@@ -817,18 +887,27 @@ export function createSchematicTraceSolverInputProblem(
             subcircuitConnectivityMapKey: st.subcircuit_connectivity_map_key,
           }).name
         : getNetNameFromPorts(portsForConnection).name || traceLabel
-      const shouldRenderNetLabels = connected.slice(1).some((b, index) => {
-        const a = connected[index]
-        const portA = db.schematic_port.get(a)
-        const portB = db.schematic_port.get(b)
-        if (!portA || !portB) return false
-        return (
-          Math.sqrt(
-            (portA.center.x - portB.center.x) ** 2 +
-              (portA.center.y - portB.center.y) ** 2,
-          ) > maxMspDist
-        )
-      })
+      const portsOnConnectivityNet = st.subcircuit_connectivity_map_key
+        ? connKeyToSchematicPortIds.get(st.subcircuit_connectivity_map_key)
+        : undefined
+      const shouldRenderNetLabels =
+        portsOnConnectivityNet &&
+        portsOnConnectivityNet.length > 2 &&
+        hasPortWithTraceSchDisplayLabel(portsOnConnectivityNet) &&
+        areAllSchematicPortsConnectedWithinMaxDistance(portsOnConnectivityNet)
+          ? false
+          : connected.slice(1).some((b, index) => {
+              const a = connected[index]
+              const portA = db.schematic_port.get(a)
+              const portB = db.schematic_port.get(b)
+              if (!portA || !portB) return false
+              return (
+                Math.sqrt(
+                  (portA.center.x - portB.center.x) ** 2 +
+                    (portA.center.y - portB.center.y) ** 2,
+                ) > maxMspDist
+              )
+            })
       const netLabelWidth =
         renderedNetLabelText && shouldRenderNetLabels
           ? Number(
@@ -907,27 +986,12 @@ export function createSchematicTraceSolverInputProblem(
     isSameSheetCrossSectionConnection?: boolean
     /** Retained for inline-label eligibility; stripped at the solver boundary. */
     isPowerOrGroundConnection?: boolean
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    isBranchedDisplayLabelTraceConnection?: boolean
   }> = [...boundaryTraceNetConnections]
 
-  /**
-   * Subcircuit connectivity map key to schematic port ids
-   */
-  const connKeyToSchematicPortIds = new Map<string, SchematicPortId[]>()
-  for (const [schId, srcPortId] of schPortIdToSourcePortId) {
-    if (schematicPortIdsWithExternallyRoutedRepresentations.has(schId)) continue
-    const sp = db.source_port.get(srcPortId)
-    if (!sp?.subcircuit_connectivity_map_key) continue
-    const connKey = sp.subcircuit_connectivity_map_key
-    if (!connKeyToSchematicPortIds.has(connKey)) {
-      connKeyToSchematicPortIds.set(connKey, [])
-    }
-    const routedSchematicPortId = resolveRoutedSchematicPortId(schId)
-    const netSchematicPortIds = connKeyToSchematicPortIds.get(connKey)!
-    if (!netSchematicPortIds.includes(routedSchematicPortId)) {
-      netSchematicPortIds.push(routedSchematicPortId)
-    }
-  }
-
+  const branchedDisplayLabelTraceConnKeys =
+    new Set<SubcircuitConnectivityMapKey>()
   for (const [connKey, schematicPortIds] of connKeyToSchematicPortIds) {
     const sourceNet = connKeyToSourceNet.get(connKey)
     if (sourceNet && schematicPortIds.length >= 1) {
@@ -964,6 +1028,41 @@ export function createSchematicTraceSolverInputProblem(
         netLabelHeight,
         connKey,
       })
+    } else if (!sourceNet && schematicPortIds.length > 2) {
+      const hasBoundaryTraceNetConnection = boundaryTraceNetConnections.some(
+        (connection) => connection.connKey === connKey,
+      )
+      const { name, wasAssignedDisplayLabel } = resolveCanonicalNetLabelText({
+        subcircuitConnectivityMapKey: connKey,
+      })
+      const hasTraceWithSchDisplayLabel =
+        hasPortWithTraceSchDisplayLabel(schematicPortIds)
+      const isPowerOrGroundConnection = tracesInScope.some(
+        (sourceTrace) =>
+          sourceTrace.subcircuit_connectivity_map_key === connKey &&
+          powerOrGroundSourceConnectivityNetIds.has(
+            getSourceConnectivityNetId(sourceTrace),
+          ),
+      )
+      if (
+        !hasBoundaryTraceNetConnection &&
+        name &&
+        wasAssignedDisplayLabel &&
+        hasTraceWithSchDisplayLabel &&
+        !isPowerOrGroundConnection &&
+        areAllSchematicPortsConnectedWithinMaxDistance(schematicPortIds)
+      ) {
+        userNetIdToConnKey.set(connKey, connKey)
+        branchedDisplayLabelTraceConnKeys.add(connKey)
+        netConnections.push({
+          netId: connKey,
+          netLabelText: name,
+          schematicPortIds,
+          isGround: false,
+          connKey,
+          isBranchedDisplayLabelTraceConnection: true,
+        })
+      }
     }
   }
 
@@ -1029,6 +1128,7 @@ export function createSchematicTraceSolverInputProblem(
         connKey,
         isSameSheetCrossSectionConnection,
         isPowerOrGroundConnection,
+        isBranchedDisplayLabelTraceConnection,
         ...connection
       }) => ({
         ...connection,
@@ -1055,6 +1155,7 @@ export function createSchematicTraceSolverInputProblem(
     routedSchematicPortIdBySchematicPortId,
     connKeyToSourceNet,
     userNetIdToConnKey,
+    branchedDisplayLabelTraceConnKeys,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
     sourceTraceIdByPortOnlyLabelSchematicPortId,
     connKeysWithExplicitPortNetTraces,
