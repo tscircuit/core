@@ -654,6 +654,21 @@ export const createComponentsFromCircuitJson = (
         }),
       )
     } else if (elm.type === "pcb_cutout") {
+      if (
+        typeof elm.pcb_cutout_id === "string" &&
+        elm.pcb_cutout_id.startsWith("pcb_cutout_from_hole_") &&
+        elm.shape === "circle" &&
+        circuitJson.some(
+          (hole) =>
+            hole.type === "pcb_hole" &&
+            hole.hole_shape === "circle" &&
+            Math.abs(hole.x - elm.center.x) < 1e-6 &&
+            Math.abs(hole.y - elm.center.y) < 1e-6 &&
+            Math.abs(hole.hole_diameter - elm.radius * 2) < 1e-6,
+        )
+      ) {
+        continue
+      }
       if (elm.shape === "rect") {
         components.push(
           new Cutout({
