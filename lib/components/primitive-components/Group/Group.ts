@@ -78,6 +78,7 @@ import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFr
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import { Port } from "../Port/Port"
+import { Net } from "../Net"
 import { Trace } from "../Trace/Trace"
 import { TraceHint } from "../TraceHint"
 import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
@@ -309,7 +310,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   override initPorts(opts: Parameters<NormalComponent["initPorts"]>[0] = {}) {
     const schPinArrangement = this._getSchematicPortArrangement()
     const hasUnresolvedNamedPins =
-      this._parsedProps?.showAsSchematicBox &&
       !this._parsedProps.pinLabels &&
       schPinArrangement &&
       getPinsFromPortArrangement(schPinArrangement).some(
@@ -3090,6 +3090,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
       for (const [name, components] of immediateChildrenByName.entries()) {
         if (components.length <= 1) continue
+
+        // A public terminal may deliberately export a same-named local net.
+        // Require one of each and actual electrical connectivity, so unrelated
+        // objects and duplicate ports still receive the usual name error.
+        const publicPort = components.find((child) => child instanceof Port)
+        const localNet = components.find((child) => child instanceof Net)
+        if (
+          components.length === 2 &&
+          publicPort instanceof Port &&
+          localNet instanceof Net &&
+          publicPort._getSubcircuitConnectivityKey() &&
+          publicPort._getSubcircuitConnectivityKey() ===
+            localNet.subcircuit_connectivity_map_key
+        )
+          continue
 
         const sameNamedTraces = components.filter(
           (child): child is Trace => child instanceof Trace,
