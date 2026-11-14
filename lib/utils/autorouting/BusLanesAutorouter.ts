@@ -1,5 +1,6 @@
 import {
   BusLanesPipelineSolver,
+  type BusLanesPipelineOptions,
   type SimpleRouteJson as BusLanesInput,
 } from "@tscircuit/bus-lanes-solver"
 import type {
@@ -15,14 +16,39 @@ import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private solver: BusLanesPipelineSolver
+  private readonly connectivityOnly: boolean
   private cancelScheduledTick?: () => void
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
   }> = []
-  constructor(public input: SimpleRouteJson) {
+  constructor(
+    public input: SimpleRouteJson,
+    options: BusLanesPipelineOptions = {},
+  ) {
+    this.connectivityOnly = options.goal === "connectivity"
     // The solver validates unsupported SRJ route primitives at its input boundary.
-    this.solver = new BusLanesPipelineSolver(input as unknown as BusLanesInput)
+    let busLanesInput = input as unknown as BusLanesInput
+    if (this.connectivityOnly) {
+      const layerConstraints = [
+        busLanesInput.allowedLayers,
+        ...(input.buses?.map((bus) => bus.allowedLayers) ?? []),
+      ].filter((layers) => layers !== undefined)
+      const carrierLayers = layerConstraints
+        .reduce(
+          (layers, constraint) =>
+            layers.filter((layer) => constraint.includes(layer)),
+          layerConstraints[0] ?? [],
+        )
+        .filter((layer) => layer !== "top")
+      if (carrierLayers.length !== 1) {
+        throw new Error(
+          "Connectivity routing requires one shared non-top carrier; set pcbAllowedLayers on the bus",
+        )
+      }
+      busLanesInput = { ...busLanesInput, allowedLayers: carrierLayers }
+    }
+    this.solver = new BusLanesPipelineSolver(busLanesInput, options)
   }
   on(
     event: "complete",
@@ -49,6 +75,17 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     for (const listener of this.listeners)
       if (listener.event === event.type) listener.callback(event)
   }
+  private routingError(cause: unknown): Error {
+    if (this.connectivityOnly) {
+      // Dependency diagnostics may contain SRJ identifiers. Keep those in the
+      // structured cause and give core a readable user-facing message.
+      return new Error(
+        "Bus lanes connectivity routing could not connect all requested signals",
+        { cause },
+      )
+    }
+    return cause instanceof Error ? cause : new Error(String(cause))
+  }
   start() {
     if (this.isRouting) return
     this.isRouting = true
@@ -65,7 +102,9 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
           this.isRouting = false
           this.emit({
             type: "error",
-            error: new Error(this.solver.error ?? "Bus lanes routing failed"),
+            error: this.routingError(
+              this.solver.error ?? "Bus lanes routing failed",
+            ),
           })
           return
         }
@@ -86,7 +125,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         this.isRouting = false
         this.emit({
           type: "error",
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: this.routingError(error),
         })
       }
     }
@@ -110,7 +149,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
   solveSync(): SimplifiedPcbTrace[] {
     this.solver.solve()
     if (this.solver.failed)
-      throw new Error(this.solver.error ?? "Bus lanes routing failed")
+      throw this.routingError(this.solver.error ?? "Bus lanes routing failed")
     return this.solver.traces
   }
 }
