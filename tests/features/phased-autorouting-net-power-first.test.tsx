@@ -40,6 +40,7 @@ test("phased autorouting routes thick power net before signal traces", async () 
         pcbY={4}
       />
       <trace
+        name="POWER"
         from=".P1 > .pin2"
         to=".P2 > .pin1"
         routingPhaseIndex={0}
@@ -49,8 +50,27 @@ test("phased autorouting routes thick power net before signal traces", async () 
       <trace from=".H2 > .pin1" to="net.GND" />
       <trace from=".V1A > .pin1" to=".V1B > .pin1" />
       <trace from=".V2A > .pin1" to=".V2B > .pin1" />
+      <pcbnotetext
+        text="Phase 0: POWER requested 1 mm; phase 1: GND"
+        pcbY={5.3}
+        fontSize={0.4}
+      />
     </board>,
   )
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await circuit.renderUntilSettled()
+  const power = circuit.db.source_trace.getWhere({ name: "POWER" })!
+  const widths = circuit.db.pcb_trace
+    .list()
+    .filter((trace) => trace.source_trace_id === power.source_trace_id)
+    .flatMap((trace) =>
+      trace.route.flatMap((point) =>
+        point.route_type === "wire" ? [point.width] : [],
+      ),
+    )
+  expect(widths.length).toBeGreaterThan(0)
+  expect(Math.max(...widths)).toBe(1)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showPcbNotes: true,
+  })
 })

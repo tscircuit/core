@@ -707,6 +707,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           sharedConnMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
+        minTraceWidth: trace.min_trace_thickness,
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
@@ -832,6 +833,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     )
 
     let nominalTraceWidthForConnection: number | undefined
+    let minTraceWidthForConnection: number | undefined
     for (const sourceNet of connectedSourceNets) {
       if (sourceNet.trace_width === undefined) continue
       nominalTraceWidthForConnection = Math.max(
@@ -841,6 +843,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     for (const sourceTrace of connectedSourceTraces) {
       if (sourceTrace.min_trace_thickness === undefined) continue
+      minTraceWidthForConnection = Math.max(
+        minTraceWidthForConnection ?? 0,
+        sourceTrace.min_trace_thickness,
+      )
       nominalTraceWidthForConnection = Math.max(
         nominalTraceWidthForConnection ?? 0,
         sourceTrace.min_trace_thickness,
@@ -888,6 +894,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       name:
         net.source_net_id ??
         sharedConnMap.getNetConnectedToId(net.source_net_id),
+      minTraceWidth: minTraceWidthForConnection,
       nominalTraceWidth: nominalTraceWidthForConnection,
       width: nominalTraceWidthForConnection,
       pointsToConnect,
@@ -941,6 +948,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
             ? `breakout:${bp.pcb_breakout_point_id}`
             : bpSourcePortId,
           source_trace_id: bp.source_trace_id,
+          minTraceWidth: bp.source_trace_id
+            ? db.source_trace.get(bp.source_trace_id)?.min_trace_thickness
+            : undefined,
           routingPcbGroupId: isInTransparentChildRoutingGroup
             ? bp.pcb_group_id
             : undefined,
