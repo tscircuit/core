@@ -164,6 +164,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
   private timeoutId?: number
   private autorouterThreads?: number
   private solverName: AutorouterSolverName
+  private readonly requireViaFreeOutput: boolean
   private threadedRun?: ThreadedAutoroutingRun
 
   constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {
@@ -192,6 +193,28 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       platformConfig,
       effort,
     })
+    // Assignable2 can route single-layer boards as long as it emits only
+    // planar copper. Validate that guarantee before returning its output.
+    this.requireViaFreeOutput =
+      Boolean(input.viaKeepouts?.length) &&
+      input.layerCount === 1 &&
+      solverName === "AssignableAutoroutingPipeline2"
+
+    if (input.viaKeepouts?.length && !this.requireViaFreeOutput) {
+      if (
+        solverName !== "AutoroutingPipelineSolver9_PreloadedTraceGraph" &&
+        solverName !== "AutoroutingPipelineSolver9_Networked"
+      ) {
+        throw new AutorouterError(
+          "Via-only keepouts require the default Pipeline9 autorouter",
+        )
+      }
+      if (!AutoroutingPipelineSolver9_PreloadedTraceGraph.supportsViaKeepouts) {
+        throw new AutorouterError(
+          "Installed autorouter does not support via-only keepouts; update @tscircuit/capacity-autorouter",
+        )
+      }
+    }
     this.solverName = solverName
     this.autorouterThreads = platformConfig?.autorouterThreads
     if (
@@ -288,8 +311,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       }
       this.emitEvent({
         type: "complete",
-        traces:
-          this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
+        traces: this.getRoutedTraces(),
       })
     } catch (error) {
       if (run.stopped) return
@@ -334,8 +356,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         } else {
           this.emitEvent({
             type: "complete",
-            traces:
-              this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[],
+            traces: this.getRoutedTraces(),
           })
         }
         this.isRouting = false
@@ -488,7 +509,23 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
       throw new AutorouterError(this.solver.error || "Routing failed")
     }
 
-    return this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
+    return this.getRoutedTraces()
+  }
+
+  private getRoutedTraces(): SimplifiedPcbTrace[] {
+    const traces =
+      this.solver.getOutputSimplifiedPcbTraces() as SimplifiedPcbTrace[]
+    if (
+      this.requireViaFreeOutput &&
+      traces.some((trace) =>
+        trace.route.some((segment) => segment.route_type === "via"),
+      )
+    ) {
+      throw new AutorouterError(
+        "Single-layer autorouting returned a via with via-only keepouts enabled",
+      )
+    }
+    return traces
   }
 
   getComputeCostSummary(): AutorouterComputeCostSummary | undefined {
