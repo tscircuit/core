@@ -179,16 +179,13 @@ beforeAll(async () => {
   }
 }, 30000)
 
-test.failing(
-  "manual path layers preserve defaults, escapes, via transitions, and selector contacts",
-  () => {
-    expect(
-      observedPathLayers.map(({ caseName, layers }) => ({ caseName, layers })),
-    ).toEqual(
-      observedPathLayers.map(({ caseName, expectedLayers }) => ({
-        caseName,
-        layers: expectedLayers,
-      })),
-    )
-  },
-)
+test("manual path layers preserve defaults, escapes, via transitions, and selector contacts", () => {
+  expect(
+    observedPathLayers.map(({ caseName, layers }) => ({ caseName, layers })),
+  ).toEqual(
+    observedPathLayers.map(({ caseName, expectedLayers }) => ({
+      caseName,
+      layers: expectedLayers,
+    })),
+  )
+})
