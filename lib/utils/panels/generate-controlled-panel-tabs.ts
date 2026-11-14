@@ -97,6 +97,7 @@ export function generateControlledPanelTabs(
     minimumBoardDimension,
     tabWidth: options.tabWidth,
     tabLength: options.tabLength,
+    mouseBites: options.mouseBites,
   })
   const mouseBiteSize = getMouseBiteSize({ tabWidth })
   const drillDiameter = mouseBiteSize.diameter

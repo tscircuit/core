@@ -62,12 +62,17 @@ function getConnectedIntervalEnd(intervals: RoutingInterval[]): number {
   return end
 }
 
+export interface PanelMouseBiteCandidate {
+  position: Point
+  shiftDirection: Point
+  oppositeEdgeDistance: number
+}
+
 /** Put drills at both roots of each tab in circuit-world mm (+X right/+Y up,
- * right-handed +Z above). Returned points are positions. Unbroken outline
- * routing bands locate the frame edge or adjacent board across the channel.
- * Intersect that span with the preserved tab so junctions cannot send drills
- * past the tab's far edge into a different routing corridor. */
-export function getPanelMouseBitePositions({
+ * right-handed +Z above), recording each drill's outward tab direction and
+ * available channel span so post-layout reconciliation can shift edge drills
+ * off nearby board copper or silkscreen. */
+export function getPanelMouseBiteCandidates({
   mouseBites,
   routingCutouts,
   minimumDrillPitch,
@@ -75,17 +80,15 @@ export function getPanelMouseBitePositions({
   mouseBites: PanelTabMouseBite[]
   routingCutouts: (PcbCutoutRect | PcbCutoutPolygon)[]
   minimumDrillPitch: number
-}): Point[] {
+}): PanelMouseBiteCandidate[] {
   if (mouseBites.length === 0) return []
   const routingPolygons = routingCutouts.map(getPanelRoutingSlotPolygon)
-  const drillPositions = new Map<PanelMouseBitePositionKey, Point>()
-  // Preserve the original board-edge rows before adding counterpart drills.
-  for (const { boardEdge } of mouseBites) {
-    const positionKey: PanelMouseBitePositionKey = `${Math.round(boardEdge.x / POSITION_TOLERANCE_MM)},${Math.round(boardEdge.y / POSITION_TOLERANCE_MM)}`
-    if (!drillPositions.has(positionKey))
-      drillPositions.set(positionKey, boardEdge)
-  }
-  for (const { boardEdge, outwardNormal, bridgeOutline } of mouseBites) {
+  const drillCandidates = new Map<
+    PanelMouseBitePositionKey,
+    PanelMouseBiteCandidate
+  >()
+  const resolvedSpans = mouseBites.map((bite) => {
+    const { boardEdge, outwardNormal, bridgeOutline } = bite
     const channelEnd = getConnectedIntervalEnd(
       routingPolygons.flatMap((routingPolygon) =>
         getRoutingIntervals({ routingPolygon, boardEdge, outwardNormal }),
@@ -104,20 +107,67 @@ export function getPanelMouseBitePositions({
     if (oppositeEdgeDistance <= POSITION_TOLERANCE_MM) {
       throw new Error("Could not locate the routed channel beside a panel tab")
     }
+    return {
+      boardEdge,
+      outwardNormal,
+      oppositeEdgeDistance,
+    }
+  })
+
+  // Preserve the original board-edge rows before adding counterpart drills.
+  for (const {
+    boardEdge,
+    outwardNormal,
+    oppositeEdgeDistance,
+  } of resolvedSpans) {
+    const positionKey: PanelMouseBitePositionKey = `${Math.round(boardEdge.x / POSITION_TOLERANCE_MM)},${Math.round(boardEdge.y / POSITION_TOLERANCE_MM)}`
+    if (!drillCandidates.has(positionKey)) {
+      drillCandidates.set(positionKey, {
+        position: boardEdge,
+        shiftDirection: { x: outwardNormal.x, y: outwardNormal.y },
+        oppositeEdgeDistance,
+      })
+    }
+  }
+  for (const {
+    boardEdge,
+    outwardNormal,
+    oppositeEdgeDistance,
+  } of resolvedSpans) {
     const oppositeEdge = Flatten.point(boardEdge.x, boardEdge.y).translate(
       outwardNormal.multiply(oppositeEdgeDistance),
     )
     // A neighboring row can already perforate this portion of the tab.
     // Reuse those drills instead of adding overlapping or under-spaced holes.
     const positionKey: PanelMouseBitePositionKey = `${Math.round(oppositeEdge.x / POSITION_TOLERANCE_MM)},${Math.round(oppositeEdge.y / POSITION_TOLERANCE_MM)}`
-    if (drillPositions.has(positionKey)) continue
-    const alreadyPerforated = [...drillPositions.values()].some(
-      (position) =>
+    if (drillCandidates.has(positionKey)) continue
+    const alreadyPerforated = [...drillCandidates.values()].some(
+      ({ position }) =>
         Math.hypot(position.x - oppositeEdge.x, position.y - oppositeEdge.y) <
         minimumDrillPitch - POSITION_TOLERANCE_MM,
     )
-    if (!alreadyPerforated)
-      drillPositions.set(positionKey, { x: oppositeEdge.x, y: oppositeEdge.y })
+    if (!alreadyPerforated) {
+      drillCandidates.set(positionKey, {
+        position: { x: oppositeEdge.x, y: oppositeEdge.y },
+        shiftDirection: { x: -outwardNormal.x, y: -outwardNormal.y },
+        oppositeEdgeDistance,
+      })
+    }
   }
-  return [...drillPositions.values()]
+  return [...drillCandidates.values()]
+}
+
+/** Put drills at both roots of each tab in circuit-world mm (+X right/+Y up,
+ * right-handed +Z above). Returned points are positions. Unbroken outline
+ * routing bands locate the frame edge or adjacent board across the channel.
+ * Intersect that span with the preserved tab so junctions cannot send drills
+ * past the tab's far edge into a different routing corridor. */
+export function getPanelMouseBitePositions(args: {
+  mouseBites: PanelTabMouseBite[]
+  routingCutouts: (PcbCutoutRect | PcbCutoutPolygon)[]
+  minimumDrillPitch: number
+}): Point[] {
+  return getPanelMouseBiteCandidates(args).map(
+    (candidate) => candidate.position,
+  )
 }

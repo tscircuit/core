@@ -10,13 +10,18 @@ import type {
 } from "circuit-json"
 import { generateContinuousPanelRoutingSlots } from "./generate-continuous-panel-routing-slots"
 import {
+  type PanelMouseBiteCandidate,
   type PanelTabMouseBite,
-  getPanelMouseBitePositions,
+  getPanelMouseBiteCandidates,
 } from "./get-panel-mouse-bite-positions"
 import { preservePanelTabBridges } from "./preserve-panel-tab-bridges"
+import type { TrackedPanelMouseBite } from "./reconcile-panel-mouse-bite-clearances"
 
 export const DEFAULT_TAB_LENGTH = 5
 export const DEFAULT_TAB_WIDTH = 2
+export const MIN_MOUSE_BITE_DIAMETER = 0.5
+export const MIN_MOUSE_BITE_SPACING = 0.3
+export const MIN_MOUSE_BITE_TAB_WIDTH = 1.1
 
 export const PANEL_GRID_SPACING = DEFAULT_TAB_WIDTH
 
@@ -37,25 +42,42 @@ export function getScaledPanelTabSize({
   minimumBoardDimension,
   tabWidth,
   tabLength,
+  mouseBites = false,
 }: {
   minimumBoardDimension: number
   tabWidth: number
   tabLength: number
+  mouseBites?: boolean
 }) {
   const scale = Math.max(
     minimumBoardDimension / TAB_SCALE_REFERENCE_BOARD_SIZE,
     MIN_TAB_SCALE,
   )
+  const scaledTabWidth = DEFAULT_TAB_WIDTH * scale
   return {
-    tabWidth: Math.min(tabWidth, DEFAULT_TAB_WIDTH * scale),
+    tabWidth: Math.min(
+      tabWidth,
+      mouseBites
+        ? Math.max(MIN_MOUSE_BITE_TAB_WIDTH, scaledTabWidth)
+        : scaledTabWidth,
+    ),
     tabLength: Math.min(tabLength, DEFAULT_TAB_LENGTH * scale),
   }
 }
 
 /** Mouse-bite drill diameter and the web between holes (mm) for a tab width. */
 export function getMouseBiteSize({ tabWidth }: { tabWidth: number }) {
-  const diameter = tabWidth * MOUSE_BITE_DIAMETER_TO_TAB_WIDTH
-  return { diameter, spacing: diameter * MOUSE_BITE_SPACING_TO_DIAMETER }
+  const diameter = Math.max(
+    MIN_MOUSE_BITE_DIAMETER,
+    tabWidth * MOUSE_BITE_DIAMETER_TO_TAB_WIDTH,
+  )
+  // Leave at least half a drill diameter (and at least 0.3 mm on small boards,
+  // giving 0.5 mm holes at 0.8 mm pitch) of material between adjacent holes.
+  const spacing = Math.max(
+    MIN_MOUSE_BITE_SPACING,
+    diameter * MOUSE_BITE_SPACING_TO_DIAMETER,
+  )
+  return { diameter, spacing }
 }
 
 interface PanelOptions {
@@ -327,6 +349,10 @@ export function generatePanelTabsAndMouseBites(
   tabCutouts: PcbCutout[]
   mouseBiteHoles: PcbHoleCircle[]
   vScoreLines: Point[][]
+  mouseBiteCandidates: TrackedPanelMouseBite[]
+  mouseBiteDiameter: number
+  minimumDrillPitch: number
+  boardOutlines: Point[][]
 } {
   const finalTabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
   const allMouseBites: PanelTabMouseBite[] = []
@@ -362,6 +388,7 @@ export function generatePanelTabsAndMouseBites(
       minimumBoardDimension: Math.min(...boardDimensions),
       tabWidth,
       tabLength,
+      mouseBites: useMouseBites,
     }))
   }
 
@@ -414,24 +441,31 @@ export function generatePanelTabsAndMouseBites(
     pcb_cutout_id: `panel_tab_${index}`,
   }))
 
-  let mouseBitePositions: Point[] = []
+  const minimumDrillPitch = mouseBiteDiameter + mouseBiteSpacing
+  let rawCandidates: PanelMouseBiteCandidate[] = []
   if (useMouseBites) {
-    mouseBitePositions = getPanelMouseBitePositions({
+    rawCandidates = getPanelMouseBiteCandidates({
       mouseBites: allMouseBites,
       routingCutouts: generatePanelOutlineRoutingCutouts(processedBoards, {
         cutoutWidth: tabWidth,
       }),
-      minimumDrillPitch: mouseBiteDiameter + mouseBiteSpacing,
+      minimumDrillPitch,
     })
   }
-  const mouseBiteHoles: PcbHoleCircle[] = mouseBitePositions.map(
-    (bite, index) => ({
-      type: "pcb_hole",
+  const mouseBiteCandidates: TrackedPanelMouseBite[] = rawCandidates.map(
+    (candidate, index) => ({
+      ...candidate,
       pcb_hole_id: `panel_mouse_bite_${index}`,
+    }),
+  )
+  const mouseBiteHoles: PcbHoleCircle[] = mouseBiteCandidates.map(
+    (candidate) => ({
+      type: "pcb_hole",
+      pcb_hole_id: candidate.pcb_hole_id,
       hole_shape: "circle",
       hole_diameter: mouseBiteDiameter,
-      x: bite.x,
-      y: bite.y,
+      x: candidate.position.x,
+      y: candidate.position.y,
     }),
   )
 
@@ -439,6 +473,12 @@ export function generatePanelTabsAndMouseBites(
     tabCutouts,
     mouseBiteHoles,
     vScoreLines,
+    mouseBiteCandidates,
+    mouseBiteDiameter,
+    minimumDrillPitch,
+    boardOutlines: processedBoards
+      .map((board) => board.outline ?? [])
+      .filter((outline) => outline.length >= 3),
   }
 }
 

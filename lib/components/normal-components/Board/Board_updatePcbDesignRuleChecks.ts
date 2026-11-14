@@ -1,4 +1,5 @@
 import { getBoardCircuitJsonForDrc } from "lib/utils/panels/get-board-circuit-json-for-drc"
+import { formatPanelMouseBiteDrcDiagnostics } from "lib/utils/panels/reconcile-panel-mouse-bite-clearances"
 import {
   dedupePcbDrcErrors,
   consolidatePcbOverlapErrors,
@@ -182,9 +183,11 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
 
     const checkResults = await Promise.all(checksToRun)
     db.insertAll(
-      consolidatePcbOverlapErrors(
-        circuitJson,
-        dedupePcbDrcErrors(checkResults.flat()),
+      formatPanelMouseBiteDrcDiagnostics(
+        consolidatePcbOverlapErrors(
+          circuitJson,
+          dedupePcbDrcErrors(checkResults.flat()),
+        ),
       ),
     )
   }
