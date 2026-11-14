@@ -12,6 +12,15 @@ export const NormalComponent_doInitialSourceDesignRuleChecks = (
   const { db } = component.root!
   if (!component.source_component_id) return
 
+  const existingWarnings = db.source_pin_missing_trace_warning.list({
+    source_component_id: component.source_component_id,
+  })
+  for (const w of existingWarnings) {
+    db.source_pin_missing_trace_warning.delete(
+      w.source_pin_missing_trace_warning_id,
+    )
+  }
+
   const ports = component.selectAll("port") as Port[]
   const traces = db.source_trace.list()
 
