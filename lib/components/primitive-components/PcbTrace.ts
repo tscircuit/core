@@ -5,10 +5,18 @@ import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefault
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { pcbTraceCircuitJsonInput } from "./PcbTrace/pcb-trace-circuit-json-input"
 import { getPcbTraceRouteBounds } from "lib/utils/pcb/get-pcb-trace-route-bounds"
+import {
+  expandPcbTraceRouteXyShorthands,
+  type PcbTraceInput,
+} from "./PcbTrace/expand-pcb-trace-route-xy-shorthands"
 
 export class PcbTrace extends PrimitiveComponent<
   typeof pcbTraceCircuitJsonInput
 > {
+  constructor(input: PcbTraceInput) {
+    super(expandPcbTraceRouteXyShorthands(input))
+  }
+
   pcb_trace_id: string | null = null
   // Imported footprints can already supply the physical via as a pcb_via.
   _materializedRouteViaIndices = new Set<number>()
