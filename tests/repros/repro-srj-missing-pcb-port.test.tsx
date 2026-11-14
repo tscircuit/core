@@ -20,26 +20,22 @@ const getPcbPortCount = (circuit: RootCircuit, componentName: string) => {
     .filter((pcbPort) => sourcePortIds.has(pcbPort.source_port_id)).length
 }
 
-test.failing(
-  "rp2040 debug circuit does not crash autorouting when a trace connects components without PCB ports",
-  async () => {
-    const consoleError = spyOn(console, "error")
+test("rp2040 debug circuit does not crash autorouting when a trace connects components without PCB ports", async () => {
+  const consoleError = spyOn(console, "error")
 
-    try {
-      const { circuit } = getTestFixture()
-      circuit.add(<DebugBoard />)
-      await circuit.renderUntilSettled()
+  try {
+    const { circuit } = getTestFixture()
+    circuit.add(<DebugBoard />)
+    await circuit.renderUntilSettled()
 
-      const connectedPortCrash = consoleError.mock.calls.find((args) =>
-        args.some((arg) => String(arg).includes("connectedPort.x")),
-      )
-      expect(connectedPortCrash).toBeUndefined()
+    const connectedPortCrash = consoleError.mock.calls.find((args) =>
+      args.some((arg) => String(arg).includes("connectedPort.x")),
+    )
+    expect(connectedPortCrash).toBeUndefined()
 
-      expect(getPcbPortCount(circuit, "TP6")).toBe(1)
-      expect(getPcbPortCount(circuit, "SW2")).toBe(0)
-    } finally {
-      consoleError.mockRestore()
-    }
-  },
-  30_000,
-)
+    expect(getPcbPortCount(circuit, "TP6")).toBe(1)
+    expect(getPcbPortCount(circuit, "SW2")).toBe(0)
+  } finally {
+    consoleError.mockRestore()
+  }
+}, 30_000)
