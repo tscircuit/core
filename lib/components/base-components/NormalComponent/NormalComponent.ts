@@ -1766,6 +1766,36 @@ export class NormalComponent<
     this._invalidFootprintPropMessages = []
   }
 
+  private _insertInvalidConnectionsPropErrors(): void {
+    const { _parsedProps: props } = this
+    if (!props.connections) return
+
+    for (const [pinName, target] of Object.entries(props.connections)) {
+      const targets = Array.isArray(target) ? target : [target]
+      for (const targetPath of targets) {
+        const targetString = String(targetPath)
+        if (targetString.trim() !== "") continue
+
+        const matchedPort = this.children.find(
+          (child) =>
+            child.componentName === "Port" &&
+            (child as Port).isMatchingAnyOf([pinName]),
+        ) as Port | undefined
+
+        this.root!.db.source_component_misconfigured_error.insert({
+          error_type: "source_component_misconfigured_error",
+          message: `${this.getString()} has an empty connection target for pin "${pinName}" in connections`,
+          source_component_ids: this.source_component_id
+            ? [this.source_component_id]
+            : [],
+          ...(matchedPort?.source_port_id
+            ? { source_port_ids: [matchedPort.source_port_id] }
+            : {}),
+        })
+      }
+    }
+  }
+
   getPortsFromSchematicSymbol(): Port[] {
     if (this.root?.schematicDisabled) return []
     const { config } = this
@@ -1794,7 +1824,9 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
-          propsWithConnections.push(String(targetPath))
+          const targetString = String(targetPath)
+          if (targetString.trim() === "") continue
+          propsWithConnections.push(targetString)
         }
       }
     }
@@ -2468,10 +2500,12 @@ export class NormalComponent<
       for (const [pinName, target] of Object.entries(props.connections)) {
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
+          const targetString = String(targetPath)
+          if (targetString.trim() === "") continue
           this.add(
             new Trace({
               from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
+              to: targetString,
             }),
           )
         }
@@ -2490,6 +2524,7 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+    this._insertInvalidConnectionsPropErrors()
   }
 
   doInitialValidatePcbCoordinates(): void {
