@@ -43,6 +43,8 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
     })
     if (traceAlreadyExists) continue
 
-    parent.add(new Trace({ from, to: target }))
+    parent.add(
+      new Trace({ from, to: target }, { suppressUnnamedTraceWarning: true }),
+    )
   }
 }

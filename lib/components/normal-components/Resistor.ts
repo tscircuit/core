@@ -63,30 +63,42 @@ export class Resistor extends NormalComponent<
   doInitialCreateTracesFromProps() {
     if (this.props.pullupFor && this.props.pullupTo) {
       this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pullupFor,
-        }),
+        new Trace(
+          {
+            from: `${this.getSubcircuitSelector()} > port.1`,
+            to: this.props.pullupFor,
+          },
+          { suppressUnnamedTraceWarning: true },
+        ),
       )
       this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pullupTo,
-        }),
+        new Trace(
+          {
+            from: `${this.getSubcircuitSelector()} > port.2`,
+            to: this.props.pullupTo,
+          },
+          { suppressUnnamedTraceWarning: true },
+        ),
       )
     }
     if (this.props.pulldownFor && this.props.pulldownTo) {
       this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.1`,
-          to: this.props.pulldownFor,
-        }),
+        new Trace(
+          {
+            from: `${this.getSubcircuitSelector()} > port.1`,
+            to: this.props.pulldownFor,
+          },
+          { suppressUnnamedTraceWarning: true },
+        ),
       )
       this.add(
-        new Trace({
-          from: `${this.getSubcircuitSelector()} > port.2`,
-          to: this.props.pulldownTo,
-        }),
+        new Trace(
+          {
+            from: `${this.getSubcircuitSelector()} > port.2`,
+            to: this.props.pulldownTo,
+          },
+          { suppressUnnamedTraceWarning: true },
+        ),
       )
     }
     this._createTracesFromConnectionsProp()

@@ -53,10 +53,13 @@ export class BoardCastellatedHole extends PlatedHole {
     this.padDiameter = padDiameter
     this.port = connectionTargets.length > 0 ? new Port({ name }) : null
     this.trace = this.port
-      ? new Trace({
-          path: [`port.${name}`, ...connectionTargets],
-          displayName: `Castellated hole ${outlinePointIndex + 1} connectivity`,
-        })
+      ? new Trace(
+          {
+            path: [`port.${name}`, ...connectionTargets],
+            displayName: `Castellated hole ${outlinePointIndex + 1} connectivity`,
+          },
+          { suppressUnnamedTraceWarning: true },
+        )
       : null
   }
 

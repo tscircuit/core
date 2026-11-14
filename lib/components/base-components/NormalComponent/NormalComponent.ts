@@ -2469,10 +2469,13 @@ export class NormalComponent<
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
           this.add(
-            new Trace({
-              from: `.${this.name} > .${pinName}`,
-              to: String(targetPath),
-            }),
+            new Trace(
+              {
+                from: `.${this.name} > .${pinName}`,
+                to: String(targetPath),
+              },
+              { suppressUnnamedTraceWarning: true },
+            ),
           )
         }
       }
