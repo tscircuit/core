@@ -1,4 +1,8 @@
 import type {
+  AssemblyDrawingExplosionViewProps,
+  AssemblyDrawingStageProps,
+  AssemblyDrawingPartLabelProps,
+  AssemblyDrawingNoteProps,
   AssemblyDrawingDimensionProps,
   AssemblyDrawingPageProps,
   AssemblyDrawingPartViewProps,
@@ -41,6 +45,19 @@ export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
 
 export const assembly = {
   drawing: {
+    explosionview: createNamespacedElement<AssemblyDrawingExplosionViewProps>(
+      "assembly.drawing.explosionview",
+    ),
+    stage: createNamespacedElement<AssemblyDrawingStageProps>(
+      "assembly.drawing.stage",
+    ),
+    partlabel: createNamespacedElement<AssemblyDrawingPartLabelProps>(
+      "assembly.drawing.partlabel",
+    ),
+    note: createNamespacedElement<AssemblyDrawingNoteProps>(
+      "assembly.drawing.note",
+    ),
+
     dimension: createNamespacedElement<AssemblyDrawingDimensionProps>(
       "assembly.drawing.dimension",
     ),

@@ -12,6 +12,10 @@ export function resolveDrawingPartSelection(
   view: AssemblyDrawingPartView,
 ): Pick<DrawingPartView, "source_group_id" | "source_component_ids"> {
   const selector = view._parsedProps.partRef
+  if (!selector)
+    throw new Error(
+      "An assembled part view requires partRef or a drawing stage",
+    )
   const scope = getAssemblyScope(view)
   const matches = selectAll(preprocessSelector(selector, view), [scope], {
     adapter: cssSelectPrimitiveComponentAdapter,
