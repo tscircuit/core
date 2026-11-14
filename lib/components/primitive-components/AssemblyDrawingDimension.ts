@@ -15,9 +15,13 @@ export class AssemblyDrawingDimension extends PrimitiveComponent<
   override doInitialAssignNameToUnnamedComponents(): void {}
 
   doInitialSourceRender(): void {
-    if (this.parent?.componentName !== "AssemblyDrawingPartView")
+    if (
+      !["AssemblyDrawingPartView", "AssemblyDrawingExplosionView"].includes(
+        this.parent?.componentName ?? "",
+      )
+    )
       throw new Error(
-        "assembly.drawing.dimension must belong to a drawing part view",
+        "assembly.drawing.dimension must belong to a drawing view",
       )
     if (this.children.length)
       throw new Error("assembly.drawing.dimension cannot contain children")

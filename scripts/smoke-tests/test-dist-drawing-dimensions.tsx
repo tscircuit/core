@@ -30,3 +30,54 @@ assert.deepEqual(
   ["30 mm", "8 mm"],
 )
 console.log("Built-package hole dimensions passed")
+
+const exploded = new RootCircuit()
+exploded.add(
+  <assembly.device name="DEVICE">
+    <assembly.part
+      name="COVER"
+      cadModel={{ jscad: { type: "cuboid", size: [10, 8, 2] } }}
+    />
+    <assembly.explosion.stage name="lift">
+      <assembly.explosion.move targetRefs="COVER" offZ={12} />
+    </assembly.explosion.stage>
+    <assembly.drawing.page
+      width={200}
+      height={150}
+      anchorAlignment="bottom_left"
+    >
+      <assembly.drawing.explosionview
+        name="exploded"
+        stageRef="lift"
+        direction="isometric"
+        width={80}
+        height={60}
+        centerX={100}
+        centerY={80}
+      >
+        <assembly.drawing.dimension heightOfView />
+        <assembly.drawing.partlabel
+          partRefs={[".COVER"]}
+          text="Cover"
+          anchor={{ x: 0, y: 0, z: 0 }}
+          xOffsetFromViewCenter={30}
+          yOffsetFromViewCenter={25}
+        />
+      </assembly.drawing.explosionview>
+      <assembly.drawing.note text="Lift the cover" paperX={15} paperY={125} />
+    </assembly.drawing.page>
+  </assembly.device>,
+)
+await exploded.renderUntilSettled()
+assert.equal(exploded.db.drawing_explosion_view.list().length, 1)
+assert.deepEqual(
+  exploded.db.drawing_explosion_view.list()[0].moves[0].translation,
+  { x: 0, y: 0, z: 12 },
+)
+assert.equal(exploded.db.drawing_part_label.list().length, 1)
+assert.equal(exploded.db.drawing_page_note.list().length, 1)
+assert.equal(
+  exploded.db.drawing_dimension_line.list()[0].drawing_explosion_view_id,
+  exploded.db.drawing_explosion_view.list()[0].drawing_explosion_view_id,
+)
+console.log("Built-package inherited explosion drawing passed")
