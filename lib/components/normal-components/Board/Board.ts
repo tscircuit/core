@@ -762,4 +762,36 @@ export class Board
       castellatedHole.isExpectedBoardEdgeDrcError(result),
     )
   }
+
+  _isExpectedSameComponentCutoutDrcError(
+    result: AnyCircuitElement,
+    circuitJson: AnyCircuitElement[],
+  ): boolean {
+    if (result.type !== "pcb_placement_error") return false
+    const placementError = result as any
+    if (!placementError.pcb_cutout_id || !placementError.pcb_element_id) {
+      return false
+    }
+
+    const cutout = circuitJson.find(
+      (el) =>
+        el.type === "pcb_cutout" &&
+        (el as any).pcb_cutout_id === placementError.pcb_cutout_id,
+    ) as any
+    const copper = circuitJson.find(
+      (el) =>
+        (el.type === "pcb_smtpad" ||
+          el.type === "pcb_plated_hole" ||
+          el.type === "pcb_via") &&
+        ((el as any).pcb_smtpad_id === placementError.pcb_element_id ||
+          (el as any).pcb_plated_hole_id === placementError.pcb_element_id ||
+          (el as any).pcb_via_id === placementError.pcb_element_id),
+    ) as any
+
+    if (cutout?.pcb_component_id && copper?.pcb_component_id) {
+      return cutout.pcb_component_id === copper.pcb_component_id
+    }
+
+    return false
+  }
 }
