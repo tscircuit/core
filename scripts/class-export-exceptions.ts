@@ -71,12 +71,6 @@ export const classExportExceptions = [
       "Retain the existing compatibility type re-export without creating a forwarding-only module.",
   },
   {
-    file: "lib/components/primitive-components/PcbTrace.ts",
-    exports: ["pcbTraceProps", "PcbTraceProps"],
-    reason:
-      "Keep this primitive's schema and inferred props with their implementation.",
-  },
-  {
     file: "lib/components/primitive-components/PcbVia.ts",
     exports: ["pcbViaProps", "PcbViaProps"],
     reason:
