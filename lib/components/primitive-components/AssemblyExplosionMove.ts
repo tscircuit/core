@@ -2,7 +2,25 @@ import type { CadExplosionMove } from "circuit-json"
 import { getRenderedAssemblyExplosionRecords } from "lib/assembly-explosion/get-rendered-assembly-explosion-records"
 import { markAssemblyExplosionDirty } from "lib/assembly-explosion/mark-assembly-explosion-dirty"
 import { assemblyExplosionMoveProps } from "@tscircuit/props"
+import { z } from "zod"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+
+const assemblyExplosionMoveWithStateProps = z.preprocess((val) => {
+  if (val && typeof val === "object") {
+    const raw = val as Record<string, unknown>
+    const hasDisplacement =
+      raw.offX !== undefined || raw.offY !== undefined || raw.offZ !== undefined
+    const hasStateTransition =
+      raw.geometryState !== undefined ||
+      raw.geometry_state !== undefined ||
+      raw.stateTransitions !== undefined ||
+      raw.state_transitions !== undefined
+    if (!hasDisplacement && hasStateTransition) {
+      return { ...raw, offX: 0 }
+    }
+  }
+  return val
+}, assemblyExplosionMoveProps)
 
 /** Straight translation instruction; displacement is resolved after mounting. */
 export class AssemblyExplosionMove extends PrimitiveComponent<
@@ -13,7 +31,7 @@ export class AssemblyExplosionMove extends PrimitiveComponent<
   get config() {
     return {
       componentName: "AssemblyExplosionMove",
-      zodProps: assemblyExplosionMoveProps,
+      zodProps: assemblyExplosionMoveWithStateProps,
     }
   }
 

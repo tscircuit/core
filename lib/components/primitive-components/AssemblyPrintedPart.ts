@@ -58,6 +58,56 @@ export class AssemblyPrintedPart
     return this.compiledJscad
   }
 
+  private resolveAuthoredGeometryStates(angles?: [number, number, number]) {
+    const rawProps = (this.props ?? {}) as Record<string, unknown>
+    const rawStates = rawProps.geometryStates ?? rawProps.geometry_states
+    if (!rawStates || typeof rawStates !== "object") return undefined
+    const resolved: Record<string, unknown> = {}
+    for (const [stateName, stateVal] of Object.entries(
+      rawStates as Record<string, unknown>,
+    )) {
+      if (isValidElement(stateVal)) {
+        const { geometry } = resolveReferencePlanes(renderToJscadPlan(stateVal))
+        if (geometry) {
+          resolved[stateName] = {
+            model_jscad: angles
+              ? { type: "rotate", angles, shape: geometry }
+              : geometry,
+          }
+        }
+      } else if (stateVal && typeof stateVal === "object") {
+        const spec = stateVal as Record<string, unknown>
+        const rawJscad = spec.jscad ?? spec.model_jscad
+        if (isValidElement(rawJscad)) {
+          const { geometry } = resolveReferencePlanes(
+            renderToJscadPlan(rawJscad),
+          )
+          resolved[stateName] = {
+            ...spec,
+            model_jscad:
+              geometry && angles
+                ? { type: "rotate", angles, shape: geometry }
+                : geometry,
+          }
+        } else if (rawJscad && typeof rawJscad === "object") {
+          const { geometry } = resolveReferencePlanes(
+            rawJscad as JscadOperation,
+          )
+          resolved[stateName] = {
+            ...spec,
+            model_jscad:
+              geometry && angles
+                ? { type: "rotate", angles, shape: geometry }
+                : (geometry ?? rawJscad),
+          }
+        } else {
+          resolved[stateName] = spec
+        }
+      }
+    }
+    return resolved
+  }
+
   doInitialReactSubtreesRender(): void {
     if (isValidElement(this.props.cadModel))
       this.add(createInstanceFromReactElement(this.props.cadModel))
@@ -93,7 +143,13 @@ export class AssemblyPrintedPart
           )
         model = { ...model, jscad: geometry }
       }
-      this.cad_component_id = renderAssemblyCadModel(this, model, placement)
+      const geometryStates = this.resolveAuthoredGeometryStates()
+      this.cad_component_id = renderAssemblyCadModel(
+        this,
+        model,
+        placement,
+        geometryStates ? { geometry_states: geometryStates } : undefined,
+      )
       return
     }
     const { transforms, subcircuitId } = resolvePrintedPartMounts(this)
@@ -105,6 +161,7 @@ export class AssemblyPrintedPart
     // (paired with jscad-planner resolveReferencePlanes). Emit a standard rotate
     // operation so viewers with older planners need no new matrix operation.
     const angles = getAssemblyEulerAngles(transform)
+    const geometryStates = this.resolveAuthoredGeometryStates(angles)
     this.cad_component_id = renderAssemblyCadModel(
       this,
       {
@@ -116,6 +173,7 @@ export class AssemblyPrintedPart
         layer: "top",
         subcircuit_id: subcircuitId,
       },
+      geometryStates ? { geometry_states: geometryStates } : undefined,
     )
   }
 }

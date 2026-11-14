@@ -27,6 +27,7 @@ export const renderAssemblyCadModel = (
   owner: PrimitiveComponent,
   model: Exclude<CadModelProp, ReactElement | null>,
   placement: AssemblyPlacement,
+  extraRecordFields?: Record<string, unknown>,
 ): CadComponent["cad_component_id"] => {
   const base = cadModelBase.parse(typeof model === "string" ? {} : model)
   const bottom = placement.layer === "bottom"
@@ -64,6 +65,30 @@ export const renderAssemblyCadModel = (
     mat4.rotateY(frame, frame, (rotationOffset.y * Math.PI) / 180)
     mat4.rotateZ(frame, frame, (rotationOffset.z * Math.PI) / 180)
     mountedRotation = getAssemblyCadRotation(frame)
+  }
+  const rawProps = (owner.props ?? {}) as Record<string, unknown>
+  const rawGeometryStates =
+    extraRecordFields?.geometry_states ??
+    rawProps.geometry_states ??
+    rawProps.geometryStates
+  let resolvedGeometryStates: Record<string, unknown> | undefined
+  if (rawGeometryStates && typeof rawGeometryStates === "object") {
+    resolvedGeometryStates = {}
+    for (const [stateName, stateVal] of Object.entries(
+      rawGeometryStates as Record<string, unknown>,
+    )) {
+      if (!stateVal || typeof stateVal !== "object") continue
+      const spec = stateVal as Record<string, unknown>
+      resolvedGeometryStates[stateName] = {
+        ...spec,
+        ...(spec.jscad !== undefined && spec.model_jscad === undefined
+          ? { model_jscad: spec.jscad }
+          : {}),
+        ...(typeof spec.stlUrl === "string" && spec.model_stl_url === undefined
+          ? { model_stl_url: assetUrl(spec.stlUrl) }
+          : {}),
+      }
+    }
   }
   const urls =
     typeof model === "string"
@@ -113,6 +138,12 @@ export const renderAssemblyCadModel = (
     size: base.size,
     anchor_alignment: "center",
     show_as_translucent_model: base.showAsTranslucentModel ?? false,
-  })
+    ...(extraRecordFields ?? {}),
+    ...(resolvedGeometryStates
+      ? { geometry_states: resolvedGeometryStates }
+      : {}),
+  } as Parameters<
+    NonNullable<typeof owner.root>["db"]["cad_component"]["insert"]
+  >[0])
   return cad.cad_component_id
 }
