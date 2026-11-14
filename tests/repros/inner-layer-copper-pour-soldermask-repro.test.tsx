@@ -38,7 +38,7 @@ test("only outer-layer copper pours request a soldermask opening", async () => {
         "layer": "top",
       },
       {
-        "covered_with_solder_mask": false,
+        "covered_with_solder_mask": true,
         "layer": "inner1",
       },
     ]
