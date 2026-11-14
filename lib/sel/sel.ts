@@ -10,13 +10,13 @@ import type {
 import type {
   CommonPinNames,
   Nums16,
-  Nums40,
+  Nums,
   PinNumbers100,
   TransistorPinNames,
 } from "./sel-utility-types"
 
 type NonPolarizedSel = Record<
-  `R${Nums40}` | `F${Nums40}`,
+  `R${Nums}` | `F${Nums}`,
   {
     pin1: string
     pin2: string
@@ -26,7 +26,7 @@ type NonPolarizedSel = Record<
 >
 
 type SwSel = Record<
-  `SW${Nums40}`,
+  `SW${Nums}`,
   {
     pin1: string
     pin2: string
@@ -42,12 +42,12 @@ type SwSel = Record<
 >
 
 type PolarizedSel = Record<
-  | `C${Nums40}`
-  | `L${Nums40}`
-  | `LED${Nums40}`
-  | `D${Nums40}`
-  | `Y${Nums40}`
-  | `B${Nums16}`,
+  | `C${Nums}`
+  | `L${Nums}`
+  | `LED${Nums}`
+  | `D${Nums}`
+  | `Y${Nums}`
+  | `B${Nums16 | `${number}`}`,
   {
     pin1: string
     pin2: string
@@ -92,17 +92,17 @@ type CommonNetNames =
   | "XOUT"
   | "RUN"
   | "SWD"
-  | `GPIO${Nums40}`
+  | `GPIO${Nums}`
 
-type TransistorSel = Record<`Q${Nums40}`, Record<TransistorPinNames, string>>
+type TransistorSel = Record<`Q${Nums}`, Record<TransistorPinNames, string>>
 
 type JumperSel = Record<
-  `J${Nums40}` | `JP${Nums40}` | `CN${Nums40}`,
+  `J${Nums}` | `JP${Nums}` | `CN${Nums}`,
   Record<PinNumbers100 | CommonPinNames, string> & ChipFnSel
 >
 
 type ChipSel = Record<
-  `U${Nums40}` | "USBC",
+  `U${Nums}` | "USBC",
   Record<CommonPinNames | PinNumbers100, string> & ChipFnSel
 >
 
@@ -115,7 +115,7 @@ type NetSel<N extends string = CommonNetNames> = Record<"net", NetSelFn<N>>
 
 type ExplicitModuleSel = Record<
   "subcircuit" | "module" | "group",
-  Record<`S${Nums40}` | `M${Nums40}` | `G${Nums40}`, SelWithoutSubcircuit>
+  Record<`S${Nums}` | `M${Nums}` | `G${Nums}`, SelWithoutSubcircuit>
 >
 
 export type GenericConnectionsAndSelectorsSel = Record<
@@ -136,7 +136,7 @@ export type GenericConnectionsAndSelectorsSel = Record<
         : never
     : never
 >
-type TestPointSel = Record<`TP${Nums40}`, { pin1: string }>
+type TestPointSel = Record<`TP${Nums}`, { pin1: string }>
 
 type SelWithoutSubcircuit = NonPolarizedSel &
   PolarizedSel &
