@@ -20,6 +20,7 @@ export * from "./utils/autorouting/unrouteCircuitJson"
 export type { LocalCacheEngine } from "./local-cache-engine"
 
 export * from "./utils/autorouting/GenericLocalAutorouter"
+export * from "./utils/autorouting/create-bus-lanes-autorouter-config"
 export * from "./utils/edit-events/apply-pcb-edit-events-to-manual-edits-file"
 export * from "./utils/edit-events/apply-schematic-edit-events-to-manual-edits-file"
 export * from "./utils/edit-events/apply-edit-events-to-circuit-json"
