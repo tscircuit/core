@@ -5,10 +5,10 @@ import type {
   PcbGroupId,
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
+  SourceTraceId,
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
-type SourceTraceId = SourceTrace["source_trace_id"]
 type SourceNetId = NonNullable<SourceTrace["connected_source_net_ids"]>[number]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>

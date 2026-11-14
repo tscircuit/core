@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import { Trace } from "lib/components/primitive-components/Trace/Trace"
 
-test("repro: routing phases retain constraints for excluded connections", () => {
+test("routing phases retain only the clock rules for their included connections", () => {
   const trace = new Trace({
     name: "X48_N",
     from: ".U1 > .X48N",
@@ -63,6 +63,8 @@ test("repro: routing phases retain constraints for excluded connections", () => 
   expect(phase.connections.map((connection) => connection.name)).toEqual([
     "clock",
   ])
-  expect(phase).toMatchObject({ routeConstraints: input.routeConstraints })
+  expect(phase.routeConstraints).toEqual([
+    { ...input.routeConstraints[0]!, connectionName: "clock" },
+  ])
   expect(input).toEqual(original)
 })
