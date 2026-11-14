@@ -4,6 +4,7 @@ import type { z } from "zod"
 import type { Group } from "./Group"
 
 const debug = Debug("Group_doInitialSchematicLayoutSections")
+import { getSchematicSheetDrawingDimensions } from "lib/utils/schematic/warn-if-schematic-elements-outside-sheet"
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
@@ -63,6 +64,7 @@ export function Group_doInitialSchematicLayoutSections<
     string | null,
     SectionBoundsWithChildren
   >()
+  const schematicSheetIds = new Set<string>()
 
   for (const sectionName of sectionNamesToLayout) {
     let minX = Infinity
@@ -82,6 +84,9 @@ export function Group_doInitialSchematicLayoutSections<
         source_component_id: sourceComponentId,
       })
       if (!schComp) continue
+      if (schComp.schematic_sheet_id) {
+        schematicSheetIds.add(schComp.schematic_sheet_id)
+      }
 
       sourceCompIds.add(sourceComponentId)
       const hw = schComp.size.width / 2
@@ -118,6 +123,23 @@ export function Group_doInitialSchematicLayoutSections<
   // Phase 3: pack sections into rows
   const groupSchPositionBeforeLayout =
     group._getGlobalSchematicPositionBeforeLayout()
+  let maxRowWidth: number | undefined
+  for (const schematicSheetId of schematicSheetIds) {
+    const sheet = db.schematic_sheet.get(schematicSheetId)
+    if (
+      !sheet ||
+      sheet.sheet_width === undefined ||
+      sheet.sheet_height === undefined
+    ) {
+      continue
+    }
+    const { width } = getSchematicSheetDrawingDimensions({
+      sheetWidth: sheet.sheet_width,
+      sheetHeight: sheet.sheet_height,
+    })
+    maxRowWidth =
+      maxRowWidth === undefined ? width : Math.min(maxRowWidth, width)
+  }
   const sectionPlacements = computeSchematicSectionLayoutUsingRows({
     sectionBlocks: Array.from(sectionNameToBoundsWithChildren.values()).map(
       (bounds) => ({
@@ -126,6 +148,7 @@ export function Group_doInitialSchematicLayoutSections<
       }),
     ),
     groupSchPositionBeforeLayout,
+    maxRowWidth,
   })
 
   for (const [sectionName, placement] of sectionPlacements) {
