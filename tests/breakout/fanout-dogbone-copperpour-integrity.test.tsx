@@ -1,4 +1,9 @@
 import { expect, test } from "bun:test"
+import {
+  copperPolygonsTouch,
+  getPourPolygon,
+  getViaPolygon,
+} from "@tscircuit/circuit-json-util"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // Regresses core#4660 using the full eight-net BGA256 example, rather than
@@ -66,6 +71,25 @@ for (const routingLayer of routingLayers) {
         expect(traceIds.has(via.pcb_trace_id!)).toBe(true)
         expect(via.from_layer).toBe("top")
         expect(via.to_layer).toBe(routingLayer)
+      }
+      // Verify the physically-filled copper, not just route/segment counts.
+      // Each via passing through a plane must touch it only on its own net.
+      for (const pour of circuit.db.pcb_copper_pour.list()) {
+        const polygon = getPourPolygon(pour)
+        for (const via of vias) {
+          const trace = circuit.db.pcb_trace.get(via.pcb_trace_id!)!
+          const sourceTrace = circuit.db.source_trace.get(
+            trace.source_trace_id!,
+          )!
+          const onSameNet = sourceTrace.connected_source_net_ids.includes(
+            pour.source_net_id!,
+          )
+          const copperTouchesVia = copperPolygonsTouch(
+            polygon,
+            getViaPolygon(via, via.outer_diameter, via.hole_diameter),
+          )
+          expect(copperTouchesVia).toBe(onSameNet)
+        }
       }
       for (const trace of traces) {
         expect(trace.route.some((point) => point.route_type === "wire")).toBe(
