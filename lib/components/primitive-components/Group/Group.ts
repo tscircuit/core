@@ -1,11 +1,3 @@
-import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
-import {
-  materializeRoutedTestPoints,
-  type ConnectedRoutedTestPoint,
-} from "lib/utils/autorouting/materialize-routed-test-points"
-import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 import {
   type SimpleRouteJson as AutorouterSimpleRouteJson,
   type RerouteRectRegion,
@@ -33,8 +25,16 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
+import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
+import {
+  type ConnectedRoutedTestPoint,
+  materializeRoutedTestPoints,
+} from "lib/utils/autorouting/materialize-routed-test-points"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
+import { getAutoroutingPhasePcbTracePaths } from "./get-autorouting-phase-pcb-trace-paths"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { isAssemblyDeviceContainer } from "lib/components/base-components/is-assembly-device-container"
@@ -62,6 +62,7 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
@@ -106,7 +107,6 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
-import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
   getCachedLocalAutoroutingPhaseResult,
@@ -1961,13 +1961,25 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
           }
         }
+        const currentPhasePlanIndex =
+          routingPhasePlans.indexOf(routingPhasePlan)
+        const laterRoutingPhasePlans =
+          currentPhasePlanIndex >= 0
+            ? routingPhasePlans
+                .slice(currentPhasePlanIndex + 1)
+                .filter(
+                  (laterPlan) =>
+                    !laterPlan.reroute && !laterPlan.testPointOptions,
+                )
+            : []
         if (
           transformedSimpleRouteJson &&
           !usesPreviousStageOutput &&
           ["fanout", "single_layer_fanout", "dogbone"].includes(
             phaseAutorouterConfig.preset ?? "",
           ) &&
-          routingPhasePlan.routingPcbGroupId
+          (routingPhasePlan.routingPcbGroupId ||
+            laterRoutingPhasePlans.length > 0)
         ) {
           const synchronizedFanout = Group_syncFanoutExitsWithGlobalConnections(
             {
@@ -1975,6 +1987,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               fanoutOutputSimpleRouteJson: transformedSimpleRouteJson,
               baseSimpleRouteJson,
               routingPhasePlan,
+              laterRoutingPhasePlans,
             },
           )
           baseSimpleRouteJson = synchronizedFanout.baseSimpleRouteJson
