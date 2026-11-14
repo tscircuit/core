@@ -86,20 +86,15 @@ beforeAll(async () => {
   })
 })
 
-test.failing(
-  "an omitted multi-pad pin cannot leave orphan ports that accept a trace",
-  () => {
-    expect(circuit.db.source_port.list().map((port) => port.name)).toEqual([
-      "SIG",
-    ])
-    expect(circuit.db.source_component_internal_connection.list()).toHaveLength(
-      0,
-    )
-    expect(circuit.db.source_ambiguous_port_reference.list()).toHaveLength(0)
-    expect(
-      circuit.db.source_trace_not_connected_error
-        .list()
-        .map((error) => error.selectors_not_found),
-    ).toEqual([["U1.pin2"]])
-  },
-)
+test("an omitted multi-pad pin cannot leave orphan ports that accept a trace", () => {
+  expect(circuit.db.source_port.list().map((port) => port.name)).toEqual([
+    "SIG",
+  ])
+  expect(circuit.db.source_component_internal_connection.list()).toHaveLength(0)
+  expect(circuit.db.source_ambiguous_port_reference.list()).toHaveLength(0)
+  expect(
+    circuit.db.source_trace_not_connected_error
+      .list()
+      .map((error) => error.selectors_not_found),
+  ).toEqual([["U1.pin2"]])
+})
