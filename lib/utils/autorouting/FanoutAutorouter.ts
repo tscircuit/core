@@ -14,6 +14,7 @@ import {
   canonicalBusFanoutDirectionValues,
 } from "@tscircuit/props"
 import { getViaBoardLayers } from "../getViaSpanLayers"
+import type { PcbComponentId } from "../circuit-json/circuit-json-id-types"
 import type {
   AutorouterCompleteEvent,
   AutorouterErrorEvent,
@@ -35,6 +36,8 @@ export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
 
 export interface FanoutAutorouterOptions {
   mode: FanoutAutorouterMode
+  /** PCB component owned by the declared local fanout region. */
+  sourceComponentId?: PcbComponentId
   busFanoutDirections?: Readonly<Record<string, BusFanoutDirection>>
   fanoutBounds?: SimpleRouteBounds
   fanoutRoutingLayers?: string[]
@@ -443,6 +446,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
 
   private getFanoutSolverOptions(): FanoutSolverOptions {
     const commonOptions: FanoutSolverOptions = {
+      sourceComponentId: this.options.sourceComponentId,
       buses: getFanoutSolverBuses(
         this.input.buses,
         this.options.busFanoutDirections,
