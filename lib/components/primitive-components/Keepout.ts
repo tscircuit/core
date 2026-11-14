@@ -52,6 +52,13 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     if (!layers) {
       layers = ["top"]
     }
+    // Use the same footprint originalLayer/component layer parity as
+    // PrimitiveComponent._computePcbGlobalTransformBeforeLayout. Only the
+    // outer board Z sides swap; preserve authored inner-layer identifiers.
+    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    layers = layers.map((layer) =>
+      layer === "top" || layer === "bottom" ? maybeFlipLayer(layer) : layer,
+    )
     const excludedPcbComponentIds = this.getExcludedPcbComponentIds()
     const pcbKeepoutExclusionProps =
       excludedPcbComponentIds.length > 0
