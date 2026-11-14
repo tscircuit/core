@@ -31,6 +31,10 @@ const MOUSE_BITE_DIAMETER_TO_TAB_WIDTH = 0.45
  * drill diameter. The former 10% web was only 0.063 mm on a 14 mm board.
  */
 const MOUSE_BITE_SPACING_TO_DIAMETER = 0.5
+/** Smallest mouse-bite drill (mm) fabs reliably drill. */
+const MIN_MOUSE_BITE_DIAMETER = 0.5
+/** Smallest web (mm) left between adjacent mouse-bite holes. */
+const MIN_MOUSE_BITE_SPACING = 0.3
 
 /** Shrink the requested tab width and length (mm) to suit small boards. */
 export function getScaledPanelTabSize({
@@ -52,10 +56,22 @@ export function getScaledPanelTabSize({
   }
 }
 
-/** Mouse-bite drill diameter and the web between holes (mm) for a tab width. */
+/**
+ * Mouse-bite drill diameter and the web between holes (mm) for a tab width,
+ * never below a drillable minimum when small boards shrink their tabs.
+ */
 export function getMouseBiteSize({ tabWidth }: { tabWidth: number }) {
-  const diameter = tabWidth * MOUSE_BITE_DIAMETER_TO_TAB_WIDTH
-  return { diameter, spacing: diameter * MOUSE_BITE_SPACING_TO_DIAMETER }
+  const diameter = Math.max(
+    tabWidth * MOUSE_BITE_DIAMETER_TO_TAB_WIDTH,
+    MIN_MOUSE_BITE_DIAMETER,
+  )
+  return {
+    diameter,
+    spacing: Math.max(
+      diameter * MOUSE_BITE_SPACING_TO_DIAMETER,
+      MIN_MOUSE_BITE_SPACING,
+    ),
+  }
 }
 
 interface PanelOptions {
