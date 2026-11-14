@@ -30,7 +30,7 @@ test("inner-layer copper pours are never covered with soldermask", async () => {
         "layer": "top",
       },
       {
-        "covered_with_solder_mask": true,
+        "covered_with_solder_mask": false,
         "layer": "inner1",
       },
     ]
