@@ -1,4 +1,5 @@
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import { formatPanelMouseBiteDrcDiagnostics } from "lib/utils/panels/reconcile-panel-mouse-bite-clearances"
 import { dedupePcbDrcErrors, runAllRoutingChecks } from "@tscircuit/checks"
 import type { AnyCircuitElement } from "circuit-json"
 import type { Group } from "./Group"
@@ -74,7 +75,9 @@ export const Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks = (
         const results = (await runAllRoutingChecks(
           routingCircuitJson,
         )) as AnyCircuitElement[]
-        db.insertAll(dedupePcbDrcErrors(results))
+        db.insertAll(
+          formatPanelMouseBiteDrcDiagnostics(dedupePcbDrcErrors(results)),
+        )
         group._standaloneSubcircuitDrcChecksComplete = true
       } finally {
         group._standaloneSubcircuitDrcChecksInProgress = false

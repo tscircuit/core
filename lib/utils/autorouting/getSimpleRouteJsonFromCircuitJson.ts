@@ -218,12 +218,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       ? { ...element, subcircuit_id: inheritedSubcircuitId }
       : element
   })
-  const subcircuitElements = scopedElements.filter(
-    (e) =>
-      !subcircuit_id ||
-      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
-  )
-
   let board: PcbBoard | undefined | null = null
   let subcircuitIsBoard = false
   if (subcircuit_id) {
@@ -236,6 +230,43 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   if (!board && !panel) {
     board = db.pcb_board.list()[0]
   }
+
+  const owningBoardEnvelope = board
+    ? board.outline && board.outline.length > 0
+      ? {
+          minX: Math.min(...board.outline.map((p) => p.x)) - 1,
+          maxX: Math.max(...board.outline.map((p) => p.x)) + 1,
+          minY: Math.min(...board.outline.map((p) => p.y)) - 1,
+          maxY: Math.max(...board.outline.map((p) => p.y)) + 1,
+        }
+      : board.width && board.height
+        ? {
+            minX: board.center.x - board.width / 2 - 1,
+            maxX: board.center.x + board.width / 2 + 1,
+            minY: board.center.y - board.height / 2 - 1,
+            maxY: board.center.y + board.height / 2 + 1,
+          }
+        : undefined
+    : undefined
+
+  const isPanelMouseBiteOnOwningBoard = (e: AnyCircuitElement): boolean =>
+    Boolean(
+      owningBoardEnvelope &&
+        e.type === "pcb_hole" &&
+        (e.pcb_hole_id?.startsWith("panel_mouse_bite_") ||
+          e.pcb_hole_id?.startsWith("pcb_hole_panel_mouse_bite_")) &&
+        e.x >= owningBoardEnvelope.minX &&
+        e.x <= owningBoardEnvelope.maxX &&
+        e.y >= owningBoardEnvelope.minY &&
+        e.y <= owningBoardEnvelope.maxY,
+    )
+
+  const subcircuitElements = scopedElements.filter(
+    (e) =>
+      !subcircuit_id ||
+      isPanelMouseBiteOnOwningBoard(e) ||
+      ("subcircuit_id" in e && relevantSubcircuitIds!.has(e.subcircuit_id!)),
+  )
 
   db = su(subcircuitElements)
   const getPortSelector = (sourcePort: SourcePort | null | undefined) => {
@@ -347,6 +378,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ].filter(
       (e) =>
         e.type === "pcb_board" ||
+        isPanelMouseBiteOnOwningBoard(e) ||
         (panel &&
           "pcb_panel_id" in e &&
           e.pcb_panel_id === panel.pcb_panel_id) ||

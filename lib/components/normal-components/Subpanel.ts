@@ -1,9 +1,9 @@
 import { PanelTab } from "../primitive-components/PanelTab"
 import { PanelTabKeepout } from "../primitive-components/PanelTabKeepout"
 import { generateControlledPanelTabs } from "lib/utils/panels/generate-controlled-panel-tabs"
-import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { subpanelProps } from "@tscircuit/props"
-import { distance } from "circuit-json"
+import { type Point, distance } from "circuit-json"
+import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import type { Matrix } from "transformation-matrix"
 import { compose, identity, translate } from "transformation-matrix"
 import {
@@ -13,7 +13,12 @@ import {
   generatePanelTabsAndMouseBites,
 } from "../../utils/panels/generate-panel-tabs-and-mouse-bites"
 import { packIntoGrid } from "../../utils/panels/pack-into-grid"
+import {
+  type TrackedPanelMouseBite,
+  reconcilePanelMouseBiteClearances,
+} from "../../utils/panels/reconcile-panel-mouse-bite-clearances"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { RenderPhase } from "../base-components/Renderable"
 import { Group } from "../primitive-components/Group/Group"
 import { Board } from "./Board/Board"
 
@@ -32,6 +37,14 @@ const V_SCORE_LINE_STROKE_WIDTH = 0.1
 export class Subpanel extends Group<typeof subpanelProps> {
   pcb_panel_id: string | null = null
   _panelizationFeaturesGenerated = false
+  _mouseBiteAppliedShifts = new Map<string, number>()
+  _mouseBiteRemovedIds = new Set<string>()
+  _generatedMouseBiteMeta: {
+    candidates: TrackedPanelMouseBite[]
+    holeDiameter: number
+    minimumDrillPitch: number
+    boardOutlines: Point[][]
+  } | null = null
 
   get config() {
     return {
@@ -461,7 +474,15 @@ export class Subpanel extends Group<typeof subpanelProps> {
         }
       } else {
         const boardGap = props.boardGap ?? tabWidth
-        const { tabCutouts, mouseBiteHoles, vScoreLines } = hasTabControls
+        const {
+          tabCutouts,
+          mouseBiteHoles,
+          vScoreLines,
+          mouseBiteCandidates,
+          mouseBiteDiameter,
+          minimumDrillPitch,
+          boardOutlines,
+        } = hasTabControls
           ? {
               ...generateControlledPanelTabs(
                 boardsInPanel.map((board) => ({
@@ -486,7 +507,11 @@ export class Subpanel extends Group<typeof subpanelProps> {
                 },
               ),
               // vScore with tab controls is rejected above.
-              vScoreLines: [],
+              vScoreLines: [] as Point[][],
+              mouseBiteCandidates: [] as TrackedPanelMouseBite[],
+              mouseBiteDiameter: 0,
+              minimumDrillPitch: 0,
+              boardOutlines: [] as Point[][],
             }
           : generatePanelTabsAndMouseBites(boardsInPanel, {
               boardGap,
@@ -504,11 +529,28 @@ export class Subpanel extends Group<typeof subpanelProps> {
           })
         }
 
-        for (const mouseBiteHole of mouseBiteHoles) {
-          db.pcb_hole.insert({
+        const trackedCandidates: TrackedPanelMouseBite[] = []
+        for (let i = 0; i < mouseBiteHoles.length; i++) {
+          const mouseBiteHole = mouseBiteHoles[i]!
+          const insertedHole = db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
           })
+          const candidate = mouseBiteCandidates[i]
+          if (candidate) {
+            trackedCandidates.push({
+              ...candidate,
+              pcb_hole_id: insertedHole.pcb_hole_id,
+            })
+          }
+        }
+        if (trackedCandidates.length > 0) {
+          this._generatedMouseBiteMeta = {
+            candidates: trackedCandidates,
+            holeDiameter: mouseBiteDiameter,
+            minimumDrillPitch,
+            boardOutlines,
+          }
         }
 
         for (const route of vScoreLines) {
@@ -524,6 +566,53 @@ export class Subpanel extends Group<typeof subpanelProps> {
     }
 
     this._panelizationFeaturesGenerated = true
+  }
+
+  protected _reconcilePanelMouseBiteClearances() {
+    if (!this.root || this.root.pcbDisabled || !this._generatedMouseBiteMeta)
+      return
+
+    const { db } = this.root
+    const { candidates, holeDiameter, minimumDrillPitch, boardOutlines } =
+      this._generatedMouseBiteMeta
+    const { kept, removedHoleIds, appliedShiftsByHoleId } =
+      reconcilePanelMouseBiteClearances({
+        candidates,
+        holeDiameter,
+        minimumDrillPitch,
+        boardOutlines,
+        elements: db.toArray(),
+        minShiftsByHoleId: this._mouseBiteAppliedShifts,
+        previouslyRemovedHoleIds: this._mouseBiteRemovedIds,
+      })
+
+    this._mouseBiteAppliedShifts = appliedShiftsByHoleId
+    for (const removedId of removedHoleIds) {
+      if (!this._mouseBiteRemovedIds.has(removedId)) {
+        this._mouseBiteRemovedIds.add(removedId)
+        db.pcb_hole.delete(removedId)
+      }
+    }
+    for (const hole of kept) {
+      db.pcb_hole.update(hole.pcb_hole_id, {
+        x: hole.x,
+        y: hole.y,
+        hole_diameter: hole.hole_diameter,
+      })
+    }
+  }
+
+  override runRenderPhaseForChildren(phase: RenderPhase): void {
+    if (
+      phase === "PcbPlacementDesignRuleChecks" ||
+      phase === "PcbDesignRuleChecks"
+    ) {
+      this._reconcilePanelMouseBiteClearances()
+    }
+    super.runRenderPhaseForChildren(phase)
+    if (phase === "SilkscreenOverlapAdjustment") {
+      this._reconcilePanelMouseBiteClearances()
+    }
   }
 
   /**
