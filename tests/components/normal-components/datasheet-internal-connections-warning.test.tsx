@@ -67,7 +67,10 @@ test("custom footprints fetch datasheet facts without pinAttributes and warn unt
   expect(fetches).toBe(2)
   const warnings =
     circuit.db.source_component_pins_underspecified_warning.list()
-  expect(warnings).toHaveLength(2)
+  // SW1's "pushbutton" footprint already ties pin1-pin2 and pin3-pin4 by
+  // default, which matches the datasheet, so only U1 is underspecified.
+  expect(warnings).toHaveLength(1)
+  expect(warnings[0].message).toContain("U1")
   for (const warning of warnings) {
     expect(
       source_component_pins_underspecified_warning.safeParse(warning).success,

@@ -34,7 +34,7 @@ test("repro84 schematic pin out", async () => {
           manufacturerPartNumber="Button"
           displayName="Button"
           footprint="pushbutton"
-          pinLabels={{ pin1: "SIG", pin2: "GND" }}
+          pinLabels={{ pin1: "SIG", pin3: "GND" }}
         />
         <jumper
           name="Hall_Effect_ica2duxymd"
@@ -155,7 +155,7 @@ test("repro84 schematic pin out", async () => {
       <trace thickness="0.5mm" from=".Servo_servo_1 > .pin3" to="net.GND" />
       <trace
         thickness="0.5mm"
-        from=".Button_e5g52nj8aud > .pin2"
+        from=".Button_e5g52nj8aud > .pin3"
         to="net.GND"
       />
       <trace
