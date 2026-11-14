@@ -1,6 +1,8 @@
 import { beforeAll, expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
+// Synthetic footprint used to isolate offset-drill rotation. The AQI board
+// connectors have centered holes; this is not an imported component from it.
 const { circuit } = getTestFixture()
 beforeAll(async () => {
   circuit.add(
@@ -43,6 +45,10 @@ beforeAll(async () => {
   )
   await circuit.renderUntilSettled()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatch3dSnapshot(import.meta.path, {
+    camPos: [0, 18, -12],
+    poppygl: { grid: false, width: 1000, height: 650 },
+  })
   const holes = circuit.db.pcb_plated_hole.list()
   expect(holes).toHaveLength(2)
   const control = holes[0]
