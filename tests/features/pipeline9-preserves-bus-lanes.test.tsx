@@ -532,7 +532,13 @@ test("preserves completed top-only LCD bus lanes through Pipeline 9", async () =
   ).toEqual([16, 16, 17])
   expect(
     phases.map((phase) => phase.endSimpleRouteJson!.traces!.length),
-  ).toEqual([16, 16, 79])
+  ).toEqual([16, 32, 95])
+  const fixedBusTraces = phases[1]!.startSimpleRouteJson!.traces!
+  expect(fixedBusTraces).toHaveLength(16)
+  expect(fixedBusTraces.every((trace) => trace.isFixed)).toBe(true)
+  expect(phases[1]!.startSimpleRouteJson!.obstacles).toEqual(
+    phases[0]!.startSimpleRouteJson!.obstacles,
+  )
   expect(phases[0]!.startSimpleRouteJson!.buses).toMatchObject([
     { maxLengthSkew: 0.1, allowedLayers: ["top"] },
   ])
