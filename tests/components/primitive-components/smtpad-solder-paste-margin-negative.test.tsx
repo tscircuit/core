@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("solderPasteMargin applies an absolute per-side margin instead of the 0.7 scale", async () => {
+test("solderPasteMargin applies an absolute per-side margin instead of matching the pad", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="12mm" height="10mm">

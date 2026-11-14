@@ -16,7 +16,7 @@ test("polygon pad has solder paste", () => {
         portHints={[]}
       />
       <pcbnotetext
-        text="Polygon pad: solder paste at 70% scale"
+        text="Polygon pad: solder paste matches the pad"
         pcbY={2}
         fontSize={0.25}
       />

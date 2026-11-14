@@ -272,9 +272,9 @@ test("pill paste follows emitted pads through rotation and bottom-layer flips", 
       pcb_component_id: pad.pcb_component_id,
       pcb_group_id: pad.pcb_group_id,
       subcircuit_id: pad.subcircuit_id,
-      width: 1.4,
-      height: 0.7,
-      radius: 0.35,
+      width: 2,
+      height: 1,
+      radius: 0.5,
     })
     if (pad.shape === "rotated_pill") {
       expect(paste).toMatchObject({ ccw_rotation: pad.ccw_rotation })

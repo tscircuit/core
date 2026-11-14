@@ -62,13 +62,6 @@ test("polygon paste offsets preserve edge distances, split apertures and opening
       islands: 1,
       holes: 0,
     },
-    {
-      vertices: concave,
-      margin: undefined,
-      area: 2.0075,
-      islands: 1,
-      holes: 0,
-    },
     { vertices: concave, margin: -0.2, area: 2.76, islands: 1, holes: 0 },
     { vertices: bridge, margin: -0.3, area: 3.92, islands: 2, holes: 0 },
     { vertices: opening, margin: 0.3, area: 32, islands: 1, holes: 1 },
@@ -94,7 +87,7 @@ test("polygon paste offsets preserve edge distances, split apertures and opening
       ])
       expect(polygon.isValid()).toBe(true)
       pasteArea += polygon.area()
-      if (margin === undefined || margin < 0) {
+      if (margin < 0) {
         const copper = new Flatten.Polygon(
           points.map(({ x, y }) => new Flatten.Point(x, y)),
         )

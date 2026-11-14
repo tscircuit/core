@@ -19,7 +19,7 @@ test("default solder paste aperture matches the pad", () => {
   expect(circuit.db.pcb_solder_paste.list()).toMatchInlineSnapshot(`
     [
       {
-        "height": 0.6649999999999999,
+        "height": 0.95,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "pcb_group_id": undefined,
@@ -28,12 +28,12 @@ test("default solder paste aperture matches the pad", () => {
         "shape": "rect",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_solder_paste",
-        "width": 0.5599999999999999,
+        "width": 0.8,
         "x": -0.825,
         "y": 0,
       },
       {
-        "height": 0.6649999999999999,
+        "height": 0.95,
         "layer": "top",
         "pcb_component_id": "pcb_component_0",
         "pcb_group_id": undefined,
@@ -42,7 +42,7 @@ test("default solder paste aperture matches the pad", () => {
         "shape": "rect",
         "subcircuit_id": "subcircuit_source_group_0",
         "type": "pcb_solder_paste",
-        "width": 0.5599999999999999,
+        "width": 0.8,
         "x": 0.825,
         "y": 0,
       },
