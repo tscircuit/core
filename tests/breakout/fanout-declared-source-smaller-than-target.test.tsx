@@ -13,13 +13,13 @@ test("a local fanout keeps its declared chip when the destination BGA is larger"
     <footprint>
       {Array.from({ length: side * side }, (_, index) => (
         <Fragment key={index}>
-        <smtpad
-          portHints={[`pin${index + 1}`]}
-          shape="circle"
-          radius={0.15}
-          pcbX={(index % side) * 0.8 - ((side - 1) * 0.8) / 2}
-          pcbY={Math.floor(index / side) * 0.8 - ((side - 1) * 0.8) / 2}
-        />
+          <smtpad
+            portHints={[`pin${index + 1}`]}
+            shape="circle"
+            radius={0.15}
+            pcbX={(index % side) * 0.8 - ((side - 1) * 0.8) / 2}
+            pcbY={Math.floor(index / side) * 0.8 - ((side - 1) * 0.8) / 2}
+          />
         </Fragment>
       ))}
     </footprint>
@@ -31,13 +31,19 @@ test("a local fanout keeps its declared chip when the destination BGA is larger"
       </fanout>
       <chip name="CPU" pcbX={4} footprint={pads(3)} />
       <trace name="DATA" from=".RAM > .pin1" to=".CPU > .pin1" />
-      <pcbnotetext pcbY={3.5} text="RAM fanout owns the smaller BGA" fontSize={0.5} />
+      <pcbnotetext
+        pcbY={3.5}
+        text="RAM fanout owns the smaller BGA"
+        fontSize={0.5}
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
 
   const ram = circuit.db.source_component.getWhere({ name: "RAM" })!
-  const ramPcb = circuit.db.pcb_component.getWhere({ source_component_id: ram.source_component_id })!
+  const ramPcb = circuit.db.pcb_component.getWhere({
+    source_component_id: ram.source_component_id,
+  })!
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(fanoutStarts).toHaveLength(1)
   expect(fanoutStarts[0]!.solverConstructorArgs[1]).toMatchObject({

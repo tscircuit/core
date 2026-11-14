@@ -1219,7 +1219,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (!fanoutRegionPcbGroupId) continue
       const sourcePcbComponents = db.pcb_component
         .list()
-        .filter((component) => component.pcb_group_id === fanoutRegionPcbGroupId)
+        .filter(
+          (component) => component.pcb_group_id === fanoutRegionPcbGroupId,
+        )
       routingPhasePlan.fanoutSourceComponentId =
         sourcePcbComponents.length === 1
           ? sourcePcbComponents[0]!.pcb_component_id
