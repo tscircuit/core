@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reproduce autorouter trace clearance being lost before routing", async () => {
+test("preserve independent trace and pad clearances before routing", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -27,13 +27,8 @@ test("reproduce autorouter trace clearance being lost before routing", async () 
   const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: circuit.getCircuitJson(),
   })
-  // Before the fix, the independent rule is missing at both boundaries.
-  expect(
-    board.min_different_net_trace_edge_to_trace_edge_clearance,
-  ).toBeUndefined()
-  expect(simpleRouteJson).not.toHaveProperty(
-    "minDifferentNetTraceEdgeToTraceEdgeClearance",
-  )
+  expect(board.min_different_net_trace_edge_to_trace_edge_clearance).toBe(0.1)
+  expect(simpleRouteJson.minDifferentNetTraceEdgeToTraceEdgeClearance).toBe(0.1)
   expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.05)
   circuit.db.pcb_note_text.insert({
     text: `Emitted trace / trace: ${board.min_different_net_trace_edge_to_trace_edge_clearance ?? "missing"}`,

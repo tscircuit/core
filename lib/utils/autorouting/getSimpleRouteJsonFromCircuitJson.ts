@@ -1136,6 +1136,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minViaPadDiameter: resolvedMinViaPadDiameter,
       min_via_hole_diameter: resolvedMinViaHoleDiameter,
       min_via_pad_diameter: resolvedMinViaPadDiameter,
+      minDifferentNetTraceEdgeToTraceEdgeClearance:
+        pcbGroup?.autorouter_configuration?.trace_clearance ??
+        board?.min_different_net_trace_edge_to_trace_edge_clearance,
       minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
       minTraceToHoleEdgeClearance: resolvedMinTraceToHoleEdgeClearance,
       minViaEdgeToPadEdgeClearance: resolvedMinViaEdgeToPadEdgeClearance,
