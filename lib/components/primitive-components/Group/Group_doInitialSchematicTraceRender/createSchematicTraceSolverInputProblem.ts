@@ -17,6 +17,7 @@ import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSche
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
 import { Group } from "../Group"
+import { getSchematicGroupPortTarget } from "../Subcircuit/getSchematicGroupPortTarget"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { getNetNameFromPorts } from "./getNetNameFromPorts"
@@ -198,6 +199,15 @@ export function createSchematicTraceSolverInputProblem(
         opts.schematicSheetId === undefined ||
         component.schematic_sheet_id === opts.schematicSheetId,
     )
+  const schematicGroupPorts = db.schematic_port
+    .list()
+    .filter(
+      (port) =>
+        !port.schematic_component_id &&
+        port.schematic_group_id === group.schematic_group_id &&
+        port.boundary_position &&
+        port.schematic_sheet_id === opts.schematicSheetId,
+    )
   const schematicComponentIds = new Set(
     schematicComponents.map((component) => component.schematic_component_id),
   )
@@ -234,8 +244,8 @@ export function createSchematicTraceSolverInputProblem(
     SchematicComponentId,
     SectionId
   >()
-  const boardDescendants = group._getBoard()?.getDescendants() ?? []
-  for (const component of boardDescendants) {
+  const schematicDescendants = (group._getBoard() ?? group).getDescendants()
+  for (const component of schematicDescendants) {
     const schematicComponentId = component.schematic_component_id
     const sectionId = component.getSchematicSectionName()
     if (schematicComponentId && sectionId) {
@@ -321,6 +331,40 @@ export function createSchematicTraceSolverInputProblem(
     })
   }
 
+  // A boundary is not a component-sized routing obstacle. Each public terminal
+  // is a tiny obstacle outside the frame, facing inward. Coordinates are points
+  // in schematic-world mm (+X right, +Y up); directions do not pick up translation.
+  for (const port of schematicGroupPorts) {
+    const outward = port.facing_direction ?? "left"
+    const inward = { left: "right", right: "left", up: "down", down: "up" }[
+      outward
+    ]
+    chips.push({
+      chipId: port.schematic_port_id,
+      center: {
+        x:
+          port.center.x +
+          (outward === "left" ? -0.05 : outward === "right" ? 0.05 : 0),
+        y:
+          port.center.y +
+          (outward === "up" ? 0.05 : outward === "down" ? -0.05 : 0),
+      },
+      width: 0.1,
+      height: 0.1,
+      pins: [
+        {
+          pinId: port.schematic_port_id,
+          displayName: port.display_pin_label,
+          x: port.center.x,
+          y: port.center.y,
+          _facingDirection: convertFacingDirectionToElbowDirection(
+            inward as "left" | "right" | "up" | "down",
+          ),
+        },
+      ],
+    })
+  }
+
   // Maps for ports within this scope
   const schematicPortIdsInScope = new Set<SchematicPortId>()
   const schPortIdToSourcePortId = new Map<SchematicPortId, SourcePortId>()
@@ -347,6 +391,13 @@ export function createSchematicTraceSolverInputProblem(
         sourcePortIdToSchPortId.set(sourcePortId, schematicPortId)
       }
     }
+  }
+  for (const port of schematicGroupPorts) {
+    const schematicPortId = asSchematicPortId(port.schematic_port_id)
+    const sourcePortId = asSourcePortId(port.source_port_id)
+    schematicPortIdsInScope.add(schematicPortId)
+    schPortIdToSourcePortId.set(schematicPortId, sourcePortId)
+    sourcePortIdToSchPortId.set(sourcePortId, schematicPortId)
   }
   const sourcePortIdsInSchematicScope = new Set(sourcePortIdToSchPortId.keys())
   const netLabelsInScope = (opts.netLabels ?? []).filter((netLabel) =>
@@ -988,6 +1039,56 @@ export function createSchematicTraceSolverInputProblem(
     },
     resolveCanonicalNetLabelText,
   })
+
+  // Public interfaces must have a visible connection to an internal endpoint.
+  // Attach the boundary pin to that endpoint's section instead of allowing the
+  // section splitter to replace the entire interface with disconnected labels.
+  for (const boundaryPort of schematicGroupPorts) {
+    const port = componentPortBySchematicPortId.get(
+      asSchematicPortId(boundaryPort.schematic_port_id),
+    )
+    if (!port) continue
+    const target = getSchematicGroupPortTarget(
+      port,
+      boundaryPort.facing_direction,
+    )
+    if (
+      !target ||
+      !schematicPortIdsInScope.has(asSchematicPortId(target.schematic_port_id))
+    )
+      continue
+    const boundaryChip = chips.find(
+      (chip) => chip.chipId === boundaryPort.schematic_port_id,
+    )!
+    boundaryChip.sectionId = sectionIdBySchematicComponentId.get(
+      target.schematic_component_id!,
+    )
+    const pair: [SchematicPortId, SchematicPortId] = [
+      asSchematicPortId(boundaryPort.schematic_port_id),
+      asSchematicPortId(target.schematic_port_id),
+    ]
+    const pairKey = [...pair].sort().join("::")
+    const sourceTrace = tracesInScope.find((trace) =>
+      trace.connected_source_port_ids.includes(boundaryPort.source_port_id),
+    )
+    if (!sourceTrace) continue
+    const connKey = port._getSubcircuitConnectivityKey()!
+    const sourceNet = connKeyToSourceNet.get(connKey)
+    const netId = sourceNet?.name ?? sourceTrace.source_trace_id
+    userNetIdToConnKey.set(netId, connKey)
+    sourceTraceIdByPinPairKey.set(pairKey, sourceTrace.source_trace_id)
+    // Replace any earlier label-eligible direct edge with an ordinary wire.
+    for (let index = directConnections.length - 1; index >= 0; index--) {
+      if (directConnections[index].schematicPortIds.includes(pair[0]))
+        directConnections.splice(index, 1)
+    }
+    for (const connection of netConnections) {
+      connection.schematicPortIds = connection.schematicPortIds.filter(
+        (id) => id !== pair[0],
+      )
+    }
+    directConnections.push({ schematicPortIds: pair, netId, connKey })
+  }
 
   // Available net label orientations from source_net naming conventions
   const availableNetLabelOrientations: Record<string, AxisDirection[]> =

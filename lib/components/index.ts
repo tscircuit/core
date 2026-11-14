@@ -146,3 +146,11 @@ export { PanelTab } from "./primitive-components/PanelTab"
 export { PanelTabKeepout } from "./primitive-components/PanelTabKeepout"
 
 export { Toolingrail } from "./normal-components/Toolingrail"
+
+export { AssemblyDrawingExplosionView } from "./primitive-components/AssemblyDrawingExplosionView"
+
+export { AssemblyDrawingStage } from "./primitive-components/AssemblyDrawingStage"
+
+export { AssemblyDrawingPartLabel } from "./primitive-components/AssemblyDrawingPartLabel"
+
+export { AssemblyDrawingNote } from "./primitive-components/AssemblyDrawingNote"

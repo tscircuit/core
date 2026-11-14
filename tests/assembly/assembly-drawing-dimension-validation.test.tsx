@@ -55,13 +55,13 @@ test("drawing dimensions reject invalid structure and unresolved geometry atomic
   for (const [child, error] of [
     [
       <assembly.drawing.dimension widthOfView />,
-      "must belong to a drawing part view",
+      "must belong to a drawing view",
     ],
     [
       <assembly.drawing.page size="iso_a4">
         <assembly.drawing.dimension heightOfView />
       </assembly.drawing.page>,
-      "must belong to a drawing part view",
+      "must belong to a drawing view",
     ],
     [
       <assembly.drawing.page size="iso_a4">

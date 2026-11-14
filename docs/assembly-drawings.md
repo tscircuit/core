@@ -203,3 +203,83 @@ helpers live in `lib/utils/assembly-drawing/`: `dimensions/` contains measuremen
 projection, annotation placement and reference resolution; `geometry/`
 contains model-feature extraction and view-geometry loading. Page placement and
 part-selection helpers live at the drawing utility directory's root.
+
+
+## Explosion views and assembly stages
+
+Author motion once with `assembly.explosion.stage` and its `assembly.explosion.move`
+children. An `assembly.drawing.explosionview` references that stage; it does not
+accept a `moves` prop.
+
+```tsx
+<assembly.explosion.stage name="lift-cover">
+  <assembly.explosion.move targetRefs="cover" offZ="20mm" />
+</assembly.explosion.stage>
+<assembly.drawing.page size="iso_a4" anchorAlignment="bottom_left">
+  <assembly.drawing.explosionview name="separated" stageRef="lift-cover"
+    direction="isometric" width="100mm" height="100mm"
+    centerX="148mm" centerY="110mm" showTrails>
+    <assembly.drawing.partlabel partRefs={[".cover"]} text="Cover"
+      anchor={{ x: 0, y: 0, z: 5 }}
+      xOffsetFromViewCenter="45mm" yOffsetFromViewCenter="40mm" />
+    <assembly.drawing.dimension heightOfView />
+  </assembly.drawing.explosionview>
+  <assembly.drawing.note text="Lift cover before servicing"
+    viewRef=".separated" xOffsetFromViewCenter="-45mm" paperY="175mm" />
+</assembly.drawing.page>
+```
+
+`stageRef` uses the existing assembly stage naming rules: a short name resolves
+within the owning assembly, while qualified names such as `rotor.remove-cap`
+address a nested stage. The view shows the selected stage owner's geometry,
+including stationary parts. Core evaluates the ordered sequence through that
+stage, respecting preceding moves, parent/child target unions and mounted owner
+frames. It then emits one resolved CAD-world translation per source component in
+`drawing_explosion_view.moves`. These are simultaneous drawing offsets from
+assembled placement, not an additional playback program.
+
+`factor` scales the resolved pose once: 0 is assembled, 1 is fully separated,
+and values between interpolate the final displacements. It is independent of
+animation's sequential `stageProgress`. Multiple views can select the same stage
+with different factors and trails. Source CAD records and authored props remain
+unchanged. Dimensions are measured in each view's displayed pose, including its
+factor and section cut. Existing assembly restrictions still apply: moving PCB
+or cable geometry is unsupported; stationary boards can appear in the view.
+
+For assembled sub-stage drawings, `assembly.drawing.stage` defines membership
+using `partRefs`, `boardRefs` and `includeStageRefs`. A part view can select that
+membership with `stageRef`, mutually exclusive with `partRef`. This is distinct
+from the explosion stage selected by an explosion view. Membership references
+support forward declarations and nested sets; cycles and invalid selectors fail.
+Include fitted components with the board substrate for a populated PCB:
+
+```tsx
+<assembly.drawing.stage name="pcba" boardRefs={[".board"]}
+  partRefs={[".board > .R1", ".board > .U1"]} />
+<assembly.drawing.partview stageRef=".pcba" direction="isometric"
+  width="80mm" height="70mm" />
+```
+
+Labels belong to a view and select visible parts/stages/boards. Their assembled
+CAD-world anchor follows the selected translation; selecting parts with different
+translations is an error. Notes may belong to a page or a view. A page note needs
+`viewRef` for view-relative positions; an explicit reference must select one view
+on the same page. For either annotation, each axis uses exactly one of
+`paperX`/`paperY` or `xOffsetFromViewCenter`/`yOffsetFromViewCenter`.
+
+`anchorAlignment` uses the board's nine-point vocabulary, defaulting to `center`.
+All paper coordinates are relative to that page anchor, with +X right and +Y up;
+model anchors remain CAD-world points in mm, +Z up. Title blocks stay attached to
+the sheet. Both view kinds support relative sibling placement.
+
+The page validates references before committing drawing records, and waits for
+all dimensions before inserting an annotated sheet. The renderer needs an
+identity-preserving `resolveSceneParts` callback for stage/explosion views and
+labels. Its scene frame is `(CAD x, CAD z, -CAD y)` in mm. Native geometry adapters
+must convert both model matrices and displacements consistently; legacy glTF
+exports using `(-x, z, y)` require a 180-degree Y rotation at that boundary.
+
+Visual examples in `tests/assembly/assembly-drawing-explosionview.test.tsx` and
+`assembly-drawing-explosion-frames.test.tsx` render the emitted Circuit JSON with
+the published drawing exporter. Membership, page anchors and labels are covered
+by the accompanying stage-membership and labeled-board snapshots.
