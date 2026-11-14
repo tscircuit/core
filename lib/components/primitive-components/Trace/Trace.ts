@@ -1,4 +1,3 @@
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { traceProps } from "@tscircuit/props"
 import {
   type LayerRef,
@@ -20,6 +19,7 @@ import { computeObstacleBounds } from "lib/utils/autorouting/computeObstacleBoun
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import { getDominantDirection } from "lib/utils/autorouting/getDominantDirection"
 import { mergeRoutes } from "lib/utils/autorouting/mergeRoutes"
+import { MultilayerIjump } from "lib/utils/autorouting/vendor/infgrid-ijump-astar/index"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { getClosest } from "lib/utils/getClosest"
 import { isRouteOutsideBoard } from "lib/utils/is-route-outside-board"
@@ -42,8 +42,8 @@ import type { TraceI } from "./TraceI"
 import { Trace__doInitialSchematicTraceRenderWithDisplayLabel } from "./Trace__doInitialSchematicTraceRenderWithDisplayLabel"
 import { Trace__findConnectedPorts } from "./Trace__findConnectedPorts"
 import { Trace_doInitialPcbManualTraceRender } from "./Trace_doInitialPcbManualTraceRender"
-import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialPcbTraceRender } from "./Trace_doInitialPcbTraceRender"
+import { Trace_doInitialPcbTraceTeardropRender } from "./Trace_doInitialPcbTraceTeardropRender"
 import { Trace_doInitialSchematicTraceRender } from "./Trace_doInitialSchematicTraceRender"
 import { getMaxLengthFromConnectedComponents } from "./trace-utils/get-max-length-from-connected-components"
 import { getTraceDisplayName } from "./trace-utils/get-trace-display-name"
