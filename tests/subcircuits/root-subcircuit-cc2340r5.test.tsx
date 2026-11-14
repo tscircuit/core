@@ -7,7 +7,7 @@ import { getElectricalSignature } from "tests/fixtures/cc2340r5-reference/electr
 import moduleSignature from "tests/fixtures/cc2340r5-reference/module-electrical-signature"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("standalone CC2340R5 reference exports its real GPIO, supply and SWD interface", async () => {
+test("top-level CC2340R5 subcircuit displays its boundary and wired exported ports", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(<Cc2340Reference />)
   await circuit.renderUntilSettled()

@@ -55,10 +55,10 @@ primitives and manual public-port coordinates are not boundary-layout inputs.
 
 Companion schema: https://github.com/tscircuit/circuit-json/pull/1004.
 Converter companion: https://github.com/tscircuit/circuit-to-svg/pull/932.
-It renders the explicit frame and terminal geometry; it
-does not infer the interface. Update the schema and converter dependencies to
-their published versions before merging. The regression snapshots were rendered
-with both companion branches linked locally.
+The converter renders the explicit frame and terminal geometry; it does not
+infer the interface. Both companions are merged. The regression snapshots are
+verified against the published `circuit-json@0.0.550` and
+`circuit-to-svg@0.0.460` packages.
 
 `tests/subcircuits/root-subcircuit-cc2340r5.test.tsx` verifies the real reference
 against the published circuit JSON's electrical signature plus the explicit
