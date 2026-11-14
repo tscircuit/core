@@ -30,7 +30,34 @@ export const getRouteForPcbPath = ({
   const pcbPathLocalToBoardTransform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : (anchorPort._computePcbGlobalTransformBeforeLayout?.() ?? identity())
-  let currentLayer = (anchorPort.getAvailablePcbLayers()[0] ??
+  const anchorLayers = anchorPort.getAvailablePcbLayers()
+  const constrainingLayerSets: LayerRef[][] = []
+  for (const pt of path) {
+    if (typeof pt === "string") {
+      const resolved = subcircuit.selectOne(pt, { type: "port" }) as
+        | Port
+        | undefined
+      const portLayers = resolved?.getAvailablePcbLayers() ?? []
+      if (portLayers.length > 0) {
+        constrainingLayerSets.push(portLayers)
+      }
+      continue
+    }
+    if (pt.via) {
+      if (pt.fromLayer) {
+        constrainingLayerSets.push([pt.fromLayer as LayerRef])
+      }
+      break
+    }
+  }
+  let currentLayer = ((constrainingLayerSets.length > 0
+    ? anchorLayers.find((candidateLayer) =>
+        constrainingLayerSets.every((layerSet) =>
+          layerSet.includes(candidateLayer),
+        ),
+      )
+    : undefined) ??
+    anchorLayers[0] ??
     "top") as LayerRef
   const route: PcbTraceRoutePoint[] = []
 
@@ -66,7 +93,15 @@ export const getRouteForPcbPath = ({
         return
       }
       if (index === 0) {
-        currentLayer = (resolvedPort.getAvailablePcbLayers()[0] ??
+        const startPortLayers = resolvedPort.getAvailablePcbLayers()
+        currentLayer = ((constrainingLayerSets.length > 0
+          ? startPortLayers.find((candidateLayer) =>
+              constrainingLayerSets.every((layerSet) =>
+                layerSet.includes(candidateLayer),
+              ),
+            )
+          : undefined) ??
+          startPortLayers[0] ??
           currentLayer) as LayerRef
       }
       const position = resolvedPort._getGlobalPcbPositionAfterLayout()
