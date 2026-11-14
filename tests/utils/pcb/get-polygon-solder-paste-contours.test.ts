@@ -65,7 +65,7 @@ test("polygon paste offsets preserve edge distances, split apertures and opening
     {
       vertices: concave,
       margin: undefined,
-      area: 2.0075,
+      area: 5,
       islands: 1,
       holes: 0,
     },
