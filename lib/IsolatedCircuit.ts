@@ -54,6 +54,37 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
+
+  private _schematicTraceRoutingDisabledOverride: boolean | undefined
+  get schematicTraceRoutingDisabled(): boolean {
+    if (this._schematicTraceRoutingDisabledOverride !== undefined) {
+      return this._schematicTraceRoutingDisabledOverride
+    }
+
+    const platform = this.platform as
+      | (PlatformConfig & { schematicTraceRoutingDisabled?: boolean })
+      | undefined
+    if (platform?.schematicTraceRoutingDisabled !== undefined) {
+      return platform.schematicTraceRoutingDisabled
+    }
+
+    const board = this._getBoard() as
+      | {
+          props?: { schematicTraceRoutingDisabled?: boolean }
+          _parsedProps?: { schematicTraceRoutingDisabled?: boolean }
+        }
+      | undefined
+
+    return (
+      board?._parsedProps?.schematicTraceRoutingDisabled ??
+      board?.props?.schematicTraceRoutingDisabled ??
+      false
+    )
+  }
+
+  set schematicTraceRoutingDisabled(value: boolean) {
+    this._schematicTraceRoutingDisabledOverride = value
+  }
   pcbDisabled = false
   pcbRoutingDisabled = false
 
