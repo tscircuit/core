@@ -24,18 +24,29 @@ type SupplierPartCandidate = {
 
 type Pin1Polarity = "anode" | "cathode"
 
+// Keep older Circuit JSON peers compatible with the optional schema field.
+export type SupplierAssemblyRotationOffsetMap = Partial<
+  Record<SupplierName, number>
+>
+
+type PcbComponentWithAssemblyRotation = PcbComponent & {
+  supplier_assembly_rotation_offset_map?: SupplierAssemblyRotationOffsetMap
+}
+
 type SupplierPartOrientationAnalysis = {
   pin1Location: PcbPin1Location | null
   pin1Polarity: Pin1Polarity | null
+  assemblyRotationOffset: number | null
 }
 
-// v5 invalidates null two-pad frames cached before circuit-json-util 0.0.128.
+// v7 separates the catalog CAD frame from the assembly rotation.
 type SupplierPartOrientationCacheKey =
-  `part-orientation-analysis:v5:${SupplierName}:${string}`
+  `part-orientation-analysis:v7:${SupplierName}:${string}`
 
 type CachedSupplierPartOrientationAnalysis = {
   pin1_location: PcbPin1Location | null
   pin1_polarity: Pin1Polarity | null
+  assembly_rotation_offset: number | null
 }
 
 const pendingSupplierPartOrientationAnalyses = new WeakMap<
@@ -183,7 +194,7 @@ const getSupplierPartOrientationCacheKey = ({
   supplierName,
   supplierPartNumber,
 }: SupplierPartCandidate): SupplierPartOrientationCacheKey =>
-  `part-orientation-analysis:v5:${supplierName}:${supplierPartNumber}`
+  `part-orientation-analysis:v7:${supplierName}:${supplierPartNumber}`
 
 const readCachedSupplierPartOrientationAnalysis = async ({
   cacheKey,
@@ -220,10 +231,17 @@ const readCachedSupplierPartOrientationAnalysis = async ({
     if (pin1Location === undefined || pin1Polarity === undefined) {
       return { cacheHit: false }
     }
+    const assemblyRotationOffset = cached.assembly_rotation_offset
+    if (
+      assemblyRotationOffset !== null &&
+      !Number.isFinite(assemblyRotationOffset)
+    ) {
+      return { cacheHit: false }
+    }
 
     return {
       cacheHit: true,
-      analysis: { pin1Location, pin1Polarity },
+      analysis: { pin1Location, pin1Polarity, assemblyRotationOffset },
     }
   } catch {
     return { cacheHit: false }
@@ -258,10 +276,26 @@ const analyzeSupplierPartOrientation = async ({
       }),
     )
     if (!supplierCircuitJson?.length) {
-      return { pin1Location: null, pin1Polarity: null }
+      return {
+        pin1Location: null,
+        pin1Polarity: null,
+        assemblyRotationOffset: null,
+      }
     }
 
+    const supplierPcbComponent: PcbComponentWithAssemblyRotation | undefined =
+      supplierCircuitJson.find((element) => element.type === "pcb_component")
+    const assemblyOffset =
+      supplierPcbComponent?.supplier_assembly_rotation_offset_map?.[
+        supplierPartCandidate.supplierName
+      ]
     const pin1Location = analyzePcbPin1Location(supplierCircuitJson)
+    const assemblyRotationOffset =
+      pin1Location &&
+      assemblyOffset !== undefined &&
+      Number.isFinite(assemblyOffset)
+        ? assemblyOffset
+        : null
     const pin1Polarity = getPin1Polarity(getPin1SourcePort(supplierCircuitJson))
     try {
       await component.root?.platform?.localCacheEngine?.setItem(
@@ -269,10 +303,11 @@ const analyzeSupplierPartOrientation = async ({
         JSON.stringify({
           pin1_location: pin1Location,
           pin1_polarity: pin1Polarity,
+          assembly_rotation_offset: assemblyRotationOffset,
         } satisfies CachedSupplierPartOrientationAnalysis),
       )
     } catch {}
-    return { pin1Location, pin1Polarity }
+    return { pin1Location, pin1Polarity, assemblyRotationOffset }
   })().finally(() => {
     pendingAnalyses.delete(cacheKey)
   })
@@ -343,17 +378,27 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
 
   component._queueAsyncEffect("analyze-part-orientation", async () => {
     const supplierPin1LocationMap: SupplierPin1LocationMap = {}
+    const supplierAssemblyRotationOffsetMap: SupplierAssemblyRotationOffsetMap =
+      {}
     for (const supplierPartCandidate of supplierPartCandidates) {
       try {
-        const { pin1Location: supplierPin1Location, pin1Polarity } =
-          await analyzeSupplierPartOrientation({
-            component,
-            partsEngine,
-            supplierPartCandidate,
-          })
+        const {
+          pin1Location: supplierPin1Location,
+          pin1Polarity,
+          assemblyRotationOffset,
+        } = await analyzeSupplierPartOrientation({
+          component,
+          partsEngine,
+          supplierPartCandidate,
+        })
         if (supplierPin1Location) {
           supplierPin1LocationMap[supplierPartCandidate.supplierName] =
             supplierPin1Location
+        }
+        if (assemblyRotationOffset !== null) {
+          supplierAssemblyRotationOffsetMap[
+            supplierPartCandidate.supplierName
+          ] = assemblyRotationOffset
         }
         if (
           localPin1Polarity &&
@@ -375,6 +420,8 @@ export const NormalComponent_doInitialPartOrientationAnalysis = (
     }
 
     component._asyncSupplierPin1LocationMap = supplierPin1LocationMap
+    component._asyncSupplierAssemblyRotationOffsetMap =
+      supplierAssemblyRotationOffsetMap
     component._markDirty("PartOrientationAnalysis")
   })
 }
@@ -386,13 +433,24 @@ export const NormalComponent_updatePartOrientationAnalysis = (
   if (!supplierPin1LocationMap || !component.pcb_component_id) return
 
   const { db } = component.root!
-  const pcbComponent = db.pcb_component.get(component.pcb_component_id)
+  const pcbComponent: PcbComponentWithAssemblyRotation | null | undefined =
+    db.pcb_component.get(component.pcb_component_id)
   if (!pcbComponent || Object.keys(supplierPin1LocationMap).length === 0) return
 
-  db.pcb_component.update(component.pcb_component_id, {
+  const supplierAssemblyRotationOffsetMap =
+    component._asyncSupplierAssemblyRotationOffsetMap
+  const orientationUpdate: Partial<PcbComponentWithAssemblyRotation> = {
     supplier_pin1_location_map: {
       ...pcbComponent.supplier_pin1_location_map,
       ...supplierPin1LocationMap,
     },
-  })
+    ...(supplierAssemblyRotationOffsetMap &&
+      Object.keys(supplierAssemblyRotationOffsetMap).length > 0 && {
+        supplier_assembly_rotation_offset_map: {
+          ...pcbComponent.supplier_assembly_rotation_offset_map,
+          ...supplierAssemblyRotationOffsetMap,
+        },
+      }),
+  }
+  db.pcb_component.update(component.pcb_component_id, orientationUpdate)
 }
