@@ -193,6 +193,17 @@ export const applyPackOutput = (
           }
         }
       }
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (elmPcbGroup?.source_group_id) {
+          if (elmPcbGroup.source_group_id === componentId) {
+            return true
+          }
+          if (isDescendantGroup(db, elmPcbGroup.source_group_id, componentId)) {
+            return true
+          }
+        }
+      }
       if ("pcb_component_id" in elm && elm.pcb_component_id) {
         const pcbComp = db.pcb_component.get(elm.pcb_component_id)
         if (pcbComp?.source_component_id) {
