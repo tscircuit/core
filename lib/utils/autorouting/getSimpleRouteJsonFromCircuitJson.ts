@@ -42,7 +42,7 @@ import { getDifferentialPairSourceTraceIds } from "./getDifferentialPairSourceTr
 import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsForSimpleRouteJson"
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
-import { reduceNetConnectionPointsForDirectTraceConnections } from "./reduceNetConnectionPointsForDirectTraceConnections"
+import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
 import { splitExplicitWidthNetTraces } from "./splitExplicitWidthNetTraces"
 
 /**
@@ -992,9 +992,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
   }
 
-  reduceNetConnectionPointsForDirectTraceConnections({
+  reduceNetConnectionPointsForDifferentialPairPaths({
     netConnections: connectionsFromNets,
-    directTraceConnections,
+    differentialPairConnections: explicitPathConnections,
   })
 
   // Plane-terminated one-point traces are emitted by directTraceConnections.
