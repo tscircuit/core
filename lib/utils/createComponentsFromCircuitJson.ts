@@ -785,6 +785,7 @@ export const createComponentsFromCircuitJson = (
           radius: elm.radius,
           layer: elm.layer,
           strokeWidth: elm.stroke_width,
+          isFilled: elm.is_filled,
         }),
       )
     } else if (elm.type === "pcb_silkscreen_line") {
