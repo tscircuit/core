@@ -58,12 +58,16 @@ export function withFixedTraces(
         (next.route_type !== "wire" && next.route_type !== "via")
       )
         continue
-      const width =
+      const resolvedWidth =
         point.route_type === "wire"
-          ? point.width
+          ? (point.width ?? input.minTraceWidth)
           : next.route_type === "wire"
-            ? next.width
+            ? (next.width ?? input.minTraceWidth)
             : input.minTraceWidth
+      const width =
+        typeof resolvedWidth === "number" && Number.isFinite(resolvedWidth)
+          ? Math.max(0, resolvedWidth)
+          : 0
       const layer = point.route_type === "wire" ? point.layer : point.to_layer
       const dx = next.x - point.x
       const dy = next.y - point.y
@@ -93,10 +97,19 @@ export function withFixedTraces(
       }
 
       const segmentLength = Math.hypot(dx, dy)
-      const steps = Math.max(1, Math.ceil(segmentLength / width))
+      const steps =
+        width > 0
+          ? Math.max(1, Math.min(1000, Math.ceil(segmentLength / width)))
+          : 1
       // Project the perpendicular stroke width onto each board axis.
-      const projectedWidthX = (Math.abs(dy) / segmentLength) * width
-      const projectedWidthY = (Math.abs(dx) / segmentLength) * width
+      const projectedWidthX =
+        width > 0 && segmentLength > 0
+          ? (Math.abs(dy) / segmentLength) * width
+          : 0
+      const projectedWidthY =
+        width > 0 && segmentLength > 0
+          ? (Math.abs(dx) / segmentLength) * width
+          : 0
       for (let step = 0; step < steps; step++) {
         obstacles.push({
           type: "rect",
@@ -110,26 +123,28 @@ export function withFixedTraces(
           connectedTo,
         })
       }
-      // The union of these rectangles conservatively covers a round end cap.
-      for (const endpoint of [point, next]) {
-        obstacles.push(
-          {
-            type: "rect",
-            center: { x: endpoint.x, y: endpoint.y },
-            width,
-            height: width * Math.SQRT1_2,
-            layers: [layer],
-            connectedTo,
-          },
-          {
-            type: "rect",
-            center: { x: endpoint.x, y: endpoint.y },
-            width: width * Math.SQRT1_2,
-            height: width,
-            layers: [layer],
-            connectedTo,
-          },
-        )
+      if (width > 0) {
+        // The union of these rectangles conservatively covers a round end cap.
+        for (const endpoint of [point, next]) {
+          obstacles.push(
+            {
+              type: "rect",
+              center: { x: endpoint.x, y: endpoint.y },
+              width,
+              height: width * Math.SQRT1_2,
+              layers: [layer],
+              connectedTo,
+            },
+            {
+              type: "rect",
+              center: { x: endpoint.x, y: endpoint.y },
+              width: width * Math.SQRT1_2,
+              height: width,
+              layers: [layer],
+              connectedTo,
+            },
+          )
+        }
       }
     }
   }
