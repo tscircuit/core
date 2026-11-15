@@ -23,8 +23,9 @@ test("routing input regenerated from serialized board data keeps the authored wi
   const { simpleRouteJson: srj } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: JSON.parse(JSON.stringify(circuit.getCircuitJson())),
   })
-  expect(srj.minTraceWidth).toBe(0.1)
+  expect(srj.nominalTraceWidth).toBe(0.35)
   expect(
     srj.connections.map((connection) => connection.nominalTraceWidth),
-  ).toEqual([0.1, 0.55])
+  ).toEqual([0.35, 0.55])
+  expect(srj.minTraceWidth).toBe(0.1)
 })
