@@ -30,7 +30,7 @@ test("unbused fanout signals use the allowed layers without changing a pinned bu
         preferredLayer="bottom"
       />
       <pcbnotetext
-        text="10 signals per boundary: inner1 + bottom; PINNED remains bottom"
+        text="10 signals per boundary | Allowed: inner1 + bottom | PINNED: bottom"
         pcbY={5}
         fontSize={0.35}
       />
@@ -53,6 +53,33 @@ test("unbused fanout signals use the allowed layers without changing a pinned bu
       "bottom",
     ])
   }
+  // The PCB renderer does not draw breakout endpoints. Mark the emitted
+  // board-world positions (mm, +X right, +Y up) with their assigned layer.
+  for (const point of points) {
+    circuit.db.pcb_note_rect.insert({
+      center: { x: point.x, y: point.y },
+      width: 0.2,
+      height: 0.2,
+      stroke_width: 0.05,
+      layer: "top",
+      color:
+        point.layer === "inner1"
+          ? "#b45c00"
+          : point.layer === "bottom"
+            ? "#215bca"
+            : "#c52828",
+      is_filled: true,
+    })
+  }
+  circuit.db.pcb_note_text.insert({
+    text: "Orange: inner1 | Blue: bottom | Red: top (forbidden) | Placement only",
+    anchor_position: { x: 0, y: -5 },
+    anchor_alignment: "center",
+    font: "tscircuit2024",
+    font_size: 0.3,
+    color: "#333333",
+    layer: "top",
+  })
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     backgroundColor: "white",
     showPcbGroups: true,
