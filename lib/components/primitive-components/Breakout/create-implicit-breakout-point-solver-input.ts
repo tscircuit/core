@@ -663,14 +663,15 @@ export const createImplicitBreakoutPointSolverContext = (
     }
   }
 
+  const availableLayers = getCoordinatedFanoutLayers({
+    routingScope,
+    automaticBreakouts,
+  })
   const buses = getImplicitBreakoutSolverBuses({
     routingScope,
     sourceTraces,
     coordinatedSourceTraceIds: sourceTraceIds,
-    availableLayers: getCoordinatedFanoutLayers({
-      routingScope,
-      automaticBreakouts,
-    }),
+    availableLayers,
   })
   const endpointsBySourceTraceId = new Map<
     SourceTraceId,
@@ -812,10 +813,26 @@ export const createImplicitBreakoutPointSolverContext = (
       busFanoutDirections,
       fallbackEdge: solverRegions[0]!.edge,
       boundaryPointSpacing,
-      layerCount: getCoordinatedFanoutLayers({
-        routingScope,
-        automaticBreakouts,
-      }).length,
+      layerCount: availableLayers.length,
+    })
+  }
+
+  // The winding solver otherwise assigns every connection outside a named bus
+  // to top, even when the fanout explicitly allows other layers. Add the layer
+  // candidates after edge assignment: these unrelated signals must not become
+  // one atomic bus that is forced to leave through the same edge.
+  const busConnectionIds = new Set(buses.flatMap((bus) => bus.connectionIds))
+  const unbusedConnectionIds = sortedSourceTraceIds.filter(
+    (sourceTraceId) => !busConnectionIds.has(sourceTraceId),
+  )
+  if (unbusedConnectionIds.length > 0) {
+    const busIds = new Set(buses.map((bus) => bus.busId))
+    let busId = "unbused_fanout_connections"
+    while (busIds.has(busId)) busId += "_"
+    buses.push({
+      busId,
+      connectionIds: unbusedConnectionIds,
+      targetLayers: availableLayers,
     })
   }
 
