@@ -1,26 +1,20 @@
 import type {
-  ConnectionPoint,
   SimpleRouteConnection,
   SimpleRouteJson,
+  SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
 
 const WIDTH_EPSILON = 1e-6
 
-function getConnectionPointKeys(point: ConnectionPoint): string[] {
+function getConnectionPointKeys(point: SingleLayerConnectionPoint): string[] {
   const keys: string[] = []
-  if ("pointId" in point && point.pointId) {
+  if (point.pointId) {
     keys.push(`id:${point.pointId}`)
   }
-  if ("pcb_port_id" in point && point.pcb_port_id) {
+  if (point.pcb_port_id) {
     keys.push(`port:${point.pcb_port_id}`)
   }
-  const layerPart =
-    "layer" in point
-      ? point.layer
-      : "layers" in point
-        ? [...point.layers].sort().join(",")
-        : ""
-  keys.push(`xy:${layerPart}:${point.x.toFixed(4)}:${point.y.toFixed(4)}`)
+  keys.push(`xy:${point.layer}:${point.x.toFixed(4)}:${point.y.toFixed(4)}`)
   return keys
 }
 
