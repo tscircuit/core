@@ -19,6 +19,7 @@ export default defineConfig({
     ],
   },
   noExternal: [
+    "@tscircuit/infgrid-ijump-astar",
     "@tscircuit/cad-collision-checking",
     "@tscircuit/jscad-to-manifold",
     "@tscircuit/test-point-rerouter",
