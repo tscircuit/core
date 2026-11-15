@@ -130,6 +130,12 @@ entire program asynchronously during rendering. Await `renderUntilSettled()`
 before inspecting its diagnostics. Getters only read the result; they do not
 generate errors or load the geometry kernel.
 
+Core checks the PCB substrate against printed assembly parts in the assembled
+pose, even when the assembly defines no explosion stages. Positive overlap
+emits a `cad_assembly_collision_error` with `intersection_volume_mm3` and fails
+`tsci build`. Geometry the check could not verify emits
+`cad_assembly_collision_check_warning`.
+
 The checker delegates mesh movement checks to
 [`@tscircuit/cad-collision-checking`](https://github.com/tscircuit/cad-collision-checking),
 a standalone `BaseSolver` with step-by-step debugging and visualization. Core
@@ -140,7 +146,7 @@ concavities. An obstacle between two clear endpoints is still detected.
 Earlier moves are applied before checking later moves; all targets of a single
 move travel together, including members selected through another stage.
 
-Only intersections introduced by movement are reported. At each move, the
+The explosion check reports intersections introduced by movement. At each move, the
 moving solid's starting occupied space is excluded from the sweep. Existing
 overlap can therefore separate without an error, while moving deeper into an
 obstacle reports the newly entered volume. Touching faces with no positive-volume
