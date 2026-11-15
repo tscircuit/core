@@ -180,7 +180,7 @@ test("repro172: different-net copper pours should clear each other", async () =>
     isPointInBrepShape({ x: 0, y: 0 }, pour.brep_shape),
   )
   const poursContainingClearanceGap = bottomBrepPours.filter((pour) =>
-    isPointInBrepShape({ x: 1.9, y: 0 }, pour.brep_shape),
+    isPointInBrepShape({ x: 2.1, y: 0 }, pour.brep_shape),
   )
   const aisenSourceNetId = circuit.db.source_net
     .list()
