@@ -648,9 +648,9 @@ export abstract class PrimitiveComponent<
     if (!refdes) return text
 
     return text
-      .replace(/\{NAME\}/g, refdes)
-      .replace(/\{REF\}/g, refdes)
-      .replace(/\{REFERENCE\}/g, refdes)
+      .replace(/(?<!\$)\{NAME\}/g, refdes)
+      .replace(/(?<!\$)\{REF\}/g, refdes)
+      .replace(/(?<!\$)\{REFERENCE\}/g, refdes)
   }
 
   /**

@@ -48,6 +48,8 @@ export class FabricationNoteText extends PrimitiveComponent<
 
     if (resolvedPcbSxVisibility === "hidden") return
 
+    const text = this._resolveText()
+
     const pcb_fabrication_note_text = db.pcb_fabrication_note_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
@@ -59,7 +61,7 @@ export class FabricationNoteText extends PrimitiveComponent<
       layer,
       color: props.color,
       ccw_rotation: ccwRotation,
-      text: normalizeTextForCircuitJson(props.text ?? ""),
+      text: normalizeTextForCircuitJson(text),
       pcb_component_id: container.pcb_component_id!,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
@@ -72,12 +74,12 @@ export class FabricationNoteText extends PrimitiveComponent<
     const { _parsedProps: props } = this
     const fontSize =
       typeof props.fontSize === "string"
-        ? parseFloat(props.fontSize)
+        ? Number.parseFloat(props.fontSize)
         : (props.fontSize ?? 1)
 
-    // Approximate the size based on the text length and font size
+    const text = this._resolveText()
     const charWidth = fontSize * 0.6
-    const width = (props.text ?? "").length * charWidth
+    const width = text.length * charWidth
     const height = fontSize
 
     return { width, height }

@@ -1,6 +1,6 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { copperTextProps } from "@tscircuit/props"
+import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
   isPcbPrimitive = true
@@ -21,6 +21,8 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
     const position = this._getGlobalPcbPositionBeforeLayout()
     const subcircuit = this.getSubcircuit()
 
+    const text = this._resolveText()
+
     const pcb_copper_text = db.pcb_copper_text.insert({
       anchor_alignment: props.anchorAlignment,
       anchor_position: {
@@ -30,7 +32,7 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
       font: "tscircuit2024",
       font_size: props.fontSize!,
       layer: props.layer ?? "top",
-      text: normalizeTextForCircuitJson(props.text),
+      text: normalizeTextForCircuitJson(text),
       ccw_rotation: props.pcbRotation,
       is_mirrored: props.mirrored,
       is_knockout: props.knockout,
@@ -44,7 +46,7 @@ export class CopperText extends PrimitiveComponent<typeof copperTextProps> {
   getPcbSize(): { width: number; height: number } {
     const { _parsedProps: props } = this
     const fontSize = props.fontSize ?? 1
-    const text = props.text ?? ""
+    const text = this._resolveText()
     const textWidth = text.length * fontSize
     const textHeight = fontSize
     return { width: textWidth * fontSize, height: textHeight * fontSize }
