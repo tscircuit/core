@@ -151,6 +151,7 @@
     "calculate-packing": "^0.0.90",
     "css-select": "5.1.0",
     "debug": "^4.3.6",
+    "earcut": "^3.0.2",
     "flatbush": "^4.5.0",
     "format-si-unit": "^0.0.12",
     "gl-matrix": "^3.4.4",
