@@ -19,7 +19,7 @@ export const parseSimulationGraphValue = (
 
   const trimmed = value.trim()
   const match = trimmed.match(
-    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([pnumµkKMG]?)/,
+    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([pnumµkKMG]?)/,
   )
   if (!match) return undefined
 
