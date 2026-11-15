@@ -14,7 +14,7 @@ test("rotated pill pad has solder paste", () => {
         portHints={[]}
       />
       <pcbnotetext
-        text="Rotated pill: paste at 70% scale"
+        text="Rotated pill: paste at 100% scale"
         pcbY={2}
         fontSize={0.25}
       />
@@ -30,8 +30,8 @@ test("rotated pill pad has solder paste", () => {
   expect(paste.shape).toBe("rotated_pill")
   if (paste.shape !== "rotated_pill")
     throw new Error("Expected rotated pill paste")
-  expect(paste.width).toBeCloseTo(1.4)
-  expect(paste.height).toBeCloseTo(0.7)
-  expect(paste.radius).toBeCloseTo(0.35)
+  expect(paste.width).toBeCloseTo(2)
+  expect(paste.height).toBeCloseTo(1)
+  expect(paste.radius).toBeCloseTo(0.5)
   expect(paste.ccw_rotation).toBe(45)
 })

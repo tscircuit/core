@@ -1,7 +1,5 @@
 import Flatten from "@flatten-js/core"
-import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type { PcbSolderPastePolygon, Point } from "circuit-json"
-import { applyToPoint, compose, scale, translate } from "transformation-matrix"
 
 const createPolygon = (points: Point[]) => {
   const polygon = new Flatten.Polygon(
@@ -14,7 +12,7 @@ const createPolygon = (points: Point[]) => {
 /** Points are footprint-local mm (+X right, +Y up, right-handed +Z above). */
 export function getPolygonSolderPasteContours({
   points,
-  solderPasteMargin,
+  solderPasteMargin = 0,
 }: {
   points: Point[]
   solderPasteMargin?: number
@@ -22,22 +20,7 @@ export function getPolygonSolderPasteContours({
   if (solderPasteMargin === 0) return [{ points }]
   const copper = createPolygon(points)
   let paste = copper
-  if (solderPasteMargin === undefined) {
-    const bounds = getBoundsFromPoints(points)!
-    const centerX = (bounds.minX + bounds.maxX) / 2
-    const centerY = (bounds.minY + bounds.maxY) / 2
-    const copperToPasteTransform = compose(
-      translate(centerX, centerY),
-      scale(0.7),
-      translate(-centerX, -centerY),
-    )
-    paste = Flatten.BooleanOperations.intersect(
-      copper,
-      createPolygon(
-        points.map((point) => applyToPoint(copperToPasteTransform, point)),
-      ),
-    )
-  } else {
+  {
     const vertices = copper.vertices
     const edges = vertices
       .map(
