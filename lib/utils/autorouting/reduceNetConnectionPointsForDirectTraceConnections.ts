@@ -1,25 +1,20 @@
-import type {
-  SimpleRouteConnection,
-  SingleLayerConnectionPoint,
-} from "./SimpleRouteJson"
-
-type SrjPointId = NonNullable<SingleLayerConnectionPoint["pointId"]>
+import type { SimpleRouteConnection, SrjPointId } from "./SimpleRouteJson"
 
 /**
- * Keep one net terminal per connected set of explicitly requested pair paths.
+ * Keep one net terminal per connected set of directly requested trace paths.
  * Those paths remain routing requests, not existing copper. The residual net
  * request joins their sets to any remaining taps without routing the trunks
  * twice. Route points are copied unchanged in right-handed circuit-world mm
  * (+X right, +Y up, +Z above the board); no geometry transform is performed.
  */
-export const reduceNetConnectionPointsForDifferentialPairPaths = ({
+export const reduceNetConnectionPointsForDirectTraceConnections = ({
   netConnections,
-  differentialPairConnections,
+  directTraceConnections,
 }: {
   netConnections: SimpleRouteConnection[]
-  differentialPairConnections: SimpleRouteConnection[]
+  directTraceConnections: SimpleRouteConnection[]
 }): void => {
-  if (differentialPairConnections.length === 0) return
+  if (directTraceConnections.length === 0) return
   const parentPointId = new Map<SrjPointId, SrjPointId>()
   const root = (pointId: SrjPointId): SrjPointId => {
     const parent = parentPointId.get(pointId)
@@ -28,7 +23,7 @@ export const reduceNetConnectionPointsForDifferentialPairPaths = ({
     parentPointId.set(pointId, representative)
     return representative
   }
-  for (const connection of differentialPairConnections) {
+  for (const connection of directTraceConnections) {
     const pointIds = connection.pointsToConnect.flatMap((point) =>
       point.pointId ? [point.pointId] : [],
     )
