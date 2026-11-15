@@ -1,11 +1,14 @@
-import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { schematicBoxProps } from "@tscircuit/props"
+import type { SchematicBox as SchematicBoxCircuitJson } from "circuit-json"
+import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import type { Port } from "../Port"
 import { getTitleAnchorAndPosition } from "../getTitleAnchorAndPosition"
 import { SchematicBox_doInitialSchematicComponentRender } from "./SchematicBox_doInitialSchematicComponentRender"
 
 export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   isSchematicPrimitive = true
+  private _insertedSchematicBox?: SchematicBoxCircuitJson
+  schematic_title_text_id?: string
 
   get config() {
     return {
@@ -19,12 +22,18 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     SchematicBox_doInitialSchematicComponentRender(this)
   }
 
-  doInitialSchematicPrimitiveRender(): void {
-    if (this.root?.schematicDisabled) return
-    if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+  private _computeBoxAndTitleGeometry(): {
+    width: number
+    height: number
+    x: number
+    y: number
+    title?: {
+      anchor: ReturnType<typeof getTitleAnchorAndPosition>["textAnchor"]
+      position: { x: number; y: number }
+    }
+  } | null {
     const { _parsedProps: props } = this
-    if (props.chipRef) return
+    if (props.chipRef) return null
 
     const basePadding = 0.6
     const generalPadding = typeof props.padding === "number" ? props.padding : 0
@@ -49,8 +58,6 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     let height: number
     let x: number
     let y: number
-    let centerX: number
-    let centerY: number
 
     if (hasOverlay) {
       const portsWithSelectors = (props.overlay as string[])
@@ -69,7 +76,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
         position: port._getGlobalSchematicPositionAfterLayout(),
       }))
 
-      if (portsWithPosition.length === 0) return
+      if (portsWithPosition.length === 0) return null
 
       const xs = portsWithPosition.map((p) => p.position.x)
       const ys = portsWithPosition.map((p) => p.position.y)
@@ -97,82 +104,128 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       height = bottom - top
       x = left + (props.schX ?? 0)
       y = top + (props.schY ?? 0)
-      centerX = x + width / 2
-      centerY = y + height / 2
     } else if (hasFixedSize) {
       width = props.width!
       height = props.height!
       const center = this._getGlobalSchematicPositionBeforeLayout()
-      centerX = center.x
-      centerY = center.y
-      x = centerX - width / 2
-      y = centerY - height / 2
+      x = center.x - width / 2
+      y = center.y - height / 2
     } else {
-      return
+      return null
     }
 
-    db.schematic_box.insert({
-      height,
-      width,
+    if (!props.title) {
+      return { width, height, x, y }
+    }
+
+    const isInside = props.titleInside
+    const TITLE_PADDING = 0.1
+    const anchor = props.titleAlignment
+    const anchorPos = getTitleAnchorAndPosition({
+      anchor,
       x,
       y,
+      width,
+      height,
+      isInside,
+    })
+    let titleOffsetY: number
+    let titleOffsetX: number
+    const textAnchor = anchorPos.textAnchor
+    if (isInside) {
+      titleOffsetY = anchor.includes("top")
+        ? -TITLE_PADDING
+        : anchor.includes("bottom")
+          ? TITLE_PADDING
+          : 0
+      titleOffsetX = anchor.includes("left")
+        ? TITLE_PADDING
+        : anchor.includes("right")
+          ? -TITLE_PADDING
+          : 0
+    } else {
+      titleOffsetY = anchor.includes("top")
+        ? TITLE_PADDING
+        : anchor.includes("bottom")
+          ? -TITLE_PADDING
+          : 0
+      titleOffsetX = anchor.includes("center_left")
+        ? -TITLE_PADDING
+        : anchor.includes("center_right")
+          ? TITLE_PADDING
+          : 0
+    }
+
+    return {
+      width,
+      height,
+      x,
+      y,
+      title: {
+        anchor: textAnchor,
+        position: {
+          x: anchorPos.x + titleOffsetX,
+          y: anchorPos.y + titleOffsetY,
+        },
+      },
+    }
+  }
+
+  doInitialSchematicPrimitiveRender(): void {
+    if (this.root?.schematicDisabled) return
+    if (this.getCollapsedSchematicBoxAncestor()) return
+    const { db } = this.root!
+    const { _parsedProps: props } = this
+    const geom = this._computeBoxAndTitleGeometry()
+    if (!geom) return
+
+    const schematicSheetId = this._resolveSchematicSheetId()
+    this._insertedSchematicBox = db.schematic_box.insert({
+      height: geom.height,
+      width: geom.width,
+      x: geom.x,
+      y: geom.y,
       is_dashed: props.strokeStyle === "dashed",
-      schematic_sheet_id: this._resolveSchematicSheetId(),
+      schematic_sheet_id: schematicSheetId,
     })
 
-    if (props.title) {
-      const isInside = props.titleInside
-      const TITLE_PADDING = 0.1
-      const anchor = props.titleAlignment
-      const anchorPos = getTitleAnchorAndPosition({
-        anchor,
-        x,
-        y,
-        width,
-        height,
-        isInside,
-      })
-      let titleOffsetY: number
-      let titleOffsetX: number
-      const textAnchor = anchorPos.textAnchor
-      if (isInside) {
-        titleOffsetY = anchor.includes("top")
-          ? -TITLE_PADDING
-          : anchor.includes("bottom")
-            ? TITLE_PADDING
-            : 0
-        titleOffsetX = anchor.includes("left")
-          ? TITLE_PADDING
-          : anchor.includes("right")
-            ? -TITLE_PADDING
-            : 0
-      } else {
-        titleOffsetY = anchor.includes("top")
-          ? TITLE_PADDING
-          : anchor.includes("bottom")
-            ? -TITLE_PADDING
-            : 0
-        titleOffsetX = anchor.includes("center_left")
-          ? -TITLE_PADDING
-          : anchor.includes("center_right")
-            ? TITLE_PADDING
-            : 0
-      }
-
-      const titleX = anchorPos.x + titleOffsetX
-      const titleY = anchorPos.y + titleOffsetY
-
-      db.schematic_text.insert({
-        anchor: textAnchor,
+    if (props.title && geom.title) {
+      const insertedText = db.schematic_text.insert({
+        anchor: geom.title.anchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,
         color: props.titleColor ?? "#000000",
-        position: {
-          x: titleX,
-          y: titleY,
-        },
+        position: geom.title.position,
         rotation: 0,
-        schematic_sheet_id: this._resolveSchematicSheetId(),
+        schematic_sheet_id: schematicSheetId,
+      })
+      this.schematic_title_text_id = insertedText.schematic_text_id
+    }
+  }
+
+  doInitialSchematicSectionRender(): void {
+    if (this.root?.schematicDisabled) return
+    const { _parsedProps: props } = this
+    if (
+      !props.overlay ||
+      props.overlay.length === 0 ||
+      !this._insertedSchematicBox
+    )
+      return
+
+    const geom = this._computeBoxAndTitleGeometry()
+    if (!geom) return
+
+    this._insertedSchematicBox.height = geom.height
+    this._insertedSchematicBox.width = geom.width
+    this._insertedSchematicBox.x = geom.x
+    this._insertedSchematicBox.y = geom.y
+
+    if (this.schematic_title_text_id && geom.title) {
+      const { db } = this.root!
+      db.schematic_text.update(this.schematic_title_text_id, {
+        anchor: geom.title.anchor,
+        position: geom.title.position,
       })
     }
   }
