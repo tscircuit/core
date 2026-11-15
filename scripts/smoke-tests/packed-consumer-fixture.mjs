@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
-import { Circuit, Board, Resistor } from "@tscircuit/core"
+import { Circuit, Board, Resistor, Trace } from "@tscircuit/core"
 
 assert.ok(
   fileURLToPath(import.meta.resolve("@tscircuit/core")).startsWith(
@@ -54,3 +54,46 @@ assert.deepEqual(
   "The packed consumer circuit must render without error records",
 )
 console.log("Packed Core imports and renders in a clean npm consumer")
+
+// Exercise the bundled legacy router locally, without a routing service.
+const routed = new Circuit({ platform: { allowLegacyAutorouters: true } })
+const routedBoard = new Board({
+  width: "20mm",
+  height: "10mm",
+  autorouter: "sequential_trace",
+})
+routed.add(routedBoard)
+routedBoard.add(
+  new Resistor({
+    name: "R1",
+    resistance: "1k",
+    footprint: "0603",
+    pcbX: -3,
+    schX: -3,
+  }),
+)
+routedBoard.add(
+  new Resistor({
+    name: "R2",
+    resistance: "1k",
+    footprint: "0603",
+    pcbX: 3,
+    schX: 3,
+  }),
+)
+routedBoard.add(new Trace({ from: ".R1 > .pin1", to: ".R2 > .pin1" }))
+await routed.renderUntilSettled()
+const routedRecords = routed.getCircuitJson()
+assert.ok(
+  routedRecords.some(
+    (record) => record.type === "pcb_trace" && record.route.length > 1,
+  ),
+)
+assert.ok(routedRecords.some((record) => record.type === "schematic_trace"))
+assert.deepEqual(
+  routedRecords.filter((record) => record.type.endsWith("_error")),
+  [],
+)
+console.log(
+  "Bundled legacy router renders a sequential PCB and schematic trace",
+)
