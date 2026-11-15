@@ -149,7 +149,8 @@
     "spicets": "*",
     "typescript": "^5.0.0",
     "@tscircuit/cableprinter": "*",
-    "@tscircuit/manifold-2d": "*"
+    "@tscircuit/manifold-2d": "*",
+    "@tscircuit/soup-util": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
