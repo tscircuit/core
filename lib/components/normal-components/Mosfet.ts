@@ -1,15 +1,23 @@
-import { mosfetProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import {
+  mosfetProps,
+  pinLabelsProp,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import type { BaseSymbolName } from "lib/utils/constants"
 import { getMosfetSchematicSymbolName } from "./get-mosfet-schematic-symbol-name"
 
-export class Mosfet extends NormalComponent<typeof mosfetProps> {
+const mosfetComponentProps = mosfetProps.extend({
+  pinLabels: pinLabelsProp.optional(),
+})
+
+export class Mosfet extends NormalComponent<typeof mosfetComponentProps> {
   get config() {
     return {
       componentName: "Mosfet",
       schematicSymbolName: (this.props.symbolName ??
         getMosfetSchematicSymbolName(this.props)) as BaseSymbolName,
-      zodProps: mosfetProps,
+      zodProps: mosfetComponentProps,
       shouldRenderAsSchematicBox: false,
     }
   }
