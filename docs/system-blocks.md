@@ -37,25 +37,27 @@ subsystems from stretching each other's internal ranks. Bidirectional interfaces
 favor the more connected endpoint for ranking, while emitted routes always retain
 the declared from/to order. Block dimensions are derived from their text.
 
-A rectilinear visibility-grid router avoids component interiors, group headings,
-and other connection labels. Endpoints initially face their label slot or target
-and are ordered by approach angle. A bounded optimization pass swaps neighboring
-landing slots, including slots across block corners, and reroutes the affected
-connections. It accepts swaps only when the complete diagram's score improves:
-crossings, shared segments, and crowded parallel runs carry larger penalties than
-bends or extra length. The visibility grid includes lanes 3 mm from existing
-wires so adjacent routes can run separately. A final rerouting sweep shortens
-remaining detours when it improves the same score.
+A rectilinear visibility-grid router avoids component interiors and group
+headings. Endpoints initially face their Dagre label slot, or their target when
+that slot lies behind the block, and are ordered by approach angle. A port never
+moves to a face that looks away from its target. A bounded optimization pass
+swaps neighboring landing slots, including slots across block corners, and
+reroutes the affected connections. It accepts swaps only when the complete
+diagram's score improves: crossings, shared segments, crowded parallel runs, and
+wires that double back carry larger penalties than bends or extra length. The
+visibility grid includes lanes 3 mm from existing wires so adjacent routes can
+run separately. A final rerouting sweep shortens remaining detours when it
+improves the same score.
 
-Labels occupy reserved horizontal slots; overlapping slots are moved before
-routing. For clear straight connections and compact same-face return loops,
-labels can sit beside the wire, attached to its midpoint. Text does not force a
-horizontal detour into a vertical arrow or an extra run into a return loop.
-Horizontal wires keep inline text when there is enough room. Pages expand to
-contain labels and outer detours. Routing is deterministic and has
-no browser or DOM requirement. Optimization tries at most 64 swaps over four
-passes, followed by one rerouting sweep. Crossings and tighter spacing can still
-occur on dense graphs; these penalties are not hard routing guarantees.
+Wires are routed first and never bend to reach their text. Each label then takes
+the clear slot nearest its wire's midpoint: inline on a horizontal run,
+otherwise beside the wire. An attachment slides along its block face, without
+passing its neighbors, when that straightens the wire. Only a self-loop reserves
+its label before routing. Pages expand to contain labels and outer detours.
+Routing is deterministic and has no browser or DOM requirement. Optimization
+tries at most 64 swaps over four passes, followed by one rerouting sweep.
+Crossings and tighter spacing can still occur on dense graphs; these penalties
+are not hard routing guarantees.
 
 Page `direction` is `right` (default), `left`, `down`, or `up`. Geometry is in
 diagram millimeters, centered on the page with +X right and +Y up. Nested group
@@ -73,12 +75,12 @@ allow it. Otherwise they retain ordinary corner rounding. The return is checked
 against blocks, group headings, and labels, including labels inside the loop.
 
 Rounding follows endpoint optimization and orthogonal routing. It preserves the
-chosen attachment points and label positions, and also checks neighboring wires
-so curved corners do not reintroduce crossings or crowd parallel routes. Curves
-may use the label's extra horizontal padding while staying outside its estimated
-text bounds. Wire clearance targets 3 mm; where the original corner is closer,
-rounding preserves that existing clearance instead of rejecting a curve that
-moves away from its neighbor.
+chosen attachment points and label positions, and compares neighboring wires in
+their rounded form, so nested corners keep concentric fillets instead of leaving
+the outer wire angular. Curves may use the label's extra horizontal padding
+while staying outside its estimated text bounds. Wire clearance targets 3 mm;
+where the original corner is closer, rounding preserves that existing clearance
+instead of rejecting a curve that moves away from its neighbor.
 
 The emitted route stores absolute `cubic_bezier_control_points` on each curved
 segment's endpoint. Arc pieces span at most 90 degrees, with matching tangent

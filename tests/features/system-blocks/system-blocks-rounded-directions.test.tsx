@@ -3,6 +3,7 @@ import { systemblock } from "lib"
 import { convertCircuitJsonToSystemSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import { assertSystemGeometry } from "./assert-system-geometry"
+import { assertSystemWireSmoothness } from "./assert-system-wire-smoothness"
 
 test("rounded fanout and self-loops work in every page direction", async () => {
   for (const direction of ["right", "left", "down", "up"] as const) {
@@ -28,13 +29,11 @@ test("rounded fanout and self-loops work in every page direction", async () => {
     circuit.render()
     const json = circuit.getCircuitJson()
     assertSystemGeometry(json)
-    expect(
-      circuit.db.system_block_connection
-        .list()
-        .every((connection) =>
-          connection.route.some((point) => point.cubic_bezier_control_points),
-        ),
-    ).toBe(true)
+    // A wire may be straight; wherever it bends, the bend must be a fillet.
+    assertSystemWireSmoothness(circuit.db.system_block_connection.list(), {
+      minRadius: 1.5,
+      maxBends: 2,
+    })
     const loop = circuit.db.system_block_connection
       .list()
       .find(

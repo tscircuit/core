@@ -12,19 +12,21 @@ export interface SystemBlockRouteObstacle {
 const EPSILON = 1e-8
 
 /**
- * Round a resolved polyline with circle-derived cubic segments, targeting 12 mm.
- * Inputs, endpoints, and controls are points in page-local diagram mm, +X right,
- * +Y up (right-handed XY, +Z out of page). Internal unit vectors are directions.
- * Fillets stay inside each corner's trim triangle, so page bounds cannot grow.
- * Obstacle checks conservatively use that triangle's axis-aligned bounds.
+ * Resolve how far each corner of a polyline can be trimmed for its fillet.
+ * `points` drops repeated and collinear waypoints; `trims[i]` is the length cut
+ * from both segments at `points[i]`, in page-local diagram mm (0 at both ends).
+ * Each trim targets a 12 mm radius, capped by half of the adjacent segments,
+ * the optional per-corner `trimLimits` (indexed like `points`), and obstacles.
+ * Obstacle checks conservatively use the trim triangle's axis-aligned bounds.
  * Neighboring wire bounds retain up to 3 mm clearance, capped by the existing
  * corner's clearance so a nearby wire does not prevent rounding away from it.
  */
-export function roundSystemBlockRoute(
+export function resolveSystemBlockRouteTrims(
   route: Point[],
   obstacles: SystemBlockRouteObstacle[],
   wireObstacles: SystemBlockRouteObstacle[] = [],
-): SystemBlockRoutePoint[] {
+  trimLimits?: readonly number[],
+): { points: Point[]; trims: number[] } {
   const points: Point[] = []
   for (const point of route) {
     if (points.length && distance(points.at(-1)!, point) < EPSILON) continue
@@ -43,15 +45,7 @@ export function roundSystemBlockRoute(
     }
     points.push(point)
   }
-  if (points.length < 3) return points.map((point) => ({ ...point }))
-  const rounded: SystemBlockRoutePoint[] = [{ ...points[0] }]
-  const append = (point: SystemBlockRoutePoint) => {
-    if (
-      point.cubic_bezier_control_points ||
-      distance(rounded.at(-1)!, point) > EPSILON
-    )
-      rounded.push(point)
-  }
+  const trims = points.map(() => 0)
   for (let index = 1; index < points.length - 1; index++) {
     const previous = points[index - 1]
     const corner = points[index]
@@ -84,41 +78,99 @@ export function roundSystemBlockRoute(
       incoming.x * outgoing.x + incoming.y * outgoing.y,
     )
     // A reversal needs a different routing skeleton, not an infinite-radius trim.
-    if (Math.abs(turn) < EPSILON || Math.PI - Math.abs(turn) < EPSILON) {
-      append({ ...corner })
-      continue
-    }
-    const tangent = Math.tan(Math.abs(turn) / 2)
-    let trim = Math.min(
-      12 * tangent,
-      distance(previous, corner) / 2,
-      distance(corner, next) / 2,
-    )
-    let start: Point
-    let end: Point
-    while (true) {
-      start = {
+    if (Math.abs(turn) < EPSILON || Math.PI - Math.abs(turn) < EPSILON) continue
+    const isBlocked = (trim: number) => {
+      const start = {
         x: corner.x - incoming.x * trim,
         y: corner.y - incoming.y * trim,
       }
-      end = { x: corner.x + outgoing.x * trim, y: corner.y + outgoing.y * trim }
+      const end = {
+        x: corner.x + outgoing.x * trim,
+        y: corner.y + outgoing.y * trim,
+      }
       const minX = Math.min(start.x, corner.x, end.x)
       const maxX = Math.max(start.x, corner.x, end.x)
       const minY = Math.min(start.y, corner.y, end.y)
       const maxY = Math.max(start.y, corner.y, end.y)
-      const blocked = cornerObstacles.some(
+      return cornerObstacles.some(
         (obstacle) =>
           minX < obstacle.maxX &&
           maxX > obstacle.minX &&
           minY < obstacle.maxY &&
           maxY > obstacle.minY,
       )
-      if (!blocked || trim < 0.001) break
-      trim /= 2
     }
-    if (trim < 0.001) {
+    let trim = Math.min(
+      12 * Math.tan(Math.abs(turn) / 2),
+      distance(previous, corner) / 2,
+      distance(corner, next) / 2,
+      trimLimits?.[index] ?? Infinity,
+    )
+    if (trim >= 0.001 && isBlocked(trim)) {
+      // The trim triangle shrinks monotonically, so bisect for the largest
+      // fillet that clears the obstacles instead of settling for a fraction.
+      let clear = 0
+      for (let step = 0; step < 12; step++) {
+        const middle = (clear + trim) / 2
+        if (isBlocked(middle)) trim = middle
+        else clear = middle
+      }
+      trim = clear
+    }
+    trims[index] = trim < 0.001 ? 0 : trim
+  }
+  return { points, trims }
+}
+
+/**
+ * Round a resolved polyline with circle-derived cubic segments, targeting 12 mm.
+ * Inputs, endpoints, and controls are points in page-local diagram mm, +X right,
+ * +Y up (right-handed XY, +Z out of page). Internal unit vectors are directions.
+ * Fillets stay inside each corner's trim triangle, so page bounds cannot grow.
+ * Trims come from `resolveSystemBlockRouteTrims`, which documents the limits.
+ */
+export function roundSystemBlockRoute(
+  route: Point[],
+  obstacles: SystemBlockRouteObstacle[],
+  wireObstacles: SystemBlockRouteObstacle[] = [],
+  trimLimits?: readonly number[],
+): SystemBlockRoutePoint[] {
+  const { points, trims } = resolveSystemBlockRouteTrims(
+    route,
+    obstacles,
+    wireObstacles,
+    trimLimits,
+  )
+  if (points.length < 3) return points.map((point) => ({ ...point }))
+  const rounded: SystemBlockRoutePoint[] = [{ ...points[0] }]
+  const append = (point: SystemBlockRoutePoint) => {
+    if (
+      point.cubic_bezier_control_points ||
+      distance(rounded.at(-1)!, point) > EPSILON
+    )
+      rounded.push(point)
+  }
+  for (let index = 1; index < points.length - 1; index++) {
+    const corner = points[index]
+    const trim = trims[index]
+    if (trim === 0) {
       append({ ...corner })
       continue
+    }
+    const incoming = unitDirection(points[index - 1], corner)
+    const outgoing = unitDirection(corner, points[index + 1])
+    const turn = Math.atan2(
+      incoming.x * outgoing.y - incoming.y * outgoing.x,
+      incoming.x * outgoing.x + incoming.y * outgoing.y,
+    )
+    const tangent = Math.tan(Math.abs(turn) / 2)
+    const start = {
+      x: corner.x - incoming.x * trim,
+      y: corner.y - incoming.y * trim,
+    }
+    const end = {
+      x: corner.x + outgoing.x * trim,
+      y: corner.y + outgoing.y * trim,
     }
     append(start)
     const radius = trim / tangent

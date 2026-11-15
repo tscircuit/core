@@ -8,12 +8,20 @@ export interface SystemRoutingObstacle {
   top: number
 }
 
-/** Both endpoints and obstacles are in page-centered mm (+X right, +Y up). */
+/**
+ * Both endpoints and obstacles are in page-centered mm (+X right, +Y up).
+ * A lane halfway between the endpoints lets a jog sit in the middle of a run,
+ * and bends next to an endpoint cost slightly more, so that a jog which could
+ * be anywhere keeps room for both of its fillets. `headings` make a turn at
+ * either endpoint count as the bend it will be once the wire is joined there.
+ */
 export function findSystemOrthogonalPath(
   start: Point,
   end: Point,
   obstacles: SystemRoutingObstacle[],
   routedSegments: [Point, Point][],
+  /** Axes along which the wire continues before `start` and after `end`. */
+  headings: { start?: "x" | "y"; end?: "x" | "y" } = {},
 ): Point[] | undefined {
   const xs = [
     ...new Set([
@@ -23,6 +31,7 @@ export function findSystemOrthogonalPath(
       ...routedSegments
         .filter(([a, b]) => a.x === b.x)
         .flatMap(([a]) => [a.x - 3, a.x + 3]),
+      (start.x + end.x) / 2,
     ]),
   ].sort((a, b) => a - b)
   const ys = [
@@ -33,6 +42,7 @@ export function findSystemOrthogonalPath(
       ...routedSegments
         .filter(([a, b]) => a.y === b.y)
         .flatMap(([a]) => [a.y - 3, a.y + 3]),
+      (start.y + end.y) / 2,
     ]),
   ].sort((a, b) => a - b)
   xs.unshift(xs[0] - 5)
@@ -66,8 +76,22 @@ export function findSystemOrthogonalPath(
     }
     queue[i] = entry
   }
-  costs[startNode * 3 + 2] = 0
-  enqueue(startNode * 3 + 2, 0, 0)
+  const startState =
+    startNode * 3 + (headings.start ? Number(headings.start === "y") : 2)
+  const endAxis = headings.end ? Number(headings.end === "y") : undefined
+  const NEAR_ENDPOINT_BEND = 8
+  // Arriving across the end heading still needs one bend at the end point.
+  const GOAL = costs.length
+  let goalCost = Infinity
+  let goalPrevious = -1
+  const pathTo = (last: number) => {
+    const path: Point[] = []
+    for (let state = last; state !== -1; state = previous[state])
+      path.push(pointAt(Math.floor(state / 3)))
+    return path.reverse()
+  }
+  costs[startState] = 0
+  enqueue(startState, 0, 0)
   while (queue.length) {
     const current = queue[0]
     const last = queue.pop()!
@@ -86,13 +110,25 @@ export function findSystemOrthogonalPath(
       }
       queue[i] = last
     }
+    if (current.state === GOAL) {
+      if (current.cost !== goalCost) continue
+      return pathTo(goalPrevious)
+    }
     if (current.cost !== costs[current.state]) continue
     const node = Math.floor(current.state / 3)
     if (node === endNode) {
-      const path: Point[] = []
-      for (let state = current.state; state !== -1; state = previous[state])
-        path.push(pointAt(Math.floor(state / 3)))
-      return path.reverse()
+      if (
+        endAxis === undefined ||
+        current.state % 3 === endAxis ||
+        current.state === startState
+      )
+        return pathTo(current.state)
+      const cost = current.cost + NEAR_ENDPOINT_BEND
+      if (cost < goalCost) {
+        goalCost = cost
+        goalPrevious = current.state
+        enqueue(GOAL, cost, cost)
+      }
     }
     const from = pointAt(node)
     const col = node % columns
@@ -170,7 +206,17 @@ export function findSystemOrthogonalPath(
       if (travelCost === Infinity) continue
       const axis = horizontal ? 0 : 1
       const state = neighbor * 3 + axis
-      const bend = current.state % 3 === 2 || current.state % 3 === axis ? 0 : 6
+      const nearEndpoint =
+        Math.min(
+          Math.abs(from.x - start.x) + Math.abs(from.y - start.y),
+          Math.abs(from.x - end.x) + Math.abs(from.y - end.y),
+        ) < 12
+      const bend =
+        current.state % 3 === 2 || current.state % 3 === axis
+          ? 0
+          : nearEndpoint
+            ? NEAR_ENDPOINT_BEND
+            : 6
       const cost = current.cost + travelCost + bend
       if (cost >= costs[state]) continue
       costs[state] = cost
