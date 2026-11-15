@@ -291,17 +291,22 @@ export class SchematicSection extends PrimitiveComponent<
           fontSize,
         })
 
-      const otherMemberBounds = overlapsAnotherSection
-        ? allSectionsWithBounds
+      let otherMemberBounds: Bounds[] | undefined
+      const getOtherMemberBounds = () => {
+        if (!otherMemberBounds) {
+          otherMemberBounds = allSectionsWithBounds
             .filter((section) => section !== sectionWithBounds)
             .flatMap((section) => section.memberBounds)
-        : []
+        }
+        return otherMemberBounds
+      }
 
       const collidesWithPlacedTitle = (bounds: Bounds) =>
         placedTitleBounds.some((placed) => doBoundsOverlap(bounds, placed))
 
       const isShadowedByOtherSection = (bounds: Bounds, anchorMinX: number) => {
-        if (!overlapsAnotherSection || otherMemberBounds.length === 0) {
+        const others = getOtherMemberBounds()
+        if (others.length === 0) {
           return false
         }
         const bandMinX = Math.min(anchorMinX, bounds.minX)
@@ -313,7 +318,7 @@ export class SchematicSection extends PrimitiveComponent<
           ownInBand.length > 0
             ? Math.max(...ownInBand.map((m) => m.maxY))
             : Number.NEGATIVE_INFINITY
-        return otherMemberBounds.some(
+        return others.some(
           (other) =>
             other.maxX > bandMinX + TOL &&
             other.minX < bandMaxX - TOL &&
@@ -327,7 +332,8 @@ export class SchematicSection extends PrimitiveComponent<
 
       if (
         collidesWithPlacedTitle(chosenBounds) ||
-        isShadowedByOtherSection(chosenBounds, rawBounds.minX)
+        (overlapsAnotherSection &&
+          isShadowedByOtherSection(chosenBounds, rawBounds.minX))
       ) {
         const obstacles = getObstacleBounds()
         const collidesWithObstacle = (bounds: Bounds) =>
