@@ -1,17 +1,82 @@
-import { mosfetProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import {
+  mosfetProps,
+  pinLabelsProp,
+  resolveManufacturerPartNumber,
+} from "@tscircuit/props"
+import type { BaseSymbolName, Ftype, MosfetPorts } from "lib/utils/constants"
+import { getPinNumberFromLabels } from "lib/utils/getPortFromHints"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { BaseSymbolName } from "lib/utils/constants"
+import type { Port } from "../primitive-components/Port"
 import { getMosfetSchematicSymbolName } from "./get-mosfet-schematic-symbol-name"
 
-export class Mosfet extends NormalComponent<typeof mosfetProps> {
+const SHORT_ALIASES: Record<string, string[]> = {
+  drain: ["d"],
+  source: ["s"],
+  gate: ["g"],
+}
+
+const mosfetComponentProps = mosfetProps.extend({
+  pinLabels: pinLabelsProp.optional(),
+})
+
+export class Mosfet extends NormalComponent<
+  typeof mosfetComponentProps,
+  MosfetPorts
+> {
   get config() {
     return {
       componentName: "Mosfet",
       schematicSymbolName: (this.props.symbolName ??
         getMosfetSchematicSymbolName(this.props)) as BaseSymbolName,
-      zodProps: mosfetProps,
+      zodProps: mosfetComponentProps,
+      sourceFtype: "simple_mosfet" as Ftype,
       shouldRenderAsSchematicBox: false,
     }
+  }
+
+  initPorts() {
+    // Explicit labels describe physical package pins. Symbol pin numbers are
+    // only the fallback; short aliases must follow the selected semantic role.
+    const additionalAliases: Record<`pin${number}`, string[]> = {}
+    const pinLabels = this._resolvePinLabels()
+    const portLabels = pinLabels
+      ? Object.entries(pinLabels).map(([pin, labels]) => [
+          pin,
+          ...(Array.isArray(labels) ? labels : [labels]),
+        ])
+      : (this.getSchematicSymbol()?.ports.map((port) => port.labels) ?? [])
+    for (const labels of portLabels) {
+      const pinNumber = getPinNumberFromLabels(labels)
+      if (!pinNumber) continue
+      additionalAliases[`pin${pinNumber}`] = labels.flatMap(
+        (label) => SHORT_ALIASES[label] ?? [],
+      )
+    }
+
+    super.initPorts({
+      pinCount: 3,
+      additionalAliases,
+    })
+  }
+
+  get drain(): Port {
+    return this.portMap.drain
+  }
+
+  get source(): Port {
+    return this.portMap.source
+  }
+
+  get gate(): Port {
+    return this.portMap.gate
+  }
+
+  doInitialCreateNetsFromProps() {
+    this._createNetsFromProps([...this._getNetsFromConnectionsProp()])
+  }
+
+  doInitialCreateTracesFromProps() {
+    this._createTracesFromConnectionsProp()
   }
 
   doInitialSourceRender() {
