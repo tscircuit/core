@@ -27,5 +27,15 @@ jobs:
       - name: Run smoke test script
         run: bun run smoke-test:dist
 
+      - name: Smoke test standalone packed install
+        run: |
+          TARBALL="$(npm pack)"
+          SMOKE_DIR="$(mktemp -d)"
+          trap 'rm -rf "$SMOKE_DIR" "$GITHUB_WORKSPACE/$TARBALL"' EXIT
+          cd "$SMOKE_DIR"
+          echo '{"type":"module"}' > package.json
+          npm install --no-audit --no-fund "$GITHUB_WORKSPACE/$TARBALL"
+          node -e 'import("@tscircuit/core")'
+
       - name: Build browser benchmarks
         run: bun run build:benchmarking
