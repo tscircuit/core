@@ -41,11 +41,10 @@ test("repro: unbused fanout endpoints ignore allowed layers", async () => {
   const points = circuit.db.pcb_breakout_point.list()
   expect(points).toHaveLength(20)
   expect(new Set(points.map((point) => point.layer))).toEqual(
-    new Set(["top", "bottom"]),
+    new Set(["inner1", "bottom"]),
   )
   const forbiddenPoints = points.filter((point) => point.layer === "top")
-  // Record the current bug; the stacked fix changes this to zero.
-  expect(forbiddenPoints).toHaveLength(16)
+  expect(forbiddenPoints).toHaveLength(0)
   for (const name of ["SIGNAL_1", "SIGNAL_2"]) {
     const sourceTrace = circuit.db.source_trace.getWhere({ name })!
     const pinnedPoints = points.filter(
