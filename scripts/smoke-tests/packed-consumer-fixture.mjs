@@ -31,4 +31,9 @@ assert.ok(
 )
 assert.ok(records.some((record) => record.type === "pcb_component"))
 assert.ok(records.some((record) => record.type === "schematic_component"))
+assert.deepEqual(
+  records.filter((record) => record.type.endsWith("_error")),
+  [],
+  "The packed consumer circuit must render without error records",
+)
 console.log("Packed Core imports and renders in a clean npm consumer")
