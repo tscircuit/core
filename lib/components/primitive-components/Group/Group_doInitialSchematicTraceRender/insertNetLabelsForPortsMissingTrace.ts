@@ -147,16 +147,20 @@ export const insertNetLabelsForPortsMissingTrace = ({
     // visually open. Preserve labels only when the user explicitly named one.
     if (isCollapsedBoxPort && !hasExternalTrace && !hasExplicitLabel) continue
 
-    const connectedPortCountForKey = Array.from(schematicPortIdsInScope).filter(
-      (portId) => {
+    const connectedSchematicPortsForKey = Array.from(schematicPortIdsInScope)
+      .filter((portId) => {
         const sourcePortId = schPortIdToSourcePortId.get(portId)
         if (!sourcePortId) return false
         return (
           db.source_port.get(sourcePortId)?.subcircuit_connectivity_map_key ===
           connKey
         )
-      },
-    ).length
+      })
+      .flatMap((portId) => {
+        const port = db.schematic_port.get(portId)
+        return port ? [port] : []
+      })
+    const connectedPortCountForKey = connectedSchematicPortsForKey.length
     const isGndNet = sourceNet?.is_ground ?? false
     const isPowerNet = !isGndNet && (sourceNet?.is_power ?? false)
     let side: "top" | "bottom" | "left" | "right"
@@ -176,9 +180,9 @@ export const insertNetLabelsForPortsMissingTrace = ({
       text,
     })
 
-    const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
+    const matchingNetLabelsOnSheet = db.schematic_net_label
       .list()
-      .find((nl) => {
+      .filter((nl) => {
         if (nl.schematic_sheet_id !== portSchematicSheetId) return false
         return doesSchematicNetLabelRepresentCurrentSourceConnection({
           nl,
@@ -187,6 +191,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
           text,
         })
       })
+    const existingNetLabelForCurrentSourceConnection =
+      matchingNetLabelsOnSheet[0]
 
     if (
       existingNetLabelForCurrentSourceConnection &&
@@ -205,42 +211,71 @@ export const insertNetLabelsForPortsMissingTrace = ({
       continue
     }
 
-    if (existingNetLabelForCurrentSourceConnection) {
-      const dx =
-        existingNetLabelForCurrentSourceConnection.anchor_position!.x -
-        schPort.center.x
-      const dy =
-        existingNetLabelForCurrentSourceConnection.anchor_position!.y -
-        schPort.center.y
-      const labelIsNearPort =
-        dx * dx + dy * dy <
-        NEAR_EXISTING_NET_LABEL_DISTANCE * NEAR_EXISTING_NET_LABEL_DISTANCE
+    if (matchingNetLabelsOnSheet.length > 0) {
+      const existingNetLabelAtPort = matchingNetLabelsOnSheet.find((nl) => {
+        if (!nl.anchor_position) return false
+        const dx = nl.anchor_position.x - schPort.center.x
+        const dy = nl.anchor_position.y - schPort.center.y
+        return (
+          dx * dx + dy * dy <
+          SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
+        )
+      })
 
-      if (labelIsNearPort) {
-        if (isGndNet) {
-          const anchor_side =
-            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
+      const otherConnectedSchematicPorts = connectedSchematicPortsForKey.filter(
+        (connectedPort) =>
+          connectedPort.schematic_port_id !== schematicPortId &&
+          Boolean(connectedPort.center),
+      )
+      const nearbyUnclaimedNetLabel = existingNetLabelAtPort
+        ? undefined
+        : matchingNetLabelsOnSheet
+            .filter((nl) => {
+              if (!nl.anchor_position) return false
+              const dx = nl.anchor_position.x - schPort.center.x
+              const dy = nl.anchor_position.y - schPort.center.y
+              const distSqToCurrentPort = dx * dx + dy * dy
+              if (
+                distSqToCurrentPort >=
+                NEAR_EXISTING_NET_LABEL_DISTANCE *
+                  NEAR_EXISTING_NET_LABEL_DISTANCE
+              ) {
+                return false
+              }
+              const isAnchoredOrCloserToOtherPort =
+                otherConnectedSchematicPorts.some((otherPort) => {
+                  const otherDx = nl.anchor_position!.x - otherPort.center.x
+                  const otherDy = nl.anchor_position!.y - otherPort.center.y
+                  const distSqToOtherPort =
+                    otherDx * otherDx + otherDy * otherDy
+                  return (
+                    distSqToOtherPort <
+                      SAME_ANCHOR_POSITION_DISTANCE *
+                        SAME_ANCHOR_POSITION_DISTANCE ||
+                    distSqToOtherPort < distSqToCurrentPort
+                  )
+                })
+              return !isAnchoredOrCloserToOtherPort
+            })
+            .sort((left, right) => {
+              const leftDx = left.anchor_position!.x - schPort.center.x
+              const leftDy = left.anchor_position!.y - schPort.center.y
+              const rightDx = right.anchor_position!.x - schPort.center.x
+              const rightDy = right.anchor_position!.y - schPort.center.y
+              return (
+                leftDx * leftDx +
+                leftDy * leftDy -
+                (rightDx * rightDx + rightDy * rightDy)
+              )
+            })[0]
+
+      const reusablePortNetLabel =
+        existingNetLabelAtPort ?? nearbyUnclaimedNetLabel
+      if (reusablePortNetLabel) {
+        if (isGndNet || (!isPowerNet && reusablePortNetLabel.text === text)) {
+          const anchor_side = reusablePortNetLabel.anchor_side ?? side
           db.schematic_net_label.update(
-            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
-            {
-              text,
-              anchor_position: schPort.center,
-              center: computeSchematicNetLabelCenter({
-                anchor_position: schPort.center,
-                anchor_side,
-                text,
-              }),
-              anchor_side,
-            },
-          )
-        } else if (
-          !isPowerNet &&
-          existingNetLabelForCurrentSourceConnection.text === text
-        ) {
-          const anchor_side =
-            existingNetLabelForCurrentSourceConnection.anchor_side ?? side
-          db.schematic_net_label.update(
-            existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
+            reusablePortNetLabel.schematic_net_label_id,
             {
               text,
               anchor_position: schPort.center,
@@ -255,25 +290,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
         }
         continue
       }
-
-      const existingAtPort = db.schematic_net_label.list().some((nl) => {
-        if (nl.schematic_sheet_id !== portSchematicSheetId) return false
-        const dx = nl.anchor_position!.x - schPort.center.x
-        const dy = nl.anchor_position!.y - schPort.center.y
-        if (
-          dx * dx + dy * dy >=
-          SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
-        ) {
-          return false
-        }
-        return doesSchematicNetLabelRepresentCurrentSourceConnection({
-          nl,
-          connKey,
-          sourceNet,
-          text,
-        })
-      })
-      if (existingAtPort) continue
     }
 
     if (!sourceNet && !shouldPreserveDirectConnectionEndpointLabels) {
