@@ -953,7 +953,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...connectionsFromBreakoutPoints,
   ]
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
-  const preferredTraceWidth = nominalTraceWidth ?? board?.nominal_trace_width
+  const preferredTraceWidth =
+    nominalTraceWidth ?? board?.default_nominal_trace_width
   const hasMultipleBoards = !subcircuit_id && db.pcb_board.list().length > 1
   const boardsBySubcircuit = new Map<
     NonNullable<PcbBoard["subcircuit_id"]>,
@@ -978,7 +979,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
         const owner = boardsBySubcircuit.get(ownerId)
         connectionDefaultWidth =
-          owner?.nominal_trace_width ??
+          owner?.default_nominal_trace_width ??
           minTraceWidth ??
           owner?.min_trace_width ??
           defaultTraceWidth

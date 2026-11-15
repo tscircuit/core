@@ -35,7 +35,7 @@ test("validated board widths survive save, load and subcircuit inflation", async
   const restoredBoards = restored.db.pcb_board.list()
   expect(restoredBoards).toHaveLength(1)
   expect(restoredBoards[0]).toMatchObject({
-    nominal_trace_width: 0.35,
+    default_nominal_trace_width: 0.35,
     min_trace_width: 0.1,
   })
   const { simpleRouteJson: srj } = getSimpleRouteJsonFromCircuitJson({
