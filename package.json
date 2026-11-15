@@ -54,7 +54,7 @@
     "@tscircuit/image-utils": "^0.0.8",
     "@tscircuit/implicit-copper-pour-solver": "github:tscircuit/implicit-copper-pour-solver#a5cbbda0cd65fd4707c5c1af25779837c25aba92",
     "@tscircuit/infer-cable-insertion-point": "^0.0.5",
-    "@tscircuit/infgrid-ijump-astar": "^0.0.35",
+    "@tscircuit/infgrid-ijump-astar": "0.0.35",
     "@tscircuit/jlcpcb-manufacturing-specs": "git+https://github.com/tscircuit/jlcpcb-manufacturing-specs#d2fcf9a557a196cf9f2824463d06cd86534b1c21",
     "@tscircuit/krt-wasm": "^0.1.1",
     "@tscircuit/log-soup": "^1.0.2",
@@ -67,7 +67,6 @@
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.246.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
-    "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#64f2ac7781b795bdc0d74ba411988e60767fa653",
     "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
     "@types/bun": "^1.2.16",
@@ -129,7 +128,6 @@
     "@tscircuit/footprinter": "*",
     "@tscircuit/image-utils": "*",
     "@tscircuit/infer-cable-insertion-point": "*",
-    "@tscircuit/infgrid-ijump-astar": "*",
     "@tscircuit/math-utils": "*",
     "@tscircuit/miniflex": "*",
     "@tscircuit/modelprinter": "*",
@@ -149,8 +147,7 @@
     "spicets": "*",
     "typescript": "^5.0.0",
     "@tscircuit/cableprinter": "*",
-    "@tscircuit/manifold-2d": "*",
-    "@tscircuit/soup-util": "*"
+    "@tscircuit/manifold-2d": "*"
   },
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
@@ -187,5 +184,8 @@
   },
   "browser": {
     "@resvg/resvg-js": false
+  },
+  "patchedDependencies": {
+    "@tscircuit/infgrid-ijump-astar@0.0.35": "patches/@tscircuit%2Finfgrid-ijump-astar@0.0.35.patch"
   }
 }

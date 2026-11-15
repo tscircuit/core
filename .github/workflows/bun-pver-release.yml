@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - 'lib/**'
+      - 'patches/**'
       - 'package.json'
       - 'bun.lock'
       - 'README.md'
