@@ -7,7 +7,8 @@ const bossOutline = Array.from({ length: 40 }, (_, index): [number, number] => {
 
 export default function PcbBossAssembly({
   bossX = 77.2,
-}: { bossX?: number } = {}) {
+  includeExplosion = true,
+}: { bossX?: number; includeExplosion?: boolean } = {}) {
   return (
     <assembly.device name="STRIP">
       <board width={150} height={14} thickness={1.6} routingDisabled />
@@ -22,9 +23,11 @@ export default function PcbBossAssembly({
           </jscad.translate>
         }
       />
-      <assembly.explosion.stage name="lower-tray">
-        <assembly.explosion.move targetRef="BOSS" offZ={-11} />
-      </assembly.explosion.stage>
+      {includeExplosion && (
+        <assembly.explosion.stage name="lower-tray">
+          <assembly.explosion.move targetRef="BOSS" offZ={-11} />
+        </assembly.explosion.stage>
+      )}
     </assembly.device>
   )
 }

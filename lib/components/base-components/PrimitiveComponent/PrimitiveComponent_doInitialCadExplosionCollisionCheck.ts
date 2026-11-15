@@ -1,10 +1,14 @@
 import {
+  cad_assembly_collision_check_warning,
   cad_explosion_collision_check_warning,
   type AnyCircuitElement,
+  type CadAssemblyCollisionError,
+  type CadAssemblyCollisionCheckWarning,
   type CadExplosionCollisionError,
   type CadExplosionCollisionCheckWarning,
 } from "circuit-json"
 import type { AssemblyExplosionCollisionCheckStatus } from "lib/assembly-explosion/collision/types"
+import { getAssemblyBoardCollisionGeometry } from "lib/assembly-explosion/collision/get-assembly-board-collision-geometry"
 import type { PrimitiveComponent } from "./PrimitiveComponent"
 
 interface ExplosionCollisionRenderState {
@@ -12,6 +16,8 @@ interface ExplosionCollisionRenderState {
   status: AssemblyExplosionCollisionCheckStatus
   errorIds: CadExplosionCollisionError["cad_explosion_collision_error_id"][]
   warningIds: CadExplosionCollisionCheckWarning["cad_explosion_collision_check_warning_id"][]
+  assemblyErrorIds: CadAssemblyCollisionError["cad_assembly_collision_error_id"][]
+  assemblyWarningIds: CadAssemblyCollisionCheckWarning["cad_assembly_collision_check_warning_id"][]
 }
 const states = new WeakMap<PrimitiveComponent, ExplosionCollisionRenderState>()
 
@@ -47,6 +53,10 @@ export function PrimitiveComponent_removeCadExplosionCollisionCheck(
       component.root.db.cad_explosion_collision_error.delete(id)
     for (const id of state.warningIds)
       component.root.db.cad_explosion_collision_check_warning.delete(id)
+    for (const id of state.assemblyErrorIds)
+      component.root.db.cad_assembly_collision_error.delete(id)
+    for (const id of state.assemblyWarningIds)
+      component.root.db.cad_assembly_collision_check_warning.delete(id)
   }
   states.delete(component)
 }
@@ -70,46 +80,90 @@ export function PrimitiveComponent_doInitialCadExplosionCollisionCheck(
     status: "not_checked",
     errorIds: [],
     warningIds: [],
+    assemblyErrorIds: [],
+    assemblyWarningIds: [],
   }
   states.set(component, state)
-  if (!input.some((record) => record.type === "cad_explosion_move")) return
-  state.status = "pending"
+  const hasMoves = input.some((record) => record.type === "cad_explosion_move")
+  const { boards, cad } = getAssemblyBoardCollisionGeometry(input)
+  const hasBoardAndPrintedPart = boards.length > 0 && cad.length > 0
+  if (!hasMoves && !hasBoardAndPrintedPart) return
+  if (hasMoves) state.status = "pending"
   component._queueAsyncEffect(
     "check-assembly-explosion-collisions",
     async () => {
-      let check
-      try {
-        const { checkCircuitJsonAssemblyExplosionCollisions } = await import(
-          "lib/assembly-explosion/check-circuit-json-assembly-explosion-collisions"
-        )
-        check = await checkCircuitJsonAssemblyExplosionCollisions(input, {
-          projectBaseUrl: root.platform?.projectBaseUrl,
-        })
-      } catch {
-        check = {
-          status: "incomplete" as const,
-          errors: [],
-          warnings: [
-            cad_explosion_collision_check_warning.parse({
-              type: "cad_explosion_collision_check_warning",
-              cad_explosion_stage_ids: input
-                .filter((r) => r.type === "cad_explosion_stage")
-                .map((stage) => stage.cad_explosion_stage_id),
-              cad_component_ids: [],
-              pcb_board_ids: [],
-              reason: "collision_check_failed",
-              message: "Explosion collision checking could not complete",
-              is_fatal: false,
-            }),
-          ],
+      const options = { projectBaseUrl: root.platform?.projectBaseUrl }
+      let assemblyCheck
+      if (hasBoardAndPrintedPart) {
+        try {
+          const { checkCircuitJsonAssemblyCollisions } = await import(
+            "lib/assembly-explosion/check-circuit-json-assembly-collisions"
+          )
+          assemblyCheck = await checkCircuitJsonAssemblyCollisions(
+            input,
+            options,
+          )
+        } catch {
+          assemblyCheck = {
+            errors: [],
+            warnings: [
+              cad_assembly_collision_check_warning.parse({
+                type: "cad_assembly_collision_check_warning",
+                cad_component_ids: [],
+                pcb_board_ids: [],
+                reason: "collision_check_failed",
+                message: "Assembled collision checking could not complete",
+              }),
+            ],
+          }
         }
       }
+      let check
+      if (hasMoves)
+        try {
+          const { checkCircuitJsonAssemblyExplosionCollisions } = await import(
+            "lib/assembly-explosion/check-circuit-json-assembly-explosion-collisions"
+          )
+          check = await checkCircuitJsonAssemblyExplosionCollisions(
+            input,
+            options,
+          )
+        } catch {
+          check = {
+            status: "incomplete" as const,
+            errors: [],
+            warnings: [
+              cad_explosion_collision_check_warning.parse({
+                type: "cad_explosion_collision_check_warning",
+                cad_explosion_stage_ids: input
+                  .filter((r) => r.type === "cad_explosion_stage")
+                  .map((stage) => stage.cad_explosion_stage_id),
+                cad_component_ids: [],
+                pcb_board_ids: [],
+                reason: "collision_check_failed",
+                message: "Explosion collision checking could not complete",
+                is_fatal: false,
+              }),
+            ],
+          }
+        }
       if (states.get(component) !== state || component.shouldBeRemoved) return
       if (JSON.stringify(collisionInput(root.db.toArray())) !== key) {
         states.delete(component)
         component._markDirty("CadExplosionCollisionCheck")
         return
       }
+      for (const error of assemblyCheck?.errors ?? [])
+        state.assemblyErrorIds.push(
+          root.db.cad_assembly_collision_error.insert(error)
+            .cad_assembly_collision_error_id,
+        )
+      for (const warning of assemblyCheck?.warnings ?? [])
+        state.assemblyWarningIds.push(
+          root.db.cad_assembly_collision_check_warning.insert(warning)
+            .cad_assembly_collision_check_warning_id,
+        )
+      if (!check) return
       for (const error of check.errors)
         state.errorIds.push(
           root.db.cad_explosion_collision_error.insert(error)

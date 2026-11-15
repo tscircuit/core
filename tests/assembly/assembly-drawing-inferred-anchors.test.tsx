@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
-import { assembly } from "lib"
+import { assembly, jscad } from "lib"
 import { HolePlate } from "tests/fixtures/assembly-drawing/hole-plate"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+const plateClearanceOffsetMm = 2
 
 test("dimension anchors infer nearest containing edges while respecting explicit anchors and axes", async () => {
   const { circuit } = getTestFixture()
@@ -11,7 +13,14 @@ test("dimension anchors infer nearest containing edges while respecting explicit
         <hole name="H1" diameter={3} pcbX={17} pcbY={8} />
         <hole name="H2" diameter={5} pcbX={-13} pcbY={-6} />
       </board>
-      <assembly.printedpart name="plate" jscad={<HolePlate />} />
+      <assembly.printedpart
+        name="plate"
+        jscad={
+          <jscad.translate offset={[0, 0, plateClearanceOffsetMm]}>
+            <HolePlate />
+          </jscad.translate>
+        }
+      />
       <assembly.drawing.page size="iso_a3">
         <assembly.drawing.titleblock title="INFERRED ANCHORS / EXPLICIT OVERRIDES" />
         <assembly.drawing.partview

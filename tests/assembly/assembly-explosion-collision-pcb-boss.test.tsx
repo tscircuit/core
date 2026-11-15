@@ -15,6 +15,9 @@ test("lowering a tray boss away from an initially obstructed PCB sweeps no new P
   expect(circuit.db.cad_explosion_collision_check_warning.list()).toEqual([])
   const errors = circuit.db.cad_explosion_collision_error.list()
   expect(errors).toEqual([])
+  const initialCollisions = circuit.db.cad_assembly_collision_error.list()
+  expect(initialCollisions).toHaveLength(1)
+  expect(initialCollisions[0].intersection_volume_mm3).toBeCloseTo(1.416, 3)
 
   const circuitJson = circuit.getCircuitJson()
   const manifold = await loadCollisionManifold()
