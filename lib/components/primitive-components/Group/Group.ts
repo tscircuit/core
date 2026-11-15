@@ -62,6 +62,7 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { partitionSimpleRouteJsonConnectionsByTraceWidth } from "lib/utils/autorouting/partitionSimpleRouteJsonConnectionsByTraceWidth"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
@@ -1908,40 +1909,111 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+            if (!autorouter) {
+              throw new Error("Failed to create local autorouter")
+            }
+            traces = await runAutorouter(autorouter)
           } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
-              busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBounds: routingPhasePlan.fanoutBounds,
-              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
+            const widthConnectionPasses =
+              localAutorouterStrategy.name === "tscircuit"
+                ? partitionSimpleRouteJsonConnectionsByTraceWidth(
+                    simpleRouteJson,
+                  )
+                : [simpleRouteJson.connections]
+
+            const createStrategyAutorouter = (passSrj: SimpleRouteJson) =>
+              localAutorouterStrategy.create({
+                simpleRouteJson: passSrj,
+                onSolverEnded: (event) =>
+                  this.root?.emit("solver:ended", {
+                    ...event,
+                    type: "solver:ended",
+                    componentName: this.getString(),
+                  }),
+                commonAutorouterOptions,
+                busFanoutDirections: routingPhasePlan.busFanoutDirections,
+                fanoutBounds: routingPhasePlan.fanoutBounds,
+                fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+                allowBlindAndBuriedVias: passSrj.allowBlindAndBuriedVias,
+                componentNamesById: getPcbComponentNamesById(db),
+                onSolverStarted: ({
                   solverName,
                   solverParams,
                   solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
-            })
-          }
+                }) =>
+                  this.root?.emit("solver:started", {
+                    type: "solver:started",
+                    solverName,
+                    solverParams,
+                    solverConstructorArgs,
+                    componentName: this.getString(),
+                  }),
+              })
 
-          if (!autorouter) {
-            throw new Error("Failed to create local autorouter")
+            if (widthConnectionPasses.length <= 1) {
+              autorouter = createStrategyAutorouter(simpleRouteJson)
+              if (!autorouter) {
+                throw new Error("Failed to create local autorouter")
+              }
+              traces = await runAutorouter(autorouter)
+            } else {
+              const pinnedSubPassTraceIds = new Set<string>()
+              let accumulatedSubPassTraces: SimplifiedPcbTrace[] = [
+                ...(simpleRouteJson.traces ?? []),
+              ]
+              for (const passConnections of widthConnectionPasses) {
+                const passConnectionNames = new Set(
+                  passConnections.map((conn) => conn.name),
+                )
+                const passSrj: SimpleRouteJson = {
+                  ...simpleRouteJson,
+                  connections: passConnections,
+                  differentialPairs: simpleRouteJson.differentialPairs?.filter(
+                    (pair) =>
+                      pair.connectionNames.every((name) =>
+                        passConnectionNames.has(name),
+                      ),
+                  ),
+                  buses: simpleRouteJson.buses?.filter((bus) =>
+                    bus.connectionNames.every((name) =>
+                      passConnectionNames.has(name),
+                    ),
+                  ),
+                  traces: accumulatedSubPassTraces.map((trace) =>
+                    pinnedSubPassTraceIds.has(trace.pcb_trace_id)
+                      ? { ...trace, isFixed: true }
+                      : trace,
+                  ),
+                }
+                autorouter = createStrategyAutorouter(passSrj)
+                if (!autorouter) {
+                  throw new Error("Failed to create local autorouter")
+                }
+                const passOutputTraces = await runAutorouter(autorouter)
+                for (const trace of passOutputTraces) {
+                  if (
+                    !trace.isFixed &&
+                    !accumulatedSubPassTraces.some(
+                      (existing) =>
+                        existing.pcb_trace_id === trace.pcb_trace_id,
+                    )
+                  ) {
+                    pinnedSubPassTraceIds.add(trace.pcb_trace_id)
+                  }
+                }
+                accumulatedSubPassTraces =
+                  getAccumulatedPcbTracesWithStageOutputReplacements({
+                    accumulatedPcbTraces: accumulatedSubPassTraces,
+                    stageOutputPcbTraces: passOutputTraces,
+                  })
+              }
+              traces = accumulatedSubPassTraces.map((trace) => {
+                if (!pinnedSubPassTraceIds.has(trace.pcb_trace_id)) return trace
+                const { isFixed: _ignored, ...rest } = trace
+                return rest
+              })
+            }
           }
-          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =

@@ -336,9 +336,34 @@ export function getSourceTraceIdForRoutedTrace({
     ),
   )
 
+  const fullyContainedEndpointTraces = connectedToEndpoint.filter(
+    (sourceTrace) =>
+      sourceTrace.connected_source_port_ids.length > 0 &&
+      sourceTrace.connected_source_port_ids.every((sourcePortId) =>
+        sourcePortIds.includes(sourcePortId),
+      ),
+  )
+
+  const prioritizedEndpointTraces =
+    fullyContainedEndpointTraces.length > 0
+      ? [...fullyContainedEndpointTraces].sort((a, b) => {
+          const portDegree = (portId: SourcePortId) =>
+            sourceTracesInEndpointNets.filter((st) =>
+              st.connected_source_port_ids.includes(portId),
+            ).length
+          const minDegreeA = Math.min(
+            ...a.connected_source_port_ids.map(portDegree),
+          )
+          const minDegreeB = Math.min(
+            ...b.connected_source_port_ids.map(portDegree),
+          )
+          return minDegreeA - minDegreeB
+        })
+      : connectedToEndpoint
+
   const candidates =
-    connectedToEndpoint.length > 0
-      ? connectedToEndpoint
+    prioritizedEndpointTraces.length > 0
+      ? prioritizedEndpointTraces
       : sourceTracesInEndpointNets
   if (candidates.length === 0) return undefined
 
