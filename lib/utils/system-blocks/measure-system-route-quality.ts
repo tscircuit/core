@@ -7,6 +7,7 @@ export function measureSystemRouteQuality(routes: readonly Point[][]) {
   let closeParallelLength = 0
   let length = 0
   let bends = 0
+  let reversals = 0
   const segments = routes.map((route) =>
     route.slice(1).map((end, index) => {
       const start = route[index]
@@ -14,7 +15,21 @@ export function measureSystemRouteQuality(routes: readonly Point[][]) {
       return { start, end, horizontal: start.y === end.y }
     }),
   )
-  for (const route of routes) bends += Math.max(0, route.length - 2)
+  for (const route of routes) {
+    bends += Math.max(0, route.length - 2)
+    // Two successive turns of the same sense make the wire double back.
+    let previousTurn = 0
+    for (let index = 1; index < route.length - 1; index++) {
+      const turn = Math.sign(
+        (route[index].x - route[index - 1].x) *
+          (route[index + 1].y - route[index].y) -
+          (route[index].y - route[index - 1].y) *
+            (route[index + 1].x - route[index].x),
+      )
+      if (turn !== 0 && turn === previousTurn) reversals++
+      if (turn !== 0) previousTurn = turn
+    }
+  }
   for (let i = 0; i < segments.length; i++) {
     for (let j = i + 1; j < segments.length; j++) {
       const intersections = new Set<string>()
@@ -60,11 +75,13 @@ export function measureSystemRouteQuality(routes: readonly Point[][]) {
     sharedLength,
     closeParallelLength,
     bends,
+    reversals,
     length,
     score:
       crossings * 200 +
       sharedLength * 100 +
       closeParallelLength * 10 +
+      reversals * 100 +
       bends * 3 +
       length * 0.05,
   }
