@@ -6,15 +6,28 @@ export async function renderBoardWidthSrjRoundTrip() {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
-      width={20}
-      height={12}
+      width={18}
+      height={10}
+      layers={1}
       minTraceWidth={0.1}
       defaultTraceWidth="0.35mm"
       routingDisabled
       schematicDisabled
     >
-      <resistor name="R1" resistance={100} footprint="1206" pcbX={-4} />
-      <resistor name="R2" resistance={100} footprint="1206" pcbX={4} />
+      <resistor
+        name="R1"
+        resistance={100}
+        footprint="1206"
+        pcbX={-5}
+        pcbRotation={270}
+      />
+      <resistor
+        name="R2"
+        resistance={100}
+        footprint="1206"
+        pcbX={5}
+        pcbRotation={270}
+      />
       <trace name="BOARD_DEFAULT" from=".R1 > .pin1" to=".R2 > .pin1" />
       <trace
         name="EXPLICIT_WIDTH"
@@ -23,22 +36,28 @@ export async function renderBoardWidthSrjRoundTrip() {
         thickness="0.55mm"
       />
       <pcbnotetext
-        pcbY={4}
+        pcbY={3.5}
         fontSize={0.55}
         text="Board default 0.35 mm, minimum 0.10 mm"
+      />
+      <pcbnotetext
+        pcbY={-3.5}
+        fontSize={0.55}
+        text="Explicit trace width 0.55 mm"
       />
     </board>,
   )
   await circuit.renderUntilSettled()
 
   const savedCircuitJson = JSON.stringify(circuit.getCircuitJson())
+  const circuitJson = any_circuit_element
+    .array()
+    .parse(JSON.parse(savedCircuitJson))
   const { simpleRouteJson: srj } = getSimpleRouteJsonFromCircuitJson({
-    circuitJson: any_circuit_element
-      .array()
-      .parse(JSON.parse(savedCircuitJson)),
+    circuitJson,
   })
 
-  const getConnectionWidth = (traceName: string) => {
+  const getConnection = (traceName: string) => {
     const sourceTraceId = circuit.db.source_trace.getWhere({
       name: traceName,
     })?.source_trace_id
@@ -50,16 +69,16 @@ export async function renderBoardWidthSrjRoundTrip() {
     if (connection?.nominalTraceWidth === undefined) {
       throw new Error(`Missing SRJ nominal width for ${traceName}`)
     }
-    return connection.nominalTraceWidth
+    return {
+      name: connection.name,
+      nominalTraceWidth: connection.nominalTraceWidth,
+    }
   }
 
   return {
-    circuit,
-    widths: {
-      minTraceWidth: srj.minTraceWidth,
-      nominalTraceWidth: srj.nominalTraceWidth,
-      defaultConnectionWidth: getConnectionWidth("BOARD_DEFAULT"),
-      explicitConnectionWidth: getConnectionWidth("EXPLICIT_WIDTH"),
-    },
+    circuitJson,
+    srj,
+    defaultConnection: getConnection("BOARD_DEFAULT"),
+    explicitConnection: getConnection("EXPLICIT_WIDTH"),
   }
 }

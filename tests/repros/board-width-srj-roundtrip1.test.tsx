@@ -1,11 +1,11 @@
 import { beforeAll, expect, test } from "bun:test"
-import { renderBoardWidthSrjRoundTrip } from "tests/fixtures/render-board-width-srj-roundtrip"
+import { renderBoardWidthSrjRoundTrip } from "tests/fixtures/render-board-width-srj-round-trip"
 
 let defaultConnectionWidth: number
 
 beforeAll(async () => {
-  const { widths } = await renderBoardWidthSrjRoundTrip()
-  defaultConnectionWidth = widths.defaultConnectionWidth
+  const { defaultConnection } = await renderBoardWidthSrjRoundTrip()
+  defaultConnectionWidth = defaultConnection.nominalTraceWidth
 })
 
 test.failing("SRJ round trip uses the board default width", () => {

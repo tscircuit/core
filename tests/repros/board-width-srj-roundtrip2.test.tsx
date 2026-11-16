@@ -1,24 +1,55 @@
 import { expect, test } from "bun:test"
-import { renderBoardWidthSrjRoundTrip } from "tests/fixtures/render-board-width-srj-roundtrip"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { renderBoardWidthSrjRoundTrip } from "tests/fixtures/render-board-width-srj-round-trip"
 
-test("snapshots show the regenerated SRJ trace widths", async () => {
-  const { circuit, widths } = await renderBoardWidthSrjRoundTrip()
-  expect(widths).toMatchInlineSnapshot(`
+test("routed copper shows the trace widths from regenerated SRJ", async () => {
+  const { circuitJson, srj, defaultConnection, explicitConnection } =
+    await renderBoardWidthSrjRoundTrip()
+  const routedTraces = new TscircuitAutorouter(srj).solveSync()
+  expect(routedTraces).toHaveLength(2)
+
+  const getCopperWidths = (connectionName: string) => {
+    const wirePoints = routedTraces
+      .find(({ connection_name }) => connection_name === connectionName)
+      ?.route.filter((point) => point.route_type === "wire")
+    if (!wirePoints || wirePoints.length < 2) {
+      throw new Error("Expected a routed wire connecting both pads")
+    }
+    return [...new Set(wirePoints.map(({ width }) => width))]
+  }
+
+  expect({
+    minTraceWidth: srj.minTraceWidth,
+    nominalTraceWidth: srj.nominalTraceWidth,
+    boardDefault: {
+      srjWidth: defaultConnection.nominalTraceWidth,
+      copperWidths: getCopperWidths(defaultConnection.name),
+    },
+    explicit: {
+      srjWidth: explicitConnection.nominalTraceWidth,
+      copperWidths: getCopperWidths(explicitConnection.name),
+    },
+  }).toMatchInlineSnapshot(`
     {
-      "defaultConnectionWidth": 0.1,
-      "explicitConnectionWidth": 0.55,
+      "boardDefault": {
+        "copperWidths": [
+          0.1,
+        ],
+        "srjWidth": 0.1,
+      },
+      "explicit": {
+        "copperWidths": [
+          0.55,
+        ],
+        "srjWidth": 0.55,
+      },
       "minTraceWidth": 0.1,
       "nominalTraceWidth": undefined,
     }
   `)
 
-  circuit.db.pcb_note_text.insert({
-    text: `SRJ default ${widths.defaultConnectionWidth.toFixed(2)} mm, explicit ${widths.explicitConnectionWidth.toFixed(2)} mm`,
-    anchor_position: { x: 0, y: -4 },
-    anchor_alignment: "center",
-    layer: "top",
-    font: "tscircuit2024",
-    font_size: 0.55,
-  })
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect([...circuitJson, ...routedTraces]).toMatchPcbSnapshot(
+    import.meta.path,
+    { showPcbNotes: true },
+  )
 })
