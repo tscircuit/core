@@ -158,7 +158,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getPortsInternallyConnectedToThisPort(): Port[] {
-    const parent = this.parent as unknown as INormalComponent | undefined
+    const parent = (this.getParentNormalComponent() ??
+      this.parent) as unknown as INormalComponent | undefined
     if (!parent || !parent._getInternallyConnectedPins) return []
     const internallyConnectedPorts = parent._getInternallyConnectedPins()
     const connected = new Set<Port>([this])
@@ -199,9 +200,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return false
     }
 
+    if (this._getSymbolAncestor()) {
+      return true
+    }
+
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       return true
+    }
+
+    if (parentNormalComponent?._hasCustomSymbolPorts()) {
+      return false
     }
 
     const symbol = parentNormalComponent?.getSchematicSymbol()
@@ -231,15 +240,15 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
+    if (this._getSymbolAncestor()) {
+      return applyToPoint(this.computeSchematicGlobalTransform(), {
+        x: 0,
+        y: 0,
+      })
+    }
+
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
-      if (this._getSymbolAncestor()) {
-        return applyToPoint(this.computeSchematicGlobalTransform(), {
-          x: 0,
-          y: 0,
-        })
-      }
-
       return { x: schX, y: schY }
     }
 
@@ -698,8 +707,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const { _parsedProps: props } = this
 
     const { schX, schY } = props
+    const hasSymbolAncestor = Boolean(this._getSymbolAncestor())
     const container =
-      schX !== undefined && schY !== undefined
+      (schX !== undefined && schY !== undefined) || hasSymbolAncestor
         ? this.getParentNormalComponent()
         : this.getPrimitiveContainer()
 
@@ -728,8 +738,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
-    const isExplicitCustomSymbolPort =
-      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
+    const isExplicitCustomSymbolPort = hasSymbolAncestor
 
     if (isExplicitCustomSymbolPort && props.direction) {
       this.facingDirection = props.direction

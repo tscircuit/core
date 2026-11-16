@@ -347,9 +347,7 @@ export class NormalComponent<
           ? getNumericPinLabels(propsPinLabels)
           : undefined
     const existingChildPorts = this._getAllPortsFromChildren()
-    const hasCustomSymbolPorts = existingChildPorts.some(
-      (port) => port._getSymbolAncestor() !== null,
-    )
+    const hasCustomSymbolPorts = this._hasCustomSymbolPorts()
     const hasExistingOrQueuedPortWithPinNumber = (pinNumber: number) =>
       existingChildPorts.some((p) => p._parsedProps.pinNumber === pinNumber) ||
       portsToCreate.some((p) => p._parsedProps.pinNumber === pinNumber)
@@ -514,7 +512,12 @@ export class NormalComponent<
 
         if (existingPort) {
           symbolPortMatches.set(symPort, existingPort)
-          existingPort.schematicSymbolPortDef = symPort
+          if (
+            !hasCustomSymbolPorts ||
+            existingPort._getSymbolAncestor() !== null
+          ) {
+            existingPort.schematicSymbolPortDef = symPort
+          }
         } else {
           // Keep the built-in layout for matching ports, but do not add
           // terminals absent from a custom symbol that declares its own ports.
@@ -891,6 +894,12 @@ export class NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     return undefined
+  }
+
+  _hasCustomSymbolPorts(): boolean {
+    return this._getAllPortsFromChildren().some(
+      (port) => port._getSymbolAncestor() !== null,
+    )
   }
 
   _getInternallyConnectedPins(): Port[][] {
