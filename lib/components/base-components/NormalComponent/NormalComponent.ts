@@ -1970,6 +1970,22 @@ export class NormalComponent<
     }
   }
 
+  _hasCustomSymbol(): boolean {
+    return (
+      isValidElement(this._parsedProps?.symbol) ||
+      this.children.some((c) => c.componentName === "Symbol")
+    )
+  }
+
+  _hasCustomSymbolPorts(): boolean {
+    return (
+      this._hasCustomSymbol() &&
+      this._getAllPortsFromChildren().some(
+        (port) => port._getSymbolAncestor() !== null,
+      )
+    )
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     if (this.schematicBoxDimensions) return this.schematicBoxDimensions
     return this._computeSchematicBoxDimensions()
@@ -1977,7 +1993,7 @@ export class NormalComponent<
 
   _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
     // Only valid if we don't have a schematic symbol
-    if (this.getSchematicSymbol()) return null
+    if (this.getSchematicSymbol() || this._hasCustomSymbol()) return null
     if (
       !this.config.shouldRenderAsSchematicBox &&
       !this._parsedProps?.showAsSchematicBox

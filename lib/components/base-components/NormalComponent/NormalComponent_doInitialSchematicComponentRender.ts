@@ -1,5 +1,4 @@
 import { schematic_manual_edit_conflict_warning } from "circuit-json"
-import { isValidElement as isReactElement } from "react"
 import type { NormalComponent } from "./NormalComponent"
 
 export function NormalComponent_doInitialSchematicComponentRender(
@@ -46,12 +45,8 @@ export function NormalComponent_doInitialSchematicComponentRender(
   const { schematicSymbolName } = component.config
   const { _parsedProps: props } = component
 
-  const hasSymbolChild = component.children.some(
-    (c) => c.componentName === "Symbol",
-  )
-
   // Check if there's a custom symbol JSX prop or an inflated symbol child
-  if ((props.symbol && isReactElement(props.symbol)) || hasSymbolChild) {
+  if (component._hasCustomSymbol()) {
     component._doInitialSchematicComponentRenderWithReactSymbol(props.symbol)
   } else if (schematicSymbolName) {
     component._doInitialSchematicComponentRenderWithSymbol()
