@@ -1,8 +1,12 @@
 import { expect, test } from "bun:test"
+import {
+  checkPadTraceClearance,
+  checkSourceTracesMatchPcbTraceThickness,
+} from "@tscircuit/checks"
 import { ExplicitTraceWidthBoard } from "tests/fixtures/explicit-trace-width/board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro: Pipeline9 relaxes an explicit 0.15 mm trace to 0.10 mm", async () => {
+test("Pipeline9 preserves an explicit 0.15 mm trace width", async () => {
   // A fresh routing run proves a full-width route fits this exact placement.
   const { circuit: control } = getTestFixture()
   control.add(<ExplicitTraceWidthBoard minimumWidth={0.15} />)
@@ -35,8 +39,13 @@ test("repro: Pipeline9 relaxes an explicit 0.15 mm trace to 0.10 mm", async () =
     )
   expect(sourceTrace.min_trace_thickness).toBe(0.15)
   expect(widths.length).toBeGreaterThan(0)
-  // Capture the existing defect in the repro layer; the fix layer changes this.
-  expect([...new Set(widths)]).toEqual([0.1])
+  expect([...new Set(widths)]).toEqual([0.15])
+  expect(
+    checkSourceTracesMatchPcbTraceThickness(circuit.getCircuitJson()),
+  ).toEqual([])
+  expect(
+    checkPadTraceClearance(circuit.getCircuitJson(), { minClearance: 0.15 }),
+  ).toEqual([])
 
   for (const [line, text] of [
     "U1.VSSA to C8.pin2: explicit width 0.15 mm",
