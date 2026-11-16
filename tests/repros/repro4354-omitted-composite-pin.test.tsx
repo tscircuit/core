@@ -111,7 +111,7 @@ beforeAll(async () => {
     .join(", ")
   const missingPin = circuit.db.source_trace_not_connected_error
     .list()
-    .some((error) => error.selectors_not_found.includes("U1.pin2"))
+    .some((error) => error.selectors_not_found?.includes("U1.pin2"))
 
   // Note anchor points in mm, in the right-handed board frame viewed from
   // above (+Z), with +X right and +Y up.
