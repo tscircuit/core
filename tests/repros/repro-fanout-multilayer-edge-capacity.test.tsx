@@ -52,15 +52,14 @@ test("repro: multilayer breakout edge capacity omits stagger space", async () =>
   )
   await circuit.renderUntilSettled()
   const errors = circuit.db.pcb_autorouting_error.list()
-  // Snapshot the current rejection even though the other edges have room.
-  expect(errors).toHaveLength(1)
-  expect(errors[0]!.message).toContain("need 4.50mm but expose only 4.10mm")
+  expect(errors).toEqual([])
   const points = circuit.db.pcb_breakout_point.list()
-  expect(points).toHaveLength(0)
+  expect(points).toHaveLength(16)
   const group = circuit.db.pcb_group.getWhere({ name: "B1" })!
   const minY = group.center.y - group.height! / 2
   const bottomPoints = points.filter((point) => Math.abs(point.y - minY) < 0.01)
-  expect(bottomPoints).toHaveLength(0)
+  expect(bottomPoints.length).toBeGreaterThan(0)
+  expect(bottomPoints.length).toBeLessThan(points.length)
   // Mark emitted board-world positions in mm (+X right, +Y up).
   for (const point of points) {
     circuit.db.pcb_note_rect.insert({

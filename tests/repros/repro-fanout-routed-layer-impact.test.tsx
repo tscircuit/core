@@ -89,22 +89,12 @@ test("repro: multilayer fanout completes a routed controller link", async () => 
     .list()
     .filter((trace) => routedSignalIds.has(trace.source_trace_id))
 
-  // Record the current planning failure while retaining the actual fallback routes.
-  expect(routingErrors).toHaveLength(1)
-  expect(routingErrors[0]!.message).toContain(
-    "declared breakout edges need 3.60mm but expose only 3.40mm",
-  )
-  expect(exits).toHaveLength(0)
+  expect(routingErrors).toEqual([])
+  expect(exits).toHaveLength(16)
   expect(connectedSignals).toHaveLength(16)
-  expect(traces).toHaveLength(16)
-  expect(vias).toHaveLength(24)
-  expect(
-    json.filter(
-      (element) =>
-        element.type.endsWith("_error") &&
-        element.type !== "pcb_autorouting_error",
-    ),
-  ).toEqual([])
+  expect(traces).toHaveLength(32)
+  expect(vias).toHaveLength(36)
+  expect(json.filter((element) => element.type.endsWith("_error"))).toEqual([])
   expect(checkEachPcbTraceNonOverlapping(json)).toEqual([])
   expect(checkHoleTraceClearance(json)).toEqual([])
   expect(checkPadTraceClearance(json)).toEqual([])
