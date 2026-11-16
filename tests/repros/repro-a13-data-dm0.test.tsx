@@ -24,8 +24,10 @@ test("native A13 data and DM0 reproduce the RAM escape collision", async (): Pro
   const source = JSON.parse(
     gunzipSync(
       readFileSync(
-        import.meta.resolve(
-          "@tscircuit/core-ddr-benchmark/circuits/a13.json.gz",
+        new URL(
+          import.meta.resolve(
+            "@tscircuit/core-ddr-benchmark/circuits/a13.json.gz",
+          ),
         ),
       ),
     ).toString(),
