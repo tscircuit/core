@@ -30,11 +30,8 @@ test("repro: bus routing rejects a supplied plated-hole passage", () => {
   } catch (error) {
     routingError = error instanceof Error ? error : new Error(String(error))
   }
-  // Record the released core's input rejection, not a successful routing run.
-  expect(routingError?.message).toContain(
-    "Fixed trace changes layer without a via",
-  )
-  expect(routes).toHaveLength(0)
+  expect(routingError).toBeUndefined()
+  expect(routes).toHaveLength(8)
   expect(input).toEqual(original)
   for (const route of routes) {
     const sourceTrace = signalSourceTraces.find(
