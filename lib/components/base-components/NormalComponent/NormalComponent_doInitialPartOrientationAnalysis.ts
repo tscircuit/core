@@ -17,14 +17,14 @@ import { fetchPartCircuitJsonWithoutDatasheet } from "lib/utils/fetch-part-circu
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import type { NormalComponent } from "./NormalComponent"
 
-type SupplierPartCandidate = {
+export type SupplierPartCandidate = {
   supplierName: SupplierName
   supplierPartNumber: string
 }
 
-type Pin1Polarity = "anode" | "cathode"
+export type Pin1Polarity = "anode" | "cathode"
 
-type SupplierPartOrientationAnalysis = {
+export type SupplierPartOrientationAnalysis = {
   pin1Location: PcbPin1Location | null
   pin1Polarity: Pin1Polarity | null
 }
@@ -100,7 +100,7 @@ const getPin1Polarity = (
   return hasAnodeHint ? "anode" : "cathode"
 }
 
-const getSupplierPartCandidates = (
+export const getSupplierPartCandidates = (
   supplierPartNumbers?: SupplierPartNumbers,
 ): SupplierPartCandidate[] => {
   if (!supplierPartNumbers) return []
@@ -230,7 +230,25 @@ const readCachedSupplierPartOrientationAnalysis = async ({
   }
 }
 
-const analyzeSupplierPartOrientation = async ({
+const resolvedComponentPartOrientationAnalyses = new WeakMap<
+  NormalComponent<any, any>,
+  Map<SupplierPartOrientationCacheKey, SupplierPartOrientationAnalysis>
+>()
+
+const setComponentPartOrientationAnalysis = (
+  component: NormalComponent<any, any>,
+  cacheKey: SupplierPartOrientationCacheKey,
+  analysis: SupplierPartOrientationAnalysis,
+) => {
+  let map = resolvedComponentPartOrientationAnalyses.get(component)
+  if (!map) {
+    map = new Map()
+    resolvedComponentPartOrientationAnalyses.set(component, map)
+  }
+  map.set(cacheKey, analysis)
+}
+
+export const analyzeSupplierPartOrientation = async ({
   component,
   partsEngine,
   supplierPartCandidate,
@@ -240,15 +258,27 @@ const analyzeSupplierPartOrientation = async ({
   supplierPartCandidate: SupplierPartCandidate
 }): Promise<SupplierPartOrientationAnalysis> => {
   const cacheKey = getSupplierPartOrientationCacheKey(supplierPartCandidate)
+  const componentCached = resolvedComponentPartOrientationAnalyses
+    .get(component)
+    ?.get(cacheKey)
+  if (componentCached) return componentCached
+
   const cached = await readCachedSupplierPartOrientationAnalysis({
     cacheKey,
     component,
   })
-  if (cached.cacheHit) return cached.analysis
+  if (cached.cacheHit) {
+    setComponentPartOrientationAnalysis(component, cacheKey, cached.analysis)
+    return cached.analysis
+  }
 
   const pendingAnalyses = getPendingSupplierPartOrientationAnalyses(partsEngine)
   const existingAnalysis = pendingAnalyses.get(cacheKey)
-  if (existingAnalysis) return existingAnalysis
+  if (existingAnalysis) {
+    const resolved = await existingAnalysis
+    setComponentPartOrientationAnalysis(component, cacheKey, resolved)
+    return resolved
+  }
 
   const analysis = (async () => {
     const supplierCircuitJson = await Promise.resolve(
@@ -278,7 +308,9 @@ const analyzeSupplierPartOrientation = async ({
   })
 
   pendingAnalyses.set(cacheKey, analysis)
-  return analysis
+  const resolved = await analysis
+  setComponentPartOrientationAnalysis(component, cacheKey, resolved)
+  return resolved
 }
 
 export const NormalComponent_doInitialPartOrientationAnalysis = (
