@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import "bun-match-svg"
+import "tests/fixtures/extend-expect-any-svg"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
@@ -57,5 +57,7 @@ test("native H3 byte 0 routing input omits later phase intent", async () => {
       phaseSimpleRouteJson,
       pendingConnections: [],
     }),
-  ).toMatchSvgSnapshot(import.meta.path, "pcb")
+  ).toMatchSvgSnapshot(import.meta.path, "h3-routing-phase-future-intent-pcb", {
+    diffThresholdPercent: 0,
+  })
 }, 60_000)
