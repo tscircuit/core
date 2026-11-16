@@ -176,7 +176,13 @@ test("phase requests retain only later routing intent with its own physical rule
   const testPoints: RoutingPhasePlan = {
     routingPhaseIndex: 7,
     routingPcbGroupId: "test_points",
-    testPointOptions: { layer: "bottom", diameter: 1 },
+    testPointOptions: {
+      layer: "bottom",
+      diameter: 1,
+      clearance: 0.2,
+      minProbeSpacing: 2.54,
+      maxDetour: 1,
+    },
     traces: [],
     nets: [],
   }

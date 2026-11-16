@@ -83,7 +83,11 @@ test("native H3 byte 0 routing input preserves every later phase request", async
   }
   expect(
     phaseSimpleRouteJson.pendingRoutingAccess![0]!.buses?.[0]?.allowedLayers,
-  ).toEqual(source.signalLayers)
+  ).toEqual(
+    source.signalLayers?.map((layer) =>
+      typeof layer === "string" ? layer : layer.name,
+    ),
+  )
 
   await expect(
     getH3RoutingPhaseIntentSnapshot({
