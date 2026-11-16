@@ -1,0 +1,189 @@
+{
+  "description": "A13 native RAM data-mask access before and after the final eight data routes. Necessary escape access is evaluated with the existing bus solver site and surface-visibility searches; it does not establish full future routing feasibility.",
+  "core": "0.0.2396",
+  "autorouter": "0.0.1109",
+  "bus_lanes": "0.0.58",
+  "benchmarkRun": 43921005346,
+  "provenanceAudit": 43931190056,
+  "phaseHashes": {
+    "phase-3-end.srj.json": "b26f0a38795d696230e97efdb8f763f2f69c59bfb66be07f521ad4da79bb61b7",
+    "phase-4-end.srj.json": "b32fc5a364a53f16ad9a6ea7536a054bd5bc8bdaeda600454205a5c94f5ef760",
+    "phase-5-start.srj.json": "83ce8fbf3fef7562628690116b8a2033ac4bba182f10a86502ee12cae03e8cf3"
+  },
+  "results": [
+    {
+      "phase": "phase-1-start",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.6081882350000001
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": "via_site",
+          "seconds": 0.37484202800000005
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": "via_site",
+          "seconds": 0.38714318499999967
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.409959018
+        }
+      ]
+    },
+    {
+      "phase": "phase-1-end",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.4491840100000004
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": "via_site",
+          "seconds": 0.32656828499999985
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": "via_site",
+          "seconds": 0.3229323319999999
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.3529878509999994
+        }
+      ]
+    },
+    {
+      "phase": "phase-2-end",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.41784068000000024
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": "via_site",
+          "seconds": 0.347558634
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": "via_site",
+          "seconds": 0.27791424800000003
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.2686721430000007
+        }
+      ]
+    },
+    {
+      "phase": "phase-3-end",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.3892264679999998
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": "via_site",
+          "seconds": 0.2956145470000001
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": "via_site",
+          "seconds": 0.21120736699999998
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.21493676099999992
+        }
+      ]
+    },
+    {
+      "phase": "phase-4-end",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.3218443360000001
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": null,
+          "seconds": 0.41717951899999933
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": null,
+          "seconds": 0.38106236199999965
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.2360602480000007
+        }
+      ]
+    },
+    {
+      "phase": "phase-5-start",
+      "pads": [
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_14",
+          "escape": "via_site",
+          "seconds": 0.5889294099999998
+        },
+        {
+          "connection": "source_net_76",
+          "port": "pcb_port_83",
+          "escape": null,
+          "seconds": 0.9181859809999987
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_76",
+          "escape": null,
+          "seconds": 0.6157917910000015
+        },
+        {
+          "connection": "source_net_77",
+          "port": "pcb_port_367",
+          "escape": "via_site",
+          "seconds": 0.4172026079999996
+        }
+      ]
+    }
+  ]
+}
