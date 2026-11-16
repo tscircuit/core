@@ -28,6 +28,7 @@ import type {
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
   SingleLayerConnectionPoint,
+  SrjPointId,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
@@ -42,6 +43,7 @@ import { getDifferentialPairsForSimpleRouteJson } from "./getDifferentialPairsFo
 import { getPreservedRoutedSubcircuitTraces } from "./getPreservedRoutedSubcircuitTraces"
 import { getUnbrokenCopperPourObstacles } from "./getUnbrokenCopperPourObstacles"
 import { reduceNetConnectionPointsForDifferentialPairPaths } from "./reduceNetConnectionPointsForDifferentialPairPaths"
+import { splitExplicitWidthNetTraces } from "./splitExplicitWidthNetTraces"
 
 /**
  * Converts PCB trace-hint route points to SRJ connection points. Both inputs
@@ -738,7 +740,9 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     .list()
     .filter((e) => !subcircuit_id || e.subcircuit_id === subcircuit_id)
 
+  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   const connectionsFromNets: SimpleRouteConnection[] = []
+  const explicitWidthNetConnections: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
   const handledNetConnectivityKeys = new Set<string>()
 
@@ -831,70 +835,84 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         ),
     )
 
-    let nominalTraceWidthForConnection: number | undefined
+    let nominalTraceWidthForConnection = nominalTraceWidth ?? defaultTraceWidth
     for (const sourceNet of connectedSourceNets) {
       if (sourceNet.trace_width === undefined) continue
       nominalTraceWidthForConnection = Math.max(
-        nominalTraceWidthForConnection ?? 0,
+        nominalTraceWidthForConnection,
         sourceNet.trace_width,
       )
     }
-    for (const sourceTrace of connectedSourceTraces) {
-      if (sourceTrace.min_trace_thickness === undefined) continue
-      nominalTraceWidthForConnection = Math.max(
-        nominalTraceWidthForConnection ?? 0,
-        sourceTrace.min_trace_thickness,
-      )
-    }
 
-    // Explicit paths preserve their identity, but still inherit net width rules.
+    const netConnectionName =
+      net.source_net_id ??
+      sharedConnMap.getNetConnectedToId(net.source_net_id) ??
+      ""
+
+    // Explicit paths preserve their identity and authored thickness. Only
+    // paths without an authored thickness inherit the net width.
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
     for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
-      connection.netConnectionName = net.source_net_id
-      connection.nominalTraceWidth = nominalTraceWidthForConnection
-      connection.width = nominalTraceWidthForConnection
-    }
-
-    const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
-    const addedPointIds = new Set<string>()
-    const connectedPcbPorts: PcbPort[] = []
-    for (const st of connectedSourceTraces) {
-      const pcb_ports = db.pcb_port
-        .list()
-        .filter((p) => st.connected_source_port_ids.includes(p.source_port_id))
-
-      for (const p of pcb_ports) {
-        const routePoint = getPcbPortRoutePoint(p)
-        if (addedPointIds.has(routePoint.pointId)) continue
-        addedPointIds.add(routePoint.pointId)
-        connectedPcbPorts.push(p)
-        pointsToConnect.push(routePoint)
+      connection.netConnectionName = netConnectionName
+      if (connection.nominalTraceWidth === undefined) {
+        connection.nominalTraceWidth = nominalTraceWidthForConnection
+        connection.width = nominalTraceWidthForConnection
       }
     }
-    pointsToConnect.push(
-      // Hints at explicit path terminals already belong to those paths.
-      ...getSrjConnectionPointsFromPcbTraceHints(
-        connectedPcbPorts.filter(
-          (port) => !explicitPathSourcePortIds.has(port.source_port_id),
+
+    const addedRoutePointIds = new Set<SrjPointId>()
+    const connectedTraceRoutes = connectedSourceTraces.map((sourceTrace) => {
+      const pcbPorts = db.pcb_port
+        .list()
+        .filter((pcbPort) =>
+          sourceTrace.connected_source_port_ids.includes(
+            pcbPort.source_port_id,
+          ),
+        )
+      const routePoints: SingleLayerConnectionPoint[] = []
+      const hintPcbPorts: PcbPort[] = []
+      for (const pcbPort of pcbPorts) {
+        const routePoint = getPcbPortRoutePoint(pcbPort)
+        if (addedRoutePointIds.has(routePoint.pointId)) continue
+        addedRoutePointIds.add(routePoint.pointId)
+        routePoints.push(routePoint)
+        hintPcbPorts.push(pcbPort)
+      }
+      return {
+        sourceTrace,
+        routePoints,
+        isEligibleForThicknessSplit:
+          !explicitPathSourceTraceIds.has(sourceTrace.source_trace_id) &&
+          !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(
+            sourceTrace.source_trace_id,
+          ),
+        // Hints at explicit path terminals already belong to those paths.
+        hintPoints: getSrjConnectionPointsFromPcbTraceHints(
+          hintPcbPorts.filter(
+            (pcbPort) => !explicitPathSourcePortIds.has(pcbPort.source_port_id),
+          ),
+          traceHints,
         ),
-        traceHints,
-      ),
-    )
+      }
+    })
+    const splitNetConnection = splitExplicitWidthNetTraces({
+      netConnectionName,
+      netWidth: nominalTraceWidthForConnection,
+      connectedTraceRoutes,
+    })
+    if (splitNetConnection.netPointsToConnect.length === 0) continue
 
     const connection: SimpleRouteConnection = {
-      name:
-        net.source_net_id ??
-        sharedConnMap.getNetConnectedToId(net.source_net_id),
-      nominalTraceWidth: nominalTraceWidthForConnection,
-      width: nominalTraceWidthForConnection,
-      pointsToConnect,
+      name: netConnectionName,
+      nominalTraceWidth: splitNetConnection.netWidth,
+      width: splitNetConnection.netWidth,
+      pointsToConnect: splitNetConnection.netPointsToConnect,
     }
-    if (pointsToConnect.length === 0) continue
-
     connectionsFromNets.push(connection)
+    explicitWidthNetConnections.push(...splitNetConnection.branchConnections)
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
     }
@@ -991,8 +1009,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...directTraceConnections,
     ...routableConnectionsFromNets,
     ...connectionsFromBreakoutPoints,
+    ...explicitWidthNetConnections,
   ]
-  const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   for (const conn of allConns) {
     conn.nominalTraceWidth ??= nominalTraceWidth ?? defaultTraceWidth
     conn.width ??= nominalTraceWidth ?? defaultTraceWidth

@@ -1,16 +1,11 @@
-import type {
-  SimpleRouteConnection,
-  SingleLayerConnectionPoint,
-} from "./SimpleRouteJson"
-
-type SrjPointId = NonNullable<SingleLayerConnectionPoint["pointId"]>
+import type { SimpleRouteConnection, SrjPointId } from "./SimpleRouteJson"
 
 /**
  * Keep one net terminal per connected set of explicitly requested pair paths.
  * Those paths remain routing requests, not existing copper. The residual net
  * request joins their sets to any remaining taps without routing the trunks
  * twice. Route points are copied unchanged in right-handed circuit-world mm
- * (+X right, +Y up, +Z above the board); no geometry transform is performed.
+ * (+X right, +Y top, +Z above the board); no geometry transform is performed.
  */
 export const reduceNetConnectionPointsForDifferentialPairPaths = ({
   netConnections,

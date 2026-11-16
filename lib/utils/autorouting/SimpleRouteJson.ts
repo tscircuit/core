@@ -81,6 +81,9 @@ export type SingleLayerConnectionPoint = {
   }
 }
 
+/** Stable identifier for a routing terminal in Simple Route JSON. */
+export type SrjPointId = NonNullable<SingleLayerConnectionPoint["pointId"]>
+
 /** Backward-compatible name for core's single-layer routing terminals. */
 export type SimpleRoutePoint = SingleLayerConnectionPoint
 
@@ -97,9 +100,9 @@ export type SimpleRouteConnection = {
   width?: number
   pointsToConnect: SingleLayerConnectionPoint[]
   /** Ordered point IDs on an explicitly declared trace path. */
-  path?: NonNullable<SingleLayerConnectionPoint["pointId"]>[]
+  path?: SrjPointId[]
   /** @deprecated DO NOT USE **/
-  externallyConnectedPointIds?: string[][]
+  externallyConnectedPointIds?: SrjPointId[][]
 }
 
 /** Length-matching constraints for two connections in Simple Route JSON. */
