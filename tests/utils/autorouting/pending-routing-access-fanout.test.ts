@@ -3,16 +3,18 @@ import {
   Group_getPendingRoutingAccess,
   type PendingRoutingPhasePlan,
 } from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 
-test("future fanouts retain resolved boundary and actual escape layers", () => {
+test("future fanouts retain physical SRJ bounds and actual escape layers", () => {
   const active: PendingRoutingPhasePlan = {
     routingPhaseIndex: 0,
     traces: [],
     nets: [{ source_net_id: "active" }],
   }
-  const fanout: PendingRoutingPhasePlan = {
+  const fanout: PendingRoutingPhasePlan &
+    Pick<RoutingPhasePlan, "fanoutBounds"> = {
     routingPhaseIndex: 1,
     fanoutBounds: { minX: -1, maxX: 1, minY: -1, maxY: 1 },
     fanoutRoutingLayers: ["inner2"],
@@ -23,6 +25,12 @@ test("future fanouts retain resolved boundary and actual escape layers", () => {
     layerCount: 4,
     minTraceWidth: 0.1,
     bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
+    outline: [
+      { x: -10, y: -10 },
+      { x: 10, y: -10 },
+      { x: 10, y: 10 },
+      { x: -10, y: 10 },
+    ],
     obstacles: [],
     connections: [
       { name: "active", pointsToConnect: [] },
@@ -50,7 +58,9 @@ test("future fanouts retain resolved boundary and actual escape layers", () => {
     routingPhasePlans,
     autorouterConfigByPhasePlan,
   })
-  expect(access?.[0]?.bounds).toEqual(fanout.fanoutBounds)
+  // A narrow fanout exit boundary does not clip the physical access area.
+  expect(access?.[0]?.bounds).toEqual(sourceSrj.bounds)
+  expect(access?.[0]?.outline).toEqual(sourceSrj.outline)
   expect(access?.[0]?.allowedLayers).toEqual(["inner2"])
   expect(access?.[0]?.buses?.[0]?.allowedLayers).toEqual(["inner2"])
   autorouterConfigByPhasePlan.set(fanout, {
@@ -64,14 +74,21 @@ test("future fanouts retain resolved boundary and actual escape layers", () => {
       autorouterConfigByPhasePlan,
     })?.[0]?.allowedLayers,
   ).toEqual(["top"])
-  fanout.fanoutBounds = undefined
-  expect(() =>
-    Group_getPendingRoutingAccess(sourceSrj, {
+  // Access metadata requires no eagerly constructed future fanout solver. Its
+  // authored exit boundary may be absent or extend beyond the physical SRJ.
+  for (const fanoutBounds of [
+    undefined,
+    { minX: 9, maxX: 15, minY: -1, maxY: 1 },
+  ]) {
+    fanout.fanoutBounds = fanoutBounds
+    const futureAccess = Group_getPendingRoutingAccess(sourceSrj, {
       phasePlan: active,
       routingPhasePlans,
       autorouterConfigByPhasePlan,
-    }),
-  ).toThrow("Future fanout routing bounds must be resolved")
+    })
+    expect(futureAccess?.[0]?.bounds).toEqual(sourceSrj.bounds)
+    expect(futureAccess?.[0]?.outline).toEqual(sourceSrj.outline)
+  }
   autorouterConfigByPhasePlan.set(fanout, {
     local: true,
     preset: "fanout",

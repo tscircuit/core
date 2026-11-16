@@ -1228,7 +1228,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       phaseAutorouterConfig,
     ] of fanoutConfigByPhasePlan) {
       const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
-      if (!fanoutRegionPcbGroupId && phaseAutorouterConfig.algorithmFn) continue
+      if (!fanoutRegionPcbGroupId) continue
       let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
         baseSimpleRouteJson,
         routingPhasePlan,
@@ -1238,12 +1238,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseSimpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
-      const breakoutPoints = fanoutRegionPcbGroupId
-        ? db.pcb_breakout_point
-            .list()
-            .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
-            .map((point) => ({ x: point.x, y: point.y }))
-        : []
+      const breakoutPoints = db.pcb_breakout_point
+        .list()
+        .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
+        .map((point) => ({ x: point.x, y: point.y }))
       const fanoutMode = phaseAutorouterConfig.preset as
         | "fanout"
         | "single_layer_fanout"
@@ -1262,7 +1260,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         },
       )
       routingPhasePlan.fanoutBounds = fanoutBounds
-      if (!fanoutRegionPcbGroupId || !fanoutBounds) continue
+      if (!fanoutBounds) continue
 
       const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
 

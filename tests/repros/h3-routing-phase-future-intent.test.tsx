@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import "tests/fixtures/extend-expect-any-svg"
-import { Buffer } from "node:buffer"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
@@ -86,29 +85,13 @@ test("native H3 byte 0 routing input preserves every later phase request", async
     phaseSimpleRouteJson.pendingRoutingAccess![0]!.buses?.[0]?.allowedLayers,
   ).toEqual(source.signalLayers)
 
-  const pcbSnapshotSvg = getH3RoutingPhaseIntentSnapshot({
-    circuitJson: circuit.getCircuitJson(),
-    phaseSimpleRouteJson,
-    pendingConnections,
+  await expect(
+    getH3RoutingPhaseIntentSnapshot({
+      circuitJson: circuit.getCircuitJson(),
+      phaseSimpleRouteJson,
+      pendingConnections,
+    }),
+  ).toMatchSvgSnapshot(import.meta.path, "h3-routing-phase-future-intent-pcb", {
+    diffThresholdPercent: 0,
   })
-  const snapshotSvgBase64 = Buffer.from(pcbSnapshotSvg, "utf8").toString(
-    "base64",
-  )
-  console.log("CORE_H3_PHASE_INTENT_FIX_SVG_BASE64_BEGIN")
-  for (
-    let base64Offset = 0;
-    base64Offset < snapshotSvgBase64.length;
-    base64Offset += 120
-  ) {
-    console.log(snapshotSvgBase64.slice(base64Offset, base64Offset + 120))
-  }
-  console.log("CORE_H3_PHASE_INTENT_FIX_SVG_BASE64_END")
-  console.log(
-    `CORE_H3_PHASE_INTENT_FIX_SVG_SHA256 ${createHash("sha256").update(pcbSnapshotSvg).digest("hex")} bytes=${Buffer.byteLength(pcbSnapshotSvg, "utf8")}`,
-  )
-  await expect(pcbSnapshotSvg).toMatchSvgSnapshot(
-    import.meta.path,
-    "h3-routing-phase-future-intent-pcb",
-    { diffThresholdPercent: 0 },
-  )
 }, 60_000)

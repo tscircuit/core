@@ -202,8 +202,10 @@ export type SimpleRouteJson = Omit<
 
 /**
  * Future routing intent in board-world millimetres (+X right, +Y up).
- * Bounds, outlines and terminals are positions. Obstacles and fixed copper are
- * deliberately supplied only by the current SRJ, so this cannot carry stale copper.
+ * Bounds and outline retain the selected future SRJ physical area; terminals are
+ * positions. Fanout exit targets are not area limits. This describes necessary
+ * native terminal access, not future fanout target or complete routing feasibility.
+ * Obstacles and fixed copper come only from the current SRJ to avoid stale copper.
  */
 export type PendingRoutingAccess = Pick<
   SimpleRouteJson,

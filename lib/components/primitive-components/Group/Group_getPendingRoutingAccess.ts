@@ -9,7 +9,7 @@ import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import {
   connectionIsInRoutingPhase,
   Group_applyDrcTolerancesToSimpleRouteJson,
-  Group_filterSimpleRouteJsonForPhase,
+  Group_selectSimpleRouteJsonForPhase,
   type RoutingPhaseSrjTargets,
 } from "./Group_phasedAutoroutingUtils"
 
@@ -20,7 +20,6 @@ export type PendingRoutingPhasePlan = RoutingPhaseSrjTargets &
     | "drcTolerances"
     | "reroute"
     | "testPointOptions"
-    | "fanoutBounds"
     | "fanoutRoutingLayers"
   >
 
@@ -41,6 +40,8 @@ export function Group_withPendingRoutingAccess(
  * Retain future routing intent without copying obstacles or completed copper.
  * All geometry remains in board-world mm (+X right, +Y up), as positions.
  * Plan order includes implicit fanouts and remaining routing, not just indices.
+ * The selected SRJ bounds describe physical terminal access. Fanout exit targets
+ * are not routing-area limits and future fanout completion is not established here.
  */
 export function Group_getPendingRoutingAccess<
   PhasePlan extends PendingRoutingPhasePlan,
@@ -67,7 +68,7 @@ export function Group_getPendingRoutingAccess<
     // Rerouting and test-point insertion revisit already requested copper.
     if (futurePhasePlan.reroute || futurePhasePlan.testPointOptions) continue
     const futureSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
-      Group_filterSimpleRouteJsonForPhase(simpleRouteJson, futurePhasePlan),
+      Group_selectSimpleRouteJsonForPhase(simpleRouteJson, futurePhasePlan),
       futurePhasePlan.drcTolerances,
     )
     const connections = futureSimpleRouteJson.connections.filter(
@@ -94,11 +95,6 @@ export function Group_getPendingRoutingAccess<
       : futureAutorouterConfig.preset
     const isFanout =
       fanoutMode === "fanout" || fanoutMode === "single_layer_fanout"
-    if (isFanout && !futurePhasePlan.fanoutBounds) {
-      throw new RoutingPhasePreparationError(
-        "Future fanout routing bounds must be resolved before preserving terminal access",
-      )
-    }
 
     const connectionNames = new Set(
       connections.map((connection) => connection.name),
@@ -125,9 +121,7 @@ export function Group_getPendingRoutingAccess<
     pendingRoutingAccess.push({
       connections,
       buses: buses?.length ? buses : undefined,
-      bounds: isFanout
-        ? futurePhasePlan.fanoutBounds!
-        : futureSimpleRouteJson.bounds,
+      bounds: futureSimpleRouteJson.bounds,
       outline: futureSimpleRouteJson.outline,
       allowedLayers: isFanout
         ? fanoutMode === "single_layer_fanout"
