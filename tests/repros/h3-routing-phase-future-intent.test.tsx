@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import "bun-match-svg"
-import { Buffer } from "node:buffer"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
@@ -52,25 +51,11 @@ test("native H3 byte 0 routing input omits later phase intent", async () => {
   ).toEqual([stopAfterCapture])
   expect(phaseSimpleRouteJson).not.toHaveProperty("pendingRoutingAccess")
 
-  const pcbSnapshotSvg = getH3RoutingPhaseIntentSnapshot({
-    circuitJson: circuit.getCircuitJson(),
-    phaseSimpleRouteJson,
-    pendingConnections: [],
-  })
-  const snapshotSvgBase64 = Buffer.from(pcbSnapshotSvg, "utf8").toString(
-    "base64",
-  )
-  console.log("CORE_H3_PHASE_INTENT_REPRO_SVG_BASE64_BEGIN")
-  for (
-    let base64Offset = 0;
-    base64Offset < snapshotSvgBase64.length;
-    base64Offset += 120
-  ) {
-    console.log(snapshotSvgBase64.slice(base64Offset, base64Offset + 120))
-  }
-  console.log("CORE_H3_PHASE_INTENT_REPRO_SVG_BASE64_END")
-  console.log(
-    `CORE_H3_PHASE_INTENT_REPRO_SVG_SHA256 ${createHash("sha256").update(pcbSnapshotSvg).digest("hex")} bytes=${Buffer.byteLength(pcbSnapshotSvg, "utf8")}`,
-  )
-  await expect(pcbSnapshotSvg).toMatchSvgSnapshot(import.meta.path, "pcb")
+  await expect(
+    getH3RoutingPhaseIntentSnapshot({
+      circuitJson: circuit.getCircuitJson(),
+      phaseSimpleRouteJson,
+      pendingConnections: [],
+    }),
+  ).toMatchSvgSnapshot(import.meta.path, "pcb")
 }, 60_000)

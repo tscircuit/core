@@ -1,9 +1,29 @@
 import type { ReactElement } from "react"
-import type { NativeDdrBoard } from "@tscircuit/core-ddr-benchmark/circuits/native-ddr-board"
 import { NativePart } from "@tscircuit/core-ddr-benchmark/circuits/native-part"
+import type { BoardProps, BusProps } from "@tscircuit/props"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
-export type NativeH3Source = Parameters<typeof NativeDdrBoard>[0]["source"]
+/** The immutable native H3 fixture fields used by this phase diagnostic. */
+export type NativeH3Source = {
+  title: string
+  width: number
+  height: number
+  layers: BoardProps["layers"]
+  rules: {
+    widths: number[]
+    appliedGlobalClearance: number
+    viaPad: number
+    viaDrill: number
+  }
+  signalLayers: BusProps["pcbAllowedLayers"]
+  parts: Parameters<typeof NativePart>[0]["part"][]
+  traces: {
+    name: string
+    path: string[]
+    width: number
+    group: string
+  }[]
+}
 
 const phaseNames = ["byte0", "byte1", "remaining"]
 const byteGroups = ["byte0", "byte1"]
@@ -52,7 +72,6 @@ export function H3RoutingPhaseIntentBoard({
       ))}
       {source.traces.map((trace) => (
         <net
-          key={trace.name}
           name={trace.name}
           connectsTo={trace.path}
           nominalTraceWidth={trace.width}
@@ -61,7 +80,6 @@ export function H3RoutingPhaseIntentBoard({
       ))}
       {byteGroups.map((group) => (
         <bus
-          key={group}
           name={`DDR_BUS_${group}`}
           routingPhaseIndex={phaseNames.indexOf(group)}
           connections={source.traces
