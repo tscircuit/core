@@ -1,5 +1,5 @@
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { routeLegacySchematicTrace } from "lib/utils/schematic/route-legacy-schematic-trace"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { type SchematicNetLabel, type SchematicTrace } from "circuit-json"
@@ -346,47 +346,32 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     layerCount: 1,
   }
 
-  let Autorouter = MultilayerIjump
-  let skipOtherTraceInteraction = false
-  if (trace.getSubcircuit().props._schDirectLineRoutingEnabled) {
-    Autorouter = DirectLineRouter as any
-    skipOtherTraceInteraction = true
-  }
+  let skipOtherTraceInteraction = Boolean(
+    trace.getSubcircuit().props._schDirectLineRoutingEnabled,
+  )
 
   if (!edges) {
-    const autorouter = new Autorouter({
-      input: simpleRouteJsonInput,
-      MAX_ITERATIONS: 100,
-      OBSTACLE_MARGIN: 0.1,
-      isRemovePathLoopsEnabled: true,
-      isShortenPathWithShortcutsEnabled: true,
-      marginsWithCosts: [
-        {
-          margin: 1,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.3,
-          enterCost: 0,
-          travelCostFactor: 1,
-        },
-        {
-          margin: 0.2,
-          enterCost: 0,
-          travelCostFactor: 2,
-        },
-        {
-          margin: 0.1,
-          enterCost: 0,
-          travelCostFactor: 3,
-        },
-      ],
-    })
-    let results: SimplifiedPcbTrace[] = autorouter.solveAndMapToTraces()
+    if (!skipOtherTraceInteraction) {
+      edges = routeLegacySchematicTrace({
+        obstacles,
+        ports: portsWithPosition.map(({ schematic_port_id }) => {
+          const schematicPort = db.schematic_port.get(schematic_port_id)!
+          return {
+            schematicPort,
+            schematicComponent: schematicPort.schematic_component_id
+              ? (db.schematic_component.get(
+                  schematicPort.schematic_component_id,
+                ) ?? undefined)
+              : undefined,
+          }
+        }),
+      })
+    }
+    let results: SimplifiedPcbTrace[] = []
 
-    if (results.length === 0) {
+    if (!edges) {
       if (
+        !skipOtherTraceInteraction &&
         !hasSheetLocalSchematicPortRepresentation &&
         (trace._isSymbolToChipConnection() ||
           trace._isSymbolToSymbolConnection() ||
@@ -402,18 +387,21 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       skipOtherTraceInteraction = true
     }
 
-    const [{ route }] = results
+    if (!edges && results.length === 0) return
+    if (!edges) {
+      const [{ route }] = results
 
-    edges = []
-    // Add autorouted path (filter out jumper routes which only apply to PCB)
-    const wireAndViaRoutes = route.filter(
-      (r) => r.route_type === "wire" || r.route_type === "via",
-    )
-    for (let i = 0; i < wireAndViaRoutes.length - 1; i++) {
-      edges.push({
-        from: wireAndViaRoutes[i],
-        to: wireAndViaRoutes[i + 1],
-      })
+      edges = []
+      // Add autorouted path (filter out jumper routes which only apply to PCB)
+      const wireAndViaRoutes = route.filter(
+        (r) => r.route_type === "wire" || r.route_type === "via",
+      )
+      for (let i = 0; i < wireAndViaRoutes.length - 1; i++) {
+        edges.push({
+          from: wireAndViaRoutes[i],
+          to: wireAndViaRoutes[i + 1],
+        })
+      }
     }
   }
 

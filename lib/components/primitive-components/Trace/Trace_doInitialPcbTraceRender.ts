@@ -1,10 +1,13 @@
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { TraceConnectionError } from "lib/errors"
-import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
+import type {
+  SimpleRouteJson,
+  SimplifiedPcbTrace,
+} from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import {
   type PcbTraceRoutePointWithSrjMetadata,
@@ -432,41 +435,51 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       trace.getSubcircuit()._parsedProps.minTraceWidth ??
       jlcMinTolerances.min_trace_width!
 
-    const ijump = new MultilayerIjump({
-      OBSTACLE_MARGIN: minTraceWidth * 2,
-      isRemovePathLoopsEnabled: true,
-      optimizeWithGoalBoxes: Boolean(pcbPortA && pcbPortB),
-      connMap,
-      input: {
-        obstacles,
-        minTraceWidth,
-        connections: [
-          {
-            name: trace.source_trace_id!,
-            pointsToConnect: [
-              { ...a, layer: aLayer, pcb_port_id: pcbPortA! },
-              { ...b, layer: bLayer, pcb_port_id: pcbPortB! },
-            ],
-          },
-        ],
-        layerCount: trace.getSubcircuit()._getSubcircuitLayerCount(),
-        bounds: {
-          minX: Math.min(a.x, b.x) - BOUNDS_MARGIN,
-          maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN,
-          minY: Math.min(a.y, b.y) - BOUNDS_MARGIN,
-          maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN,
+    // Conservatively reserve the legacy edge clearance plus half the copper
+    // width in obstacle geometry: clearance settings alone did not protect the
+    // thick-trace/hole regression. Expand the search window for these detours.
+    const obstacleClearance = minTraceWidth * 2
+    const centerlineMargin = obstacleClearance + minTraceWidth / 2
+    const routingInput: SimpleRouteJson = {
+      obstacles: obstacles.map((obstacle) => ({
+        ...obstacle,
+        width: obstacle.width + centerlineMargin * 2,
+        height: obstacle.height + centerlineMargin * 2,
+      })),
+      minTraceWidth,
+      // Preserve the legacy router's obstacle margin explicitly instead of
+      // relying on the maintained router's default copper clearances.
+      minTraceToPadEdgeClearance: obstacleClearance,
+      minTraceToHoleEdgeClearance: obstacleClearance,
+      connections: [
+        {
+          name: trace.source_trace_id!,
+          nominalTraceWidth: minTraceWidth,
+          rootConnectionName:
+            connMap.getNetConnectedToId(trace.source_trace_id!) ?? undefined,
+          pointsToConnect: [
+            { x: a.x, y: a.y, layer: aLayer, pcb_port_id: pcbPortA! },
+            { x: b.x, y: b.y, layer: bLayer, pcb_port_id: pcbPortB! },
+          ],
         },
+      ],
+      layerCount: trace.getSubcircuit()._getSubcircuitLayerCount(),
+      bounds: {
+        minX: Math.min(a.x, b.x) - BOUNDS_MARGIN - centerlineMargin,
+        maxX: Math.max(a.x, b.x) + BOUNDS_MARGIN + centerlineMargin,
+        minY: Math.min(a.y, b.y) - BOUNDS_MARGIN - centerlineMargin,
+        maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN + centerlineMargin,
       },
-    })
+    }
     let traces: SimplifiedPcbTrace[] | null = null
     try {
-      traces = ijump.solveAndMapToTraces()
+      traces = new TscircuitAutorouter(routingInput).solveSync()
     } catch (e: any) {
       trace.renderError({
         type: "pcb_trace_error",
         pcb_trace_error_id: trace.source_trace_id!,
         error_type: "pcb_trace_error",
-        message: `error solving route: ${e.message}`,
+        message: `Could not solve route for ${trace.getString()}`,
         source_trace_id: trace.pcb_trace_id!,
         center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
         pcb_port_ids: ports.map((p) => p.pcb_port_id!),

@@ -8,7 +8,8 @@ import {
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
-import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -191,6 +192,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
         .toArray()
         .filter(
           (elm) =>
+            elm.type === "pcb_board" ||
             elm.type === "pcb_smtpad" ||
             elm.type === "pcb_trace" ||
             elm.type === "pcb_plated_hole" ||
@@ -199,20 +201,28 @@ export class Net extends PrimitiveComponent<typeof netProps> {
             elm.type === "pcb_port",
         )
 
-      const { solution } = autoroute(
-        pcbElements.concat([
+      const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+        circuitJson: pcbElements.concat([
           {
             type: "source_trace",
             source_trace_id: "__net_trace_tmp",
+            connected_source_net_ids: [],
             connected_source_port_ids: [
               Aport.source_port_id!,
               Bport.source_port_id!,
             ],
           } as SourceTrace,
-        ]) as any, // Remove as any when autorouting-dataset has been updated
-      )
-
-      const trace = solution[0]
+        ]),
+      })
+      let trace:
+        | ReturnType<TscircuitAutorouter["solveSync"]>[number]
+        | undefined
+      try {
+        trace = new TscircuitAutorouter(simpleRouteJson).solveSync()[0]
+      } catch {
+        // Solver failures become circuit diagnostics, just like an empty
+        // solution. Do not expose raw solver messages containing internal IDs.
+      }
       if (!trace) {
         this.renderError({
           pcb_trace_error_id: "",
