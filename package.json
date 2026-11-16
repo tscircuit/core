@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/core",
   "type": "module",
-  "version": "0.0.2383",
+  "version": "0.0.2395",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -39,10 +39,10 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.56.tgz",
+    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.58.tgz",
     "@tscircuit/cableprinter": "^0.0.6",
-    "@tscircuit/capacity-autorouter": "^0.0.1100",
-    "@tscircuit/checks": "^0.0.278",
+    "@tscircuit/capacity-autorouter": "^0.0.1107",
+    "@tscircuit/checks": "^0.0.279",
     "@tscircuit/circuit-json-util": "^0.0.131",
     "@tscircuit/common": "^0.0.20",
     "@tscircuit/copper-pour-solver": "^0.0.74",
@@ -79,11 +79,11 @@
     "bun-match-svg": "0.0.16",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "^0.0.550",
+    "circuit-json": "0.0.551",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.33",
-    "circuit-json-to-spice": "^0.0.45",
+    "circuit-json-to-spice": "^0.0.47",
     "circuit-to-svg": "^0.0.460",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
@@ -123,7 +123,7 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#7b05251f6e868954adead2275a26c95b163c4813"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -172,7 +172,7 @@
     "graphics-debug": "$graphics-debug",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.732",
-    "circuit-json": "^0.0.550",
+    "circuit-json": "0.0.551",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
