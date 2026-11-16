@@ -2,10 +2,10 @@ import { expect, test } from "bun:test"
 import type { ManualEditEvent } from "@tscircuit/props"
 import { runAllRoutingChecks } from "@tscircuit/checks"
 import { RootCircuit } from "lib/RootCircuit"
-import { applyEditEvents } from "lib/utils/edit-events/apply-edit-events-to-circuit-json"
+import { applyPcbMoveWithRouting } from "lib/utils/edit-events/apply-pcb-move-with-routing"
 import "../../fixtures/extend-expect-circuit-snapshot"
 
-test("moving a PCB component leaves its routed connection at the old pad", async () => {
+test("moving a PCB component repairs its trace end and preserves other copper", async () => {
   const circuit = new RootCircuit()
   circuit.add(
     <board width={16} height={10}>
@@ -39,15 +39,35 @@ test("moving a PCB component leaves its routed connection at the old pad", async
     new_center: { ...component.center, y: component.center.y + 1 },
   } satisfies ManualEditEvent
   const original = circuit.getCircuitJson()
-  const edited = applyEditEvents({
+  const edited = await applyPcbMoveWithRouting({
     circuitJson: original,
-    editEvents: [editEvent],
+    editEvent,
   })
 
-  expect(
-    original.filter((element) => element.type === "pcb_trace"),
-  ).toHaveLength(2)
-  expect(await runAllRoutingChecks(original)).toEqual([])
-  expect(await runAllRoutingChecks(edited)).not.toEqual([])
+  expect(edited).not.toBeNull()
+  const originalTraces = original.filter(
+    (element) => element.type === "pcb_trace",
+  )
+  const editedTraces = edited!.filter((element) => element.type === "pcb_trace")
+  expect(editedTraces).toHaveLength(2)
+  const movedPorts = circuit.db.pcb_port
+    .list()
+    .filter((port) => port.pcb_component_id === component.pcb_component_id)
+  const repairedTrace = editedTraces.find((trace) => {
+    const end = trace.route.at(-1)
+    return (
+      end?.route_type === "wire" &&
+      movedPorts.some((port) => port.pcb_port_id === end.end_pcb_port_id)
+    )
+  })!
+  expect(repairedTrace.route.at(-1)).toMatchObject({
+    route_type: "wire",
+    y: editEvent.new_center.y,
+  })
+  const untouchedTrace = originalTraces.find(
+    (trace) => trace.pcb_trace_id !== repairedTrace.pcb_trace_id,
+  )!
+  expect(editedTraces).toContainEqual(untouchedTrace)
+  expect(await runAllRoutingChecks(edited!)).toEqual([])
   await expect(edited).toMatchPcbSnapshot(import.meta.path)
 })
