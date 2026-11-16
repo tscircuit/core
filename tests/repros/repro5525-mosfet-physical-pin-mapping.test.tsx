@@ -1,4 +1,5 @@
 import { expect, it } from "bun:test"
+import type { Port } from "lib/components/primitive-components/Port"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 it("maps AO3400A SOT-23 pads to G/S/D without moving the schematic terminals", async () => {
@@ -24,29 +25,33 @@ it("maps AO3400A SOT-23 pads to G/S/D without moving the schematic terminals", a
   )
   circuit.render()
 
-  const sourcePorts = circuit.db.source_port.list()
-  const portName = (pinNumber: number) =>
-    sourcePorts.find(
-      (p) =>
-        p.pin_number === pinNumber &&
-        p.source_component_id ===
-          sourcePorts.find((q) => q.name === "gate")!.source_component_id,
-    )!.name
-  expect([1, 2, 3].map(portName)).toEqual(["gate", "source", "drain"])
-
-  const gate = sourcePorts.find((p) => p.name === "gate")!
-  const trace = circuit.db.source_trace.list()[0]!
-  expect(trace.connected_source_port_ids).toContain(gate.source_port_id)
-
-  const schematicPort = (name: string) => {
-    const sourcePort = sourcePorts.find((p) => p.name === name)!
-    return circuit.db.schematic_port
+  const q1 = circuit.selectOne(".Q1")!
+  const sideByRole = { gate: "left", source: "down", drain: "up" } as const
+  for (const [pin, role] of [
+    [1, "gate"],
+    [2, "source"],
+    [3, "drain"],
+  ] as const) {
+    const pad = circuit.db.pcb_smtpad
+      .list()
+      .find(
+        (p) =>
+          p.pcb_component_id === q1.pcb_component_id &&
+          p.port_hints?.includes(String(pin)),
+      )!
+    const pcbPort = circuit.db.pcb_port.get(pad.pcb_port_id!)!
+    const sourcePort = circuit.db.source_port.get(pcbPort.source_port_id!)!
+    expect(sourcePort.name).toBe(role)
+    const schematicPort = circuit.db.schematic_port
       .list()
       .find((p) => p.source_port_id === sourcePort.source_port_id)!
+    expect(schematicPort.facing_direction).toBe(sideByRole[role])
   }
-  expect(schematicPort("gate").facing_direction).toBe("left")
-  expect(schematicPort("source").facing_direction).toBe("down")
-  expect(schematicPort("drain").facing_direction).toBe("up")
+
+  const gate = circuit.selectOne(".Q1 > .gate") as Port
+  expect(
+    circuit.db.source_trace.list()[0]!.connected_source_port_ids,
+  ).toContain(gate.source_port_id!)
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
