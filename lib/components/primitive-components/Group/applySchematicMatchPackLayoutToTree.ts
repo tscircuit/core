@@ -41,6 +41,78 @@ type NestedGroupMatchpackProxy = {
   size: Point
 }
 
+function getNestedGroupSchematicContext({
+  db,
+  treeNode,
+  schematicSheetId,
+}: {
+  db: CircuitJsonUtilObjects
+  treeNode: CircuitJsonTreeNode
+  schematicSheetId?: SchematicSheetId
+}): {
+  schematicGroup: SchematicGroup | undefined
+  descendantSchematicGroups: SchematicGroup[]
+  groupComponents: SchematicComponent[]
+} {
+  if (treeNode.nodeType !== "group" || !treeNode.sourceGroup) {
+    return {
+      schematicGroup: undefined,
+      descendantSchematicGroups: [],
+      groupComponents: [],
+    }
+  }
+
+  const schematicGroup = db.schematic_group?.getWhere?.({
+    source_group_id: treeNode.sourceGroup.source_group_id,
+  })
+  if (!schematicGroup) {
+    return {
+      schematicGroup: undefined,
+      descendantSchematicGroups: [],
+      groupComponents: [],
+    }
+  }
+
+  const descendantSourceGroupIds: string[] = []
+  const collectSourceGroupIds = (node: CircuitJsonTreeNode) => {
+    if (node.nodeType === "group" && node.sourceGroup) {
+      descendantSourceGroupIds.push(node.sourceGroup.source_group_id)
+    }
+    for (const childNode of node.childNodes) {
+      collectSourceGroupIds(childNode)
+    }
+  }
+  collectSourceGroupIds(treeNode)
+
+  const descendantSchematicGroups: SchematicGroup[] = []
+  const descendantSchematicGroupIds = new Set<string>()
+  for (const sourceGroupId of descendantSourceGroupIds) {
+    const sg = db.schematic_group?.getWhere?.({
+      source_group_id: sourceGroupId,
+    })
+    if (sg && !descendantSchematicGroupIds.has(sg.schematic_group_id)) {
+      descendantSchematicGroupIds.add(sg.schematic_group_id)
+      descendantSchematicGroups.push(sg)
+    }
+  }
+
+  const groupComponents = db.schematic_component
+    .list()
+    .filter(
+      (component) =>
+        Boolean(component.schematic_group_id) &&
+        descendantSchematicGroupIds.has(component.schematic_group_id!) &&
+        (!schematicSheetId ||
+          component.schematic_sheet_id === schematicSheetId),
+    )
+
+  return {
+    schematicGroup,
+    descendantSchematicGroups,
+    groupComponents,
+  }
+}
+
 const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
   {
     "y+": 0,
@@ -518,9 +590,12 @@ function convertTreeToMatchPackInputProblem(
       const groupId = getTreeChildChipId(child, index)!
       debug(`[${group.name}] Processing nested group: ${groupId}`)
 
-      const schematicGroup = db.schematic_group?.getWhere?.({
-        source_group_id: child.sourceGroup.source_group_id,
-      })
+      const { schematicGroup, groupComponents } =
+        getNestedGroupSchematicContext({
+          db,
+          treeNode: child,
+          schematicSheetId: opts.schematicSheetId,
+        })
 
       const groupInstance = group.children.find(
         (groupChild) =>
@@ -534,10 +609,6 @@ function convertTreeToMatchPackInputProblem(
 
       if (schematicGroup) {
         debug(`[${group.name}] Treating group ${groupId} as composite chip`)
-
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
-        })
 
         debug(
           `[${group.name}] Group ${groupId} has ${groupComponents.length} components:`,
@@ -617,16 +688,16 @@ function convertTreeToMatchPackInputProblem(
       })
 
       if (treeNode?.nodeType === "group" && treeNode.sourceGroup) {
-        const schematicGroup = db.schematic_group?.getWhere?.({
-          source_group_id: treeNode.sourceGroup.source_group_id,
-        })
-
-        if (schematicGroup) {
-          const groupComponents = db.schematic_component.list({
-            schematic_group_id: schematicGroup.schematic_group_id,
+        const { schematicGroup, groupComponents } =
+          getNestedGroupSchematicContext({
+            db,
+            treeNode,
+            schematicSheetId: opts.schematicSheetId,
           })
 
+        if (schematicGroup) {
           for (const comp of groupComponents) {
+            if (!comp.source_component_id) continue
             const sourcePorts = db.source_port.list({
               source_component_id: comp.source_component_id,
             })
@@ -1073,18 +1144,17 @@ export function applySchematicMatchPackLayoutToTree<
         }
       }
     } else if (treeNode.nodeType === "group" && treeNode.sourceGroup) {
-      const schematicGroup = db.schematic_group?.getWhere?.({
-        source_group_id: treeNode.sourceGroup.source_group_id,
-      })
+      const { schematicGroup, descendantSchematicGroups, groupComponents } =
+        getNestedGroupSchematicContext({
+          db,
+          treeNode,
+          schematicSheetId: opts.schematicSheetId,
+        })
 
       if (schematicGroup) {
         debug(
           `Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`,
         )
-
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
-        })
 
         debug(
           `Group ${chipId} has ${groupComponents.length} components to move`,
@@ -1139,6 +1209,21 @@ export function applySchematicMatchPackLayoutToTree<
               deltaX: positionDelta.x,
               deltaY: positionDelta.y,
             })
+          }
+        }
+
+        for (const descendantGroup of descendantSchematicGroups) {
+          if (
+            descendantGroup.schematic_group_id ===
+            schematicGroup.schematic_group_id
+          ) {
+            continue
+          }
+          if (descendantGroup.center) {
+            descendantGroup.center = {
+              x: descendantGroup.center.x + positionDelta.x,
+              y: descendantGroup.center.y + positionDelta.y,
+            }
           }
         }
 
