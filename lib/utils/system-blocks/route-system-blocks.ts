@@ -623,7 +623,7 @@ export function routeSystemBlocks(
   // One cleanup sweep can shorten detours left by an earlier route without
   // reopening the bounded search over endpoint permutations.
   for (const connection of connections) reroute(new Set([connection]))
-  // Wires are final. Give each remaining label a clear slot on its own wire,
+  // Wires are final. Give each remaining label a clear slot near its wire,
   // shortest wires first because they have the fewest slots to choose from.
   const placedLabels = [...labels.values()]
   for (const connection of connections) {

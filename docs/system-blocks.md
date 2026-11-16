@@ -49,11 +49,11 @@ visibility grid includes lanes 3 mm from existing wires so adjacent routes can
 run separately. A final rerouting sweep shortens remaining detours when it
 improves the same score.
 
-Wires are routed first and never bend to reach their text. Each label then takes
-the clear slot nearest its wire's midpoint: inline on a horizontal run,
-otherwise beside the wire. An attachment slides along its block face, without
-passing its neighbors, when that straightens the wire. Only a self-loop reserves
-its label before routing. Pages expand to contain labels and outer detours.
+Wires are routed first and never bend to reach their text. Labels favor clear
+space below horizontal runs and can move above or beside a wire when needed.
+An attachment can slide along its block face to straighten the wire while
+keeping its neighbors in order. Only a self-loop reserves its label before
+routing. Pages expand to contain labels and outer detours.
 Routing is deterministic and has no browser or DOM requirement. Optimization
 tries at most 64 swaps over four passes, followed by one rerouting sweep.
 Crossings and tighter spacing can still occur on dense graphs; these penalties

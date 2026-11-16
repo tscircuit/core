@@ -32,12 +32,9 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
 })
 
-test.failing(
-  "places the Classic F1 I²C label entirely below the horizontal wire",
-  () => {
-    const [i2c] = circuit.db.system_block_connection.list()
-    const [start] = i2c.route
-    // Diagram Y increases upward. The text and its halo extend 2 mm above the label center.
-    expect(i2c.label_anchor_center!.y + 2).toBeLessThan(start.y)
-  },
-)
+test("places the Classic F1 I²C label entirely below the horizontal wire", () => {
+  const [i2c] = circuit.db.system_block_connection.list()
+  const [start] = i2c.route
+  // Diagram Y increases upward. The text and its halo extend 2 mm above the label center.
+  expect(i2c.label_anchor_center!.y + 2).toBeLessThan(start.y)
+})

@@ -50,10 +50,9 @@ const filletsOf = (route: Point[]) =>
   })
 
 /**
- * Choose a label slot on an already routed wire instead of bending the wire to
- * reach a slot. Horizontal runs carry inline text; vertical runs carry text
- * beside them. The slot nearest the wire's midpoint wins among those clear of
- * blocks, other labels and other wires, and corners keep room for their fillets.
+ * Choose a label slot near a routed wire. Prefer a clear slot below a
+ * horizontal run, with slots above and beside the wire as fallbacks. Favor
+ * space near the wire's midpoint and leave room for rounded corners.
  * All geometry is page-centered diagram mm (+X right, +Y up); `width` includes
  * the label's horizontal padding. The result is the slot's center point.
  */
@@ -88,9 +87,8 @@ export function placeSystemConnectionLabel({
   let best: { center: Point; cost: number } | undefined
   const consider = (
     center: Point,
-    host: number,
     along: number,
-    placement: "inline" | "beside" | "detached",
+    placement: "below" | "beside" | "detached",
   ) => {
     const slot = {
       left: center.x - halfWidth,
@@ -117,7 +115,7 @@ export function placeSystemConnectionLabel({
       labels.filter((r) => overlaps(slot, r)).length * 4
     for (const [a, b] of otherSegments) if (crosses(a, b)) conflicts++
     for (let index = 0; index < lengths.length; index++)
-      if (index !== host && crosses(route[index], route[index + 1])) conflicts++
+      if (crosses(route[index], route[index + 1])) conflicts++
     // Text off its wire must still read as belonging to it: no other wire
     // may be as near to the text as its own.
     const gap = ([a, b]: readonly [Point, Point]) =>
@@ -136,9 +134,7 @@ export function placeSystemConnectionLabel({
     const ownGap = Math.min(
       ...lengths.map((_, index) => gap([route[index], route[index + 1]])),
     )
-    const ambiguous =
-      placement !== "inline" &&
-      otherSegments.some((segment) => gap(segment) < ownGap + 1)
+    const ambiguous = otherSegments.some((segment) => gap(segment) < ownGap + 1)
     // Text inside a fillet's bounds shrinks that fillet to the trim at which
     // its bounds clear the text. Avoid slots that leave a corner nearly sharp.
     let squeeze = 0
@@ -157,7 +153,7 @@ export function placeSystemConnectionLabel({
       squeeze +
       Math.abs(along - total / 2) +
       (ambiguous ? 300 : 0) +
-      { inline: 0, beside: 120, detached: 400 }[placement]
+      { below: 0, beside: 120, detached: 400 }[placement]
     if (!best || cost < best.cost - 1e-9) best = { center, cost }
   }
   let traveled = 0
@@ -190,23 +186,19 @@ export function placeSystemConnectionLabel({
         ...start,
         [axis]: start[axis] + direction * offset,
       } as Point
-      if (horizontal && fits)
-        consider(anchor, host, traveled + offset, "inline")
-      // Text that cannot sit on the wire goes beside it.
       for (const side of [1, -1])
         consider(
           horizontal
             ? { x: anchor.x, y: anchor.y + side * 4.5 }
             : { x: anchor.x + side * (halfWidth + 2), y: anchor.y },
-          host,
           traveled + offset,
-          "beside",
+          horizontal && side === -1 ? "below" : "beside",
         )
     }
     traveled += lengths[host]
   }
   if (!best || best.cost >= 1000) {
-    // No slot on or beside the wire is clear. Look for free space around the
+    // No adjacent slot is clear. Look for free space around the
     // wire's midpoint; the cost keeps the text as near to it as possible.
     let remaining = total / 2
     let middle = route[0]
@@ -227,7 +219,6 @@ export function placeSystemConnectionLabel({
       for (let dy = -30; dy <= 30; dy += 3)
         consider(
           { x: middle.x + dx, y: middle.y + dy },
-          -1,
           total / 2 + Math.abs(dx) + Math.abs(dy),
           "detached",
         )
