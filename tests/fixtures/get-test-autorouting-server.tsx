@@ -50,9 +50,7 @@ export const getTestAutoroutingServer = ({
           )
         }
 
-        const autorouter = new TscircuitAutorouter(simpleRouteJson)
-
-        const traces = autorouter.solveSync()
+        const traces = new TscircuitAutorouter(simpleRouteJson).solveSync()
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {
@@ -104,9 +102,7 @@ export const getTestAutoroutingServer = ({
           circuitJson: body.input_circuit_json,
         })
 
-        const autorouter = new TscircuitAutorouter(simpleRouteJson)
-
-        const traces = autorouter.solveSync()
+        const traces = new TscircuitAutorouter(simpleRouteJson).solveSync()
 
         // Simulate failure in the first trace if the flag is set
         if (failInFirstTrace && traces.length > 0) {

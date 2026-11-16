@@ -7,9 +7,10 @@ import {
   GROUND_NET_REGEX,
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
-import type { AnyCircuitElement, SourceTrace } from "circuit-json"
+import type { PcbTrace } from "circuit-json"
 import { TscircuitAutorouter } from "lib/utils/autorouting/CapacityMeshAutorouter"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import { tryNow } from "lib/utils/try-now"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -188,7 +189,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       const Aport = A.ports[closestPair[0]]
       const Bport = B.ports[closestPair[1]]
 
-      const pcbElements: AnyCircuitElement[] = db
+      const pcbElements = db
         .toArray()
         .filter(
           (elm) =>
@@ -202,7 +203,8 @@ export class Net extends PrimitiveComponent<typeof netProps> {
         )
 
       const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-        circuitJson: pcbElements.concat([
+        circuitJson: [
+          ...pcbElements,
           {
             type: "source_trace",
             source_trace_id: "__net_trace_tmp",
@@ -211,18 +213,13 @@ export class Net extends PrimitiveComponent<typeof netProps> {
               Aport.source_port_id!,
               Bport.source_port_id!,
             ],
-          } as SourceTrace,
-        ]),
+          },
+        ],
       })
-      let trace:
-        | ReturnType<TscircuitAutorouter["solveSync"]>[number]
-        | undefined
-      try {
-        trace = new TscircuitAutorouter(simpleRouteJson).solveSync()[0]
-      } catch {
-        // Solver failures become circuit diagnostics, just like an empty
-        // solution. Do not expose raw solver messages containing internal IDs.
-      }
+      const [traces] = tryNow(() =>
+        new TscircuitAutorouter(simpleRouteJson).solveSync(),
+      )
+      const trace = traces?.[0]
       if (!trace) {
         this.renderError({
           pcb_trace_error_id: "",
@@ -242,7 +239,7 @@ export class Net extends PrimitiveComponent<typeof netProps> {
         return
       }
 
-      db.pcb_trace.insert(trace as any)
+      db.pcb_trace.insert(trace as PcbTrace)
     }
   }
 

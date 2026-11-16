@@ -4,10 +4,6 @@ import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { type LayerRef, type PcbTrace, type RouteHintPoint } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { TraceConnectionError } from "lib/errors"
-import type {
-  SimpleRouteJson,
-  SimplifiedPcbTrace,
-} from "lib/utils/autorouting/SimpleRouteJson"
 import { findPossibleTraceLayerCombinations } from "lib/utils/autorouting/findPossibleTraceLayerCombinations"
 import {
   type PcbTraceRoutePointWithSrjMetadata,
@@ -358,8 +354,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
 
   // Cache the PCB obstacles, they'll be needed for each segment between
   // ports/hints
-  const [obstacles, errGettingObstacles] = tryNow(
-    () => getObstaclesFromCircuitJson(trace.root!.db.toArray() as any), // Remove as any when autorouting-dataset gets updated
+  const [obstacles, errGettingObstacles] = tryNow(() =>
+    getObstaclesFromCircuitJson(db.toArray()),
   )
 
   if (errGettingObstacles) {
@@ -435,20 +431,16 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
       trace.getSubcircuit()._parsedProps.minTraceWidth ??
       jlcMinTolerances.min_trace_width!
 
-    // Conservatively reserve the legacy edge clearance plus half the copper
-    // width in obstacle geometry: clearance settings alone did not protect the
-    // thick-trace/hole regression. Expand the search window for these detours.
+    // Inflate obstacles by the edge clearance plus half the trace width.
     const obstacleClearance = minTraceWidth * 2
     const centerlineMargin = obstacleClearance + minTraceWidth / 2
-    const routingInput: SimpleRouteJson = {
+    const routingInput = {
       obstacles: obstacles.map((obstacle) => ({
         ...obstacle,
         width: obstacle.width + centerlineMargin * 2,
         height: obstacle.height + centerlineMargin * 2,
       })),
       minTraceWidth,
-      // Preserve the legacy router's obstacle margin explicitly instead of
-      // relying on the maintained router's default copper clearances.
       minTraceToPadEdgeClearance: obstacleClearance,
       minTraceToHoleEdgeClearance: obstacleClearance,
       connections: [
@@ -471,10 +463,10 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         maxY: Math.max(a.y, b.y) + BOUNDS_MARGIN + centerlineMargin,
       },
     }
-    let traces: SimplifiedPcbTrace[] | null = null
-    try {
-      traces = new TscircuitAutorouter(routingInput).solveSync()
-    } catch (e: any) {
+    const [traces] = tryNow(() =>
+      new TscircuitAutorouter(routingInput).solveSync(),
+    )
+    if (!traces) {
       trace.renderError({
         type: "pcb_trace_error",
         pcb_trace_error_id: trace.source_trace_id!,
@@ -486,8 +478,8 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
         pcb_trace_id: trace.pcb_trace_id!,
         pcb_component_ids: ports.map((p) => p.pcb_component_id!),
       })
+      return
     }
-    if (!traces) return
     if (traces.length === 0) {
       trace.renderError({
         type: "pcb_trace_error",

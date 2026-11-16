@@ -3,6 +3,7 @@ import {
   type InputChip,
   type InputProblem,
 } from "@tscircuit/schematic-trace-solver"
+import type { Point } from "@tscircuit/math-utils"
 import type {
   SchematicComponent,
   SchematicPort,
@@ -10,6 +11,12 @@ import type {
 } from "circuit-json"
 import type { Obstacle } from "lib/utils/autorouting/SimpleRouteJson"
 import { convertFacingDirectionToElbowDirection } from "./convertFacingDirectionToElbowDirection"
+
+const samePoint = (a: Point, b: Point) =>
+  Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6
+
+const isOrthogonalSegment = (a: Point, b: Point) =>
+  Math.abs(a.x - b.x) <= 1e-6 || Math.abs(a.y - b.y) <= 1e-6
 
 /**
  * Route consecutive terminals in schematic world coordinates (right-handed XY,
@@ -75,8 +82,7 @@ export const routeLegacySchematicTrace = ({
       availableNetLabelOrientations: {},
       maxMspPairDistance: Math.hypot(end.x - start.x, end.y - start.y) + 1,
     }
-    // Legacy rendering owns crossings/junctions and label fallback. Run the
-    // maintained obstacle router and its recovery stage, not label placement.
+    // Legacy rendering handles crossings, junctions and label fallback.
     const solver = new SchematicTracePipelineSolver(inputProblem)
     solver.solveUntilPhase("traceOverlapShiftSolver")
     const traces =
@@ -86,17 +92,14 @@ export const routeLegacySchematicTrace = ({
         trace.pins.some((pin) => pin.pinId === start.pinId) &&
         trace.pins.some((pin) => pin.pinId === end.pinId),
     )
-    let path = trace?.tracePath
-    if (solver.failed || !path || path.length < 2) return null
-    const samePoint = (
-      a: { x: number; y: number },
-      b: { x: number; y: number },
-    ) => Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6
-    if (samePoint(path[0], end) && samePoint(path[path.length - 1], start)) {
-      path = [...path].reverse()
-    }
-    // The pipeline may correct pins inside chip bodies. Never silently accept
-    // a route whose endpoints no longer coincide with the actual Core ports.
+    const routedPath = trace?.tracePath
+    if (solver.failed || !routedPath || routedPath.length < 2) return null
+    const path =
+      samePoint(routedPath[0], end) &&
+      samePoint(routedPath[routedPath.length - 1], start)
+        ? [...routedPath].reverse()
+        : routedPath
+    // Reject endpoints moved by the solver's pin correction.
     if (!samePoint(path[0], start) || !samePoint(path[path.length - 1], end))
       return null
     if (
@@ -105,17 +108,11 @@ export const routeLegacySchematicTrace = ({
       )
     )
       return null
-    if (
-      path.some(
-        (point, index) =>
-          index > 0 &&
-          Math.abs(point.x - path![index - 1].x) > 1e-6 &&
-          Math.abs(point.y - path![index - 1].y) > 1e-6,
-      )
-    )
-      return null
     for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
-      edges.push({ from: path[pathIndex], to: path[pathIndex + 1] })
+      const from = path[pathIndex]
+      const to = path[pathIndex + 1]
+      if (!isOrthogonalSegment(from, to)) return null
+      edges.push({ from, to })
     }
   }
   return edges.length > 0 ? edges : null
