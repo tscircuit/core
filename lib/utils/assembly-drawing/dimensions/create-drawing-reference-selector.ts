@@ -2,7 +2,7 @@ import { selectAll, type Options } from "css-select"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "lib/components/base-components/PrimitiveComponent/preprocessSelector"
-import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import type { AssemblyDrawingView } from "../drawing-view"
 import { getAssemblyScope } from "lib/components/primitive-components/get-assembly-scope-components"
 import type { DrawingModelFeature } from "../geometry/get-drawing-model-features"
 
@@ -17,7 +17,7 @@ export interface DrawingSelectorNode {
  * owning part, scoped to the geometry selected by this view; no props are changed.
  */
 export function createDrawingReferenceSelector(
-  view: AssemblyDrawingPartView,
+  view: AssemblyDrawingView,
   features: DrawingModelFeature[],
 ) {
   const build = (

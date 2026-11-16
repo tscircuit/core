@@ -30,9 +30,10 @@ test("collapsed group port hides its internal connectivity key", async () => {
 
   await circuit.renderUntilSettled()
 
+  const group = circuit.db.source_group.getWhere({ name: "MATRIX_ROW" })!
   const publicPortNames = circuit.db.source_port
     .list()
-    .filter((port) => port.source_component_id === null)
+    .filter((port) => port.source_group_id === group.source_group_id)
     .map((port) => port.name)
 
   expect(publicPortNames).toEqual(["ROW1"])

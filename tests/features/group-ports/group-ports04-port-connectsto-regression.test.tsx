@@ -45,12 +45,13 @@ test("group port connectsTo creates source connectivity regardless of child orde
     source_component_id: r1.source_component_id,
     name: "pin2",
   })!
+  const group = circuit.db.source_group.getWhere({ name: "FILTER" })!
   const vin = circuit.db.source_port.getWhere({
-    source_component_id: null as any,
+    source_group_id: group.source_group_id,
     name: "VIN",
   })!
   const vout = circuit.db.source_port.getWhere({
-    source_component_id: null as any,
+    source_group_id: group.source_group_id,
     name: "VOUT",
   })!
 

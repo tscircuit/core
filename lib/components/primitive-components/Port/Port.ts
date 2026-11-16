@@ -482,7 +482,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // Group ports don't need a source_component_id
     if (this.isGroupPort()) {
       db.source_port.update(this.source_port_id!, {
-        source_component_id: null as any,
+        source_component_id: undefined,
+        source_group_id: this.parent?.source_group_id ?? undefined,
         subcircuit_id: this.getSubcircuit()?.subcircuit_id!,
       })
       return

@@ -95,6 +95,7 @@ const renderSchematicTracesForSheet = ({
 
   // Apply traces
   applyTracesFromSolverOutput({
+    sourceTraceIdByPinPairKey,
     group,
     solver,
     userNetIdToConnKey,

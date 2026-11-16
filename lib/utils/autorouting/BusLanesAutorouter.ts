@@ -1,7 +1,5 @@
-import {
-  BusLanesPipelineSolver,
-  type SimpleRouteJson as BusLanesInput,
-} from "@tscircuit/bus-lanes-solver"
+import { BusLanesPipelineSolver } from "@tscircuit/bus-lanes-solver"
+import { getBusLanesInputFromSrj } from "./get-bus-lanes-input-from-srj"
 import type {
   GenericLocalAutorouter,
   AutorouterEvent,
@@ -21,8 +19,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     callback: (event: AutorouterEvent) => void
   }> = []
   constructor(public input: SimpleRouteJson) {
-    // The solver validates unsupported SRJ route primitives at its input boundary.
-    this.solver = new BusLanesPipelineSolver(input as unknown as BusLanesInput)
+    this.solver = new BusLanesPipelineSolver(getBusLanesInputFromSrj(input))
   }
   on(
     event: "complete",

@@ -2,6 +2,7 @@ import type {
   AnyCircuitElement,
   DrawingDimensionLine,
   DrawingPartView,
+  DrawingPartSelection,
 } from "circuit-json"
 import { vec3 } from "gl-matrix"
 import {
@@ -10,7 +11,10 @@ import {
   createOutlineSection,
   type CameraUp,
 } from "poppygl"
-import type { AssemblyDrawingPartView } from "lib/components/primitive-components/AssemblyDrawingPartView"
+import {
+  usesResolvedDrawingScene,
+  type AssemblyDrawingView,
+} from "../drawing-view"
 import type { AssemblyDrawingDimension } from "lib/components/primitive-components/AssemblyDrawingDimension"
 import { getDrawingViewGeometry } from "../geometry/get-drawing-view-geometry"
 import { getDrawingDrawCalls } from "../geometry/get-drawing-draw-calls"
@@ -23,7 +27,10 @@ import { resolveDrawingEdgeReferences } from "./resolve-drawing-edge-references"
 
 export type ResolvedDrawingDimension = Omit<
   DrawingDimensionLine,
-  "type" | "drawing_dimension_line_id" | "drawing_part_view_id"
+  | "type"
+  | "drawing_dimension_line_id"
+  | "drawing_part_view_id"
+  | "drawing_explosion_view_id"
 >
 
 /** Camera directions match circuit-json-to-drawing's getViewOrientation:
@@ -47,11 +54,12 @@ const cameraDirections: Record<
  * only witness/line placement is scaled into paper coordinates.
  */
 export async function resolveDrawingDimensions(
-  view: AssemblyDrawingPartView,
+  view: AssemblyDrawingView,
   drawingView: Omit<
     DrawingPartView,
     "type" | "drawing_part_view_id" | "drawing_page_id"
-  >,
+  > &
+    Pick<DrawingPartSelection, "pcb_board_ids">,
   circuitJson: AnyCircuitElement[],
 ): Promise<ResolvedDrawingDimension[]> {
   const dimensions = view.children.filter(
@@ -99,11 +107,21 @@ export async function resolveDrawingDimensions(
     1,
     Math.hypot(...bounds.min.map((min, i) => bounds.max[i]! - min)) * 3,
   )
-  const direction = cameraDirections[drawingView.direction]
+  // Identity-resolved stage views use the renderer's canonical (x,z,-y) frame.
+  // Existing model readers use (-x,z,y); rotate the camera by the paired 180°
+  // Y transform, including its up direction, instead of altering CAD points.
+  const canonical = usesResolvedDrawingScene(view)
+  const direction = cameraDirections[drawingView.direction].map((n, i) =>
+    canonical && i !== 1 ? -n : n,
+  )
   const eye = center.map(
     (n, i) => n + (direction[i]! / Math.hypot(...direction)) * distance,
   ) as [number, number, number]
-  const up: CameraUp = drawingView.direction.startsWith("z_") ? "z-" : "y+"
+  const up: CameraUp = drawingView.direction.startsWith("z_")
+    ? canonical
+      ? "z+"
+      : "z-"
+    : "y+"
   const section = drawingView.section
   const sectionPlane = section
     ? {
@@ -123,6 +141,11 @@ export async function resolveDrawingDimensions(
         hatchSpacing: section.hatch_spacing ?? 1,
       }
     : undefined
+  if (canonical && sectionPlane && sectionPlane.axis !== "y") {
+    sectionPlane.offset = -sectionPlane.offset
+    sectionPlane.keepSide =
+      sectionPlane.keepSide === "less" ? "greater" : "less"
+  }
   const retained = sectionPlane
     ? createOutlineSection(drawCalls, sectionPlane).drawCalls
     : drawCalls
