@@ -93,7 +93,7 @@ jobs:
           bun install --ignore-scripts
           cd ../head
           bun install --ignore-scripts
-      - name: Compare base and head sequentially with the same pinned fixtures
+      - name: Compare base/head/head/base on the same pinned fixtures
         env:
           CIRCUIT: ${{ needs.resolve.outputs.circuit }}
           SAMPLE_TIMEOUT: ${{ needs.resolve.outputs.timeout }}
@@ -106,6 +106,9 @@ jobs:
           head_status=0
           bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" "${args[@]}" || base_status=$?
           bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" "${args[@]}" || head_status=$?
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head-repeat" "${args[@]}" || head_status=$?
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base-repeat" "${args[@]}" || base_status=$?
+          bun "$benchmark/report.ts" results/head-repeat/results.json results/base-repeat/results.json results/comparison-repeat.md
           bun "$benchmark/report.ts" results/head/results.json results/base/results.json results/comparison.md
           cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
           if (( base_status != 0 || head_status != 0 )); then exit 1; fi
