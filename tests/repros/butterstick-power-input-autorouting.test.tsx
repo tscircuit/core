@@ -5,7 +5,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 // https://github.com/butterstick-fpga/butterstick-hardware/blob/0694ddfa9824a07f0c6c6981186e45f80187659c/hardware/ButterStick_r1.0/ButterStick.kicad_pcb
 // Pad points are footprint-local, in mm, X right/Y up. originalLayer keeps
 // the native bottom-side geometry from receiving an additional mirror.
-test("ButterStick power input annulus contact blocks autorouting", async () => {
+test("Routes the ButterStick power input through same-net annulus contact", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -298,9 +298,11 @@ test("ButterStick power input annulus contact blocks autorouting", async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
-  expect(circuit.db.pcb_footprint_overlap_error.list()).toHaveLength(1)
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_footprint_overlap_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_port_not_connected_error.list()).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     backgroundColor: "white",
     colorOverrides: {
