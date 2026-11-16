@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import "bun-match-svg"
+import "tests/fixtures/extend-expect-any-svg"
 import { Buffer } from "node:buffer"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
@@ -106,5 +106,9 @@ test("native H3 byte 0 routing input preserves every later phase request", async
   console.log(
     `CORE_H3_PHASE_INTENT_FIX_SVG_SHA256 ${createHash("sha256").update(pcbSnapshotSvg).digest("hex")} bytes=${Buffer.byteLength(pcbSnapshotSvg, "utf8")}`,
   )
-  await expect(pcbSnapshotSvg).toMatchSvgSnapshot(import.meta.path, "pcb")
+  await expect(pcbSnapshotSvg).toMatchSvgSnapshot(
+    import.meta.path,
+    "h3-routing-phase-future-intent-pcb",
+    { diffThresholdPercent: 0 },
+  )
 }, 60_000)

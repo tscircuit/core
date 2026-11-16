@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import "graphics-debug/matcher"
-import type { GraphicsObject } from "graphics-debug"
+import "tests/fixtures/extend-expect-any-svg"
+import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
 import { Group_getPendingRoutingAccess } from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
 import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
@@ -320,6 +320,11 @@ test("phase requests retain only later routing intent with its own physical rule
   const phaseInput = Group_filterSimpleRouteJsonForPhase(sourceSrj, active)
   phaseInput.pendingRoutingAccess = pendingRoutingAccess
   await expect(
-    getPendingRoutingAccessGraphics({ sourceSrj, phaseInput }),
-  ).toMatchGraphicsSvg(import.meta.path, { backgroundColor: "white" })
+    getSvgFromGraphicsObject(
+      getPendingRoutingAccessGraphics({ sourceSrj, phaseInput }),
+      { backgroundColor: "white" },
+    ),
+  ).toMatchSvgSnapshot(import.meta.path, "pending-routing-access", {
+    diffThresholdPercent: 0,
+  })
 })
