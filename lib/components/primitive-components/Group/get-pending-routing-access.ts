@@ -9,7 +9,7 @@ import type { RoutingPhasePlan } from "./GroupRoutingPhasePlan"
 import {
   connectionIsInRoutingPhase,
   Group_applyDrcTolerancesToSimpleRouteJson,
-  Group_selectSimpleRouteJsonForPhase,
+  selectSimpleRouteJsonForPhase,
   type RoutingPhaseSrjTargets,
 } from "./Group_phasedAutoroutingUtils"
 
@@ -24,7 +24,7 @@ export type PendingRoutingPhasePlan = RoutingPhaseSrjTargets &
   >
 
 /** Replace inherited intent on a derived SRJ; empty future work has no field. */
-export function Group_withPendingRoutingAccess(
+export function withPendingRoutingAccessOnSrj(
   simpleRouteJson: SimpleRouteJson,
   pendingRoutingAccess: PendingRoutingAccess[] | undefined,
 ): SimpleRouteJson {
@@ -43,7 +43,7 @@ export function Group_withPendingRoutingAccess(
  * The selected SRJ bounds describe physical terminal access. Fanout exit targets
  * are not routing-area limits and future fanout completion is not established here.
  */
-export function Group_getPendingRoutingAccess<
+export function getPendingRoutingAccessFromSrj<
   PhasePlan extends PendingRoutingPhasePlan,
 >(
   simpleRouteJson: SimpleRouteJson,
@@ -68,7 +68,7 @@ export function Group_getPendingRoutingAccess<
     // Rerouting and test-point insertion revisit already requested copper.
     if (futurePhasePlan.reroute || futurePhasePlan.testPointOptions) continue
     const futureSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
-      Group_selectSimpleRouteJsonForPhase(simpleRouteJson, futurePhasePlan),
+      selectSimpleRouteJsonForPhase(simpleRouteJson, futurePhasePlan),
       futurePhasePlan.drcTolerances,
     )
     const connections = futureSimpleRouteJson.connections.filter(
@@ -90,11 +90,11 @@ export function Group_getPendingRoutingAccess<
         "Future routing configuration must be resolved before preserving terminal access",
       )
     }
-    const fanoutMode = futureAutorouterConfig.algorithmFn
+    const routingPreset = futureAutorouterConfig.algorithmFn
       ? undefined
       : futureAutorouterConfig.preset
     const isFanout =
-      fanoutMode === "fanout" || fanoutMode === "single_layer_fanout"
+      routingPreset === "fanout" || routingPreset === "single_layer_fanout"
 
     const connectionNames = new Set(
       connections.map((connection) => connection.name),
@@ -123,11 +123,13 @@ export function Group_getPendingRoutingAccess<
       buses: buses?.length ? buses : undefined,
       bounds: futureSimpleRouteJson.bounds,
       outline: futureSimpleRouteJson.outline,
-      allowedLayers: isFanout
-        ? fanoutMode === "single_layer_fanout"
-          ? ["top"]
-          : futurePhasePlan.fanoutRoutingLayers
-        : undefined,
+      // Dogbone shares the phase layer restriction, not fanout bus overrides.
+      allowedLayers:
+        isFanout || routingPreset === "dogbone"
+          ? routingPreset === "single_layer_fanout"
+            ? ["top"]
+            : futurePhasePlan.fanoutRoutingLayers
+          : undefined,
       minTraceWidth: futureSimpleRouteJson.minTraceWidth,
       defaultObstacleMargin: futureSimpleRouteJson.defaultObstacleMargin,
       minTraceToPadEdgeClearance:

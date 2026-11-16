@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import "tests/fixtures/extend-expect-any-svg"
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
-import { Group_getPendingRoutingAccess } from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+import { getPendingRoutingAccessFromSrj } from "lib/components/primitive-components/Group/get-pending-routing-access"
 import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import type {
   PcbGroupId,
@@ -276,7 +276,7 @@ test("phase requests retain only later routing intent with its own physical rule
       { local: true, allowViaInPad: phasePlan !== byte1 },
     ]),
   )
-  const pendingRoutingAccess = Group_getPendingRoutingAccess(sourceSrj, {
+  const pendingRoutingAccess = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: active,
     routingPhasePlans,
     autorouterConfigByPhasePlan,
@@ -309,14 +309,14 @@ test("phase requests retain only later routing intent with its own physical rule
     expect(access).not.toHaveProperty("pendingRoutingAccess")
   }
   expect(
-    Group_getPendingRoutingAccess(sourceSrj, {
+    getPendingRoutingAccessFromSrj(sourceSrj, {
       phasePlan: remaining,
       routingPhasePlans,
       autorouterConfigByPhasePlan,
     }),
   ).toBeUndefined()
   expect(
-    Group_getPendingRoutingAccess(sourceSrj, {
+    getPendingRoutingAccessFromSrj(sourceSrj, {
       phasePlan: active,
       routingPhasePlans: [prior, active],
       autorouterConfigByPhasePlan,

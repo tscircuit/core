@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import {
-  Group_getPendingRoutingAccess,
+  getPendingRoutingAccessFromSrj,
   type PendingRoutingPhasePlan,
-} from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+} from "lib/components/primitive-components/Group/get-pending-routing-access"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 
@@ -75,7 +75,7 @@ test("future requests preserve width precedence after existing phase DRC overrid
     PendingRoutingPhasePlan,
     NormalizedAutorouterConfig
   >(routingPhasePlans.map((phasePlan) => [phasePlan, { local: true }]))
-  const access = Group_getPendingRoutingAccess(sourceSrj, {
+  const access = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: active,
     routingPhasePlans,
     autorouterConfigByPhasePlan,

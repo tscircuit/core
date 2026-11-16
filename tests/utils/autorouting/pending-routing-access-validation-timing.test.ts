@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import {
-  Group_getPendingRoutingAccess,
+  getPendingRoutingAccessFromSrj,
   type PendingRoutingPhasePlan,
-} from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+} from "lib/components/primitive-components/Group/get-pending-routing-access"
 import { Group_filterSimpleRouteJsonForPhase } from "lib/components/primitive-components/Group/Group_phasedAutoroutingUtils"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
@@ -71,7 +71,7 @@ test("future physical intent does not enter later matching validation early", ()
     PendingRoutingPhasePlan,
     NormalizedAutorouterConfig
   >(routingPhasePlans.map((phasePlan) => [phasePlan, { local: true }]))
-  const access = Group_getPendingRoutingAccess(sourceSrj, {
+  const access = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: earlier,
     routingPhasePlans,
     autorouterConfigByPhasePlan,
@@ -106,7 +106,7 @@ test("future physical intent does not enter later matching validation early", ()
     ],
   }
   expect(
-    Group_getPendingRoutingAccess(sourceWithPair, {
+    getPendingRoutingAccessFromSrj(sourceWithPair, {
       phasePlan: earlier,
       routingPhasePlans,
       autorouterConfigByPhasePlan,

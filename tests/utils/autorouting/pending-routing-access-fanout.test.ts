@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import {
-  Group_getPendingRoutingAccess,
+  getPendingRoutingAccessFromSrj,
   type PendingRoutingPhasePlan,
-} from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+} from "lib/components/primitive-components/Group/get-pending-routing-access"
 import type { RoutingPhasePlan } from "lib/components/primitive-components/Group/GroupRoutingPhasePlan"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
@@ -53,7 +53,7 @@ test("future fanouts retain physical SRJ bounds and actual escape layers", () =>
     [active, { local: true }],
     [fanout, { local: true, preset: "fanout" }],
   ])
-  const access = Group_getPendingRoutingAccess(sourceSrj, {
+  const access = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: active,
     routingPhasePlans,
     autorouterConfigByPhasePlan,
@@ -68,7 +68,7 @@ test("future fanouts retain physical SRJ bounds and actual escape layers", () =>
     preset: "single_layer_fanout",
   })
   expect(
-    Group_getPendingRoutingAccess(sourceSrj, {
+    getPendingRoutingAccessFromSrj(sourceSrj, {
       phasePlan: active,
       routingPhasePlans,
       autorouterConfigByPhasePlan,
@@ -81,7 +81,7 @@ test("future fanouts retain physical SRJ bounds and actual escape layers", () =>
     { minX: 9, maxX: 15, minY: -1, maxY: 1 },
   ]) {
     fanout.fanoutBounds = fanoutBounds
-    const futureAccess = Group_getPendingRoutingAccess(sourceSrj, {
+    const futureAccess = getPendingRoutingAccessFromSrj(sourceSrj, {
       phasePlan: active,
       routingPhasePlans,
       autorouterConfigByPhasePlan,
@@ -96,7 +96,7 @@ test("future fanouts retain physical SRJ bounds and actual escape layers", () =>
       throw new Error("A metadata-only test must not call a custom router")
     },
   })
-  const customAccess = Group_getPendingRoutingAccess(sourceSrj, {
+  const customAccess = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: active,
     routingPhasePlans,
     autorouterConfigByPhasePlan,

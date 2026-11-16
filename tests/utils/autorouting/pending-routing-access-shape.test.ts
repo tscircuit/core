@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Group_withPendingRoutingAccess } from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+import { withPendingRoutingAccessOnSrj } from "lib/components/primitive-components/Group/get-pending-routing-access"
 import type {
   PendingRoutingAccess,
   SimpleRouteJson,
@@ -14,7 +14,7 @@ test("no future work preserves request shape and removes stale inherited intent"
     connections: [{ name: "active", pointsToConnect: [] }],
   }
   const originalSrj = JSON.stringify(sourceSrj)
-  const withoutFuture = Group_withPendingRoutingAccess(sourceSrj, undefined)
+  const withoutFuture = withPendingRoutingAccessOnSrj(sourceSrj, undefined)
   expect(withoutFuture).toStrictEqual(sourceSrj)
   expect(withoutFuture).not.toHaveProperty("pendingRoutingAccess")
   expect(Object.hasOwn(withoutFuture, "pendingRoutingAccess")).toBe(false)
@@ -28,14 +28,14 @@ test("no future work preserves request shape and removes stale inherited intent"
     },
   ]
   const staleSrj = { ...sourceSrj, pendingRoutingAccess: oldAccess }
-  const cleared = Group_withPendingRoutingAccess(staleSrj, undefined)
+  const cleared = withPendingRoutingAccessOnSrj(staleSrj, undefined)
   expect(cleared).toStrictEqual(sourceSrj)
   expect(cleared).not.toHaveProperty("pendingRoutingAccess")
   expect(Object.hasOwn(cleared, "pendingRoutingAccess")).toBe(false)
   expect(JSON.stringify(cleared)).toBe(originalSrj)
   expect(staleSrj.pendingRoutingAccess).toBe(oldAccess)
 
-  const empty = Group_withPendingRoutingAccess(staleSrj, [])
+  const empty = withPendingRoutingAccessOnSrj(staleSrj, [])
   expect(empty).not.toHaveProperty("pendingRoutingAccess")
   expect(JSON.stringify(empty)).toBe(originalSrj)
 
@@ -46,7 +46,7 @@ test("no future work preserves request shape and removes stale inherited intent"
       connections: [{ name: "future", pointsToConnect: [] }],
     },
   ]
-  const replaced = Group_withPendingRoutingAccess(staleSrj, futureAccess)
+  const replaced = withPendingRoutingAccessOnSrj(staleSrj, futureAccess)
   expect(replaced.pendingRoutingAccess).toBe(futureAccess)
   expect(JSON.parse(JSON.stringify(replaced)).pendingRoutingAccess).toEqual(
     futureAccess,

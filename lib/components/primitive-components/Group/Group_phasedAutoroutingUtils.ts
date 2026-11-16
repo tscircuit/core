@@ -63,7 +63,7 @@ export function Group_filterSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
   phasePlan: RoutingPhaseSrjTargets,
 ): SimpleRouteJson {
-  const phaseSimpleRouteJson = Group_selectSimpleRouteJsonForPhase(
+  const phaseSimpleRouteJson = selectSimpleRouteJsonForPhase(
     simpleRouteJson,
     phasePlan,
   )
@@ -119,7 +119,7 @@ export function Group_filterSimpleRouteJsonForPhase(
 }
 
 /** Select physical phase intent without entering its route-preparation checks. */
-export function Group_selectSimpleRouteJsonForPhase(
+export function selectSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
   phasePlan: RoutingPhaseSrjTargets,
 ): SimpleRouteJson {

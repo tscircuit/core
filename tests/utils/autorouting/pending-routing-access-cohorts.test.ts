@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import {
-  Group_getPendingRoutingAccess,
+  getPendingRoutingAccessFromSrj,
   type PendingRoutingPhasePlan,
-} from "lib/components/primitive-components/Group/Group_getPendingRoutingAccess"
+} from "lib/components/primitive-components/Group/get-pending-routing-access"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 
@@ -64,7 +64,7 @@ test("local fanouts do not erase a later global bridge with the same source owne
     PendingRoutingPhasePlan,
     NormalizedAutorouterConfig
   >(routingPhasePlans.map((phasePlan) => [phasePlan, { local: true }]))
-  const accessBeforeRam = Group_getPendingRoutingAccess(sourceSrj, {
+  const accessBeforeRam = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: active,
     routingPhasePlans,
     autorouterConfigByPhasePlan,
@@ -74,7 +74,7 @@ test("local fanouts do not erase a later global bridge with the same source owne
       access.connections.map((connection) => connection.name),
     ),
   ).toEqual([["ram_escape"], ["global_bridge"]])
-  const accessAfterRam = Group_getPendingRoutingAccess(sourceSrj, {
+  const accessAfterRam = getPendingRoutingAccessFromSrj(sourceSrj, {
     phasePlan: ram,
     routingPhasePlans,
     autorouterConfigByPhasePlan,

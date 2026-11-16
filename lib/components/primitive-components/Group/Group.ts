@@ -108,9 +108,9 @@ import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import {
-  Group_getPendingRoutingAccess,
-  Group_withPendingRoutingAccess,
-} from "./Group_getPendingRoutingAccess"
+  getPendingRoutingAccessFromSrj,
+  withPendingRoutingAccessOnSrj,
+} from "./get-pending-routing-access"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
@@ -1571,9 +1571,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
-      simpleRouteJson = Group_withPendingRoutingAccess(
+      simpleRouteJson = withPendingRoutingAccessOnSrj(
         simpleRouteJson,
-        Group_getPendingRoutingAccess(baseSimpleRouteJson, {
+        getPendingRoutingAccessFromSrj(baseSimpleRouteJson, {
           phasePlan: routingPhasePlan,
           routingPhasePlans,
           autorouterConfigByPhasePlan,
