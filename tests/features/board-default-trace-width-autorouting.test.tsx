@@ -31,6 +31,9 @@ test("board nominalTraceWidth sets autorouted trace width", async () => {
   for (const width of widths) {
     expect(width).toBe(0.25)
   }
+  expect(circuit.db.pcb_board.list()[0]).not.toHaveProperty(
+    "default_nominal_trace_width",
+  )
 })
 
 test("explicit trace thickness takes precedence over board defaultTraceWidth", async () => {
