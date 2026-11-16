@@ -23,6 +23,7 @@ export * from "./utils/autorouting/GenericLocalAutorouter"
 export * from "./utils/edit-events/apply-pcb-edit-events-to-manual-edits-file"
 export * from "./utils/edit-events/apply-schematic-edit-events-to-manual-edits-file"
 export * from "./utils/edit-events/apply-edit-events-to-circuit-json"
+export { applyPcbMoveWithRouting } from "./utils/edit-events/apply-pcb-move-with-routing"
 export * from "./solvers"
 
 // Allows easier introspection of render process
