@@ -10,16 +10,20 @@ beforeAll(async () => {
     <board width={18} height={10} routingDisabled>
       <chip name="U1" schPinArrangement={{ rightSide: ["pin1"] }}>
         <footprint>
-          {[-2, 2].map((pcbX) => (
-            <platedhole
-              key={pcbX}
-              portHints={["pin2"]}
-              pcbX={pcbX}
-              shape="circle"
-              holeDiameter={0.8}
-              outerDiameter={1.4}
-            />
-          ))}
+          <platedhole
+            portHints={["pin2"]}
+            pcbX={-2}
+            shape="circle"
+            holeDiameter={0.8}
+            outerDiameter={1.4}
+          />
+          <platedhole
+            portHints={["pin2"]}
+            pcbX={2}
+            shape="circle"
+            holeDiameter={0.8}
+            outerDiameter={1.4}
+          />
         </footprint>
       </chip>
       <trace from="U1.pin2" to="net.GND" />
