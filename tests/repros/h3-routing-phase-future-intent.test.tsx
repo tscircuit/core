@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import "bun-match-svg"
+import { Buffer } from "node:buffer"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
@@ -11,7 +12,7 @@ import {
 import { getH3RoutingPhaseIntentSnapshot } from "tests/fixtures/h3-routing-phase-intent/snapshot"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
-test("native H3 byte 0 routing input omits later phase intent", async () => {
+test("native H3 byte 0 routing input preserves every later phase request", async () => {
   const fixtureBytes = readFileSync(
     new URL(
       "../fixtures/h3-routing-phase-intent/source.json.gz",
@@ -49,13 +50,61 @@ test("native H3 byte 0 routing input omits later phase intent", async () => {
   expect(
     circuit.db.pcb_autorouting_error.list().map((error) => error.message),
   ).toEqual([stopAfterCapture])
-  expect(phaseSimpleRouteJson).not.toHaveProperty("pendingRoutingAccess")
+  expect(
+    phaseSimpleRouteJson.pendingRoutingAccess?.map(
+      (access) => access.connections.length,
+    ),
+  ).toEqual([8, 37])
+  const pendingConnections = phaseSimpleRouteJson.pendingRoutingAccess!.flatMap(
+    (access) => access.connections,
+  )
+  const futureNetNames = new Set(
+    source.traces
+      .filter((trace) => trace.group !== "byte0")
+      .map((trace) => trace.name),
+  )
+  const futureSourceNetIds = circuit.db.source_net
+    .list()
+    .filter((net) => futureNetNames.has(net.name!))
+    .map((net) => net.source_net_id)
+  expect(futureSourceNetIds).toHaveLength(45)
+  expect(
+    new Set(pendingConnections.map((connection) => connection.name)),
+  ).toEqual(new Set(futureSourceNetIds))
+  for (const access of phaseSimpleRouteJson.pendingRoutingAccess!) {
+    expect(access.bounds).toEqual(phaseSimpleRouteJson.bounds)
+    expect(access.minViaPadDiameter).toBe(source.rules.viaPad)
+    expect(access.minViaHoleDiameter).toBe(source.rules.viaDrill)
+    expect(access.minTraceToPadEdgeClearance).toBe(
+      source.rules.appliedGlobalClearance,
+    )
+    expect(access.allowViaInPad).toBe(false)
+    expect(access).not.toHaveProperty("obstacles")
+    expect(access).not.toHaveProperty("traces")
+  }
+  expect(
+    phaseSimpleRouteJson.pendingRoutingAccess![0]!.buses?.[0]?.allowedLayers,
+  ).toEqual(source.signalLayers)
 
-  await expect(
-    getH3RoutingPhaseIntentSnapshot({
-      circuitJson: circuit.getCircuitJson(),
-      phaseSimpleRouteJson,
-      pendingConnections: [],
-    }),
-  ).toMatchSvgSnapshot(import.meta.path, "pcb")
+  const pcbSnapshotSvg = getH3RoutingPhaseIntentSnapshot({
+    circuitJson: circuit.getCircuitJson(),
+    phaseSimpleRouteJson,
+    pendingConnections,
+  })
+  const snapshotSvgBase64 = Buffer.from(pcbSnapshotSvg, "utf8").toString(
+    "base64",
+  )
+  console.log("CORE_H3_PHASE_INTENT_FIX_SVG_BASE64_BEGIN")
+  for (
+    let base64Offset = 0;
+    base64Offset < snapshotSvgBase64.length;
+    base64Offset += 120
+  ) {
+    console.log(snapshotSvgBase64.slice(base64Offset, base64Offset + 120))
+  }
+  console.log("CORE_H3_PHASE_INTENT_FIX_SVG_BASE64_END")
+  console.log(
+    `CORE_H3_PHASE_INTENT_FIX_SVG_SHA256 ${createHash("sha256").update(pcbSnapshotSvg).digest("hex")} bytes=${Buffer.byteLength(pcbSnapshotSvg, "utf8")}`,
+  )
+  await expect(pcbSnapshotSvg).toMatchSvgSnapshot(import.meta.path, "pcb")
 }, 60_000)

@@ -107,6 +107,10 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import {
+  Group_getPendingRoutingAccess,
+  Group_withPendingRoutingAccess,
+} from "./Group_getPendingRoutingAccess"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
@@ -1068,6 +1072,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id ?? undefined,
       })
     }
+    const autorouterConfigByPhasePlan = new Map<
+      RoutingPhasePlan,
+      NormalizedAutorouterConfig
+    >()
     const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
       const resolvedPhaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
@@ -1115,6 +1123,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               }
             : phaseAutorouterConfig,
         this.root?.platform,
+      )
+      autorouterConfigByPhasePlan.set(
+        routingPhasePlan,
+        stages[0]!.autorouterConfig,
       )
       return stages.map((stage, phaseStageIndex) => ({
         ...stage,
@@ -1216,7 +1228,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       phaseAutorouterConfig,
     ] of fanoutConfigByPhasePlan) {
       const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
-      if (!fanoutRegionPcbGroupId) continue
+      if (!fanoutRegionPcbGroupId && phaseAutorouterConfig.algorithmFn) continue
       let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
         baseSimpleRouteJson,
         routingPhasePlan,
@@ -1226,10 +1238,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseSimpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
-      const breakoutPoints = db.pcb_breakout_point
-        .list()
-        .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
-        .map((point) => ({ x: point.x, y: point.y }))
+      const breakoutPoints = fanoutRegionPcbGroupId
+        ? db.pcb_breakout_point
+            .list()
+            .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
+            .map((point) => ({ x: point.x, y: point.y }))
+        : []
       const fanoutMode = phaseAutorouterConfig.preset as
         | "fanout"
         | "single_layer_fanout"
@@ -1248,7 +1262,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         },
       )
       routingPhasePlan.fanoutBounds = fanoutBounds
-      if (!fanoutBounds) continue
+      if (!fanoutRegionPcbGroupId || !fanoutBounds) continue
 
       const pcbGroup = db.pcb_group.get(fanoutRegionPcbGroupId)
 
@@ -1559,6 +1573,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+      simpleRouteJson = Group_withPendingRoutingAccess(
+        simpleRouteJson,
+        Group_getPendingRoutingAccess(baseSimpleRouteJson, {
+          phasePlan: routingPhasePlan,
+          routingPhasePlans,
+          autorouterConfigByPhasePlan,
+        }),
+      )
 
       const getPrecomputedRoutingResult = usesPreviousStageOutput
         ? undefined

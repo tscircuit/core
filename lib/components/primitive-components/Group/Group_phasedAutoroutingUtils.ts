@@ -10,11 +10,22 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import type { Trace } from "../Trace/Trace"
+import type { Net } from "../Net"
 import { getPairedBreakoutExitTarget } from "./getPairedBreakoutExitTarget"
+
+/** The phase filter only needs emitted source ownership, not component behavior. */
+export type RoutingPhaseSrjTargets = Pick<
+  RoutingPhasePlan,
+  "routingPcbGroupId" | "routingBounds"
+> & {
+  traces: ReadonlyArray<Pick<Trace, "source_trace_id">>
+  nets: ReadonlyArray<Pick<Net, "source_net_id">>
+}
 
 export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
-  phasePlan: RoutingPhasePlan,
+  phasePlan: RoutingPhaseSrjTargets,
 ): boolean {
   if (connection.routingPcbGroupId) {
     return connection.routingPcbGroupId === phasePlan.routingPcbGroupId
@@ -50,7 +61,7 @@ export function Group_hasPhasedAutorouting(
 
 export function Group_filterSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
-  phasePlan: RoutingPhasePlan,
+  phasePlan: RoutingPhaseSrjTargets,
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
   for (const connection of simpleRouteJson.connections) {
