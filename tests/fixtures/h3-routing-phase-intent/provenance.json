@@ -18,49 +18,24 @@
         "value": "DDR3-FBGA96",
         "footprint": "Package_BGA:Micron_FBGA-96_8x14mm_Layout9x16_P0.8mm",
         "pads": 96,
-        "at": [
-          "139.9286",
-          "64.560806",
-          "90"
-        ]
+        "at": ["139.9286", "64.560806", "90"]
       },
       {
         "ref": "U1",
         "value": "Allwinner-H3",
         "footprint": "Allwinner:Allwinner-H3",
         "pads": 347,
-        "at": [
-          "120.290565",
-          "63.925475"
-        ]
+        "at": ["120.290565", "63.925475"]
       }
     ],
-    "nativeLayers": [
-      [
-        "0",
-        "F.Cu",
-        "signal"
-      ],
-      [
-        "31",
-        "B.Cu",
-        "signal"
-      ]
-    ],
-    "signalLayers": [
-      "top",
-      "bottom"
-    ],
+    "nativeLayers": [["0", "F.Cu", "signal"], ["31", "B.Cu", "signal"]],
+    "signalLayers": ["top", "bottom"],
     "nets": 53,
     "terminals": 108,
     "pads": 479,
     "rules": {
-      "widths": [
-        0.1143
-      ],
-      "clearances": [
-        0.0889
-      ],
+      "widths": [0.1143],
+      "clearances": [0.0889],
       "appliedGlobalClearance": 0.0889,
       "viaPad": 0.45,
       "viaDrill": 0.2
