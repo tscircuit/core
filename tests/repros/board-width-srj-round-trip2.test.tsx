@@ -33,9 +33,9 @@ test("routed copper shows the trace widths from regenerated SRJ", async () => {
     {
       "boardDefault": {
         "copperWidths": [
-          0.1,
+          0.35,
         ],
-        "srjWidth": 0.1,
+        "srjWidth": 0.35,
       },
       "explicit": {
         "copperWidths": [
@@ -44,7 +44,7 @@ test("routed copper shows the trace widths from regenerated SRJ", async () => {
         "srjWidth": 0.55,
       },
       "minTraceWidth": 0.1,
-      "nominalTraceWidth": undefined,
+      "nominalTraceWidth": 0.35,
     }
   `)
 

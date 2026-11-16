@@ -8,6 +8,6 @@ beforeAll(async () => {
   defaultConnectionWidth = defaultConnection.nominalTraceWidth
 })
 
-test.failing("SRJ round trip uses the board default width", () => {
+test("SRJ round trip uses the board default width", () => {
   expect(defaultConnectionWidth).toBe(0.35)
 })
