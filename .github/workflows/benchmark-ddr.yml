@@ -1,146 +1,61 @@
-name: Core DDR workflow benchmark
-
+name: Audit saved DDR circuit results
 on:
-  issue_comment:
-    types: [created]
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Pull request to compare with its base
-        required: true
+        required: false
         type: string
-      circuit:
-        description: Optional circuit name (empty runs all ten)
-        type: string
-      timeout:
-        description: Render timeout in seconds per circuit
-        default: '120'
-        type: string
-
 permissions:
   contents: read
-  pull-requests: read
-
+  actions: read
 jobs:
-  resolve:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.issue.pull_request &&
-       startsWith(github.event.comment.body, '/benchmark') &&
-       github.event.comment.user.type != 'Bot' &&
-       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+  audit:
     runs-on: ubuntu-latest
-    outputs:
-      base: ${{ steps.resolve.outputs.base }}
-      head: ${{ steps.resolve.outputs.head }}
-      pr: ${{ steps.resolve.outputs.pr }}
-      circuit: ${{ steps.resolve.outputs.circuit }}
-      timeout: ${{ steps.resolve.outputs.timeout }}
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-      - uses: actions/github-script@v7
-        id: resolve
-        with:
-          script: |
-            const { pathToFileURL } = require('node:url')
-            const { parseDdrBenchmarkCommand } = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/benchmark-ddr/parse-command.mjs`).href)
-            const manual = context.eventName === 'workflow_dispatch'
-            const input = context.payload.inputs || {}
-            const command = manual
-              ? `/benchmark${input.circuit ? ` --circuit ${input.circuit}` : ''} --timeout ${input.timeout || '120'}`
-              : context.payload.comment.body
-            const options = parseDdrBenchmarkCommand(command)
-            const number = manual ? input.pr_number : context.issue.number
-            if (!/^\d+$/.test(String(number))) throw new Error('Invalid PR number')
-            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(number) })
-            core.setOutput('base', pr.base.sha)
-            core.setOutput('head', pr.head.sha)
-            core.setOutput('pr', String(pr.number))
-            core.setOutput('circuit', options.circuit)
-            core.setOutput('timeout', String(options.timeout))
-
-  benchmark:
-    needs: resolve
-    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
-    timeout-minutes: 150
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          path: tooling
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.base }}
-          path: base
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.head }}
-          path: head
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - name: Install trusted benchmark and both core dependency sets
-        run: |
-          cd tooling
-          bun install --ignore-scripts
-          cd ../base
-          bun install --ignore-scripts
-          cd ../head
-          bun install --ignore-scripts
-      - name: Compare base and head sequentially with the same pinned fixtures
+      - name: Wait for the completed comparison artifact
         env:
-          CIRCUIT: ${{ needs.resolve.outputs.circuit }}
-          SAMPLE_TIMEOUT: ${{ needs.resolve.outputs.timeout }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
-          args=(--timeout "$SAMPLE_TIMEOUT")
-          if [[ -n "$CIRCUIT" ]]; then args+=(--circuit "$CIRCUIT"); fi
-          mkdir -p results
-          base_status=0
-          head_status=0
-          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" "${args[@]}" || base_status=$?
-          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" "${args[@]}" || head_status=$?
-          bun "$benchmark/report.ts" results/head/results.json results/base/results.json results/comparison.md
-          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
-          if (( base_status != 0 || head_status != 0 )); then exit 1; fi
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ddr-benchmark-results
-          path: results/
-          retention-days: 14
-
-  report:
-    needs: [resolve, benchmark]
-    if: always() && needs.resolve.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-      issues: write
-      pull-requests: write
-    steps:
+          for audit_attempt in $(seq 1 120); do
+            artifact_count=$(gh api repos/tscircuit/core/actions/runs/43879593088/artifacts --jq '.artifacts | length')
+            if [ "$artifact_count" -gt 0 ]; then exit 0; fi
+            sleep 10
+          done
+          exit 1
       - uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: ddr-benchmark-results
+          run-id: 43879593088
+          github-token: ${{ github.token }}
           path: results
-      - uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ needs.resolve.outputs.pr }}
-          BENCHMARK_STATUS: ${{ needs.benchmark.result }}
-        with:
-          script: |
-            const fs = require('node:fs')
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
-            const report = fs.existsSync('results/comparison.md')
-              ? fs.readFileSync('results/comparison.md', 'utf8')
-              : 'The DDR benchmark could not produce a comparison. Check the workflow logs and partial artifacts.'
-            const body = `${report.slice(0, 58000)}\n\nWorkflow status: ${process.env.BENCHMARK_STATUS}. [Logs and artifacts](${runUrl}).`
-            await github.rest.issues.createComment({ ...context.repo, issue_number: Number(process.env.PR_NUMBER), body })
+      - name: Audit actual assessments, copper and routing inputs
+        run: |
+          python3 - <<'AUDIT_PY'
+          import json, pathlib, hashlib, base64
+          r = pathlib.Path('results')
+          a = json.loads((r/'base/results.json').read_text())
+          b = json.loads((r/'head/results.json').read_text())
+          prior = json.loads(base64.b64decode('eyJoMyI6IHsiYXNzZXNzbWVudCI6IHsicmVxdWVzdGVkTmV0cyI6IDUzLCAiY29ubmVjdGVkTmV0cyI6IDE2LCAidW5jb25uZWN0ZWROZXRzIjogWyIvRERSMyAxNngxL1NBMCIsICIvRERSMyAxNngxL1NBMSIsICIvRERSMyAxNngxL1NBMTAiLCAiL0REUjMgMTZ4MS9TQTExIiwgIi9ERFIzIDE2eDEvU0ExMiIsICIvRERSMyAxNngxL1NBMTMiLCAiL0REUjMgMTZ4MS9TQTE0IiwgIi9ERFIzIDE2eDEvU0ExNSIsICIvRERSMyAxNngxL1NBMiIsICIvRERSMyAxNngxL1NBMyIsICIvRERSMyAxNngxL1NBNCIsICIvRERSMyAxNngxL1NBNSIsICIvRERSMyAxNngxL1NBNiIsICIvRERSMyAxNngxL1NBNyIsICIvRERSMyAxNngxL1NBOCIsICIvRERSMyAxNngxL1NBOSIsICIvRERSMyAxNngxL1NCQTAiLCAiL0REUjMgMTZ4MS9TQkExIiwgIi9ERFIzIDE2eDEvU0JBMiIsICIvRERSMyAxNngxL1NDQVMiLCAiL0REUjMgMTZ4MS9TQ0tFMCIsICIvRERSMyAxNngxL1NDS0UxIiwgIi9ERFIzIDE2eDEvU0NLTiIsICIvRERSMyAxNngxL1NDS1AiLCAiL0REUjMgMTZ4MS9TQ1MwIiwgIi9ERFIzIDE2eDEvU0NTMSIsICIvRERSMyAxNngxL1NEUU0wIiwgIi9ERFIzIDE2eDEvU0RRTTEiLCAiL0REUjMgMTZ4MS9TRFFTME4iLCAiL0REUjMgMTZ4MS9TRFFTMFAiLCAiL0REUjMgMTZ4MS9TRFFTMU4iLCAiL0REUjMgMTZ4MS9TRFFTMVAiLCAiL0REUjMgMTZ4MS9TT0RUMCIsICIvRERSMyAxNngxL1NPRFQxIiwgIi9ERFIzIDE2eDEvU1JBUyIsICIvRERSMyAxNngxL1NSU1QiLCAiL0REUjMgMTZ4MS9TV0UiXSwgInBjYlRyYWNlcyI6IDE2LCAidmlhcyI6IDE0LCAid2lyZUxlbmd0aE1tIjogMjkzLjgwNTIxODk2NjgxOCwgImZpbmRpbmdzIjogeyJtaXNzaW5nX3RyYWNlcyI6IDAsICJkaXNjb25uZWN0ZWRfcG9ydHMiOiA3NiwgInRyYWNlX292ZXJsYXAiOiAwLCAicGFkX3RyYWNlIjogMCwgInZpYV90cmFjZSI6IDAsICJ2aWFfcGFkIjogMCwgInZpYV9zcGFjaW5nIjogMCwgImNvbnRpZ3VvdXMiOiAwLCAidmlhX2luX3BhZCI6IDAsICJob2xlX3RyYWNlIjogMCwgIndpZHRoIjogMH0sICJnZW9tZXRyeUVycm9ycyI6IFtdfSwgInN0YXR1cyI6ICJmYWlsZWQiLCAiY29wcGVySGFzaCI6ICJmYmUyZDY2M2ZiMTYzMzAzZWEzNDBjYjFhMTU1Y2FjYzA4YTE2MjU2ZjBjYzY5MjYyZjVlZGQ2NTFjMWMwNDU4IiwgImlucHV0SGFzaCI6ICI5ZDIwZjhiNWE3OTUzZTQ1OTZmNzMyYTU5YTkzZTI1YWM4M2NmYzEyMTA3NDAzODdmOTM3MzZjZWYzYzE5OGY3In0sICJhNjQiOiB7ImFzc2Vzc21lbnQiOiB7InJlcXVlc3RlZE5ldHMiOiA3NSwgImNvbm5lY3RlZE5ldHMiOiAzMiwgInVuY29ubmVjdGVkTmV0cyI6IFsiL1MwU0EwIiwgIi9TMFNBMSIsICIvUzBTQTEwIiwgIi9TMFNBMTEiLCAiL1MwU0ExMiIsICIvUzBTQTEzIiwgIi9TMFNBMTQiLCAiL1MwU0ExNSIsICIvUzBTQTIiLCAiL1MwU0EzIiwgIi9TMFNBNCIsICIvUzBTQTUiLCAiL1MwU0E2IiwgIi9TMFNBNyIsICIvUzBTQTgiLCAiL1MwU0E5IiwgIi9TMFNCQTAiLCAiL1MwU0JBMSIsICIvUzBTQkEyIiwgIi9TMFNDQVMiLCAiL1MwU0NLRTAiLCAiL1MwU0NLRTEiLCAiL1MwU0NLX04iLCAiL1MwU0NLX1AiLCAiL1MwU0NTMCIsICIvUzBTQ1MxIiwgIi9TMFNEUU0wIiwgIi9TMFNEUU0xIiwgIi9TMFNEUU0yIiwgIi9TMFNEUU0zIiwgIi9TMFNEUVMwX04iLCAiL1MwU0RRUzBfUCIsICIvUzBTRFFTMV9OIiwgIi9TMFNEUVMxX1AiLCAiL1MwU0RRUzJfTiIsICIvUzBTRFFTMl9QIiwgIi9TMFNEUVMzX04iLCAiL1MwU0RRUzNfUCIsICIvUzBTT0RUMCIsICIvUzBTT0RUMSIsICIvUzBTUkFTIiwgIi9TMFNSU1QiLCAiL1MwU1dFIl0sICJwY2JUcmFjZXMiOiAzMiwgInZpYXMiOiA0NCwgIndpcmVMZW5ndGhNbSI6IDQ3NC45NTM5NDYzNTM4OTYyLCAiZmluZGluZ3MiOiB7Im1pc3NpbmdfdHJhY2VzIjogMCwgImRpc2Nvbm5lY3RlZF9wb3J0cyI6IDEyMCwgInRyYWNlX292ZXJsYXAiOiAwLCAicGFkX3RyYWNlIjogMCwgInZpYV90cmFjZSI6IDAsICJ2aWFfcGFkIjogMCwgInZpYV9zcGFjaW5nIjogMCwgImNvbnRpZ3VvdXMiOiAwLCAidmlhX2luX3BhZCI6IDAsICJob2xlX3RyYWNlIjogMCwgIndpZHRoIjogMH0sICJnZW9tZXRyeUVycm9ycyI6IFtdfSwgInN0YXR1cyI6ICJmYWlsZWQiLCAiY29wcGVySGFzaCI6ICIwNjliZmJjMWQ0OTg1ZjE3ODU2MzI3MDA1NjY0ZjM3MThhNmU4YmY0YTIyMTkwYWNmNGRmZTkxNjJiYzYzMTYxIiwgImlucHV0SGFzaCI6ICI2MmEyYTY5ZjQwMWQwMjI2NWUyMDg2ZmJjMzQ0MWM0ZWE0YzJmM2YzNTY5YzA0ZTg4NDEzZDY2YzhhNGUzNDY4In0sICJzdG1wMTU3IjogeyJhc3Nlc3NtZW50IjogeyJyZXF1ZXN0ZWROZXRzIjogNzIsICJjb25uZWN0ZWROZXRzIjogMzIsICJ1bmNvbm5lY3RlZE5ldHMiOiBbIi9TMFNBMCIsICIvUzBTQTEiLCAiL1MwU0ExMCIsICIvUzBTQTExIiwgIi9TMFNBMTIiLCAiL1MwU0ExMyIsICIvUzBTQTE0IiwgIi9TMFNBMTUiLCAiL1MwU0EyIiwgIi9TMFNBMyIsICIvUzBTQTQiLCAiL1MwU0E1IiwgIi9TMFNBNiIsICIvUzBTQTciLCAiL1MwU0E4IiwgIi9TMFNBOSIsICIvUzBTQkEwIiwgIi9TMFNCQTEiLCAiL1MwU0JBMiIsICIvUzBTQ0FTIiwgIi9TMFNDS0UwIiwgIi9TMFNDS19OIiwgIi9TMFNDS19QIiwgIi9TMFNDUzAiLCAiL1MwU0RRTTAiLCAiL1MwU0RRTTEiLCAiL1MwU0RRTTIiLCAiL1MwU0RRTTMiLCAiL1MwU0RRUzBfTiIsICIvUzBTRFFTMF9QIiwgIi9TMFNEUVMxX04iLCAiL1MwU0RRUzFfUCIsICIvUzBTRFFTMl9OIiwgIi9TMFNEUVMyX1AiLCAiL1MwU0RRUzNfTiIsICIvUzBTRFFTM19QIiwgIi9TMFNPRFQwIiwgIi9TMFNSQVMiLCAiL1MwU1JTVCIsICIvUzBTV0UiXSwgInBjYlRyYWNlcyI6IDMyLCAidmlhcyI6IDU2LCAid2lyZUxlbmd0aE1tIjogNDc1LjU5NTA2MTU5Mzg4NTgsICJmaW5kaW5ncyI6IHsibWlzc2luZ190cmFjZXMiOiAwLCAiZGlzY29ubmVjdGVkX3BvcnRzIjogMTM3LCAidHJhY2Vfb3ZlcmxhcCI6IDAsICJwYWRfdHJhY2UiOiAwLCAidmlhX3RyYWNlIjogMCwgInZpYV9wYWQiOiAwLCAidmlhX3NwYWNpbmciOiAwLCAiY29udGlndW91cyI6IDAsICJ2aWFfaW5fcGFkIjogMCwgImhvbGVfdHJhY2UiOiAwLCAid2lkdGgiOiAwfSwgImdlb21ldHJ5RXJyb3JzIjogW119LCAic3RhdHVzIjogImZhaWxlZCIsICJjb3BwZXJIYXNoIjogImI3ZDllYzk2MDA4ODMxNWNlYjIxNWVjMjBhNzY0NTFiNjUzNzU0MDlkMjcxMWVmZTVhYjAxMDc2NTUzODAwZGEiLCAiaW5wdXRIYXNoIjogIjlkYzVkYzA3NTU4YjZmNTNjNTdhYjBkZGM1YWQwN2EyYTU5NWVlY2Y4NDVlZWYzOWFhZjY0YjcyNDNiM2IyNjUifSwgIm9yYW5nZWNyYWIiOiB7ImFzc2Vzc21lbnQiOiB7InJlcXVlc3RlZE5ldHMiOiA1MCwgImNvbm5lY3RlZE5ldHMiOiA1MCwgInVuY29ubmVjdGVkTmV0cyI6IFtdLCAicGNiVHJhY2VzIjogNTIsICJ2aWFzIjogMTExLCAid2lyZUxlbmd0aE1tIjogODcyLjQxNTM4ODI4ODE5NzUsICJmaW5kaW5ncyI6IHsibWlzc2luZ190cmFjZXMiOiAwLCAiZGlzY29ubmVjdGVkX3BvcnRzIjogMCwgInRyYWNlX292ZXJsYXAiOiAwLCAicGFkX3RyYWNlIjogMCwgInZpYV90cmFjZSI6IDAsICJ2aWFfcGFkIjogMCwgInZpYV9zcGFjaW5nIjogMCwgImNvbnRpZ3VvdXMiOiAwLCAidmlhX2luX3BhZCI6IDAsICJob2xlX3RyYWNlIjogMCwgIndpZHRoIjogMH0sICJnZW9tZXRyeUVycm9ycyI6IFtdfSwgInN0YXR1cyI6ICJwYXNzZWQiLCAiY29wcGVySGFzaCI6ICI4Y2JjNzdhZmIwODkyMzVmNjkyMTYwMWMzMjM1NTJmOGI0MmY3YThhYjI1ZDJjMmRkODEyZTA5YjZlMzA2YTU2IiwgImlucHV0SGFzaCI6ICI0YTc5ZGFlYjIwOWZlOGI5NjU1ODIyNGE2MDA2MDBkNjczM2QyMGFjMTE1MzJkMjY5NWU5MTRhNThjMzZhODhkIn0sICJhMTMiOiB7ImFzc2Vzc21lbnQiOiB7InJlcXVlc3RlZE5ldHMiOiA5NiwgImNvbm5lY3RlZE5ldHMiOiAwLCAidW5jb25uZWN0ZWROZXRzIjogWyIvRERSMyBNZW1vcnkvYTAwIiwgIi9ERFIzIE1lbW9yeS9hMDEiLCAiL0REUjMgTWVtb3J5L2EwMiIsICIvRERSMyBNZW1vcnkvYTAzIiwgIi9ERFIzIE1lbW9yeS9hMDQiLCAiL0REUjMgTWVtb3J5L2EwNSIsICIvRERSMyBNZW1vcnkvYTA2IiwgIi9ERFIzIE1lbW9yeS9hMDciLCAiL0REUjMgTWVtb3J5L2EwOCIsICIvRERSMyBNZW1vcnkvYTA5IiwgIi9ERFIzIE1lbW9yeS9hMTAiLCAiL0REUjMgTWVtb3J5L2ExMSIsICIvRERSMyBNZW1vcnkvYTEyIiwgIi9ERFIzIE1lbW9yeS9hMTMiLCAiL0REUjMgTWVtb3J5L2ExNCIsICIvRERSMyBNZW1vcnkvYmEwIiwgIi9ERFIzIE1lbW9yeS9iYTEiLCAiL0REUjMgTWVtb3J5L2JhMiIsICIvRERSMyBNZW1vcnkvY2FzIiwgIi9ERFIzIE1lbW9yeS9jaysiLCAiL0REUjMgTWVtb3J5L2NrLSIsICIvRERSMyBNZW1vcnkvY2tlIiwgIi9ERFIzIE1lbW9yeS9kMDAiLCAiL0REUjMgTWVtb3J5L2QwMSIsICIvRERSMyBNZW1vcnkvZDAyIiwgIi9ERFIzIE1lbW9yeS9kMDMiLCAiL0REUjMgTWVtb3J5L2QwNCIsICIvRERSMyBNZW1vcnkvZDA1IiwgIi9ERFIzIE1lbW9yeS9kMDYiLCAiL0REUjMgTWVtb3J5L2QwNyIsICIvRERSMyBNZW1vcnkvZDA4IiwgIi9ERFIzIE1lbW9yeS9kMDkiLCAiL0REUjMgTWVtb3J5L2QxMCIsICIvRERSMyBNZW1vcnkvZDExIiwgIi9ERFIzIE1lbW9yeS9kMTIiLCAiL0REUjMgTWVtb3J5L2QxMyIsICIvRERSMyBNZW1vcnkvZDE0IiwgIi9ERFIzIE1lbW9yeS9kMTUiLCAiL0REUjMgTWVtb3J5L2Rkci1hMCIsICIvRERSMyBNZW1vcnkvZGRyLWExIiwgIi9ERFIzIE1lbW9yeS9kZHItYTEwIiwgIi9ERFIzIE1lbW9yeS9kZHItYTExIiwgIi9ERFIzIE1lbW9yeS9kZHItYTEyIiwgIi9ERFIzIE1lbW9yeS9kZHItYTEzIiwgIi9ERFIzIE1lbW9yeS9kZHItYTE0IiwgIi9ERFIzIE1lbW9yeS9kZHItYTIiLCAiL0REUjMgTWVtb3J5L2Rkci1hMyIsICIvRERSMyBNZW1vcnkvZGRyLWE0IiwgIi9ERFIzIE1lbW9yeS9kZHItYTUiLCAiL0REUjMgTWVtb3J5L2Rkci1hNiIsICIvRERSMyBNZW1vcnkvZGRyLWE3IiwgIi9ERFIzIE1lbW9yeS9kZHItYTgiLCAiL0REUjMgTWVtb3J5L2Rkci1hOSIsICIvRERSMyBNZW1vcnkvZGRyLWJhMCIsICIvRERSMyBNZW1vcnkvZGRyLWJhMSIsICIvRERSMyBNZW1vcnkvZGRyLWJhMiIsICIvRERSMyBNZW1vcnkvZGRyLWNhcyIsICIvRERSMyBNZW1vcnkvZGRyLWNrKyIsICIvRERSMyBNZW1vcnkvZGRyLWNrLSIsICIvRERSMyBNZW1vcnkvZGRyLWNrZSIsICIvRERSMyBNZW1vcnkvZGRyLWQwIiwgIi9ERFIzIE1lbW9yeS9kZHItZDEiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTAiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTEiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTIiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTMiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTQiLCAiL0REUjMgTWVtb3J5L2Rkci1kMTUiLCAiL0REUjMgTWVtb3J5L2Rkci1kMiIsICIvRERSMyBNZW1vcnkvZGRyLWQzIiwgIi9ERFIzIE1lbW9yeS9kZHItZDQiLCAiL0REUjMgTWVtb3J5L2Rkci1kNSIsICIvRERSMyBNZW1vcnkvZGRyLWQ2IiwgIi9ERFIzIE1lbW9yeS9kZHItZDciLCAiL0REUjMgTWVtb3J5L2Rkci1kOCIsICIvRERSMyBNZW1vcnkvZGRyLWQ5IiwgIi9ERFIzIE1lbW9yeS9kZHItZG0wIiwgIi9ERFIzIE1lbW9yeS9kZHItZG0xIiwgIi9ERFIzIE1lbW9yeS9kZHItZHFzMCsiLCAiL0REUjMgTWVtb3J5L2Rkci1kcXMwLSIsICIvRERSMyBNZW1vcnkvZGRyLWRxczErIiwgIi9ERFIzIE1lbW9yeS9kZHItZHFzMS0iLCAiL0REUjMgTWVtb3J5L2Rkci1vZHQiLCAiL0REUjMgTWVtb3J5L2Rkci1yYXMiLCAiL0REUjMgTWVtb3J5L2Rkci1yc3QiLCAiL0REUjMgTWVtb3J5L2Rkci13ZSIsICIvRERSMyBNZW1vcnkvZG0wIiwgIi9ERFIzIE1lbW9yeS9kbTEiLCAiL0REUjMgTWVtb3J5L2RxczArIiwgIi9ERFIzIE1lbW9yeS9kcXMwLSIsICIvRERSMyBNZW1vcnkvZHFzMSsiLCAiL0REUjMgTWVtb3J5L2RxczEtIiwgIi9ERFIzIE1lbW9yeS9vZHQiLCAiL0REUjMgTWVtb3J5L3JhcyIsICIvRERSMyBNZW1vcnkvcnN0IiwgIi9ERFIzIE1lbW9yeS93ZSJdLCAicGNiVHJhY2VzIjogMCwgInZpYXMiOiAwLCAid2lyZUxlbmd0aE1tIjogMCwgImZpbmRpbmdzIjogeyJtaXNzaW5nX3RyYWNlcyI6IDAsICJkaXNjb25uZWN0ZWRfcG9ydHMiOiAxOTIsICJ0cmFjZV9vdmVybGFwIjogMCwgInBhZF90cmFjZSI6IDAsICJ2aWFfdHJhY2UiOiAwLCAidmlhX3BhZCI6IDAsICJ2aWFfc3BhY2luZyI6IDAsICJjb250aWd1b3VzIjogMCwgInZpYV9pbl9wYWQiOiAwLCAiaG9sZV90cmFjZSI6IDAsICJ3aWR0aCI6IDB9LCAiZ2VvbWV0cnlFcnJvcnMiOiBbXX0sICJzdGF0dXMiOiAidGltZW91dCIsICJjb3BwZXJIYXNoIjogIjRmNTNjZGExOGMyYmFhMGMwMzU0YmI1ZjlhM2VjYmU1ZWQxMmFiNGQ4ZTExYmE4NzNjMmYxMTE2MTIwMmI5NDUiLCAiaW5wdXRIYXNoIjogIjgzY2U4ZmJmM2ZlZjc1NjI2Mjg2OTAxMTZiOGEyMDMzYWM0YmJhMTgyZjEwYTg2NTAyZWUxMmNhZTAzZThjZjMifSwgImg2MTYiOiB7ImFzc2Vzc21lbnQiOiB7InJlcXVlc3RlZE5ldHMiOiA1MywgImNvbm5lY3RlZE5ldHMiOiA1MywgInVuY29ubmVjdGVkTmV0cyI6IFtdLCAicGNiVHJhY2VzIjogNTcsICJ2aWFzIjogOTQsICJ3aXJlTGVuZ3RoTW0iOiA2NjUuODg2NzM0Njk4MjQ4NywgImZpbmRpbmdzIjogeyJtaXNzaW5nX3RyYWNlcyI6IDAsICJkaXNjb25uZWN0ZWRfcG9ydHMiOiAwLCAidHJhY2Vfb3ZlcmxhcCI6IDAsICJwYWRfdHJhY2UiOiAwLCAidmlhX3RyYWNlIjogMCwgInZpYV9wYWQiOiAwLCAidmlhX3NwYWNpbmciOiAwLCAiY29udGlndW91cyI6IDAsICJ2aWFfaW5fcGFkIjogMCwgImhvbGVfdHJhY2UiOiAwLCAid2lkdGgiOiAwfSwgImdlb21ldHJ5RXJyb3JzIjogW119LCAic3RhdHVzIjogInBhc3NlZCIsICJjb3BwZXJIYXNoIjogIjYxYmY1NTJiNmMwNTUyYTJkNWY3NzdhMjA1ZGNhODQwOThjZGI3NTA1NTUyMjY3NjdiZTgyYTFiNjQxNDA1MmIiLCAiaW5wdXRIYXNoIjogImNiOWJkNmU4YWFlMDAyYzFiOTg3N2M1YmVmZmM1MmY4NGJmNGZmZDZjYWY1YTg2MGI4ZjMyOGViYTJhNWZkNWUifSwgImJ1dHRlcnN0aWNrIjogeyJhc3Nlc3NtZW50IjogeyJyZXF1ZXN0ZWROZXRzIjogNTUsICJjb25uZWN0ZWROZXRzIjogMCwgInVuY29ubmVjdGVkTmV0cyI6IFsiL0ZQR0EtRERSM0wvQTAiLCAiL0ZQR0EtRERSM0wvQTEiLCAiL0ZQR0EtRERSM0wvQTEwIiwgIi9GUEdBLUREUjNML0ExMSIsICIvRlBHQS1ERFIzTC9BMTIiLCAiL0ZQR0EtRERSM0wvQTEzIiwgIi9GUEdBLUREUjNML0ExNCIsICIvRlBHQS1ERFIzTC9BMTUiLCAiL0ZQR0EtRERSM0wvQTIiLCAiL0ZQR0EtRERSM0wvQTMiLCAiL0ZQR0EtRERSM0wvQTQiLCAiL0ZQR0EtRERSM0wvQTUiLCAiL0ZQR0EtRERSM0wvQTYiLCAiL0ZQR0EtRERSM0wvQTciLCAiL0ZQR0EtRERSM0wvQTgiLCAiL0ZQR0EtRERSM0wvQTkiLCAiL0ZQR0EtRERSM0wvQkEwIiwgIi9GUEdBLUREUjNML0JBMSIsICIvRlBHQS1ERFIzTC9CQTIiLCAiL0ZQR0EtRERSM0wvQ0FTIiwgIi9GUEdBLUREUjNML0NLMF9OIiwgIi9GUEdBLUREUjNML0NLMF9QIiwgIi9GUEdBLUREUjNML0NLMV9OIiwgIi9GUEdBLUREUjNML0NLMV9QIiwgIi9GUEdBLUREUjNML0NLRTAiLCAiL0ZQR0EtRERSM0wvQ0tFMSIsICIvRlBHQS1ERFIzTC9DUzAiLCAiL0ZQR0EtRERSM0wvQ1MxIiwgIi9GUEdBLUREUjNML0RRMCIsICIvRlBHQS1ERFIzTC9EUTEiLCAiL0ZQR0EtRERSM0wvRFExMCIsICIvRlBHQS1ERFIzTC9EUTExIiwgIi9GUEdBLUREUjNML0RRMTIiLCAiL0ZQR0EtRERSM0wvRFExMyIsICIvRlBHQS1ERFIzTC9EUTE0IiwgIi9GUEdBLUREUjNML0RRMTUiLCAiL0ZQR0EtRERSM0wvRFEyIiwgIi9GUEdBLUREUjNML0RRMyIsICIvRlBHQS1ERFIzTC9EUTQiLCAiL0ZQR0EtRERSM0wvRFE1IiwgIi9GUEdBLUREUjNML0RRNiIsICIvRlBHQS1ERFIzTC9EUTciLCAiL0ZQR0EtRERSM0wvRFE4IiwgIi9GUEdBLUREUjNML0RROSIsICIvRlBHQS1ERFIzTC9MRE0iLCAiL0ZQR0EtRERSM0wvTERRU19OIiwgIi9GUEdBLUREUjNML0xEUVNfUCIsICIvRlBHQS1ERFIzTC9PRFQwIiwgIi9GUEdBLUREUjNML09EVDEiLCAiL0ZQR0EtRERSM0wvUkFTIiwgIi9GUEdBLUREUjNML1JTVCIsICIvRlBHQS1ERFIzTC9VRE0iLCAiL0ZQR0EtRERSM0wvVURRU19OIiwgIi9GUEdBLUREUjNML1VEUVNfUCIsICIvRlBHQS1ERFIzTC9XRSJdLCAicGNiVHJhY2VzIjogMCwgInZpYXMiOiAwLCAid2lyZUxlbmd0aE1tIjogMCwgImZpbmRpbmdzIjogeyJtaXNzaW5nX3RyYWNlcyI6IDAsICJkaXNjb25uZWN0ZWRfcG9ydHMiOiAxNTksICJ0cmFjZV9vdmVybGFwIjogMCwgInBhZF90cmFjZSI6IDAsICJ2aWFfdHJhY2UiOiAwLCAidmlhX3BhZCI6IDAsICJ2aWFfc3BhY2luZyI6IDAsICJjb250aWd1b3VzIjogMCwgInZpYV9pbl9wYWQiOiAwLCAiaG9sZV90cmFjZSI6IDAsICJ3aWR0aCI6IDB9LCAiZ2VvbWV0cnlFcnJvcnMiOiBbXX0sICJzdGF0dXMiOiAidGltZW91dCIsICJjb3BwZXJIYXNoIjogIjRmNTNjZGExOGMyYmFhMGMwMzU0YmI1ZjlhM2VjYmU1ZWQxMmFiNGQ4ZTExYmE4NzNjMmYxMTE2MTIwMmI5NDUiLCAiaW5wdXRIYXNoIjogIjAwOTZlZmY4NGY3NWYwNTQ5YTkwMjEwYjdlZmRjNjUyNDljM2Y0OWMyYzhlMWQ4YWI3YzljZGZkMzhlOGNkMjcifSwgImdsaWRlciI6IHsiYXNzZXNzbWVudCI6IHsicmVxdWVzdGVkTmV0cyI6IDQ5LCAiY29ubmVjdGVkTmV0cyI6IDQ5LCAidW5jb25uZWN0ZWROZXRzIjogW10sICJwY2JUcmFjZXMiOiA1MywgInZpYXMiOiA5NCwgIndpcmVMZW5ndGhNbSI6IDExNjguNzk2NzM2ODY0NDI3LCAiZmluZGluZ3MiOiB7Im1pc3NpbmdfdHJhY2VzIjogMCwgImRpc2Nvbm5lY3RlZF9wb3J0cyI6IDAsICJ0cmFjZV9vdmVybGFwIjogMCwgInBhZF90cmFjZSI6IDAsICJ2aWFfdHJhY2UiOiAwLCAidmlhX3BhZCI6IDAsICJ2aWFfc3BhY2luZyI6IDAsICJjb250aWd1b3VzIjogMCwgInZpYV9pbl9wYWQiOiAwLCAiaG9sZV90cmFjZSI6IDAsICJ3aWR0aCI6IDB9LCAiZ2VvbWV0cnlFcnJvcnMiOiBbXX0sICJzdGF0dXMiOiAicGFzc2VkIiwgImNvcHBlckhhc2giOiAiMzJjM2FhNGY0YjkyZjdkOGQ3Mzk3NmNlZThkNjg3M2VlZGI0MzFhZjJiMzAxMzFjZmI2ZWRiMzU3MjQyYTNlNyIsICJpbnB1dEhhc2giOiAiNTYyYjA2MWRkNmEwZTYxYTdjYTM0NjAxZjE3OTc0M2I1MmQyNzQ0ZThlZmI1YmYzMDQwNTA5ZTk5MTY3MDAyYiJ9LCAiaW14NiI6IHsiYXNzZXNzbWVudCI6IHsicmVxdWVzdGVkTmV0cyI6IDUzLCAiY29ubmVjdGVkTmV0cyI6IDUzLCAidW5jb25uZWN0ZWROZXRzIjogW10sICJwY2JUcmFjZXMiOiA2NiwgInZpYXMiOiAxMzQsICJ3aXJlTGVuZ3RoTW0iOiAxNDk0LjE5NzA4NzMxMzg3NTMsICJmaW5kaW5ncyI6IHsibWlzc2luZ190cmFjZXMiOiAwLCAiZGlzY29ubmVjdGVkX3BvcnRzIjogMCwgInRyYWNlX292ZXJsYXAiOiAwLCAicGFkX3RyYWNlIjogMCwgInZpYV90cmFjZSI6IDAsICJ2aWFfcGFkIjogMCwgInZpYV9zcGFjaW5nIjogMCwgImNvbnRpZ3VvdXMiOiAwLCAidmlhX2luX3BhZCI6IDAsICJob2xlX3RyYWNlIjogMCwgIndpZHRoIjogMH0sICJnZW9tZXRyeUVycm9ycyI6IFtdfSwgInN0YXR1cyI6ICJwYXNzZWQiLCAiY29wcGVySGFzaCI6ICJlZmNkZDlkYjgwMDRlZDg1MjM3MDcyZGJlY2NlOWIzOGU2M2Y2YmQ2Njc5MTdjZWI3ZWQ4ZmFmOTk3YTE5ZjZmIiwgImlucHV0SGFzaCI6ICIzM2VjZjI1MjQ4YTllMTcxZDY2M2IzZDA2OGZkZjQ1ZjAyYzM0ZDc5MmRlZTA3MDFkZDZjMDc1YTdkYmMwY2Y4In0sICJpY2VwaSI6IHsiYXNzZXNzbWVudCI6IHsicmVxdWVzdGVkTmV0cyI6IDUwLCAiY29ubmVjdGVkTmV0cyI6IDUwLCAidW5jb25uZWN0ZWROZXRzIjogW10sICJwY2JUcmFjZXMiOiA1MiwgInZpYXMiOiAxMjUsICJ3aXJlTGVuZ3RoTW0iOiA4OTcuNDA2MDY5MTgzNDE5OCwgImZpbmRpbmdzIjogeyJtaXNzaW5nX3RyYWNlcyI6IDAsICJkaXNjb25uZWN0ZWRfcG9ydHMiOiAwLCAidHJhY2Vfb3ZlcmxhcCI6IDAsICJwYWRfdHJhY2UiOiAwLCAidmlhX3RyYWNlIjogMCwgInZpYV9wYWQiOiAwLCAidmlhX3NwYWNpbmciOiAwLCAiY29udGlndW91cyI6IDAsICJ2aWFfaW5fcGFkIjogMCwgImhvbGVfdHJhY2UiOiAwLCAid2lkdGgiOiAwfSwgImdlb21ldHJ5RXJyb3JzIjogW119LCAic3RhdHVzIjogInBhc3NlZCIsICJjb3BwZXJIYXNoIjogImFiOWMwZTQ4NTQ1MTgxYTRiMmM2NzVjOWI0M2M2MmE5N2JmZTU2NWVjMzNjMWVhMzM1M2NjNDI2OTYwZDA0M2EiLCAiaW5wdXRIYXNoIjogIjYyNTYyOWJkOGE0NmUyNzkyZTgxZTIyYzBmYzAxNWZjNDlkZWZjZDUxMjg0MDE2NTBiZDg2MDVjNzNkMzllNzcifX0='))
+          def fingerprint(obj):
+              return hashlib.sha256(json.dumps(obj,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          for key in ['benchmarkRevision','assessmentRevision','fixtureHashes','bunVersion','platform','cpu','dependencies','timeoutSeconds']:
+              assert a[key] == b[key], key
+          assert len(a['cases']) == len(b['cases']) == 10
+          rows = []
+          for x,y in zip(a['cases'],b['cases']):
+              name = x['circuit']
+              assert name == y['circuit']
+              aa = {k:v for k,v in x['assessment'].items() if k != 'validationMs'}
+              bb = {k:v for k,v in y['assessment'].items() if k != 'validationMs'}
+              copper=[]
+              for ref in ['base','head']:
+                  elements=json.loads((r/ref/name/'circuit.json').read_text())
+                  copper.append([e for e in elements if e.get('type') in ['pcb_trace','pcb_via']])
+              starts = sorted((r/'base'/name).glob('phase-*-start.srj.json'))
+              original_input = json.loads(starts[-1].read_text())
+              previous = prior[name]
+              rows.append({'circuit':name,'requested':aa['requestedNets'],'beforeConnected':aa['connectedNets'],'afterConnected':bb['connectedNets'],'beforeStatus':x['status'],'afterStatus':y['status'],'beforeSeconds':x['wallMs']/1000,'afterSeconds':y['wallMs']/1000,'beforeRss':x['peakRssMb'],'afterRss':y['peakRssMb'],'sameAssessment':aa==bb,'sameCopper':copper[0]==copper[1],'previousConnected':previous['assessment']['connectedNets'],'previousStatus':previous['status'],'samePriorAssessment':previous['assessment']==aa,'samePriorCopper':previous['copperHash']==fingerprint(copper[0]),'samePriorInput':previous['inputHash']==fingerprint(original_input),'beforeFindings':aa['findings'],'afterFindings':bb['findings'],'beforeGeometryErrors':aa['geometryErrors'],'afterGeometryErrors':bb['geometryErrors'],'beforePhases':x['progress']['phases'],'afterPhases':y['progress']['phases'],'beforeErrors':x['progress']['errors'],'afterErrors':y['progress']['errors']})
+          report={'baseCommit':a['coreCommit'],'headCommit':b['coreCommit'],'dependencies':a['dependencies'],'runtime':{'bun':a['bunVersion'],'cpu':a['cpu'],'timeout':a['timeoutSeconds']},'cases':rows,'baseSeconds':sum(c['wallMs'] for c in a['cases'])/1000,'headSeconds':sum(c['wallMs'] for c in b['cases'])/1000}
+          print('AUDIT_JSON='+json.dumps(report,separators=(',',':')))
+          AUDIT_PY
