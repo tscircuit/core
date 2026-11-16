@@ -1,3 +1,4 @@
+import type {} from "@tscircuit/core-ddr-benchmark/scripts/jsx"
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
