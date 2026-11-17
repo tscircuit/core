@@ -13,10 +13,9 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        variant: [endcaps, validation]
+        variant: [validation]
         circuit: [a13, butterstick]
         include:
-          - {variant: endcaps, ref: 6bc2f5ad26d09f59aad8ccb705a6f5ea496603a5}
           - {variant: validation, ref: 9ddd7a2c8c13374620afe51e922902349eee11b3}
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +33,17 @@ jobs:
           github-token: ${{ github.token }}
           path: captured
       - run: bun install --ignore-scripts
+      - name: Capture rejected immutable geometry
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensitySolver.ts')
+          s=p.read_text()
+          marker="              return false\n            }\n          }\n        }\n        return true\n      },"
+          replacement="              if (Number(this.stats.debugImmutablePairs ?? 0) < 3) {\n                this.stats.debugImmutablePairs = Number(this.stats.debugImmutablePairs ?? 0) + 1\n                console.log(\"IMMUTABLE_PAIR_JSON=\" + JSON.stringify({node: this.activeNode, route, fixedRoute, clearance: this.obstacleMargin, bounds: candidateBounds, layerCount: this.layerCount, obstacles: fixedRouteObstacles}))\n              }\n              return false\n            }\n          }\n        }\n        return true\n      },"
+          if marker not in s: raise Exception('instrumentation target missing')
+          p.write_text(s.replace(marker,replacement))
+          PY
       - name: Solve the actual Core request
         env:
           CIRCUIT: ${{ matrix.circuit }}
