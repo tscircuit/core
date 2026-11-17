@@ -2,6 +2,11 @@ import type { Point, SystemBlockRoutePoint } from "circuit-json"
 import type { SystemBlockTree } from "./collect-system-blocks"
 import { createSystemBlockSelfLoop } from "./create-system-block-self-loop"
 import {
+  limitSystemWireFillets,
+  sampleSystemBlockRoute,
+} from "./limit-system-wire-fillets"
+import {
+  resolveSystemBlockRouteTrims,
   roundSystemBlockRoute,
   type SystemBlockRouteObstacle,
 } from "./round-system-block-route"
@@ -26,16 +31,29 @@ export function roundSystemBlockConnections(
   routes: Map<SystemBlockConnection, SystemConnectionRoute>,
 ): Map<SystemBlockConnection, SystemConnectionRoute> {
   const obstacles: SystemBlockRouteObstacle[] = [...bounds].map(
-    ([block, box]) => ({
-      minX: box.center.x - box.width / 2,
-      maxX: box.center.x + box.width / 2,
-      minY: tree.groups.includes(block as SystemBlockGroup)
-        ? box.center.y +
-          box.height / 2 -
-          (block._parsedProps.description ? 12 : 7)
-        : box.center.y - box.height / 2,
-      maxY: box.center.y + box.height / 2,
-    }),
+    ([block, box]) => {
+      const group = tree.groups.includes(block as SystemBlockGroup)
+      return {
+        minX: box.center.x - box.width / 2,
+        // Like the router, protect a group's heading text, not the whole band
+        // beside it: a wire that turns there should still get its fillet.
+        maxX:
+          group && !block._parsedProps.description
+            ? box.center.x -
+              box.width / 2 +
+              Math.min(
+                box.width,
+                (block._parsedProps.displayName ?? block.name).length * 1.8 + 6,
+              )
+            : box.center.x + box.width / 2,
+        minY: group
+          ? box.center.y +
+            box.height / 2 -
+            (block._parsedProps.description ? 12 : 7)
+          : box.center.y - box.height / 2,
+        maxY: box.center.y + box.height / 2,
+      }
+    },
   )
   for (const [connection, resolved] of routes) {
     const label = resolved.label_anchor_center
@@ -55,7 +73,23 @@ export function roundSystemBlockConnections(
     })
   }
   const rounded = new Map(routes)
+  const wires: {
+    connection: SystemBlockConnection
+    route: Point[]
+    trims: number[]
+  }[] = []
+  const loops: Point[][] = []
   for (const [connection, resolved] of routes) {
+    const { from, to } = tree.endpoints.get(connection)!
+    if (from !== to) {
+      wires.push({
+        connection,
+        ...(({ points, trims }) => ({ route: points, trims }))(
+          resolveSystemBlockRouteTrims(resolved.route, obstacles),
+        ),
+      })
+      continue
+    }
     const wireObstacles: SystemBlockRouteObstacle[] = []
     for (const [other, { route }] of rounded) {
       if (other === connection) continue
@@ -83,17 +117,19 @@ export function roundSystemBlockConnections(
         maxY: wire.maxY + 3,
       })),
     ]
-    const { from, to } = tree.endpoints.get(connection)!
-    const selfLoop =
-      from === to
-        ? createSystemBlockSelfLoop(resolved.route, bounds.get(from)!, blocked)
-        : undefined
-    rounded.set(connection, {
-      ...resolved,
-      route:
-        selfLoop ??
-        roundSystemBlockRoute(resolved.route, obstacles, wireObstacles),
-    })
+    const loop =
+      createSystemBlockSelfLoop(resolved.route, bounds.get(from)!, blocked) ??
+      roundSystemBlockRoute(resolved.route, obstacles, wireObstacles)
+    rounded.set(connection, { ...resolved, route: loop })
+    loops.push(sampleSystemBlockRoute(loop))
   }
+  // Blocks and labels bound each fillet on its own. Wires bound one another
+  // only as rounded shapes, so parallel wires can turn a corner side by side.
+  limitSystemWireFillets(wires, loops)
+  for (const { connection, route, trims } of wires)
+    rounded.set(connection, {
+      ...routes.get(connection)!,
+      route: roundSystemBlockRoute(route, [], [], trims),
+    })
   return rounded
 }
