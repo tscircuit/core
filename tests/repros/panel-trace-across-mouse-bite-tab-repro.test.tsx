@@ -22,12 +22,5 @@ test("panel trace crosses a mouse-bite tab between two boards", async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(
     circuit.db.pcb_trace_error.list().map((error) => error.message),
-  ).toMatchInlineSnapshot(`
-    [
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.190000mm, required: 0.2mm)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.190000mm, required: 0.2mm)",
-    ]
-  `)
+  ).toMatchInlineSnapshot(`[]`)
 })
