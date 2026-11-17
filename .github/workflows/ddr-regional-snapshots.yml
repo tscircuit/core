@@ -52,7 +52,17 @@ jobs:
           bun export.private.ts
       - name: Check existing regional repair regressions
         if: matrix.variant == 'pr'
-        run: bun test tests/features/pipeline9-srj18-sample2-bounded-regional-drc.test.ts tests/repro/pipeline9-a13-declared-trace-clearance.test.ts --timeout 9999999
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test tests/features/pipeline9-srj18-sample2-bounded-regional-drc.test.ts tests/repro/pipeline9-a13-declared-trace-clearance.test.ts --timeout 9999999
+      - name: Export changed existing snapshots
+        if: always() && matrix.variant == 'pr'
+        run: |
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process'
+          import {readFileSync} from 'node:fs'
+          import {gzipSync} from 'node:zlib'
+          const files=execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim().split('\n').filter(p=>p.endsWith('.snap.svg'))
+          for(const path of files)console.log('CHANGED_SNAPSHOT_JSON='+JSON.stringify({path,gzip:gzipSync(readFileSync(path)).toString('base64')}))
+          JS
       - uses: actions/upload-artifact@v4
         if: always()
         with:
