@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { withTimeout } from "lib/utils/withTimeout"
+import { withTimeout } from "lib/utils/with-timeout"
 
 test("withTimeout passes through rejections that happen in time", async () => {
   await expect(

@@ -14,7 +14,7 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
-import { withTimeout } from "lib/utils/withTimeout"
+import { withTimeout } from "lib/utils/with-timeout"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import {
