@@ -11,6 +11,11 @@ function compareSignalNames(a: string, b: string) {
   return left.length - right.length
 }
 
+function getPrbsTap(order: number) {
+  if (order === 31) return 28
+  return order - 1
+}
+
 function advance(state: number, order: number, tap: number, period: number) {
   return (
     (state * 2 + (((state >>> (order - 1)) ^ (state >>> (tap - 1))) & 1)) %
@@ -54,7 +59,7 @@ export function getSignalSeed(
     )
   if (seed !== undefined) return seed
   let steps = Math.floor((names.indexOf(name) * period) / names.length)
-  const tap = order === 31 ? 28 : order - 1
+  const tap = getPrbsTap(order)
   // Exponentiate the linear PRBS transition so PRBS31 phases take O(n² log P),
   // instead of iterating billions of bits to reach the planned phase.
   let basis = Array.from({ length: order }, (_, bit) =>
