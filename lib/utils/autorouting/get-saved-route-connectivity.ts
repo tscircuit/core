@@ -32,7 +32,10 @@ export function getSavedRouteConnectivity({
   pcbPorts,
 }: {
   routes: SavedPcbRoute[]
-  input: SimpleRouteJson
+  input: Pick<
+    SimpleRouteJson,
+    "connections" | "layerCount" | "allowBlindAndBuriedVias"
+  >
   pcbPorts: PcbPort[]
 }) {
   const portsById = new Map<PcbPortId, PcbPort>(

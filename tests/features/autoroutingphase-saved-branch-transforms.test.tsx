@@ -51,7 +51,7 @@ test("branched paths replay group placement at every quarter turn on both layers
                 />
               ))}
               <trace from="A.1" to="B.1" />
-              <trace from="A.1" to="C.1" />
+              <trace from="B.1" to="C.1" />
               <autoroutingphase
                 pcbTracePaths={paths}
                 autorouter={{

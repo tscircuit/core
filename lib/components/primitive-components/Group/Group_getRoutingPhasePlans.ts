@@ -6,6 +6,7 @@ import type {
 } from "@tscircuit/props"
 import type { z } from "zod"
 import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
+import { getSourceTracesCoveredBySavedPhase } from "./get-source-traces-covered-by-saved-phase"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
@@ -337,10 +338,15 @@ export function Group_getRoutingPhasePlans(
     ]),
   )
   // A complete saved path's port identifies its electrical net. A routed
-  // branch can span several source traces, so implicit path selectors must
-  // retain all same-net demands belonging to this phase. Explicit selections,
+  // branch can span several source traces, so implicit path selectors also
+  // include same-net demands covered by the saved copper. Explicit selections,
   // fanout escapes and traces assigned to other phases keep their ownership.
-  for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
+  for (const phase of group.selectAll(
+    "autoroutingphase",
+  ) as AutoroutingPhase[]) {
+    const phaseProps = phase._parsedProps
+    const phaseIndex = phaseProps.phaseIndex ?? null
+    if (phasePropsByPhaseIndex.get(phaseIndex) !== phaseProps) continue
     if (
       phaseProps.pcbTracePaths === undefined ||
       phaseProps.connection !== undefined ||
@@ -363,21 +369,30 @@ export function Group_getRoutingPhasePlans(
         .map((trace) => trace.subcircuit_connectivity_map_key)
         .filter((key) => key !== null),
     )
-    for (const trace of traces) {
+    const candidates = traces.filter((trace) => {
+      if (selected.has(trace)) return false
       const assignedPhase = getTraceRoutingPhaseIndex(trace, buses)
-      if (assignedPhase !== null && assignedPhase !== phaseIndex) continue
+      if (assignedPhase !== null && assignedPhase !== phaseIndex) return false
       if (
         [...selectedTracesByPhaseIndex].some(
           ([otherPhase, otherSelected]) =>
             otherPhase !== phaseIndex && otherSelected.has(trace),
         )
       )
-        continue
-      if (
+        return false
+      return (
         trace.subcircuit_connectivity_map_key !== null &&
         netKeys.has(trace.subcircuit_connectivity_map_key)
       )
-        selected.add(trace)
+    })
+    if (candidates.length > 0) {
+      const covered = getSourceTracesCoveredBySavedPhase(phase, [
+        ...selected,
+        ...candidates,
+      ])
+      for (const trace of candidates) {
+        if (covered.has(trace)) selected.add(trace)
+      }
     }
   }
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
