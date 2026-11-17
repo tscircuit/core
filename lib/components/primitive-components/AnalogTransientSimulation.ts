@@ -27,8 +27,14 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
 
   protected insertSimulationExperiment() {
     const { db } = this.root!
-    const { duration, name, startTime, timePerStep, spiceOptions } =
-      this._parsedProps
+    const {
+      duration,
+      name,
+      startTime,
+      timePerStep,
+      spiceOptions,
+      calculateInitialOperatingPoint,
+    } = this._parsedProps
 
     const experimentProps = {
       name: name ?? "spice_transient_analysis",
@@ -37,6 +43,7 @@ export class AnalogTransientSimulation extends AnalogAnalysisSimulation<
       start_time_ms: startTime,
       time_per_step: timePerStep,
       spice_options: spiceOptions,
+      calculate_initial_operating_point: calculateInitialOperatingPoint,
       spice_engine: this.getSpiceEngineName(),
       subcircuit_id: this.getSubcircuit().subcircuit_id!,
     }
