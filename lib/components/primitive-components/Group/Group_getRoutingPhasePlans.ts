@@ -7,6 +7,7 @@ import type {
 import type { z } from "zod"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
+import { getTracesCoveredBySavedPhase } from "./get-traces-covered-by-saved-phase"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
@@ -391,6 +392,48 @@ export function Group_getRoutingPhasePlans(
       ),
     ]),
   )
+  // A saved path's selector supplies a port frame. Its copper can also
+  // satisfy a source trace that was never named by a saved path selector.
+  const selectedTraces = new Set(
+    [...selectedTracesByPhaseIndex.values()].flatMap((traces) => [...traces]),
+  )
+  for (const phase of group.selectAll<AutoroutingPhase>("autoroutingphase")) {
+    const props = phase._parsedProps
+    const phaseIndex = props.phaseIndex ?? null
+    if (
+      phasePropsByPhaseIndex.get(phaseIndex) !== props ||
+      !props.pcbTracePaths?.length ||
+      props.connection !== undefined ||
+      props.connections !== undefined ||
+      props.reroute
+    )
+      continue
+    const autorouter = autoroutersByPhaseIndex.get(phaseIndex)
+    const config =
+      autorouter === undefined
+        ? group._getAutorouterConfig()
+        : getPresetAutoroutingConfig(autorouter, group.root?.platform)
+    if (config.preset === "fanout" || config.preset === "single_layer_fanout")
+      continue
+
+    const selected = selectedTracesByPhaseIndex.get(phaseIndex)!
+    const selectedNets = new Set(
+      [...selected].map((trace) => trace.subcircuit_connectivity_map_key),
+    )
+    const candidates = traces.filter(
+      (trace) =>
+        !breakoutByTrace.has(trace) &&
+        !selectedTraces.has(trace) &&
+        trace.subcircuit_connectivity_map_key !== null &&
+        selectedNets.has(trace.subcircuit_connectivity_map_key) &&
+        getTraceRoutingPhaseIndex({ trace, buses }, selectionContext) === null,
+    )
+    if (!candidates.length) continue
+    for (const trace of getTracesCoveredBySavedPhase(phase, candidates)) {
+      selected.add(trace)
+      selectedTraces.add(trace)
+    }
+  }
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const routeRemaining = group.getInheritedProperty("routeRemaining") !== false
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)

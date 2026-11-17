@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("replay rejects a saved trunk with junctions at both ends", async () => {
+test("replay restores a saved trunk with junctions at both ends", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={12} routeRemaining={false} schematicDisabled>
@@ -45,22 +45,11 @@ test("replay rejects a saved trunk with junctions at both ends", async () => {
         pcbY={4.5}
         fontSize={0.4}
       />
-      <pcbnotetext
-        text="Replay rejected all three paths"
-        pcbY={-4}
-        fontSize={0.5}
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
-    {
-      message: expect.stringContaining(
-        'Saved phase path "B.1" must start at its PCB port',
-      ),
-    },
-  ])
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(3)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
