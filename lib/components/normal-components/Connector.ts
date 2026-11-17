@@ -240,6 +240,12 @@ export class Connector<
     }
 
     this.addAll(fpComponents)
+    // Existing ports may have rendered before the async footprint arrived.
+    for (const child of this.children) {
+      if (child.componentName === "Port") {
+        child._markDirty("PcbPortRender")
+      }
+    }
     this._markDirty("InitializePortsFromChildren")
   }
 
