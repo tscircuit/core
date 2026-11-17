@@ -25,6 +25,7 @@ jobs:
         with:
           bun-version: '1.4.3'
       - run: bun install
+      - run: bun install --no-save --cwd tests/fixtures/usb-terminal-clearance
       - name: Run the existing complete suite
         run: bun test --timeout 120000
       - name: Check TypeScript
