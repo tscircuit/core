@@ -1,0 +1,32 @@
+name: Check existing-contact repair
+on:
+  push:
+    branches: [artifacts/ddr-inherited-contact-checks]
+permissions:
+  contents: read
+jobs:
+  checks:
+    name: Repair03 ${{ matrix.variant }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {variant: base, ref: adf46bb08b7197335163f20530486e408ab733ee}
+          - {variant: head, ref: 30d261f2e206ba0d4261f1ba7b047344a8b5a7c4}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-repair03
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - name: Run the existing complete suite
+        run: bun test --timeout 120000
+      - name: Check TypeScript
+        if: always()
+        run: bun run typecheck
