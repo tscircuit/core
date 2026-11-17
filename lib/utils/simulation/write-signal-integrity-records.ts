@@ -1,4 +1,6 @@
+import type { PcbDriverReceiverChannel } from "lib/components/primitive-components/PcbDriverReceiverChannel"
 import type { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
+import type { resolveSignalEndpoint } from "./resolve-signal-endpoint"
 import { simulationTimeToMilliseconds } from "./simulation-time-to-milliseconds"
 
 function getDurationMs(props: PcbTransientChannelSimulation["_parsedProps"]) {
@@ -9,16 +11,52 @@ function getDurationMs(props: PcbTransientChannelSimulation["_parsedProps"]) {
   return durationMs
 }
 
+type ResolvedSignal = {
+  signal: PcbDriverReceiverChannel
+  driver: ReturnType<typeof resolveSignalEndpoint>
+  receivers: ReturnType<typeof resolveSignalEndpoint>[]
+  seed: number | undefined
+}
+
+function getChannelRecord(
+  { signal, driver, receivers, seed }: ResolvedSignal,
+  defaultBitRate: number,
+) {
+  const channelProps = signal._parsedProps
+  const bitRate = channelProps.bitRate ?? defaultBitRate
+  const offsetMs = simulationTimeToMilliseconds(channelProps.offset, bitRate)
+  if (!Number.isFinite(offsetMs))
+    throw new Error(`Channel "${channelProps.name}" offset must be finite.`)
+  return {
+    signal,
+    record: {
+      name: channelProps.name,
+      driver: driver.record,
+      receivers: receivers.map((receiver) => receiver.record),
+      bit_rate_bps: bitRate,
+      pattern: channelProps.pattern,
+      ...(seed === undefined ? {} : { seed }),
+      offset_ms: offsetMs,
+      ...(channelProps.driverDisabled ? { driver_disabled: true } : {}),
+    },
+  }
+}
+
 export function writeSignalIntegrityRecords(
   block: PcbTransientChannelSimulation,
+  signals: ResolvedSignal[],
 ) {
   const { db } = block.root!
   const props = block._parsedProps
   const durationMs = getDurationMs(props)
 
+  const channels = signals.map((signal) =>
+    getChannelRecord(signal, props.bitRate),
+  )
+
   // Updates merge fields. Replace records to clear omitted optional values.
   const simulations = db.simulation_pcb_transient_channel_simulation
-  const record = {
+  const simulationRecord = {
     name: props.name,
     bit_rate_bps: props.bitRate,
     duration_ms: durationMs,
@@ -30,10 +68,26 @@ export function writeSignalIntegrityRecords(
   // A supplied ID, even undefined, overrides the database's generated ID.
   if (previousSimulationId) {
     simulations.delete(previousSimulationId)
-    Object.assign(record, {
+    Object.assign(simulationRecord, {
       simulation_pcb_transient_channel_simulation_id: previousSimulationId,
     })
   }
+  const { simulation_pcb_transient_channel_simulation_id } =
+    simulations.insert(simulationRecord)
   block.simulation_pcb_transient_channel_simulation_id =
-    simulations.insert(record).simulation_pcb_transient_channel_simulation_id
+    simulation_pcb_transient_channel_simulation_id
+
+  for (const { signal, record } of channels) {
+    const channelRecords = db.simulation_pcb_driver_receiver_channel
+    const { simulation_pcb_driver_receiver_channel_id: previousChannelId } =
+      signal
+    if (previousChannelId) channelRecords.delete(previousChannelId)
+    signal.simulation_pcb_driver_receiver_channel_id = channelRecords.insert({
+      ...record,
+      simulation_pcb_transient_channel_simulation_id,
+      ...(previousChannelId
+        ? { simulation_pcb_driver_receiver_channel_id: previousChannelId }
+        : {}),
+    }).simulation_pcb_driver_receiver_channel_id
+  }
 }

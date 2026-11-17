@@ -1,6 +1,7 @@
 import type {
   PcbReturnCurrentExcitationProps,
   PcbTransientChannelSimulationProps,
+  PcbDriverReceiverChannelProps,
   SimulationIbisModelProps,
   PcbReturnCurrentSimulationProps,
 } from "@tscircuit/props"
@@ -10,6 +11,10 @@ export const simulation = {
   pcbtransientchannelsimulation:
     createNamespacedElement<PcbTransientChannelSimulationProps>(
       "simulation.pcbtransientchannelsimulation",
+    ),
+  pcbdriverreceiverchannel:
+    createNamespacedElement<PcbDriverReceiverChannelProps>(
+      "simulation.pcbdriverreceiverchannel",
     ),
   ibismodel: createNamespacedElement<SimulationIbisModelProps>(
     "simulation.ibismodel",

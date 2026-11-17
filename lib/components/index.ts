@@ -140,6 +140,7 @@ export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawing
 export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
 
 export { PcbTransientChannelSimulation } from "./primitive-components/PcbTransientChannelSimulation"
+export { PcbDriverReceiverChannel } from "./primitive-components/PcbDriverReceiverChannel"
 
 export { PanelTab } from "./primitive-components/PanelTab"
 
