@@ -1,0 +1,70 @@
+name: Profile native DDR remaining routing
+on:
+  push:
+    branches: [artifacts/ddr-3229-butterstick-profile]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    name: Validation metrics ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [butterstick]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: c59915ab6f7e29c36a8699829ce9b7da71abd273
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install both routing revisions
+        run: |
+          (cd head && bun install --ignore-scripts)
+      - name: Replay identical Core requests sequentially on one machine
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > layer-experiment.private.ts <<'TS'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
+          import {gunzipSync} from 'node:zlib'
+          import {createHash} from 'node:crypto'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
+          const circuit=process.env.CIRCUIT!
+          const {inputSrj:input}=JSON.parse(gunzipSync(readFileSync('./tests/fixtures/assets/butterstick-ddr-fixed-copper.srj.json.gz')).toString('utf8'))
+          mkdirSync('../results/'+process.env.VARIANT,{recursive:true})
+          const started=performance.now()
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          solver.solve()
+          if(!solver.solved||solver.failed)throw Error(solver.error??'Native DDR routing failed')
+          const routes=solver.getOutputSimplifiedPcbTraces()
+          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
+          const errors=evaluateRelaxedDrc(drcInput).errors
+          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),validationMetrics:[solver.pipeline9JointDrcRepairSolver?.initialBoundedRegionalRepairSolver?.validationMetrics,solver.pipeline9JointDrcRepairSolver?.boundedRegionalRepairSolver?.validationMetrics].map(s=>Object.fromEntries(Object.entries(s??{}).filter(([k])=>k.startsWith('fixedGuard')))),timeSpent:solver.timeSpentOnPhase}
+          console.log('NATIVE_STAGE_PROFILE_METRICS_JSON='+JSON.stringify(summary))
+          writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
+          TS
+          cp layer-experiment.private.ts head/
+          (cd head && VARIANT=metrics timeout 600s bun --cpu-prof --cpu-prof-dir=.private-profiles layer-experiment.private.ts > result.private.log 2>&1)
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path('head/result.private.log').read_text().splitlines():
+              if line.startswith('RASTER_VALIDATION_METRICS_JSON='):print(line)
+          from collections import Counter
+          import json
+          for path in pathlib.Path('head/.private-profiles').glob('*.cpuprofile'):
+              profile=json.loads(path.read_text())
+              nodes={node['id']:node for node in profile['nodes']}
+              totals=Counter()
+              for sample,delta in zip(profile.get('samples',[]),profile.get('timeDeltas',[])):
+                  frame=nodes[sample]['callFrame']
+                  totals[(frame.get('functionName',''),frame.get('url','').split('/node_modules/')[-1])]+=delta
+              total=sum(totals.values())
+              print('DDR_CPU_PROFILE_SUMMARY_JSON='+json.dumps({'sampledSeconds':total/1e6,'topFunctions':[{'function':name,'module':module,'percent':100*duration/total} for (name,module),duration in totals.most_common(35)]}))
+          PY
