@@ -4,7 +4,7 @@ import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { createBasicAutorouter } from "tests/fixtures/createBasicAutorouter"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("completed phase traces remain buffered while the next routing phase is pending", async () => {
+test("accepted phase traces render while the next routing phase is pending", async () => {
   const { circuit } = getTestFixture()
   const secondPhaseStarted = Promise.withResolvers<void>()
   const releaseSecondPhase = Promise.withResolvers<void>()
@@ -143,8 +143,8 @@ test("completed phase traces remain buffered while the next routing phase is pen
     expect(circuit.isDoneRendering()).toBeFalse()
     expect(firstPhaseTraces).toEqual(firstPhaseSnapshot)
     await expect(circuit.getCircuitJson()).toMatchPcbSnapshot(import.meta.path)
-    expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-    expect(circuit.db.pcb_via.list()).toHaveLength(0)
+    expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+    expect(circuit.db.pcb_via.list()).toHaveLength(2)
     const acceptedCircuitJson = structuredClone(circuit.getCircuitJson())
     circuit.render()
     expect(circuit.getCircuitJson()).toEqual(acceptedCircuitJson)
