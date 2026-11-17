@@ -16,16 +16,21 @@ function getPrbsTap(order: number) {
   return order - 1
 }
 
-function advance(state: number, order: number, tap: number, period: number) {
+function advance({
+  state,
+  order,
+  tap,
+  period,
+}: { state: number; order: number; tap: number; period: number }) {
   return (
     (state * 2 + (((state >>> (order - 1)) ^ (state >>> (tap - 1))) & 1)) %
     (period + 1)
   )
 }
 
-function apply(basis: number[], state: number, order: number) {
+function apply(basis: number[], state: number) {
   let result = 0
-  for (let bit = 0; bit < order; bit++)
+  for (let bit = 0; bit < basis.length; bit++)
     if ((state >>> bit) & 1) result ^= basis[bit]
   return result
 }
@@ -63,12 +68,12 @@ export function getSignalSeed(
   // Exponentiate the linear PRBS transition so PRBS31 phases take O(n² log P),
   // instead of iterating billions of bits to reach the planned phase.
   let basis = Array.from({ length: order }, (_, bit) =>
-    advance(2 ** bit, order, tap, period),
+    advance({ state: 2 ** bit, order, tap, period }),
   )
   let state = period
   while (steps > 0) {
-    if (steps % 2) state = apply(basis, state, order)
-    basis = basis.map((column) => apply(basis, column, order))
+    if (steps % 2) state = apply(basis, state)
+    basis = basis.map((column) => apply(basis, column))
     steps = Math.floor(steps / 2)
   }
   return state
