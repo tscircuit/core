@@ -1,5 +1,6 @@
 import { beforeAll, expect, test } from "bun:test"
 import {
+  addSavedRouteBranchStatus,
   getSavedRouteBranchCopper,
   getSavedRouteBranchesFixture,
 } from "tests/fixtures/get-saved-route-branches-fixture"
@@ -10,7 +11,14 @@ beforeAll(async () => {
   await fixture.circuit.renderUntilSettled()
   expect(fixture.circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(getSavedRouteBranchCopper(fixture.circuit)).toEqual(fixture.routes)
-  // Snapshot validation is independent of the saved-route round trip.
+  const event = fixture.events[0]!
+  expect(event.pcbTracePaths).toHaveLength(4)
+  expect(event.pcbTracePathsUnavailableReason).toBeUndefined()
+  addSavedRouteBranchStatus(
+    fixture.circuit,
+    `Save: ${event.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${event.pcbTracePaths?.length ?? 0} / 4 paths)`,
+  )
+  // The snapshot shows the observed save result as well as the copper.
   await expect(fixture.circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
@@ -25,5 +33,10 @@ test("saved routes round-trip junctions and a trunk without a pad endpoint", asy
   await replay.circuit.renderUntilSettled()
   expect(replay.circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(getSavedRouteBranchCopper(replay.circuit)).toEqual(fixture.routes)
+  const replayEvent = replay.events[0]!
+  addSavedRouteBranchStatus(
+    replay.circuit,
+    `Save: ${replayEvent.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${replayEvent.pcbTracePaths?.length ?? 0} / 4 paths)`,
+  )
   await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
 })

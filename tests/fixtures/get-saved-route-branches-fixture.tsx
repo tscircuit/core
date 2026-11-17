@@ -1,5 +1,6 @@
 import type { AutoroutingEndEvent } from "lib/events"
 import type { FanoutTracePath } from "lib/index"
+import type { Board } from "lib/components/normal-components/Board/Board"
 import { createBasicAutorouter } from "./createBasicAutorouter"
 import { getTestFixture } from "./get-test-fixture"
 
@@ -106,4 +107,12 @@ export function getSavedRouteBranchCopper(
       }
     }),
   )
+}
+
+export function addSavedRouteBranchStatus(
+  circuit: ReturnType<typeof getTestFixture>["circuit"],
+  text: string,
+) {
+  const board = circuit.firstChild as Board
+  board.add(<pcbnotetext text={text} pcbY={-4.9} fontSize={0.45} />)
 }
