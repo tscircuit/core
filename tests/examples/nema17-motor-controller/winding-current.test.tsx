@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import Rp2040MotorControllerCurrentSense from "./example43-rp2040-motor-controller.circuit"
+import Rp2040MotorControllerCurrentSense from "./winding-current.circuit"
 
-test("example43: RP2040 motor controller winding current schematic", async () => {
+test("RP2040 motor controller winding current schematic", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(<Rp2040MotorControllerCurrentSense />)

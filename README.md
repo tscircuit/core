@@ -33,10 +33,9 @@ circuit.getCircuitJson()
 The [RP2040 motor controller by imrishabh18](https://tscircuit.com/imrishabh18/rp2040-motor-controller#schematic)
 shows how a ten-sheet design groups power, programming, motor drive, and telemetry.
 
-The [winding-current TSX example](./tests/examples/example43-rp2040-motor-controller.circuit.tsx)
-extracts the two INA240 measurement channels. Each channel uses the same shunt,
-amplifier pin arrangement, and RC filter. Core routes the wires and renders the
-signal names along them. [View the schematic snapshot](./tests/examples/__snapshots__/example43-rp2040-motor-controller-schematic_stacked.snap.svg).
+The [NEMA 17 example directory](./tests/examples/nema17-motor-controller)
+contains all ten schematic sheets and a runnable TSX example of the two
+INA240 winding-current channels.
 
 ## System block diagrams
 
