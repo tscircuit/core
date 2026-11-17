@@ -220,12 +220,17 @@ export const assignSingleRegionBreakoutEdges = ({
     }
   })
 
-  // The winding solver staggers layers by half a spacing, so each layer adds
-  // roughly one slot per spacing along the edge.
-  const getEdgeCapacity = (edge: BreakoutEdge): number =>
-    (Math.floor(getBreakoutEdgeLength(bounds, edge) / boundaryPointSpacing) +
-      1) *
-    Math.max(1, layerCount)
+  // Match winding's placeBreakoutGates: its extreme layer offsets consume
+  // (layerCount - 1) half-spacings before any per-layer slots are placed.
+  const staggerSpan = ((Math.max(1, layerCount) - 1) * boundaryPointSpacing) / 2
+  const getEdgeCapacity = (edge: BreakoutEdge): number => {
+    const usableLength = getBreakoutEdgeLength(bounds, edge) - staggerSpan
+    const slotsPerLayer = Math.max(
+      0,
+      Math.floor((usableLength + 1e-9) / boundaryPointSpacing) + 1,
+    )
+    return slotsPerLayer * Math.max(1, layerCount)
+  }
   const getEdgeLoad = (edge: BreakoutEdge): number =>
     units
       .filter((unit) => unit.edge === edge)
