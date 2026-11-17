@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {variant: base, ref: 929677b3e030dc6e42e4c36c4630148340888461}
-          - {variant: head, ref: be356e322f544def026fcd87b5be2b070dac1c40}
+          - {variant: base, ref: 51dcb6ebad33c0310cf5179c56969d60f98a4548}
+          - {variant: head, ref: 6cf8fce3a0395f37fb943d1be9e0fb64e2fec408}
     name: Repair04 checks ${{ matrix.variant }}
     steps:
       - uses: actions/checkout@v4
