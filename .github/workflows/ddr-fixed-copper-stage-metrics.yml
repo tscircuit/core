@@ -1,0 +1,74 @@
+# Numeric stage metrics only; board geometry and diagnostic records stay on the runner.
+name: Locate fixed-copper contacts in the routing pipeline
+on:
+  push:
+    branches: [artifacts/ddr-fixed-copper-stage-metrics]
+permissions:
+  contents: read
+jobs:
+  profile:
+    name: Stage metrics ${{ matrix.variant }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {variant: base, ref: e3aa8103907e43bf530f4c46572d7abb05f4e726}
+          - {variant: score, ref: 9558375f0c827db5424cb4a21255ecccd4c3811d}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-a13
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - run: bun install --ignore-scripts
+      - name: Count fixed-copper contacts after each actual pipeline stage
+        run: |
+          cat > stages.private.ts <<'TS'
+          import {readFileSync} from 'node:fs'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          import {getFixedObstacleViolations} from '@tscircuit/repair04'
+          import {convertToCircuitJson} from './lib/utils/convertToCircuitJson'
+          import {getFixedCopperObstacleIndexes} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/getFixedCopperObstacleIndexes'
+          const input=JSON.parse(readFileSync('captured/head/a13/phase-5-start.srj.json','utf8'))
+          const represented=new Set<number>()
+          convertToCircuitJson(input,[],{originalSrj:input,representedPadObstacleIndexes:represented,includeOriginalConnections:true})
+          const fixed=getFixedCopperObstacleIndexes({inputSrj:input,representedPadObstacleIndexes:represented})
+          const physical={...input,traces:undefined,defaultObstacleMargin:0,minTraceToPadEdgeClearance:0,minViaEdgeToPadEdgeClearance:0,minTraceToHoleEdgeClearance:0,minPadEdgeToPadEdgeClearance:0,obstacles:input.obstacles.filter((_:unknown,index:number)=>fixed.has(index))}
+          const selectors:Record<string,(solver:any)=>any[]>={
+            highDensityRouteSolver:s=>s.highDensityRouteSolver.routes,
+            highDensityForceImproveSolver:s=>s.highDensityForceImproveSolver.getOutput(),
+            highDensityRepairSolver:s=>s.highDensityRepairSolver.getOutput(),
+            highDensityStitchSolver:s=>s.highDensityStitchSolver.mergedHdRoutes,
+            traceSimplificationSolver:s=>s.traceSimplificationSolver.simplifiedHdRoutes,
+            traceWidthSolver:s=>s.traceWidthSolver.getHdRoutesWithWidths(),
+            globalDrcForceImproveSolver:s=>s.globalDrcForceImproveSolver.getOutput(),
+            pipeline9JointDrcRepairSolver:s=>s.pipeline9JointDrcRepairSolver.getOutput(),
+            effortCleanupSolver:s=>s.effortCleanupSolver.getOutput()
+          }
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          const started=performance.now()
+          while(!solver.solved&&!solver.failed) {
+            const index=solver.currentPipelineStepIndex
+            const name=solver.getCurrentPhase()
+            solver.step()
+            if(solver.currentPipelineStepIndex===index||!selectors[name])continue
+            const routes=selectors[name]!(solver)
+            const violations=getFixedObstacleViolations({srj:physical,routes,traceClearance:0,viaClearance:0})
+            const pairs=new Set(violations.map(v=>JSON.stringify([routes[v.routeIndex]!.rootConnectionName??routes[v.routeIndex]!.connectionName,physical.obstacles[v.obstacleIndex]!.connectedTo.slice().sort(),v.kind])))
+            const metrics={phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
+            console.log('PIPELINE_COPPER_STAGE_METRICS_JSON='+JSON.stringify(metrics))
+          }
+          if(solver.failed)throw Error('Native A13 pipeline failed')
+          TS
+          timeout 600s bun stages.private.ts
