@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       # Both repositories and these exact fixture inputs were verified public.
-      # No board geometry, raw errors, net names or identifiers are exported.
+      # User explicitly authorized printing these 14 saved DRC error records.
+      # Full Circuit JSON, copper geometry and board artifacts are not exported.
       - uses: actions/checkout@v4
         with:
           repository: ShiboSoftwareDev/core-ddr-benchmark
@@ -52,6 +53,9 @@ jobs:
                   counts[' + '.join(sorted(phases)) or 'unresolved']+=1
               if counts: summary[kind]=dict(counts)
           print('A13_DRC_PHASE_COUNTS_JSON='+json.dumps(summary,separators=(',',':')))
+          records=[{'kind':kind,'error':error} for kind,errors in findings.items() if kind not in ['missing_traces','disconnected_ports','width'] for error in errors if error['type'].endswith('_error')]
+          assert len(records)==14, len(records)
+          print('A13_AUTHORIZED_14_DRC_RECORDS_JSON='+json.dumps(records,separators=(',',':')))
           PY
       - uses: oven-sh/setup-bun@v2
         with:
