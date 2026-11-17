@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { execFileSync } from "node:child_process"
+import { execFileSync, spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { relative } from "node:path"
@@ -24,13 +24,16 @@ test("validate the canonical compiler on the stacked routing checkout", () => {
     hash.update(readFileSync(name))
     hash.update("\0")
   }
-  const output = execFileSync("bunx", ["tsc", "--noEmit"], {
+  const result = spawnSync("bunx", ["tsc", "--noEmit"], {
     cwd: directory,
     encoding: "utf8",
     timeout: 120_000,
     maxBuffer: 8 * 1024 * 1024,
   })
-  expect(output.trim()).toBe("")
+  if (result.stdout.trim()) console.log(result.stdout)
+  if (result.stderr.trim()) console.error(result.stderr)
+  expect(result.error).toBeUndefined()
+  expect(result.status).toBe(0)
   const compiler = JSON.parse(
     readFileSync("node_modules/typescript/package.json", "utf8"),
   )
