@@ -4,6 +4,9 @@ on:
     branches: [artifacts/ddr-stable-fixed-copper-experiment]
 permissions:
   contents: read
+concurrency:
+  group: stable-ddr-scoring
+  cancel-in-progress: true
 jobs:
   benchmark:
     name: A13 ${{ matrix.variant }}
@@ -42,47 +45,10 @@ jobs:
           import os,pathlib
           p=pathlib.Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9JointDrcRepairSolver.ts')
           source=p.read_text()
+          old="hasNativePreloadedTraces ||\n        !this.initialBoundedRegionalRepairSolver?.solved"
           assert source.count(old)==2
           if os.environ['VARIANT']=='candidate':
               p.write_text(source.replace(old,'hasNativePreloadedTraces'))
-          PY
-      - name: Solve the same native Core remaining request
-        env:
-          VARIANT: ${{ matrix.variant }}
-        run: |
-          cat > router/experiment.private.ts <<'TS'
-          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
-          import {createHash} from 'node:crypto'
-          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
-          import {getBugReportSnapshotSvg} from './lib/testing/getBugReportSnapshotSvg'
-          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
-          const input=JSON.parse(readFileSync('../captured/head/a13/phase-5-start.srj.json','utf8'))
-          mkdirSync('../results',{recursive:true})
-          const started=performance.now()
-          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
-          solver.solve()
-          if(!solver.solved||solver.failed)throw Error(solver.error??'A13 did not solve')
-          const traces=solver.getOutputSimplifiedPcbTraces()
-          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:traces,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
-          const drc=evaluateRelaxedDrc(drcInput)
-          const summary={variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,traces:traces.length,errors:drc.errors,stats:solver.pipeline9JointDrcRepairSolver?.stats,timeSpent:solver.timeSpentOnPhase,copperHash:createHash('sha256').update(JSON.stringify(traces)).digest('hex')}
-          console.log('SCORING_EXPERIMENT_JSON='+JSON.stringify(summary))
-          writeFileSync('../results/summary.json',JSON.stringify(summary,null,2))
-          writeFileSync('../results/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
-          writeFileSync('../results/board.svg',getBugReportSnapshotSvg(drcInput))
-          TS
-          cd router
-          bun experiment.private.ts
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: a13-stable-scoring-${{ matrix.variant }}
-          path: results/
-          retention-days: 14          old='hasNativePreloadedTraces ||\\n        !this.initialBoundedRegionalRepairSolver?.solved'.replace('\\n','\n')
-          assert source.count(old)==2
-          if os.environ['VARIANT']=='candidate':
-              source=source.replace(old,'hasNativePreloadedTraces')
-              p.write_text(source)
           print('SCORING_VARIANT='+os.environ['VARIANT'])
           PY
       - name: Solve the same native Core remaining request
