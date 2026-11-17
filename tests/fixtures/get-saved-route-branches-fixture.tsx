@@ -1,6 +1,6 @@
 import type { AutoroutingEndEvent } from "lib/events"
 import type { FanoutTracePath } from "lib/index"
-import type { Board } from "lib/components/normal-components/Board"
+import type { Board } from "lib/components/normal-components/Board/Board"
 import { createBasicAutorouter } from "./createBasicAutorouter"
 import { getTestFixture } from "./get-test-fixture"
 
