@@ -1,9 +1,18 @@
-import type { SourceComponentBase, SourcePort } from "circuit-json"
+import type {
+  AnyCircuitElementInput,
+  SourceComponentBase,
+  SourcePort,
+} from "circuit-json"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-type SourceComponentId = SourceComponentBase["source_component_id"]
-type SourcePortId = SourcePort["source_port_id"]
+const ibisSimulationTypes = ["simulation_ibis_model"] as const
+
+const simulationTypes = [...ibisSimulationTypes] as const
+
+type SimulationReferenceId =
+  | SourceComponentBase["source_component_id"]
+  | SourcePort["source_port_id"]
 
 /** Restore records after inflated components have allocated their source IDs. */
 class InflatedSimulation extends PrimitiveComponent {
@@ -27,89 +36,97 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
-  const componentIdMap = new Map<SourceComponentId, SourceComponentId>()
-  const portIdMap = new Map<SourcePortId, SourcePortId>()
-  const remapComponentId = (originalId: SourceComponentId) => {
-    const restoredId = componentIdMap.get(originalId)
-    if (restoredId) return restoredId
-    const original = injectionDb.source_component.get(originalId)
-    const group = original?.source_group_id
-      ? groupsMap?.get(original.source_group_id)
-      : subcircuit
-    const components =
-      original && group?.source_group_id
-        ? db.source_component.list({
-            source_group_id: group.source_group_id,
-            name: original.name,
-          })
-        : []
-    if (components.length !== 1)
-      throw new Error(
-        "Cannot restore simulation records: unable to remap source_component_id safely.",
-      )
-    const { source_component_id } = components[0]
-    componentIdMap.set(originalId, source_component_id)
-    return source_component_id
-  }
+  const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
-  const remapPortId = (originalId: SourcePortId) => {
-    const restoredId = portIdMap.get(originalId)
+  const remapId = (
+    originalId: SimulationReferenceId,
+    field: string,
+  ): SimulationReferenceId => {
+    const restoredId = restoredIds.get(originalId)
     if (restoredId) return restoredId
-    const original = injectionDb.source_port.get(originalId)
-    // The inflator cannot reliably reconstruct group ports.
-    const ports = original?.source_component_id
-      ? db.source_port
-          .list({
-            source_component_id: remapComponentId(original.source_component_id),
-          })
+
+    let matchedId: SimulationReferenceId | undefined
+    if (field === "source_component_id") {
+      const original = injectionDb.source_component.get(originalId)
+      const group = original?.source_group_id
+        ? groupsMap?.get(original.source_group_id)
+        : subcircuit
+      if (original && group?.source_group_id) {
+        const components = db.source_component.list({
+          source_group_id: group.source_group_id,
+          name: original.name,
+        })
+        if (components.length === 1)
+          matchedId = components[0].source_component_id
+      }
+    } else if (field.endsWith("source_port_id")) {
+      const original = injectionDb.source_port.get(originalId)
+      // Group ports are not reliably reconstructed by the existing inflator.
+      // Refuse to preserve a stale ID when there is no physical component pin.
+      if (original?.source_component_id) {
+        const componentId = remapId(
+          original.source_component_id,
+          "source_component_id",
+        )
+        const ports = db.source_port
+          .list({ source_component_id: componentId })
           .filter((port) =>
             original.pin_number !== undefined
               ? port.pin_number === original.pin_number
               : port.name === original.name,
           )
-      : []
-    if (ports.length !== 1)
+        if (ports.length === 1) matchedId = ports[0].source_port_id
+      }
+    }
+
+    if (!matchedId) {
       throw new Error(
-        "Cannot restore simulation records: unable to remap source_port_id safely.",
+        `Cannot restore simulation records: unable to remap ${field} safely.`,
       )
-    const { source_port_id } = ports[0]
-    portIdMap.set(originalId, source_port_id)
-    return source_port_id
+    }
+    restoredIds.set(originalId, matchedId)
+    return matchedId
   }
 
-  const remapPinMap = (pins: Record<string, SourcePortId>) =>
-    Object.fromEntries(
-      Object.entries(pins).map(([pin, portId]) => [pin, remapPortId(portId)]),
-    )
+  const remapReferences = (value: unknown, field: string): unknown => {
+    if (typeof value === "string" && field.endsWith("_id"))
+      return remapId(value, field)
+    if (Array.isArray(value))
+      return value.map((entry) => remapReferences(entry, field))
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, entry]) => [
+          key,
+          remapReferences(
+            entry,
+            field === "ibis_pin_name_to_source_port_id"
+              ? "source_port_id"
+              : key,
+          ),
+        ]),
+      )
+    }
+    return value
+  }
 
-  for (const model of injectionDb.simulation_ibis_model.list()) {
-    const {
-      type,
-      simulation_ibis_model_id,
-      ibis_pin_name_to_reference_source_port_ids: referencePortsByPin,
-      ...fields
-    } = model
-    db.simulation_ibis_model.insert({
-      ...fields,
-      source_component_id: remapComponentId(model.source_component_id),
-      ibis_pin_name_to_source_port_id: remapPinMap(
-        model.ibis_pin_name_to_source_port_id,
-      ),
-      ...(referencePortsByPin
-        ? {
-            ibis_pin_name_to_reference_source_port_ids: Object.fromEntries(
-              Object.entries(referencePortsByPin).map(([pin, references]) => [
-                pin,
-                remapPinMap(references),
-              ]),
-            ),
-          }
-        : {}),
-    })
+  for (const type of simulationTypes) {
+    for (const record of injectionDb[type].list()) {
+      const primaryIdField = `${type}_id`
+      const fields = Object.fromEntries(
+        Object.entries(record).filter(([key]) => key !== primaryIdField),
+      )
+      // Only identifiers change; all other circuit-json fields are preserved.
+      db.insert(remapReferences(fields, "") as AnyCircuitElementInput)
+    }
   }
 }
 
 export function inflateSimulation(inflationCtx: InflatorContext) {
-  if (inflationCtx.injectionDb.simulation_ibis_model.list().length === 0) return
+  if (
+    !ibisSimulationTypes.some(
+      (type) => inflationCtx.injectionDb[type].list().length > 0,
+    )
+  )
+    return
   inflationCtx.subcircuit.add(new InflatedSimulation(inflationCtx))
 }
