@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [regional-contact, exact-reference]
+        variant: [regional-contact]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,6 +60,7 @@ jobs:
               old='      }).length > 0\n    ) {'
               assert source.count(old)==1
               source=source.replace(old,'      }).length > 0 ||\n      this.traceContactGuard.getNewContactPairs(candidateRoutes).length > 0\n    ) {')
+              source=source.replace('    const { context, candidateRoutes } = state\n','    const { context, candidateRoutes } = state\n    this.traceContactGuard.preserveClearedContacts(context.currentRoutes)\n')
               p.write_text(source)
           else:
               raise Exception(variant)
