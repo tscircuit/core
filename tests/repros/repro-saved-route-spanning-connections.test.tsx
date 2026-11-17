@@ -14,10 +14,12 @@ beforeAll(async () => {
   const event = fixture.events[0]!
   expect(event.pcbTracePaths).toHaveLength(2)
   expect(event.pcbTracePathsUnavailableReason).toBeUndefined()
-  addSavedRouteBranchStatus(
-    fixture.circuit,
-    `Save: ${event.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${event.pcbTracePaths?.length ?? 0} / 2 paths)`,
-  )
+  addSavedRouteBranchStatus(fixture.circuit, {
+    operation: "save",
+    actualCount: event.pcbTracePaths?.length ?? 0,
+    expectedCount: 2,
+    error: event.pcbTracePathsUnavailableReason,
+  })
   await expect(fixture.circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
@@ -33,9 +35,11 @@ test("saved routes preserve a net routed across separate connection requests", a
   expect(replay.circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(getSavedRouteBranchCopper(replay.circuit)).toEqual(fixture.routes)
   const replayEvent = replay.events[0]!
-  addSavedRouteBranchStatus(
-    replay.circuit,
-    `Save: ${replayEvent.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${replayEvent.pcbTracePaths?.length ?? 0} / 2 paths)`,
-  )
+  addSavedRouteBranchStatus(replay.circuit, {
+    operation: "save",
+    actualCount: replayEvent.pcbTracePaths?.length ?? 0,
+    expectedCount: 2,
+    error: replayEvent.pcbTracePathsUnavailableReason,
+  })
   await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
 })

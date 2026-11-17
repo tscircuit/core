@@ -14,10 +14,12 @@ beforeAll(async () => {
   const event = fixture.events[0]!
   expect(event.pcbTracePaths).toHaveLength(4)
   expect(event.pcbTracePathsUnavailableReason).toBeUndefined()
-  addSavedRouteBranchStatus(
-    fixture.circuit,
-    `Save: ${event.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${event.pcbTracePaths?.length ?? 0} / 4 paths)`,
-  )
+  addSavedRouteBranchStatus(fixture.circuit, {
+    operation: "save",
+    actualCount: event.pcbTracePaths?.length ?? 0,
+    expectedCount: 4,
+    error: event.pcbTracePathsUnavailableReason,
+  })
   // The snapshot shows the observed save result as well as the copper.
   await expect(fixture.circuit).toMatchPcbSnapshot(import.meta.path)
 })
@@ -34,9 +36,11 @@ test("saved routes round-trip junctions and a trunk without a pad endpoint", asy
   expect(replay.circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(getSavedRouteBranchCopper(replay.circuit)).toEqual(fixture.routes)
   const replayEvent = replay.events[0]!
-  addSavedRouteBranchStatus(
-    replay.circuit,
-    `Save: ${replayEvent.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${replayEvent.pcbTracePaths?.length ?? 0} / 4 paths)`,
-  )
+  addSavedRouteBranchStatus(replay.circuit, {
+    operation: "save",
+    actualCount: replayEvent.pcbTracePaths?.length ?? 0,
+    expectedCount: 4,
+    error: replayEvent.pcbTracePathsUnavailableReason,
+  })
   await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -23,10 +23,12 @@ beforeAll(async () => {
   const errors = replay.circuit.db.pcb_autorouting_error.list()
   expect(errors).toEqual([])
   expect(replay.circuit.db.pcb_trace.list()).toHaveLength(2)
-  addSavedRouteBranchStatus(
-    replay.circuit,
-    `Replay: ${errors.length ? "BLOCKED" : "OK"} (${replay.circuit.db.pcb_trace.list().length} / 2 traces)`,
-  )
+  addSavedRouteBranchStatus(replay.circuit, {
+    operation: "replay",
+    actualCount: replay.circuit.db.pcb_trace.list().length,
+    expectedCount: 2,
+    error: errors[0]?.message,
+  })
   // The snapshot shows the replayed copper and observed result.
   await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
 })
