@@ -1,0 +1,45 @@
+import { pcbTransientChannelSimulationProps } from "@tscircuit/props"
+import type { SimulationPcbTransientChannelSimulation } from "circuit-json"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { writeSignalIntegrityRecords } from "lib/utils/simulation/write-signal-integrity-records"
+
+/** Declares a coupled SI run; solvers consume its Circuit JSON separately. */
+export class PcbTransientChannelSimulation extends PrimitiveComponent<
+  typeof pcbTransientChannelSimulationProps
+> {
+  simulation_pcb_transient_channel_simulation_id:
+    | SimulationPcbTransientChannelSimulation["simulation_pcb_transient_channel_simulation_id"]
+    | null = null
+  get config() {
+    return {
+      componentName: "PcbTransientChannelSimulation",
+      zodProps: pcbTransientChannelSimulationProps,
+    }
+  }
+
+  onPropsChange(): void {
+    this._markDirty("PcbSimulationRender")
+  }
+
+  doInitialPcbSimulationRender(): void {
+    if (this.parent?.componentName !== "Board")
+      throw new Error(
+        "<simulation.pcbtransientchannelsimulation> must be a direct child of <board>",
+      )
+    if (this.getInheritedProperty("analogSimulationDisabled")) return
+    writeSignalIntegrityRecords(this)
+  }
+
+  updatePcbSimulationRender(): void {
+    this.doInitialPcbSimulationRender()
+  }
+
+  removePcbSimulationRender(): void {
+    if (!this.simulation_pcb_transient_channel_simulation_id) return
+    const { db } = this.root!
+    db.simulation_pcb_transient_channel_simulation.delete(
+      this.simulation_pcb_transient_channel_simulation_id,
+    )
+    this.simulation_pcb_transient_channel_simulation_id = null
+  }
+}
