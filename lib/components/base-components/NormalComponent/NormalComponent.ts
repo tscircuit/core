@@ -2276,6 +2276,22 @@ export class NormalComponent<
       standard: source_component.standard,
       pin_count: source_component.pin_count,
       footprinterString,
+      // Specifications the parts engine searches by. Undefined fields are
+      // omitted by JSON.stringify, so keys for other components are unchanged.
+      resistance: source_component.resistance,
+      capacitance: source_component.capacitance,
+      max_resistance: source_component.max_resistance,
+      inductance: source_component.inductance,
+      voltage: source_component.voltage,
+      frequency: source_component.frequency,
+      load_capacitance: source_component.load_capacitance,
+      color: source_component.color,
+      transistor_type: source_component.transistor_type,
+      mosfet_mode: source_component.mosfet_mode,
+      channel_type: source_component.channel_type,
+      gender: source_component.gender,
+      pitch: source_component.pitch,
+      is_right_angle: source_component.is_right_angle,
     })
   }
 
