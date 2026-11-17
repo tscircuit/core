@@ -1,0 +1,65 @@
+name: Inspect fixed-copper repair candidate rejection
+on:
+  push:
+    branches: [artifacts/ddr-raster-validation-metrics]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    name: Validation metrics ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [a13, butterstick]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 94ba9ddf46f3809a0d286ea95a613b76efffddb8
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-${{ matrix.circuit }}
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Install both routing revisions
+        run: |
+          (cd head && bun install --ignore-scripts)
+      - name: Replay identical Core requests sequentially on one machine
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > layer-experiment.private.ts <<'TS'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
+          import {createHash} from 'node:crypto'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
+          const circuit=process.env.CIRCUIT!
+          const phase=circuit==='a13'?5:3
+          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
+          mkdirSync('../results/'+process.env.VARIANT,{recursive:true})
+          const started=performance.now()
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          solver.solve()
+          if(!solver.solved||solver.failed)throw Error(solver.error??'Native DDR routing failed')
+          const routes=solver.getOutputSimplifiedPcbTraces()
+          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
+          const errors=evaluateRelaxedDrc(drcInput).errors
+          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),validationMetrics:[solver.pipeline9JointDrcRepairSolver?.initialBoundedRegionalRepairSolver?.stats,solver.pipeline9JointDrcRepairSolver?.boundedRegionalRepairSolver?.stats].map(s=>Object.fromEntries(Object.entries(s??{}).filter(([k])=>k.startsWith('fixedGuard')))),timeSpent:solver.timeSpentOnPhase}
+          console.log('RASTER_VALIDATION_METRICS_JSON='+JSON.stringify(summary))
+          writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
+          TS
+          cp layer-experiment.private.ts head/
+          (cd head && VARIANT=metrics timeout 600s bun layer-experiment.private.ts > result.private.log 2>&1)
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path('head/result.private.log').read_text().splitlines():
+              if line.startswith('RASTER_VALIDATION_METRICS_JSON='):print(line)
+          PY
