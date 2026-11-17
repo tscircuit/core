@@ -841,19 +841,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         sourceNet.trace_width,
       )
     }
-    const netWidthSourceTraces = connectedSourceTraces.filter(
-      (st) => !explicitPathSourceTraceIds.has(st.source_trace_id),
-    )
-    if (
-      netWidthSourceTraces.length > 0 &&
-      netWidthSourceTraces.every((st) => st.min_trace_thickness !== undefined)
-    ) {
-      for (const sourceTrace of netWidthSourceTraces) {
-        nominalTraceWidthForConnection = Math.max(
-          nominalTraceWidthForConnection ?? 0,
-          sourceTrace.min_trace_thickness!,
-        )
-      }
+    for (const sourceTrace of connectedSourceTraces) {
+      if (explicitPathSourceTraceIds.has(sourceTrace.source_trace_id)) continue
+      if (sourceTrace.min_trace_thickness === undefined) continue
+      nominalTraceWidthForConnection = Math.max(
+        nominalTraceWidthForConnection ?? 0,
+        sourceTrace.min_trace_thickness,
+      )
     }
 
     // Explicit paths preserve their identity, but still inherit net width rules
