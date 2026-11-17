@@ -77,6 +77,10 @@ test("phase planning resolves shared bus selectors and pin aliases", async () =>
   try {
     const plans = Group_getRoutingPhasePlans(board)
     selectorSearches = selectOne.mock.calls.length
+    expect(selectorSearches).toBeLessThanOrEqual(bitIndexes.length * 6)
+    selectOne.mockClear()
+    Group_getRoutingPhasePlans(board)
+    expect(selectOne.mock.calls.length).toBe(selectorSearches)
     expect(plans.map((plan) => plan.traces.map((trace) => trace.name))).toEqual(
       [
         bitIndexes.slice(0, 8).map((bit) => `D${bit}`),
