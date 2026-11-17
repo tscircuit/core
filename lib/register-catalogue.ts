@@ -28,6 +28,8 @@ extendCatalogue({
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,
+  "simulation.pcbtransientchannelsimulation":
+    Components.PcbTransientChannelSimulation,
   "simulation.ibismodel": Components.SimulationIbisModel,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
