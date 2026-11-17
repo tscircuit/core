@@ -6,21 +6,17 @@ import type { PcbTransientChannelSimulation } from "lib/components/primitive-com
 
 type SourcePortId = SourcePort["source_port_id"]
 
-function resolveEndpointPorts(
-  block: PcbTransientChannelSimulation,
-  selectors: string[],
-  override: string | { p: string; n: string } | undefined,
-) {
-  const ports = selectors.map(
-    (selector) =>
-      resolveExternalSimulationPort({ declaration: block, selector })
-        .source_port_id!,
-  )
-  const overrides =
-    typeof override === "object"
-      ? [override.p, override.n]
-      : selectors.map(() => override)
-  return { ports, overrides }
+function getEndpointSelectors(endpoint: SignalEndpointProps): string[] {
+  if (typeof endpoint === "string") return [endpoint]
+  if ("pin" in endpoint) return getEndpointSelectors(endpoint.pin)
+  return [endpoint.p, endpoint.n]
+}
+
+function getEndpointModelNames(endpoint: SignalEndpointProps) {
+  if (typeof endpoint === "string" || !("pin" in endpoint)) return []
+  const { model } = endpoint
+  if (typeof model === "object") return [model.p, model.n]
+  return [model, model]
 }
 
 function validateEndpoints(
@@ -54,14 +50,13 @@ export function resolveSignalEndpoint(
   endpoint: SignalEndpointProps,
   role: "driver" | "receiver",
 ) {
-  const pin =
-    typeof endpoint === "object" && "pin" in endpoint ? endpoint.pin : endpoint
-  const override =
-    typeof endpoint === "object" && "pin" in endpoint
-      ? endpoint.model
-      : undefined
-  const selectors = typeof pin === "string" ? [pin] : [pin.p, pin.n]
-  const { ports, overrides } = resolveEndpointPorts(block, selectors, override)
+  const selectors = getEndpointSelectors(endpoint)
+  const ports = selectors.map(
+    (selector) =>
+      resolveExternalSimulationPort({ declaration: block, selector })
+        .source_port_id!,
+  )
+  const [firstModelName, secondModelName] = getEndpointModelNames(endpoint)
   validateEndpoints(signal, role, selectors, ports, block)
   if (ports.length === 1) {
     return {
@@ -69,7 +64,7 @@ export function resolveSignalEndpoint(
       selectors,
       record: {
         source_port_id: ports[0],
-        ...(overrides[0] ? { ibis_model_name: overrides[0] } : {}),
+        ibis_model_name: firstModelName,
       },
     }
   }
@@ -79,8 +74,8 @@ export function resolveSignalEndpoint(
     record: {
       p_source_port_id: ports[0],
       n_source_port_id: ports[1],
-      ...(overrides[0] ? { p_ibis_model_name: overrides[0] } : {}),
-      ...(overrides[1] ? { n_ibis_model_name: overrides[1] } : {}),
+      p_ibis_model_name: firstModelName,
+      n_ibis_model_name: secondModelName,
     },
   }
 }

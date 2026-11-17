@@ -33,8 +33,8 @@ export class SimulationIbisModel extends PrimitiveComponent<
       for (const simulation of subcircuit.selectAll<PcbTransientChannelSimulation>(
         "pcbtransientchannelsimulation",
       )) {
-        if (simulation.getSubcircuit() === subcircuit)
-          simulation._markDirty("PcbSimulationRender")
+        if (simulation.getSubcircuit() !== subcircuit) continue
+        simulation._markDirty("PcbSimulationRender")
       }
     }
   }

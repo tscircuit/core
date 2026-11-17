@@ -35,9 +35,9 @@ function getChannelRecord(
       receivers: receivers.map((receiver) => receiver.record),
       bit_rate_bps: bitRate,
       pattern: channelProps.pattern,
-      ...(seed === undefined ? {} : { seed }),
+      seed,
       offset_ms: offsetMs,
-      ...(channelProps.driverDisabled ? { driver_disabled: true } : {}),
+      driver_disabled: channelProps.driverDisabled || undefined,
     },
   }
 }
@@ -79,15 +79,21 @@ export function writeSignalIntegrityRecords(
 
   for (const { signal, record } of channels) {
     const channelRecords = db.simulation_pcb_driver_receiver_channel
-    const { simulation_pcb_driver_receiver_channel_id: previousChannelId } =
-      signal
-    if (previousChannelId) channelRecords.delete(previousChannelId)
-    signal.simulation_pcb_driver_receiver_channel_id = channelRecords.insert({
+    const channelRecord = {
       ...record,
       simulation_pcb_transient_channel_simulation_id,
-      ...(previousChannelId
-        ? { simulation_pcb_driver_receiver_channel_id: previousChannelId }
-        : {}),
-    }).simulation_pcb_driver_receiver_channel_id
+    }
+    const { simulation_pcb_driver_receiver_channel_id: previousChannelId } =
+      signal
+    if (previousChannelId) {
+      channelRecords.delete(previousChannelId)
+      Object.assign(channelRecord, {
+        simulation_pcb_driver_receiver_channel_id: previousChannelId,
+      })
+    }
+    signal.simulation_pcb_driver_receiver_channel_id =
+      channelRecords.insert(
+        channelRecord,
+      ).simulation_pcb_driver_receiver_channel_id
   }
 }

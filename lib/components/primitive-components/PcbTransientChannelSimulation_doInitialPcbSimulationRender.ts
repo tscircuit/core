@@ -55,6 +55,13 @@ function getBlockSignals(block: PcbTransientChannelSimulation) {
   return signals
 }
 
+function getReceiverRefs(
+  receiverRef: PcbDriverReceiverChannel["_parsedProps"]["receiverRef"],
+) {
+  if (Array.isArray(receiverRef)) return receiverRef
+  return [receiverRef]
+}
+
 function resolveSignal(
   block: PcbTransientChannelSimulation,
   signal: PcbDriverReceiverChannel,
@@ -68,11 +75,7 @@ function resolveSignal(
     signalProps.driverRef,
     "driver",
   )
-  const receivers = (
-    Array.isArray(signalProps.receiverRef)
-      ? signalProps.receiverRef
-      : [signalProps.receiverRef]
-  ).map((receiver) =>
+  const receivers = getReceiverRefs(signalProps.receiverRef).map((receiver) =>
     resolveSignalEndpoint(block, signal, receiver, "receiver"),
   )
   if (
@@ -87,6 +90,25 @@ function resolveSignal(
     ),
   )
   return { signal, driver, receivers, ports, seed }
+}
+
+function validateCopperRouting(
+  block: PcbTransientChannelSimulation,
+  { signal, driver, ports }: ReturnType<typeof resolveSignal>,
+  topology: ReturnType<typeof getSignalTopology>,
+) {
+  if (block._parsedProps.allowUnroutedTraces) return
+  const unroutedPort = ports.find(
+    (port) =>
+      port.source_component_id &&
+      !driver.ports.some((driverId) =>
+        topology.routed.areIdsConnected(driverId, port.source_port_id),
+      ),
+  )
+  if (!unroutedPort) return
+  throw new Error(
+    `Signal "${signal._parsedProps.name}" is not routed between ${driver.selectors[0]} and ${describeSignalPort(block, unroutedPort)}.`,
+  )
 }
 
 function validateSignals(
@@ -128,19 +150,7 @@ function validateSignals(
           )
       }
     }
-    const unroutedPort = props.allowUnroutedTraces
-      ? undefined
-      : ports.find(
-          (port) =>
-            port.source_component_id &&
-            !driver.ports.some((driverId) =>
-              topology.routed.areIdsConnected(driverId, port.source_port_id),
-            ),
-        )
-    if (unroutedPort)
-      throw new Error(
-        `Signal "${name}" is not routed between ${driver.selectors[0]} and ${describeSignalPort(block, unroutedPort)}.`,
-      )
+    validateCopperRouting(block, resolved[i], topology)
     for (const port of ports) {
       if (!port.source_component_id) continue
       const component = db.source_component.get(port.source_component_id)!

@@ -91,14 +91,15 @@ export function getSignalTopology(block: PcbTransientChannelSimulation) {
     // physical contact too, rather than assuming every route carries port IDs.
     for (const trace of pcbTraces) {
       if (
-        trace.route.some(
+        !trace.route.some(
           (point) =>
             point.route_type === "wire" &&
             pcbPort.layers.includes(point.layer) &&
             Math.hypot(point.x - pcbPort.x, point.y - pcbPort.y) < 1e-6,
         )
       )
-        routed.addConnections([[pcbPort.pcb_port_id, trace.pcb_trace_id]])
+        continue
+      routed.addConnections([[pcbPort.pcb_port_id, trace.pcb_trace_id]])
     }
   }
 
