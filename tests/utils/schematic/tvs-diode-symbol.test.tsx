@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { Circuit } from "lib/Circuit"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("both <diode variant='tvs' /> and <diode tvs /> select the TVS/avalanche diode schematic symbol (#5570)", () => {
-  const circuit = new Circuit()
+  const { circuit } = getTestFixture()
   circuit.add(
     <board width={20} height={10}>
       <diode name="D_STANDARD" schX={-3} variant="standard" />
@@ -14,15 +14,13 @@ test("both <diode variant='tvs' /> and <diode tvs /> select the TVS/avalanche di
 
   circuit.render()
 
-  const circuitJson = circuit.getCircuitJson()
+  const sourceComponents = circuit.db.source_component.list()
+  const schematicComponents = circuit.db.schematic_component.list()
+
   const getSymbolName = (name: string) => {
-    const src = circuitJson.find(
-      (el) => el.type === "source_component" && el.name === name,
-    )
-    const sch = circuitJson.find(
-      (el) =>
-        el.type === "schematic_component" &&
-        el.source_component_id === src?.source_component_id,
+    const src = sourceComponents.find((el) => el.name === name)
+    const sch = schematicComponents.find(
+      (el) => el.source_component_id === src?.source_component_id,
     )
     return sch?.symbol_name
   }
