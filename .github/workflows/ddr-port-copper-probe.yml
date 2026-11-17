@@ -66,7 +66,8 @@ jobs:
               const points=segments.flatMap(segment=>segment.portPoints)
               const routes=points.map(point=>({connectionName:'probe-no-net',traceThickness:solver.minTraceWidth,viaDiameter:solver.viaDiameter,route:[{...point,z:point.availableZ[0]},{...point,z:point.availableZ[0]}],vias:[]}))
               const violations=getFixedObstacleViolations({srj:physical,routes,traceClearance:clearance,viaClearance:0})
-              const blocked=new Set(violations.map(v=>points[v.routeIndex]))
+              const nodeById=new Map(solver.capacityNodes.map(node=>[node.capacityMeshNodeId,node]))
+              const blocked=new Set(violations.map(v=>points[v.routeIndex]).filter(point=>point.cramped&&point.nodeIds.every(id=>!nodeById.get(id)?._containsObstacle)))
               removedPorts=blocked.size
               for(const segment of segments)segment.portPoints=segment.portPoints.filter(port=>!blocked.has(port))
               filtered=true
@@ -74,7 +75,7 @@ jobs:
             }
             solver.step()
           }
-          if(!solver.solved||solver.failed){console.log('PORT_FILTER_OUTCOME_JSON='+JSON.stringify({circuit,clearance:process.env.CLEARANCE,failed:true,removedPorts,seconds:(performance.now()-started)/1000}));process.exit(0)}
+          if(!solver.solved||solver.failed){console.log('PORT_FILTER_OUTCOME_JSON='+JSON.stringify({circuit,clearance:process.env.CLEARANCE,failed:true,failedPhase:solver.getCurrentPhase(),removedPorts,seconds:(performance.now()-started)/1000}));process.exit(0)}
           const routes=solver.getOutputSimplifiedPcbTraces()
           const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
           const errors=evaluateRelaxedDrc(drcInput).errors
