@@ -1,4 +1,3 @@
-import { getSignalIntegrityEyes } from "lib/utils/simulation/get-signal-integrity-blocks"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -246,11 +245,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _isolatedCircuitJson: AnyCircuitElement[] | null = null
 
   get _isIsolatedSubcircuit(): boolean {
-    // Eye diagrams depend on transient simulations on the owning board.
-    return (
-      Boolean(this.getInheritedProperty("_subcircuitCachingEnabled")) &&
-      getSignalIntegrityEyes(this).length === 0
-    )
+    return Boolean(this.getInheritedProperty("_subcircuitCachingEnabled"))
   }
 
   _normalComponentNameMap: Map<string, NormalComponent[]> | null = null

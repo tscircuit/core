@@ -32,6 +32,10 @@ export class SimulationEyeDiagram extends PrimitiveComponent<
   }
 
   doInitialSimulationSpiceEngineRender(): void {
+    if (this.parent?.componentName !== "Board")
+      throw new Error(
+        "<simulation.eyediagram> must be a direct child of <board>",
+      )
     if (this.getInheritedProperty("analogSimulationDisabled")) {
       this.removeSimulationSpiceEngineRender()
       return
@@ -45,7 +49,7 @@ export class SimulationEyeDiagram extends PrimitiveComponent<
         `Eye diagram "${name}" needs exactly one simulation named "${simulationRef}".`,
       )
     const [block] = blocks
-    // A block loading IBIS assets will dirty its eye diagrams when it writes records.
+    // The simulation marks its eye diagrams dirty after writing its record.
     const simulationId = block.simulation_pcb_transient_channel_simulation_id
     if (!simulationId) return
 
