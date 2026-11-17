@@ -1,4 +1,4 @@
-import { sel } from "tscircuit"
+import { sel } from "lib"
 
 export const POWER_SECTION = "power"
 
