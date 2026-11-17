@@ -25,7 +25,7 @@ const pads = () => (
   </footprint>
 )
 
-test.only("routes net-attached CPU and connector pair sections through the same ESD pads", async () => {
+test("routes net-attached CPU and connector pair sections through the same ESD pads", async () => {
   const { circuit } = getTestFixture()
   captureActualConsumerBusInput(circuit, "esd_net_sections")
   const asyncErrors: string[] = []

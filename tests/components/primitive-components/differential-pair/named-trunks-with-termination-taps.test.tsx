@@ -3,7 +3,7 @@ import { expect, test } from "bun:test"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.only("routes named differential trunks separately from termination taps on their nets", async () => {
+test("routes named differential trunks separately from termination taps on their nets", async () => {
   const { circuit } = getTestFixture()
   captureActualConsumerBusInput(circuit, "named_trunks_and_taps")
   const inputs: SimpleRouteJson[] = []

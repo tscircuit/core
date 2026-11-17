@@ -15,7 +15,7 @@ import {
   renderOrangeCrabDdrClock,
 } from "tests/fixtures/orangecrab-ddr-clock/render"
 
-test.only("routes the real OrangeCrab clock trunks and termination branches", async (): Promise<void> => {
+test("routes the real OrangeCrab clock trunks and termination branches", async (): Promise<void> => {
   const { circuit, inputs, outputs, asyncErrors, phaseNames } =
     await renderOrangeCrabDdrClock(true, (circuit) =>
       captureActualConsumerBusInput(circuit, "orangecrab_clock"),
