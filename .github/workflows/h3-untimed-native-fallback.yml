@@ -1,0 +1,76 @@
+# Aggregate native-H3 results only. No board files are exported.
+name: Compare existing native surface fallback for untimed DDR
+on:
+  push:
+    branches: [artifacts/h3-untimed-native-fallback]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: cbd27db2e7de5697d24fc63928c43fb92d3431d1
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 695a99b6a81506c24d8e26eb6a9898b389499104
+          path: head
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: bfd2f2e7686a48148dd8fb9f7504276ad36c16a8
+          path: repro
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: |
+          (cd base && bun install --ignore-scripts)
+          (cd head && bun install --ignore-scripts)
+          cp repro/tests/fixtures/pad-escapes.ts base/tests/fixtures/pad-escapes.private.ts
+          cp repro/tests/fixtures/pad-escapes.ts head/tests/fixtures/pad-escapes.private.ts
+          cp repro/tests/fixtures/expect-connected-and-clear.ts base/tests/fixtures/expect-connected-and-clear.private.ts
+          cp repro/tests/fixtures/expect-connected-and-clear.ts head/tests/fixtures/expect-connected-and-clear.private.ts
+      - name: Fresh native before and after solves with all 76 later terminals checked
+        run: |
+          cat > inspect.private.ts <<'TS'
+          import {readFileSync} from 'node:fs'
+          import {gunzipSync} from 'node:zlib'
+          import {createHash} from 'node:crypto'
+          import {BusLanesPipelineSolver} from './lib'
+          import {getPadEscape} from './tests/fixtures/pad-escapes.private'
+          import {expectConnectedAndClear} from './tests/fixtures/expect-connected-and-clear.private'
+          const fixture=JSON.parse(gunzipSync(readFileSync('../repro/tests/fixtures/h3-pending-pad-escapes/input.json.gz')).toString())
+          const input=fixture.byte1Request
+          const original=JSON.stringify(input)
+          const pending=fixture.pendingConnections.flatMap(connection=>connection.pointsToConnect.map((point,end)=>({connection,end})))
+          const count=(request)=>pending.map(({connection,end})=>getPadEscape({input:request,connection,end,viaTargetLayer:'bottom'}))
+          const before=count(input)
+          const started=performance.now()
+          const solver=new BusLanesPipelineSolver(input)
+          while(!solver.solved&&!solver.failed&&performance.now()-started<600000)solver.step()
+          const seconds=(performance.now()-started)/1000
+          if(!solver.solved||solver.failed){console.log('H3_NATIVE_FALLBACK_JSON='+JSON.stringify({variant:process.env.VARIANT,solved:false,seconds,phase:solver.phase}));process.exit(0)}
+          const traces=solver.getOutput().traces
+          const after=count({...input,traces})
+          let valid=true
+          try{expectConnectedAndClear({request:input,connections:[...fixture.fixedConnections,...input.connections],traces})}catch{valid=false}
+          console.log('H3_NATIVE_FALLBACK_JSON='+JSON.stringify({variant:process.env.VARIANT,solved:true,valid,seconds,completeRoutes:traces.length,inputUnchanged:original===JSON.stringify(input),fixedTracesPreserved:JSON.stringify(traces.slice(0,input.traces.length))===JSON.stringify(input.traces),initiallyBlocked:before.filter(s=>!s).length,newlyBlocked:after.filter((s,i)=>before[i]&&!s).length,remainingViaEscapes:after.filter(s=>s==='via_site').length,copperHash:createHash('sha256').update(JSON.stringify(traces)).digest('hex')}))
+          TS
+          cp inspect.private.ts base/inspect.private.ts
+          cp inspect.private.ts head/inspect.private.ts
+          for variant in base head; do
+            (cd "$variant" && VARIANT="$variant" timeout 650s bun inspect.private.ts > inspection.private.log 2>&1)
+            VARIANT="$variant" python3 - <<'PY'
+          import pathlib,os
+          for line in pathlib.Path(os.environ['VARIANT']+'/inspection.private.log').read_text().splitlines():
+              if line.startswith('H3_NATIVE_FALLBACK_JSON='):print(line)
+          PY
+          done
