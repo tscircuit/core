@@ -55,16 +55,5 @@ test("board traces in a panel route around mouse-bite drills", async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(
     circuit.db.pcb_trace_error.list().map((error) => error.message),
-  ).toMatchInlineSnapshot(`
-    [
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-      "Trace .R2 > .pin1 to .R1 > .pin2 is too close to non-plated hole unnamed hole (gap: 0.175000mm, required: 0.2mm)",
-    ]
-  `)
+  ).toMatchInlineSnapshot(`[]`)
 })

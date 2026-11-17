@@ -31,6 +31,7 @@ import type {
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
+import { getPanelBreakawayObstacleElements } from "./get-panel-breakaway-obstacle-elements"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
   type FanoutPourNetMap,
@@ -501,6 +502,24 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       minY: Math.min(bounds.minY, groupBounds.minY),
       maxY: Math.max(bounds.maxY, groupBounds.maxY),
     }
+  }
+  // A board inside a panel must avoid the panel's mouse-bite drills and tab
+  // slots. They block routing without widening the routing bounds above.
+  if (
+    subcircuitIsBoard &&
+    board &&
+    allElements.some((e) => e.type === "pcb_panel")
+  ) {
+    obstacles.push(
+      ...getObstaclesFromCircuitJson(
+        getPanelBreakawayObstacleElements({
+          board,
+          elements: allElements,
+          boardSubcircuitIds: relevantSubcircuitIds!,
+        }),
+        sharedConnMap,
+      ),
+    )
   }
   const sourceTraceIdsAlreadyPreservedAsSrjTraces = new Set(
     db.pcb_trace
