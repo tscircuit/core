@@ -1,0 +1,32 @@
+name: Verify DDR published package provenance
+on:
+  push:
+    branches: [artifacts/ddr-release-provenance-3220]
+permissions:
+  contents: read
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Report public npm versions and routing dependencies only
+        run: |
+          node --input-type=module <<'JS'
+          async function metadata(name, version) {
+            const response = await fetch("https://registry.npmjs.org/" + name + "/" + version);
+            if (!response.ok) throw new Error("Public npm metadata unavailable");
+            return response.json();
+          }
+          const tscircuit = await metadata("tscircuit", "latest");
+          const coreVersion = tscircuit.dependencies["@tscircuit/core"].replace(/^[\^~]/, "");
+          const core = await metadata("@tscircuit/core", coreVersion);
+          const tested = await metadata("tscircuit", "0.0.3220");
+          const routingNames = ["@tscircuit/core", "@tscircuit/capacity-autorouter", "@tscircuit/bus-lanes-solver", "@tscircuit/fanout-solver", "@tscircuit/props", "circuit-json", "@tscircuit/checks"];
+          console.log("PUBLIC_RELEASE_PROVENANCE_JSON=" + JSON.stringify({
+            latestTscircuit: tscircuit.version,
+            publishedCore: core.version,
+            latestRouting: Object.fromEntries(routingNames.map(name => [name, tscircuit.dependencies[name] ?? core.devDependencies?.[name]])),
+            testedTscircuit: tested.version,
+            publishedIntegrityVerified: Boolean(tscircuit.dist.integrity && core.dist.integrity)
+          }));
+          JS
