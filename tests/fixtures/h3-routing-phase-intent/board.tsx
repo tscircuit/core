@@ -29,14 +29,15 @@ const phaseNames = ["byte0", "byte1", "remaining"]
 const byteGroups = ["byte0", "byte1"]
 
 /** Native board-world points in mm, +X right, +Y up and +Z above.
- * The first callback captures Core's actual request and deliberately aborts.
+ * Omitting the optional capture runs every phase through its actual router.
+ * The phase-intent repro supplies a callback that deliberately aborts byte 0.
  */
 export function H3RoutingPhaseIntentBoard({
   source,
   captureFirstPhase,
 }: {
   source: NativeH3Source
-  captureFirstPhase: (simpleRouteJson: SimpleRouteJson) => Promise<never>
+  captureFirstPhase?: (simpleRouteJson: SimpleRouteJson) => Promise<never>
 }): ReactElement {
   return (
     <board

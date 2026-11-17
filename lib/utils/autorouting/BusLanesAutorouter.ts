@@ -8,18 +8,49 @@ import type {
   AutorouterProgressEvent,
 } from "./GenericLocalAutorouter"
 import type { SimpleRouteJson, SimplifiedPcbTrace } from "./SimpleRouteJson"
+import type { SolverEndedEvent } from "lib/events"
+
+export interface BusLanesSolverStarted {
+  solverName: "BusLanesPipelineSolver"
+  solverParams: BusLanesPipelineSolver["input"]
+  solverConstructorArgs: ReturnType<
+    BusLanesPipelineSolver["getConstructorParams"]
+  >
+}
+
+export interface BusLanesSolverEnded
+  extends Omit<SolverEndedEvent, "type" | "componentName"> {
+  solverName: "BusLanesPipelineSolver"
+}
+
+export interface BusLanesAutorouterOptions {
+  onSolverStarted?: (details: BusLanesSolverStarted) => void
+  onSolverEnded?: (event: BusLanesSolverEnded) => void
+}
+
 /** Adapter preserves board coordinates (mm, +X right, +Y up). A failed planar
  * solve emits an error; it never falls back to a router that can insert vias. */
 export class BusLanesAutorouter implements GenericLocalAutorouter {
   isRouting = false
   private solver: BusLanesPipelineSolver
+  private solverEndedReported = false
   private cancelScheduledTick?: () => void
   private listeners: Array<{
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
   }> = []
-  constructor(public input: SimpleRouteJson) {
+  constructor(
+    public input: SimpleRouteJson,
+    private readonly options: BusLanesAutorouterOptions = {},
+  ) {
     this.solver = new BusLanesPipelineSolver(getBusLanesInputFromSrj(input))
+    // Observe the constructed solver's physical input, including fixed-copper
+    // adaptation and future terminal intent, rather than the pre-adapter SRJ.
+    options.onSolverStarted?.({
+      solverName: "BusLanesPipelineSolver",
+      solverParams: this.solver.input,
+      solverConstructorArgs: this.solver.getConstructorParams(),
+    })
   }
   on(
     event: "complete",
@@ -46,6 +77,21 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     for (const listener of this.listeners)
       if (listener.event === event.type) listener.callback(event)
   }
+  private reportSolverEnded(error?: Error): void {
+    if (this.solverEndedReported) return
+    this.solverEndedReported = true
+    if (!this.options.onSolverEnded) return
+    const pendingRoutingAccessReport =
+      this.solver.getPendingRoutingAccessReport()
+    this.options.onSolverEnded({
+      solverName: "BusLanesPipelineSolver",
+      solved: this.solver.solved && !error,
+      failed: this.solver.failed || error !== undefined,
+      iterations: this.solver.iterations,
+      error: error?.message ?? this.solver.error,
+      ...(pendingRoutingAccessReport ? { pendingRoutingAccessReport } : {}),
+    })
+  }
   start() {
     if (this.isRouting) return
     this.isRouting = true
@@ -60,6 +106,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
           this.solver.step()
         if (this.solver.failed) {
           this.isRouting = false
+          this.reportSolverEnded()
           this.emit({
             type: "error",
             error: new Error(this.solver.error ?? "Bus lanes routing failed"),
@@ -68,6 +115,7 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         }
         if (this.solver.solved) {
           this.isRouting = false
+          this.reportSolverEnded()
           this.emit({ type: "complete", traces: this.solver.traces })
           return
         }
@@ -81,9 +129,12 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         this.scheduleTick(tick)
       } catch (error) {
         this.isRouting = false
+        const routingError =
+          error instanceof Error ? error : new Error(String(error))
+        this.reportSolverEnded(routingError)
         this.emit({
           type: "error",
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: routingError,
         })
       }
     }
@@ -105,9 +156,17 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     this.cancelScheduledTick?.()
   }
   solveSync(): SimplifiedPcbTrace[] {
-    this.solver.solve()
-    if (this.solver.failed)
-      throw new Error(this.solver.error ?? "Bus lanes routing failed")
+    try {
+      this.solver.solve()
+      if (this.solver.failed)
+        throw new Error(this.solver.error ?? "Bus lanes routing failed")
+    } catch (error) {
+      const routingError =
+        error instanceof Error ? error : new Error(String(error))
+      this.reportSolverEnded(routingError)
+      throw routingError
+    }
+    this.reportSolverEnded()
     return this.solver.traces
   }
 }

@@ -34,7 +34,7 @@ const getRequestNotes = ({
   })
 
 /** Notes use the board and pad positions Core emitted, without a new transform. */
-const getNativeGeometryNotes = (
+export const getNativeGeometryNotes = (
   circuitJson: AnyCircuitElement[],
 ): AnyCircuitElement[] => {
   const board = circuitJson.find((element) => element.type === "pcb_board")
