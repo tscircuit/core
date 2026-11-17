@@ -173,7 +173,7 @@ test("preserve shared and explicit stored via spans without mutating copper", ()
             ...element,
             route: getCircuitJsonPcbTraceRoute(element.route).map((point) =>
               point.route_type === "via"
-                ? { ...point, to_layer: "bottom" }
+                ? { ...point, to_layer: "bottom" as const }
                 : point,
             ),
           }
