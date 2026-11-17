@@ -47,7 +47,7 @@ jobs:
           import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
           import {createHash} from 'node:crypto'
           import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
-          import {getClearanceGridAxes} from '@tscircuit/repair04/lib/getClearanceGridAxes'
+          import {getClearanceGridAxes} from './node_modules/@tscircuit/repair04/lib/getClearanceGridAxes.ts'
           import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
           const circuit=process.env.CIRCUIT!
           const phase=circuit==='a13'?5:3
