@@ -25,7 +25,9 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
-      - run: bun install --ignore-scripts
+      - run: |
+          bun install
+          npm rebuild sharp
       - name: Existing tests
         run: |
           status=0
