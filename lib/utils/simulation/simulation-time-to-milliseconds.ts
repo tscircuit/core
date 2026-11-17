@@ -3,7 +3,7 @@ export function simulationTimeToMilliseconds(
   time: number | string,
   bitRate: number,
 ) {
-  return (
-    (typeof time === "string" ? Number.parseFloat(time) / bitRate : time) * 1000
-  )
+  if (typeof time === "string")
+    return (Number.parseFloat(time) / bitRate) * 1000
+  return time * 1000
 }
