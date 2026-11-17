@@ -14,7 +14,6 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
-import { withTimeout } from "lib/utils/with-timeout"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import {
@@ -54,9 +53,6 @@ export class Led extends NormalComponent<
   typeof ledProps,
   PolarizedPassivePorts
 > {
-  /** Supplier polarity lookup blocks layout phases, so never wait longer than this. */
-  static supplierPolarityTimeoutMs = 2000
-
   private declare _hasExplicitPortChildren?: boolean
   private declare _hasStartedSupplierPolarityResolution?: boolean
   private declare _stringFootprintChildren?: PrimitiveComponent[]
@@ -291,13 +287,11 @@ export class Led extends NormalComponent<
       await Promise.resolve()
       if (!this.root) return
 
-      // A slow parts engine must not stall the whole board's layout; on timeout
-      // keep the default polarity and let the mismatch check report it.
-      const targetPin1Polarity = await withTimeout(
-        this._inferSupplierPin1Polarity(partsEngine),
-        Led.supplierPolarityTimeoutMs,
-        null,
-      )
+      // Polarity determines connectivity, so supplier latency must not choose
+      // which physical pin receives a net. Keep dependent layout phases pending
+      // until inference finishes rather than treating a timeout as unknown polarity.
+      const targetPin1Polarity =
+        await this._inferSupplierPin1Polarity(partsEngine)
       if (!targetPin1Polarity) return
 
       const { positivePin } = resolveDiodeFootprint(baseFootprint, {
