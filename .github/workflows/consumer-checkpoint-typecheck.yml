@@ -1,0 +1,31 @@
+name: Verify exact consumer checkpoint types
+
+on:
+  push:
+    branches: [diagnostics/core-consumer-checkpoint-typecheck]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: capture
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: source
+          ref: 1975652b039564919f757431f6967d4b48ac32cb
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - name: Install the exact checkpoint dependencies
+        working-directory: source
+        run: bun i
+      - name: Run the project typecheck on the isolated source checkout
+        run: bun capture/scripts/diagnostics/verify-consumer-checkpoint-types.mjs source
