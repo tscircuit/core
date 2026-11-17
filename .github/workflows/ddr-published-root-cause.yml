@@ -1,4 +1,4 @@
-name: Extended published A13 baseline
+name: Extended published ButterStick baseline
 on:
   push:
     branches: [artifacts/ddr-3209-root-cause-profile]
@@ -14,7 +14,7 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - { circuit: a13, order: "head" }
+          - { circuit: butterstick, order: "head" }
     steps:
       - uses: actions/checkout@v4
         with:
