@@ -1,0 +1,55 @@
+name: Classify public A13 DRC findings by routing phase
+on:
+  push:
+    branches: [artifacts/ddr-published-a13-findings]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      # Both repositories and these exact fixture inputs were verified public.
+      # No board geometry, raw errors, net names or identifiers are exported.
+      - uses: actions/checkout@v4
+        with:
+          repository: ShiboSoftwareDev/core-ddr-benchmark
+          ref: 24dc44c166d4258c3538f8b1f66953f1b6f58690
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-extended-a13
+          run-id: 44059843290
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Print aggregate error counts per public routing phase
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,gzip,collections
+          root=pathlib.Path('captured')
+          findings=json.loads(next(root.rglob('findings.json')).read_text())
+          circuit=json.loads(next(root.rglob('circuit.json')).read_text())
+          fixture=json.loads(gzip.decompress(pathlib.Path('circuits/a13.json.gz').read_bytes()))
+          groups={t['name']:t['group'] for t in fixture['traces']}
+          traces={p['pcb_trace_id']:p for p in circuit if p['type']=='pcb_trace'}
+          sources={p['source_trace_id']:p for p in circuit if p['type']=='source_trace'}
+          nets={p['source_net_id']:p for p in circuit if p['type']=='source_net'}
+          vias={p['pcb_via_id']:p for p in circuit if p['type']=='pcb_via'}
+          summary={}
+          for kind,errors in findings.items():
+              if kind in ['missing_traces','disconnected_ports','width']: continue
+              counts=collections.Counter()
+              for error in errors:
+                  if not error['type'].endswith('_error'): continue
+                  ids=[error.get('pcb_trace_id')]+error.get('pcb_trace_ids',[])
+                  via_ids=[error.get('pcb_via_id')]+error.get('pcb_via_ids',[])
+                  ids.extend(vias[v].get('pcb_trace_id') for v in via_ids if v in vias)
+                  phases=set()
+                  for trace_id in ids:
+                      source_id=traces.get(trace_id,{}).get('source_trace_id')
+                      source=sources.get(source_id,{})
+                      phases.update(groups.get(nets[n].get('name'),'unknown') for n in source.get('connected_source_net_ids',[]) if n in nets)
+                      if source_id in nets: phases.add(groups.get(nets[source_id].get('name'),'unknown'))
+                  counts[' + '.join(sorted(phases)) or 'unresolved']+=1
+              if counts: summary[kind]=dict(counts)
+          print('A13_DRC_PHASE_COUNTS_JSON='+json.dumps(summary,separators=(',',':')))
+          PY
