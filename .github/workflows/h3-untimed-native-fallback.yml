@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: da7546f5d885e8c316c1df117efe256d33c29152
+          ref: 9c5b0276bfb018b66053bfe0c5c07572978f7432
           path: head
           persist-credentials: false
       - uses: actions/checkout@v4
