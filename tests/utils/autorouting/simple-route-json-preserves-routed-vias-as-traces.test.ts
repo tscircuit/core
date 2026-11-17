@@ -105,6 +105,7 @@ test("preserved routed vias stay in SRJ traces instead of obstacles", () => {
           y: 0,
           from_layer: "top",
           to_layer: "inner1",
+          layers: ["top", "inner1"],
           via_diameter: 0.9,
           via_hole_diameter: 0.4,
         },

@@ -1,4 +1,10 @@
 import { expect, test } from "bun:test"
+import { createHash } from "node:crypto"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { basename, join } from "node:path"
+import { gzipSync } from "node:zlib"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -183,7 +189,78 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     expect(exitPoint.x).toBeCloseTo(expectedRightBoundary)
   }
 
-  expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  // Temporary official-matcher capture; every phase/geometry assertion and
+  // the unchanged PCB snapshot above have passed. The normal strict SRJ
+  // snapshot comparison below still runs against its existing golden.
+  if (process.env.CI) {
+    const captureDirectory = mkdtempSync(join(tmpdir(), "core-fanout-srj-"))
+    const snapshotName = "autorouter-fanout-autorouting-srj"
+    const circuitBefore = JSON.stringify(circuit.getCircuitJson())
+    const phasesBefore = JSON.stringify(autoroutingPhaseIoStack)
+    try {
+      await expect(
+        autoroutingPhaseIoStack,
+      ).toMatchAutoroutingPhaseIoStackSnapshot(
+        join(captureDirectory, basename(import.meta.path)),
+        snapshotName,
+        circuit,
+      )
+      const bytes = readFileSync(
+        join(captureDirectory, "__snapshots__", `${snapshotName}.snap.svg`),
+      )
+      expect(JSON.stringify(circuit.getCircuitJson())).toBe(circuitBefore)
+      expect(JSON.stringify(autoroutingPhaseIoStack)).toBe(phasesBefore)
+      const gzip = gzipSync(bytes)
+      const base64 = gzip.toString("base64")
+      expect(bytes.length).toBeLessThan(2 * 1024 * 1024)
+      expect(base64.length).toBeLessThan(2 * 1024 * 1024)
+      const chunks = base64.match(/.{1,180}/g) ?? []
+      const sha256 = (bytes: Uint8Array) =>
+        createHash("sha256").update(bytes).digest("hex")
+      const circuitJson = circuit.getCircuitJson()
+      const fullSrj = getSimpleRouteJsonFromCircuitJson({
+        circuitJson,
+      }).simpleRouteJson
+      expect(JSON.stringify(circuit.getCircuitJson())).toBe(circuitBefore)
+      expect(JSON.stringify(autoroutingPhaseIoStack)).toBe(phasesBefore)
+      const metadata = {
+        snapshotName,
+        bytes: bytes.length,
+        sha256: sha256(bytes),
+        gzipBytes: gzip.length,
+        gzipSha256: sha256(gzip),
+        chunks: chunks.length,
+        circuitSha256: sha256(Buffer.from(circuitBefore)),
+        phaseIoSha256: sha256(Buffer.from(phasesBefore)),
+        phaseCounts: autoroutingPhaseIoStack.map((phase) => ({
+          startConnections: phase.startSimpleRouteJson?.connections.length,
+          startTraces: phase.startSimpleRouteJson?.traces?.length ?? 0,
+          endConnections: phase.endSimpleRouteJson?.connections.length,
+          endTraces: phase.endSimpleRouteJson?.traces?.length ?? 0,
+        })),
+        physicalViaSpans: circuitJson
+          .filter((element) => element.type === "pcb_via")
+          .map((via) => ({ x: via.x, y: via.y, layers: via.layers })),
+        preservedViaSpans: fullSrj.traces?.flatMap((trace) =>
+          trace.route.flatMap((point) =>
+            point.route_type === "via"
+              ? [{ x: point.x, y: point.y, layers: point.layers }]
+              : [],
+          ),
+        ),
+        remainingViaObstacleCount: fullSrj.obstacles.filter(
+          (obstacle) => obstacle.circuitJsonMetadata?.pcb_via_id,
+        ).length,
+      }
+      console.log("CORE_FANOUT_SRJ_SVG_BEGIN " + JSON.stringify(metadata))
+      for (const [index, chunk] of chunks.entries())
+        console.log(`CORE_FANOUT_SRJ_SVG_CHUNK ${index} ${chunk}`)
+      console.log("CORE_FANOUT_SRJ_SVG_END " + JSON.stringify(metadata))
+    } finally {
+      rmSync(captureDirectory, { recursive: true, force: true })
+    }
+  }
   await expect(autoroutingPhaseIoStack).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "autorouter-fanout-autorouting-srj",
