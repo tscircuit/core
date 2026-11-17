@@ -1,10 +1,9 @@
 import * as Components from "./components"
 import { extendCatalogue } from "./fiber/catalogue"
 
-// Register all components, generally you don't need to manually
-// register a component, as long as it's exported from lib/components
-// it'll automatically be registered!
-extendCatalogue(Components)
+// Register simulation.ibismodel only under its namespaced host.
+const { SimulationIbisModel, ...components } = Components
+extendCatalogue(components)
 
 // Aliases (only when class name is different than the name of the component)
 extendCatalogue({
@@ -28,6 +27,7 @@ extendCatalogue({
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,
+  "simulation.ibismodel": SimulationIbisModel,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
   "enclosure.fdm.box": Components.EnclosureFdmBox,

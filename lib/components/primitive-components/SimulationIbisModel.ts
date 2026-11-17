@@ -1,18 +1,22 @@
 import { simulationIbisModelProps } from "@tscircuit/props"
-import type { SimulationIbisModel } from "circuit-json"
+import type { SimulationIbisModel as SimulationIbisModelRecord } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import { IbisModel_getSimulationIbisModel } from "./IbisModel_getSimulationIbisModel"
+import { SimulationIbisModel_getSimulationIbisModel } from "./SimulationIbisModel_getSimulationIbisModel"
 
-type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
+type SimulationIbisModelId =
+  SimulationIbisModelRecord["simulation_ibis_model_id"]
 
 /** Declares a vendor source and physical pin mapping without fetching model files. */
-export class IbisModel extends PrimitiveComponent<
+export class SimulationIbisModel extends PrimitiveComponent<
   typeof simulationIbisModelProps
 > {
   simulation_ibis_model_id: SimulationIbisModelId | null = null
 
   get config() {
-    return { componentName: "IbisModel", zodProps: simulationIbisModelProps }
+    return {
+      componentName: "SimulationIbisModel",
+      zodProps: simulationIbisModelProps,
+    }
   }
 
   onPropsChange(): void {
@@ -22,7 +26,7 @@ export class IbisModel extends PrimitiveComponent<
   doInitialSimulationRender(): void {
     if (this.getInheritedProperty("analogSimulationDisabled")) return
 
-    const model = IbisModel_getSimulationIbisModel(this)
+    const model = SimulationIbisModel_getSimulationIbisModel(this)
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.update(
         this.simulation_ibis_model_id,
