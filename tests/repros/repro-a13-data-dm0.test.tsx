@@ -20,7 +20,7 @@ type NativeDdrSource = Parameters<typeof NativeDdrBoard>[0]["source"]
 
 // Native board-world positions in mm: +X right, +Y up, +Z above.
 // The 16 data bits retain both sides of their series resistors; DM0 does too.
-test("native A13 data and DM0 reproduce the RAM escape collision", async (): Promise<void> => {
+test("native A13 data and DM0 route without physical violations", async (): Promise<void> => {
   const source = JSON.parse(
     gunzipSync(
       readFileSync(
@@ -94,7 +94,7 @@ test("native A13 data and DM0 reproduce the RAM escape collision", async (): Pro
     ...checkHoleTraceClearance(circuitJson, clearance),
     ...checkDifferentNetViaSpacing(circuitJson),
   ].filter((finding) => finding.type.endsWith("_error"))
-  expect(physicalFindings.length).toBeGreaterThan(0)
+  expect(physicalFindings).toEqual([])
   console.log(
     "A13_MASK_RESULT=" +
       JSON.stringify({
