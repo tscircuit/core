@@ -9,21 +9,21 @@ import {
 } from "tests/fixtures/fixed-via-physical-span"
 import { getFixedViaPhysicalSpanSnapshot } from "tests/fixtures/fixed-via-physical-span-snapshot"
 
-test("reproduce loss of four-layer existing via spans at Core's bus handoff", async () => {
+test("preserve four-layer existing via spans at Core's bus handoff", async () => {
   const fixture = getFixedViaPhysicalSpanFixture()
   const original = structuredClone(fixture)
   const observed = observeFixedViaPhysicalSpans(fixture)
   expect(observed.rows.map((row) => row.exportedLayers)).toEqual([
-    undefined,
+    ["top", "inner1", "inner2", "bottom"],
     ["top", "inner1"],
-    undefined,
-    undefined,
+    ["top", "inner1", "inner2", "bottom"],
+    ["top", "inner1"],
   ])
   expect(
     observed.recovered.obstacles.filter(
       (obstacle) => obstacle.circuitJsonMetadata?.pcb_via_id,
     ),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(fixture).toEqual(original)
   const svg = getFixedViaPhysicalSpanSnapshot({
     circuitJson: fixture.circuitJson,
@@ -42,7 +42,7 @@ test("reproduce loss of four-layer existing via spans at Core's bus handoff", as
     const sha256 = (bytes: Uint8Array) =>
       createHash("sha256").update(bytes).digest("hex")
     const metadata = {
-      phase: "repro",
+      phase: "fix",
       bytes: bytes.length,
       sha256: sha256(bytes),
       gzipBytes: gzip.length,

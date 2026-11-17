@@ -1,14 +1,21 @@
 import { expect, test } from "bun:test"
 import { su } from "@tscircuit/circuit-json-util"
-import { pcb_trace, type AnyCircuitElement } from "circuit-json"
+import {
+  pcb_trace,
+  source_group,
+  source_board,
+  type AnyCircuitElement,
+} from "circuit-json"
 import {
   getFixedViaPhysicalSpanFixture,
   physicalBoardLayers,
 } from "tests/fixtures/fixed-via-physical-span"
 import { getPreservedRoutedSubcircuitTraces } from "lib/utils/autorouting/getPreservedRoutedSubcircuitTraces"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
+import { getBusLanesInputFromSrj } from "lib/utils/autorouting/get-bus-lanes-input-from-srj"
+import { getCircuitJsonPcbTraceRoute } from "lib/utils/autorouting/get-circuit-json-pcb-trace-route"
 
-test("reproduce loss of shared and explicit stored via spans without mutating copper", () => {
+test("preserve shared and explicit stored via spans without mutating copper", () => {
   const fixture = getFixedViaPhysicalSpanFixture()
   const throughVia = fixture.circuitJson
     .filter((element) => element.type === "pcb_via")
@@ -51,15 +58,77 @@ test("reproduce loss of shared and explicit stored via spans without mutating co
         (trace) =>
           trace.route.find((point) => point.route_type === "via")?.layers,
       ),
-  ).toEqual([undefined, undefined])
+  ).toEqual([physicalBoardLayers, physicalBoardLayers])
   expect(
     getSimpleRouteJsonFromCircuitJson({
       circuitJson: shared,
     }).simpleRouteJson.obstacles.filter(
       (obstacle) => obstacle.circuitJsonMetadata?.pcb_via_id,
     ),
-  ).toHaveLength(2)
+  ).toHaveLength(0)
   expect(shared).toEqual(original)
+
+  // The public import path inherits missing PCBTrace scope from SourceTrace.
+  // A shared old blind barrel can be linked only to its first imported trace,
+  // with the optional PCBVia scope absent. This is still known physical copper.
+  const oldBlindTrace = fixture.circuitJson
+    .filter((element) => element.type === "pcb_trace")
+    .find((trace) => trace.pcb_trace_id === "existing_blind")!
+  const unscoped: AnyCircuitElement[] = [
+    source_group.parse({
+      type: "source_group",
+      source_group_id: "imported_group",
+      name: "Imported board",
+      is_subcircuit: true,
+      subcircuit_id: "board",
+    }),
+    source_board.parse({
+      type: "source_board",
+      source_board_id: "imported_board",
+      source_group_id: "imported_group",
+      title: "Imported board",
+    }),
+    ...fixture.circuitJson,
+    {
+      ...oldBlindTrace,
+      pcb_trace_id: "shared_old_blind",
+      route: getCircuitJsonPcbTraceRoute(oldBlindTrace.route),
+    },
+  ].map((element) => {
+    if (element.type === "pcb_board")
+      return { ...element, source_board_id: "imported_board" }
+    if (element.type !== "pcb_trace" && element.type !== "pcb_via")
+      return element
+    const { subcircuit_id: _scope, ...physicalElement } = element
+    return physicalElement
+  })
+  const unscopedOriginal = structuredClone(unscoped)
+  for (const subcircuit_id of [undefined, "board"]) {
+    const imported = getSimpleRouteJsonFromCircuitJson({
+      circuitJson: unscoped,
+      subcircuit_id,
+    }).simpleRouteJson
+    const importedBus = getBusLanesInputFromSrj(imported)
+    expect(imported.allowBlindAndBuriedVias).toBe(false)
+    expect(
+      importedBus.traces
+        ?.find((trace) => trace.pcb_trace_id === "shared_old_blind")
+        ?.route.find((point) => point.route_type === "via")?.layers,
+    ).toEqual(["top", "inner1"])
+    expect(
+      imported.obstacles.filter(
+        (obstacle) => obstacle.circuitJsonMetadata?.pcb_via_id,
+      ),
+    ).toHaveLength(0)
+  }
+  expect(
+    getSimpleRouteJsonFromCircuitJson({
+      circuitJson: unscoped,
+      subcircuit_id: "board",
+      ignoreExistingTopLevelPcbRouteState: true,
+    }).simpleRouteJson.traces,
+  ).toBeUndefined()
+  expect(unscoped).toEqual(unscopedOriginal)
 
   const explicit: AnyCircuitElement[] = [
     {
@@ -77,7 +146,7 @@ test("reproduce loss of shared and explicit stored via spans without mutating co
       scopedDb: su(explicit),
       relevantSubcircuitIds: null,
     })[0]?.route.find((point) => point.route_type === "via")?.layers,
-  ).toBeUndefined()
+  ).toEqual(["top", "inner1"])
   expect(explicit).toEqual(explicitOriginal)
 
   const ambiguous: AnyCircuitElement[] = [
@@ -94,7 +163,31 @@ test("reproduce loss of shared and explicit stored via spans without mutating co
       scopedDb: su(ambiguous),
       relevantSubcircuitIds: null,
     }),
-  ).not.toThrow()
+  ).toThrow("Existing routed via has ambiguous physical layer spans")
   expect(ambiguous).toEqual(ambiguousOriginal)
+
+  const conflictingEndpoint: AnyCircuitElement[] = fixture.circuitJson.map(
+    (element) =>
+      element.type === "pcb_trace" && element.pcb_trace_id === "existing_blind"
+        ? {
+            ...element,
+            route: getCircuitJsonPcbTraceRoute(element.route).map((point) =>
+              point.route_type === "via"
+                ? { ...point, to_layer: "bottom" }
+                : point,
+            ),
+          }
+        : element,
+  )
+  const conflictingOriginal = structuredClone(conflictingEndpoint)
+  expect(() =>
+    getPreservedRoutedSubcircuitTraces({
+      scopedDb: su(conflictingEndpoint),
+      relevantSubcircuitIds: null,
+    }),
+  ).toThrow(
+    "Existing routed via's physical span does not include its routed layers",
+  )
+  expect(conflictingEndpoint).toEqual(conflictingOriginal)
   expect(throughVia.layers).toEqual(physicalBoardLayers)
 })
