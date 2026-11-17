@@ -63,13 +63,19 @@ test("native phase via-pad checks honor specific rules and keep real copper viol
   })
   expect(explicitZero.findings).toHaveLength(0)
 
-  const genericFallback = checkNativeH3PhaseViaPadClearance(boardWithGap(0.14), {
-    minPadEdgeToPadEdgeClearance: 0.2,
-  })
+  const genericFallback = checkNativeH3PhaseViaPadClearance(
+    boardWithGap(0.14),
+    {
+      minPadEdgeToPadEdgeClearance: 0.2,
+    },
+  )
   expect(genericFallback.findings).toHaveLength(1)
   expect(genericFallback.findings[0]?.minimum_clearance).toBe(0.2)
 
-  const boardFallback = checkNativeH3PhaseViaPadClearance(boardWithGap(0.14), {})
+  const boardFallback = checkNativeH3PhaseViaPadClearance(
+    boardWithGap(0.14),
+    {},
+  )
   expect(boardFallback.findings).toHaveLength(1)
   expect(boardFallback.findings[0]?.minimum_clearance).toBe(0.3)
 })

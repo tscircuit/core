@@ -30,15 +30,17 @@ export const hasNativeH3RoutingSolverEvidence = ({
     // Bus adapters emit a solver end report. The capacity adapter currently
     // emits its constructor observation and terminates through autorouting
     // end/error, so no synthetic solver:ended event is required for Pipeline9.
-    const expectedEvents = stageIndex < 2
-      ? ["solver:started", "solver:ended"]
-      : ["solver:started"]
+    const expectedEvents =
+      stageIndex < 2 ? ["solver:started", "solver:ended"] : ["solver:started"]
     if (
       stage.start.phaseName !== phaseNames[stageIndex] ||
       stage.start._actualRoutingPhaseOrderIndex !== stageIndex ||
       stage.start.routingPhaseIndex !== stageIndex ||
       stage.start.solverName !== solverName ||
-      !isDeepStrictEqual(solverEvents.map((event) => event.type), expectedEvents) ||
+      !isDeepStrictEqual(
+        solverEvents.map((event) => event.type),
+        expectedEvents,
+      ) ||
       !solverEvents.every((event) => {
         return (
           event.solverName === solverName &&

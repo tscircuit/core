@@ -76,7 +76,9 @@ export const runNativeH3Routing = async (circuit: RootCircuit) => {
       initialGeometry = structuredClone(getNativeH3Geometry(initialCircuitJson))
     }
     if (activeStage)
-      throw new Error("H3 routing phase started before its previous phase ended")
+      throw new Error(
+        "H3 routing phase started before its previous phase ended",
+      )
     activeStage = { start: structuredClone(event), solverEvents: [] }
     stages.push(activeStage)
   })

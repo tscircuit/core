@@ -32,16 +32,19 @@ test("native H3 keeps layout in the full timeline and correlates actual routing 
           connections: [],
         },
       }
-      const solverEvents: H3RoutingStage["solverEvents"] = [{
-        type: "solver:started",
-        solverName,
-        componentName: start.componentDisplayName,
-      }]
-      if (routingPhaseIndex < 2) solverEvents.push({
-        type: "solver:ended",
-        solverName,
-        componentName: start.componentDisplayName,
-      })
+      const solverEvents: H3RoutingStage["solverEvents"] = [
+        {
+          type: "solver:started",
+          solverName,
+          componentName: start.componentDisplayName,
+        },
+      ]
+      if (routingPhaseIndex < 2)
+        solverEvents.push({
+          type: "solver:ended",
+          solverName,
+          componentName: start.componentDisplayName,
+        })
       return { start, end: { ...start, type: "autorouting:end" }, solverEvents }
     },
   )
@@ -98,19 +101,25 @@ test("native H3 keeps layout in the full timeline and correlates actual routing 
   differentTerminalSolver[2]!.end!.solverName = "BusLanesPipelineSolver"
   expect(verifies(differentTerminalSolver)).toBe(false)
   const duplicatedTerminal = structuredClone(stages)
-  duplicatedTerminal[2]!.error = { ...duplicatedTerminal[2]!.start,
-    type: "autorouting:error" }
+  duplicatedTerminal[2]!.error = {
+    ...duplicatedTerminal[2]!.start,
+    type: "autorouting:error",
+  }
   expect(verifies(duplicatedTerminal)).toBe(false)
   const wrongExecutionOrder = structuredClone(stages)
   wrongExecutionOrder[1]!.start._actualRoutingPhaseOrderIndex = 0
   expect(verifies(wrongExecutionOrder)).toBe(false)
   expect(verifies([stages[1]!, stages[0]!, stages[2]!])).toBe(false)
-  expect(hasNativeH3RoutingSolverEvidence({
-    stages,
-    solverNames: solverNames.slice(1),
-  })).toBe(false)
-  expect(hasNativeH3RoutingSolverEvidence({
-    stages,
-    solverNames: [...solverNames, "FanoutSolver"],
-  })).toBe(false)
+  expect(
+    hasNativeH3RoutingSolverEvidence({
+      stages,
+      solverNames: solverNames.slice(1),
+    }),
+  ).toBe(false)
+  expect(
+    hasNativeH3RoutingSolverEvidence({
+      stages,
+      solverNames: [...solverNames, "FanoutSolver"],
+    }),
+  ).toBe(false)
 })
