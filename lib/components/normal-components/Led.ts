@@ -1,14 +1,10 @@
 import { fp } from "@tscircuit/footprinter"
 import {
   type PartsEngine,
-  type SupplierPartNumbers,
   ledProps,
   resolveManufacturerPartNumber,
 } from "@tscircuit/props"
-import {
-  type AnyCircuitElement,
-  source_part_not_found_warning,
-} from "circuit-json"
+import type { AnyCircuitElement } from "circuit-json"
 import type {
   BaseSymbolName,
   Ftype,
@@ -18,6 +14,7 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
+import { isValidElement } from "react"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import {
@@ -99,10 +96,21 @@ export class Led extends NormalComponent<
     }
   }
 
+  add(component: Parameters<NormalComponent["add"]>[0]) {
+    // React children arrive after the constructor has already generated ports.
+    // Track authored ports before NormalComponent can deduplicate them.
+    if (
+      (isValidElement(component) && component.type === "port") ||
+      ("componentName" in component &&
+        component.componentName === "Port" &&
+        !(component as Port).originDescription)
+    ) {
+      this._hasExplicitPortChildren = true
+    }
+    super.add(component)
+  }
+
   initPorts() {
-    this._hasExplicitPortChildren ??= this.children.some(
-      (child) => child.componentName === "Port",
-    )
     super.initPorts(getDiodePortOptions(this))
   }
 
@@ -146,34 +154,50 @@ export class Led extends NormalComponent<
   }
 
   private _applyImpliedPin1Polarity(targetPin1Polarity: Pin1Polarity) {
+    const previousPinLabels = this._impliedFootprintPinLabels
     this._impliedFootprintPinLabels =
       targetPin1Polarity === "cathode"
         ? { pin1: ["cathode", "neg"], pin2: ["anode", "pos"] }
         : { pin1: ["anode", "pos"], pin2: ["cathode", "neg"] }
 
+    const resolvedFootprint = this.resolveFootprint()
+    if (typeof resolvedFootprint !== "string") {
+      this._impliedFootprintPinLabels = previousPinLabels
+      return
+    }
+    let newArtworkComponents: PrimitiveComponent[]
+    try {
+      const fpCircuitJson = (
+        fp.string(resolvedFootprint).soup() as AnyCircuitElement[]
+      ).filter((element) => POLARITY_ARTWORK_ELEMENT_TYPES.has(element.type))
+      newArtworkComponents = createComponentsFromCircuitJson(
+        {
+          sourcePortOwner: this,
+          componentName: this.name ?? this.componentName,
+          componentRotation: String(this.props.pcbRotation ?? 0),
+          footprinterString: resolvedFootprint,
+          pinLabels: this._resolvePinLabels(),
+        },
+        fpCircuitJson,
+      )
+    } catch {
+      this._impliedFootprintPinLabels = previousPinLabels
+      return
+    }
+
     for (const port of this._getAllPortsFromChildren()) {
       const pinNumber = port._parsedProps.pinNumber
       if (pinNumber !== 1 && pinNumber !== 2) continue
 
-      if (Array.isArray(port._parsedProps.aliases)) {
-        port._parsedProps.aliases = port._parsedProps.aliases.filter(
-          (alias: string) => !POLARITY_ALIASES.has(alias),
-        )
-      }
-      if (Array.isArray(port.props.aliases)) {
-        port.props.aliases = port.props.aliases.filter(
-          (alias: string) => !POLARITY_ALIASES.has(alias),
-        )
+      port.resolvedNameAndAliases = {
+        name: `pin${pinNumber}`,
+        aliases: port
+          .getNameAndAliases()
+          .filter((alias) => !POLARITY_ALIASES.has(alias)),
       }
       port.externallyAddedAliases = port.externallyAddedAliases.filter(
         (alias) => !POLARITY_ALIASES.has(alias),
       )
-      if (
-        port._parsedProps.name &&
-        POLARITY_ALIASES.has(port._parsedProps.name)
-      ) {
-        port._parsedProps.name = `pin${pinNumber}`
-      }
       port.schematicSymbolPortDef = null
     }
 
@@ -183,7 +207,7 @@ export class Led extends NormalComponent<
     for (const port of this._getAllPortsFromChildren()) {
       if (!port.source_port_id) continue
       db.source_port.update(port.source_port_id, {
-        name: port.physicalPinName ?? port._parsedProps.name!,
+        name: port.physicalPinName ?? port.name!,
         port_hints: port.getNameAndAliases(),
         do_not_connect: false,
         ...resolvePortSourcePinAttributes(port),
@@ -224,26 +248,8 @@ export class Led extends NormalComponent<
       (child) => !POLARITY_ARTWORK_COMPONENT_NAMES.has(child.componentName),
     )
 
-    const resolvedFootprint = this.resolveFootprint()
-    if (typeof resolvedFootprint === "string") {
-      try {
-        const fpCircuitJson = (
-          fp.string(resolvedFootprint).soup() as AnyCircuitElement[]
-        ).filter((element) => POLARITY_ARTWORK_ELEMENT_TYPES.has(element.type))
-        const newArtworkComponents = createComponentsFromCircuitJson(
-          {
-            sourcePortOwner: this,
-            componentName: this.name ?? this.componentName,
-            componentRotation: String(this.props.pcbRotation ?? 0),
-            footprinterString: resolvedFootprint,
-            pinLabels: this._resolvePinLabels(),
-          },
-          fpCircuitJson,
-        )
-        this.addAll(newArtworkComponents)
-        this._stringFootprintChildren.push(...newArtworkComponents)
-      } catch {}
-    }
+    this.addAll(newArtworkComponents)
+    this._stringFootprintChildren.push(...newArtworkComponents)
 
     this.getSubcircuit()?._markDirty("OptimizeSelectorCache")
   }
@@ -255,51 +261,13 @@ export class Led extends NormalComponent<
 
     this._hasStartedSupplierPolarityResolution = true
     const { partsEngine, baseFootprint } = resolutionContext
-    const footprint = this.props.footprint ?? this._getImpliedFootprintString()
-    const footprinterString =
-      typeof footprint === "string" ? footprint : undefined
-
     this._queueAsyncEffect("resolve-led-supplier-polarity", async () => {
       // Yield one microtask so Cycle 1 finishes SourceRender and populates source_component_id.
       await Promise.resolve()
       if (!this.root) return
-      const { db } = this.root
-      const sourceComponent = this.source_component_id
-        ? db.source_component.get(this.source_component_id)
-        : undefined
-      if (!sourceComponent) return
-
-      let supplierPartNumbers: SupplierPartNumbers | undefined =
-        sourceComponent.supplier_part_numbers
-      if (!supplierPartNumbers) {
-        try {
-          supplierPartNumbers = await this._getSupplierPartNumbers(
-            partsEngine,
-            sourceComponent,
-            footprinterString,
-          )
-          this._asyncSupplierPartNumbers = supplierPartNumbers
-          db.source_component.update(sourceComponent.source_component_id, {
-            supplier_part_numbers: supplierPartNumbers,
-          })
-        } catch (error: any) {
-          this._asyncSupplierPartNumbers = {}
-          db.source_component.update(sourceComponent.source_component_id, {
-            supplier_part_numbers: {},
-          })
-          const warning = source_part_not_found_warning.parse({
-            type: "source_part_not_found_warning",
-            message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
-            source_component_id: sourceComponent.source_component_id,
-            subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-            manufacturer_part_number:
-              sourceComponent.manufacturer_part_number ?? undefined,
-            part_name: sourceComponent.name ?? undefined,
-          })
-          db.source_part_not_found_warning.insert(warning)
-          return
-        }
-      }
+      const supplierPartNumbers =
+        await this._resolveSupplierPartNumbers(partsEngine)
+      if (!supplierPartNumbers) return
 
       const supplierCandidates = getSupplierPartCandidates(supplierPartNumbers)
       if (supplierCandidates.length === 0) return
@@ -323,9 +291,8 @@ export class Led extends NormalComponent<
       })
       const defaultPin1Polarity: Pin1Polarity =
         defaultTerminals.positivePin === 1 ? "anode" : "cathode"
-      if (targetPin1Polarity !== defaultPin1Polarity) {
-        this._applyImpliedPin1Polarity(targetPin1Polarity!)
-      }
+      if (targetPin1Polarity === defaultPin1Polarity) return
+      this._applyImpliedPin1Polarity(targetPin1Polarity!)
     })
   }
 

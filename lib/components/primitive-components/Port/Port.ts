@@ -315,13 +315,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   /** Physical package ball name; pinNumber remains a schematic layout ordinal. */
   physicalPinName?: string
 
+  /** Derived names for generated ports; never overwrite authored props. */
+  resolvedNameAndAliases?: { name: string; aliases: string[] }
+
+  get name() {
+    return this.resolvedNameAndAliases?.name ?? super.name
+  }
+
   getNameAndAliases() {
     const { _parsedProps: props } = this
     return Array.from(
       new Set([
         ...(this.physicalPinName ? [this.physicalPinName] : []),
-        ...(props.name ? [props.name] : []),
-        ...(props.aliases ?? []),
+        ...(this.name ? [this.name] : []),
+        ...(this.resolvedNameAndAliases?.aliases ?? props.aliases ?? []),
         ...(typeof props.pinNumber === "number"
           ? [`pin${props.pinNumber}`, props.pinNumber.toString()]
           : []),
@@ -375,9 +382,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // TODO this.parent.getSubcircuitSelector() >
     const parentComponent = this.getParentNormalComponent() ?? this.parent
     if (parentComponent !== this.parent) {
-      return `.${parentComponent?.props.name} port.${this.props.name}`
+      return `.${parentComponent?.props.name} port.${this.name}`
     }
-    return `.${parentComponent?.props.name} > port.${this.props.name}`
+    return `.${parentComponent?.props.name} > port.${this.name}`
   }
   getAvailablePcbLayers(): LayerRef[] {
     const { layer, layers } = this._parsedProps
@@ -449,7 +456,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const portAttributesFromParent = resolvePortSourcePinAttributes(this)
 
     const source_port = db.source_port.insert({
-      name: this.physicalPinName ?? props.name!,
+      name: this.physicalPinName ?? this.name!,
       // Physical balls have a string package identity. Keep their numeric
       // layout ordinal on schematic_port, not the physical source pin number.
       pin_number: this.physicalPinName ? undefined : props.pinNumber,
@@ -542,7 +549,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         // This port hint is ambiguous - multiple non-overlapping pads share the
         // same name. Skip creating a pcb_port and record a warning instead of
         // throwing, so the rest of the circuit can still render.
-        const portName = this.props.name!
+        const portName = this.name!
         const componentName =
           this.getParentNormalComponent()?.props.name ?? "unknown"
         const altAliases = this.getNameAndAliases().filter(

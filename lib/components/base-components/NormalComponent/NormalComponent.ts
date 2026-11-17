@@ -24,6 +24,7 @@ import type {
   SchematicPortArrangement,
   SpiceModelElement,
   SupplierPartNumbers,
+  PartsEngine,
 } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
@@ -2358,43 +2359,47 @@ export class NormalComponent<
     if (!source_component) return
     if (source_component.supplier_part_numbers) return
 
+    this._queueAsyncEffect("get-supplier-part-numbers", async () => {
+      await this._resolveSupplierPartNumbers(partsEngine)
+    })
+  }
+
+  /** Resolve once and persist for both early polarity inference and PartsEngineRender. */
+  protected async _resolveSupplierPartNumbers(partsEngine: PartsEngine) {
+    const { db } = this.root!
+    const sourceComponent = db.source_component.get(this.source_component_id!)
+    if (!sourceComponent) return undefined
+    if (sourceComponent.supplier_part_numbers) {
+      return sourceComponent.supplier_part_numbers
+    }
+
     const footprint = this.props.footprint ?? this._getImpliedFootprintString()
     const footprinterString =
       typeof footprint === "string" ? footprint : undefined
-    const supplierPartNumbersMaybePromise = this._getSupplierPartNumbers(
-      partsEngine,
-      source_component,
-      footprinterString,
-    )
-
-    if (!(supplierPartNumbersMaybePromise instanceof Promise)) {
-      db.source_component.update(this.source_component_id!, {
-        supplier_part_numbers: supplierPartNumbersMaybePromise,
-      })
-      return
+    try {
+      this._asyncSupplierPartNumbers = await this._getSupplierPartNumbers(
+        partsEngine,
+        sourceComponent,
+        footprinterString,
+      )
+    } catch (error) {
+      this._asyncSupplierPartNumbers = {}
+      db.source_part_not_found_warning.insert(
+        source_part_not_found_warning.parse({
+          type: "source_part_not_found_warning",
+          message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error instanceof Error ? error.message : String(error)}`,
+          source_component_id: this.source_component_id ?? undefined,
+          subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
+          manufacturer_part_number:
+            sourceComponent.manufacturer_part_number ?? undefined,
+          part_name: sourceComponent.name ?? undefined,
+        }),
+      )
     }
-
-    this._queueAsyncEffect("get-supplier-part-numbers", async () => {
-      await supplierPartNumbersMaybePromise
-        .then((supplierPartNumbers) => {
-          this._asyncSupplierPartNumbers = supplierPartNumbers
-          this._markDirty("PartsEngineRender")
-        })
-        .catch((error: Error) => {
-          this._asyncSupplierPartNumbers = {}
-          const warning = source_part_not_found_warning.parse({
-            type: "source_part_not_found_warning",
-            message: `Failed to fetch supplier part numbers for ${this.getString()}: ${error.message}`,
-            source_component_id: this.source_component_id ?? undefined,
-            subcircuit_id: this.getSubcircuit()?.subcircuit_id ?? undefined,
-            manufacturer_part_number:
-              source_component.manufacturer_part_number ?? undefined,
-            part_name: source_component.name ?? undefined,
-          })
-          db.source_part_not_found_warning.insert(warning)
-          this._markDirty("PartsEngineRender")
-        })
+    db.source_component.update(sourceComponent.source_component_id, {
+      supplier_part_numbers: this._asyncSupplierPartNumbers,
     })
+    return this._asyncSupplierPartNumbers
   }
 
   updatePartsEngineRender(): void {
