@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 94ba9ddf46f3809a0d286ea95a613b76efffddb8
+          ref: adb3fe0121ca158824224f3738dd1666571f589c
           path: head
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -52,7 +52,7 @@ jobs:
           const routes=solver.getOutputSimplifiedPcbTraces()
           const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
           const errors=evaluateRelaxedDrc(drcInput).errors
-          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),validationMetrics:[solver.pipeline9JointDrcRepairSolver?.initialBoundedRegionalRepairSolver?.stats,solver.pipeline9JointDrcRepairSolver?.boundedRegionalRepairSolver?.stats].map(s=>Object.fromEntries(Object.entries(s??{}).filter(([k])=>k.startsWith('fixedGuard')))),timeSpent:solver.timeSpentOnPhase}
+          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),validationMetrics:[solver.pipeline9JointDrcRepairSolver?.initialBoundedRegionalRepairSolver?.validationMetrics,solver.pipeline9JointDrcRepairSolver?.boundedRegionalRepairSolver?.validationMetrics].map(s=>Object.fromEntries(Object.entries(s??{}).filter(([k])=>k.startsWith('fixedGuard')))),timeSpent:solver.timeSpentOnPhase}
           console.log('RASTER_VALIDATION_METRICS_JSON='+JSON.stringify(summary))
           writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
           TS
