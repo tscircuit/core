@@ -1,4 +1,4 @@
-name: Capture A13 repair rejection and native CPU profile
+name: Profile published A13 remaining routing
 on:
   push:
     branches: [artifacts/ddr-3209-repair-capture]
@@ -6,123 +6,71 @@ permissions:
   contents: read
 jobs:
   profile:
-    name: Profile ${{ matrix.circuit }} ${{ matrix.release }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 18
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        circuit: [a13]
-        release: [head]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: dd3383cfcb5c82960952bd44e6e1dc1d95a7f84f
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: published-ddr-3209-${{ matrix.circuit }}
+          name: published-ddr-3209-a13
           run-id: 44050671541
           github-token: ${{ github.token }}
           path: captured
-      - name: Restore exact release dependency graph
-        env:
-          RELEASE: ${{ matrix.release }}
+      - run: bun install --ignore-scripts
+      - name: CPU-profile the real Core request
+        run: |
+          cat > profile-a13.private.ts <<'TS'
+          import {readFileSync} from 'node:fs'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          const input=JSON.parse(readFileSync('captured/head/a13/phase-5-start.srj.json','utf8'))
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          solver.solve()
+          console.log('CPU_SOLVER_JSON='+JSON.stringify({solved:solver.solved,failed:solver.failed,times:solver.timeSpentOnPhase,stats:solver.pipeline9JointDrcRepairSolver?.stats}))
+          TS
+          bun --cpu-prof profile-a13.private.ts
+      - name: Report sampled hot functions
+        if: always()
         run: |
           node --input-type=module <<'JS'
-          import {mkdirSync,writeFileSync,readFileSync,copyFileSync} from 'node:fs'
-          const release=process.env.RELEASE
-          const runtime=JSON.parse(readFileSync('captured/'+release+'/published-runtime.json','utf8'))
-          mkdirSync('runtime',{recursive:true})
-          writeFileSync('runtime/package.json',JSON.stringify({name:'ddr-published-'+release,private:true,type:'module',dependencies:runtime.dependencies},null,2))
-          copyFileSync('captured/'+release+'/install.lock','runtime/bun.lock')
+          import {readdirSync,readFileSync} from 'node:fs'
+          for(const file of readdirSync('.').filter(p=>p.endsWith('.cpuprofile'))) {
+            const p=JSON.parse(readFileSync(file,'utf8'))
+            const nodes=new Map(p.nodes.map(n=>[n.id,n]))
+            const parents=new Map()
+            for(const n of p.nodes)for(const child of n.children??[])parents.set(child,n.id)
+            const grouped=new Map()
+            let total=0
+            for(let i=0;i<p.samples.length;i++) {
+              const duration=p.timeDeltas?.[i]??1000
+              total+=duration
+              let id=p.samples[i],first=true
+              while(id!==undefined) {
+                const n=nodes.get(id)
+                if(!n)break
+                const frame=n.callFrame
+                const key=frame.url+':'+frame.lineNumber+':'+frame.functionName
+                let row=grouped.get(key)
+                if(!row){row={name:frame.functionName,file:frame.url,line:frame.lineNumber+1,self:0,inclusive:0};grouped.set(key,row)}
+                row.inclusive+=duration
+                if(first)row.self+=duration
+                first=false
+                id=parents.get(id)
+              }
+            }
+            const rows=[...grouped.values()].map(r=>({...r,selfSeconds:r.self/1e6,inclusiveSeconds:r.inclusive/1e6,self:undefined,inclusive:undefined}))
+            console.log('CPU_PROFILE_SUMMARY_JSON='+JSON.stringify({file,totalSeconds:total/1e6,topSelf:rows.toSorted((a,b)=>b.selfSeconds-a.selfSeconds).slice(0,35),topInclusive:rows.toSorted((a,b)=>b.inclusiveSeconds-a.inclusiveSeconds).slice(0,35)}))
+          }
           JS
-          (cd runtime && bun install --frozen-lockfile --ignore-scripts)
-      - name: Profile unchanged captured latest SRJ on both published autorouters
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
-          RELEASE: ${{ matrix.release }}
-        run: |
-          cat > runtime/profile.ts <<'TS'
-          import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
-          import { AutoroutingPipelineSolver } from '@tscircuit/capacity-autorouter'
-          import { gzipSync } from 'node:zlib'
-          const circuit=process.env.CIRCUIT!
-          const release=process.env.RELEASE!
-          const phase=circuit==='a13'?5:3
-          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
-          mkdirSync('../profile',{recursive:true})
-          writeFileSync('../profile/input.srj.json',JSON.stringify(input))
-          const started=performance.now()
-          const solver=new AutoroutingPipelineSolver(input,{cacheProvider:null})
-          let previous=''
-          let lastReport=0
-          const seen=new Set<string>()
-          function chain(s: any): unknown[] {
-            const out=[]
-            for(let i=0;s&&i<9;i++,s=s.activeSubSolver??s.traceContactRepairSolver) {
-              const state:any={name:s.constructor.name,iterations:s.iterations,solved:s.solved,failed:s.failed}
-              for(const key of ['currentPipelineStepIndex','currentStepIndex','phase','stage','stats','error']) {
-                const value=s[key]
-                if(value===undefined)continue
-                if(key==='stats')state.stats=Object.fromEntries(Object.entries(value).filter(([,v])=>typeof v!=='object'))
-                else state[key]=value
-              }
-              for(const key of ['routes','failedSolvers','failedRoutes','solvers'])if(Array.isArray(s[key]))state[key+'Count']=s[key].length
-              out.push(state)
-            }
-            return out
-          }
-          while(!solver.solved&&!solver.failed&&performance.now()-started<600000) {
-            const phaseName=solver.getCurrentPhase()
-            if(phaseName!==previous) {
-              console.log('PHASE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,phase:phaseName,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}))
-              previous=phaseName
-              if(['pipeline9JointDrcRepairSolver','effortCleanupSolver'].includes(phaseName)&&!seen.has(phaseName)) {
-                seen.add(phaseName)
-                const joint=solver.pipeline9JointDrcRepairSolver
-                const routes=phaseName==='effortCleanupSolver'?joint?.getOutput():solver.globalDrcForceImproveSolver?.getOutput()
-                if(routes)writeFileSync('../profile/'+phaseName+'.routes.json',JSON.stringify(routes))
-              }
-            }
-            solver.step()
-            const joint=solver.pipeline9JointDrcRepairSolver
-            if(joint&&!seen.has('joint-input')) {
-              seen.add('joint-input')
-              const packed=gzipSync(Buffer.from(JSON.stringify([joint.params],(key,value)=>value instanceof Set?[...value]:value)))
-              writeFileSync('../profile/joint-input.json.gz',packed)
-              console.log('JOINT_INPUT_GZIP_BASE64='+packed.toString('base64'))
-            }
-            if(joint?.initialBoundedRegionalRepairSolver?.solved&&!seen.has('initial-finish')) {
-              seen.add('initial-finish')
-              const bounded=joint.initialBoundedRegionalRepairSolver
-              const candidate=bounded.getRepairCandidate()
-              const routes=candidate??bounded.getResult().routes
-              const reference=joint.cachedReferenceDrcEvaluator({traces:[],routes,hdRoutes:routes})
-              const errors=Array.isArray(reference)?reference:reference.errors
-              const contacts=joint.traceContactGuard.getNewContactPairs(routes)
-              console.log('INITIAL_REJECTION_JSON='+JSON.stringify({result:{...bounded.getResult(),routes:undefined},candidateErrors:errors,contacts,selected:!!joint.initialBoundedRepairCandidate}))
-              writeFileSync('../profile/initial-candidate.routes.json',JSON.stringify(routes))
-              writeFileSync('../profile/initial-candidate.errors.json',JSON.stringify(errors))
-            }
-            if(performance.now()-lastReport>15000) {
-              lastReport=performance.now()
-              console.log('ACTIVE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,chain:chain(solver)}))
-            }
-          }
-          const result={jointStats:solver.pipeline9JointDrcRepairSolver?.stats,circuit,release,solved:solver.solved,failed:solver.failed,error:solver.error,seconds:(performance.now()-started)/1000,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}
-          writeFileSync('../profile/result.json',JSON.stringify(result,null,2))
-          if(solver.solved)writeFileSync('../profile/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
-          console.log('PROFILE_RESULT_JSON='+JSON.stringify(result))
-          TS
-          cd runtime
-          bun profile.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ddr-3209-profile-${{ matrix.circuit }}-${{ matrix.release }}
-          path: profile/
+          name: a13-routing-cpu-profile
+          path: '*.cpuprofile'
           retention-days: 14
