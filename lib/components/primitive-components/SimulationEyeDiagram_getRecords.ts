@@ -8,11 +8,49 @@ import type { SimulationEyeDiagram } from "./SimulationEyeDiagram"
 type TransientSimulationId =
   SimulationPcbTransientChannelSimulation["simulation_pcb_transient_channel_simulation_id"]
 
+function getEyeDiagramRecord(
+  { name, startTime, endTime }: SimulationEyeDiagram["_parsedProps"],
+  simulationId: TransientSimulationId,
+  group: SimulationPcbDriverReceiverChannel[],
+  includeChannelIds: boolean,
+) {
+  const rate = group[0].bit_rate_bps
+  const startMs =
+    startTime === undefined
+      ? undefined
+      : simulationTimeToMilliseconds(startTime, rate)
+  const endMs =
+    endTime === undefined
+      ? undefined
+      : simulationTimeToMilliseconds(endTime, rate)
+  if (
+    (startMs !== undefined && !Number.isFinite(startMs)) ||
+    (endMs !== undefined &&
+      (!Number.isFinite(endMs) || endMs <= (startMs ?? 0)))
+  )
+    throw new Error(
+      `Eye diagram "${name}" must have a finite window with the end after the start.`,
+    )
+  const channelIds = group.map(
+    (channel) => channel.simulation_pcb_driver_receiver_channel_id,
+  )
+  return {
+    name,
+    simulation_pcb_transient_channel_simulation_id: simulationId,
+    ...(includeChannelIds
+      ? { simulation_pcb_driver_receiver_channel_ids: channelIds }
+      : {}),
+    ...(startMs === undefined ? {} : { start_time_ms: startMs }),
+    ...(endMs === undefined ? {} : { end_time_ms: endMs }),
+  }
+}
+
 export function SimulationEyeDiagram_getRecords(
   eye: SimulationEyeDiagram,
   simulationId: TransientSimulationId,
 ) {
-  const { name, channelRef, startTime, endTime } = eye._parsedProps
+  const props = eye._parsedProps
+  const { name, channelRef, startTime, endTime } = props
   const channels = eye.root!.db.simulation_pcb_driver_receiver_channel.list({
     simulation_pcb_transient_channel_simulation_id: simulationId,
   })
@@ -36,39 +74,15 @@ export function SimulationEyeDiagram_getRecords(
     if (channel.driver_disabled || /^(?:0+|1+)$/.test(channel.pattern)) continue
     const rate = usesUnitIntervals ? channel.bit_rate_bps : 0
     const group = channelsByWindowRate.get(rate)
-    if (group) group.push(channel)
-    else channelsByWindowRate.set(rate, [channel])
+    if (!group) {
+      channelsByWindowRate.set(rate, [channel])
+      continue
+    }
+    group.push(channel)
   }
 
-  return [...channelsByWindowRate.values()].map((group) => {
-    const rate = group[0].bit_rate_bps
-    const startMs =
-      startTime === undefined
-        ? undefined
-        : simulationTimeToMilliseconds(startTime, rate)
-    const endMs =
-      endTime === undefined
-        ? undefined
-        : simulationTimeToMilliseconds(endTime, rate)
-    if (
-      (startMs !== undefined && !Number.isFinite(startMs)) ||
-      (endMs !== undefined &&
-        (!Number.isFinite(endMs) || endMs <= (startMs ?? 0)))
-    )
-      throw new Error(
-        `Eye diagram "${name}" must have a finite window with the end after the start.`,
-      )
-    const channelIds = group.map(
-      (channel) => channel.simulation_pcb_driver_receiver_channel_id,
-    )
-    return {
-      name,
-      simulation_pcb_transient_channel_simulation_id: simulationId,
-      ...(channelRef || channelsByWindowRate.size > 1
-        ? { simulation_pcb_driver_receiver_channel_ids: channelIds }
-        : {}),
-      ...(startMs === undefined ? {} : { start_time_ms: startMs }),
-      ...(endMs === undefined ? {} : { end_time_ms: endMs }),
-    }
-  })
+  const includeChannelIds = Boolean(channelRef) || channelsByWindowRate.size > 1
+  return [...channelsByWindowRate.values()].map((group) =>
+    getEyeDiagramRecord(props, simulationId, group, includeChannelIds),
+  )
 }
