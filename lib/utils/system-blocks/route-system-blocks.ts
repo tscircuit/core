@@ -8,6 +8,7 @@ import {
   findSystemOrthogonalPath,
   type SystemRoutingObstacle,
 } from "./find-system-orthogonal-path"
+import { placeSystemConnectionLabel } from "./place-system-connection-label"
 
 /** Page-centered diagram mm: +X right, +Y up. Centers and route vertices are points. */
 export interface SystemBlockBounds {
@@ -26,8 +27,23 @@ type Port = {
   escape: Point
   side: number
   target: Point
+  /** Center of the block at the wire's other end; undefined for a self-loop. */
+  other?: Point
   connection: SystemBlockConnection
+  block: SystemBlockComponent
 }
+
+/** Whether a block face (0 right, 1 top, 2 left, 3 bottom) looks away from a point. */
+const facesAway = (side: number, center: Point, point: Point) =>
+  [
+    point.x - center.x,
+    point.y - center.y,
+    center.x - point.x,
+    center.y - point.y,
+  ][side] < 0
+
+/** Length of the straight stub between a block face and its first bend, in mm. */
+const PORT_STUB_LENGTH = 6
 
 /** Total horizontal padding around connection text, in diagram mm. */
 export const SYSTEM_CONNECTION_LABEL_HORIZONTAL_PADDING = 3
@@ -50,10 +66,11 @@ export function getSystemConnectionLabelWidth(label: string): number {
 }
 
 /**
- * Route on a rectilinear visibility grid around blocks, group headings and labels.
- * Dagre supplies ranks and label slots, but not the final wire geometry. Ports
- * start in approach-angle order, then swap slots when rerouting improves the
- * complete diagram. Distinct slots prevent a shared fanout tip.
+ * Route on a rectilinear visibility grid around blocks and group headings.
+ * Dagre supplies ranks and approach directions, but not the final wire geometry.
+ * Ports start in approach-angle order, then swap slots when rerouting improves
+ * the complete diagram. Distinct slots prevent a shared fanout tip. A wire is
+ * never bent to reach its text: labels are placed on the finished wires.
  * All input/output geometry is page-centered diagram mm (+X right, +Y up).
  */
 export function routeSystemBlocks(
@@ -72,12 +89,16 @@ export function routeSystemBlocks(
             block._parsedProps.description
               ? box.width
               : (block._parsedProps.displayName ?? block.name).length * 1.8 + 6,
-          )
+          ) +
+          2
         : box.center.x + box.width / 2 + 2,
+      // Like a block, a heading keeps 2 mm clear on every side, so a wire
+      // that turns around it has room for a fillet.
       bottom: tree.groups.includes(block as SystemBlockGroup)
         ? box.center.y +
           box.height / 2 -
-          (block._parsedProps.description ? 12 : 7)
+          (block._parsedProps.description ? 12 : 7) -
+          2
         : box.center.y - box.height / 2 - 2,
       top: box.center.y + box.height / 2 + 2,
     }),
@@ -92,23 +113,34 @@ export function routeSystemBlocks(
       const target = bounds.get(
         end === 0 ? endpoints.to : endpoints.from,
       )!.center
+      const selfLoop = endpoints.from === endpoints.to
       const guide = initialRoutes.get(connection)!.label_anchor_center ?? target
-      const point =
-        endpoints.from === endpoints.to
-          ? end === 0
-            ? route[0]
-            : route.at(-1)!
-          : guide
-      const dx = (point.x - box.center.x) / box.width
-      const dy = (point.y - box.center.y) / box.height
-      const side =
-        Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? 0 : 2) : dy >= 0 ? 1 : 3
+      const sideFacing = (point: Point) => {
+        const dx = (point.x - box.center.x) / box.width
+        const dy = (point.y - box.center.y) / box.height
+        return Math.abs(dx) >= Math.abs(dy)
+          ? dx >= 0
+            ? 0
+            : 2
+          : dy >= 0
+            ? 1
+            : 3
+      }
+      const point = selfLoop ? (end === 0 ? route[0] : route.at(-1)!) : guide
+      let side = sideFacing(point)
+      // Dagre's label slot hints at the lane a wire should take, but it can lie
+      // behind the block. Never start a wire on a face that looks away from
+      // the block it connects to: it would have to hook around its own block.
+      if (!selfLoop && facesAway(side, box.center, target))
+        side = sideFacing(target)
       const port = {
         point: { ...point },
         escape: { ...point },
         side,
         target: guide,
+        other: selfLoop ? undefined : target,
         connection,
+        block,
       }
       const ports = portsByBlock.get(block) ?? []
       ports.push(port)
@@ -135,8 +167,10 @@ export function routeSystemBlocks(
                 Math.max(1, Math.abs(b.target.y - box.center.y)),
         )
       const span = horizontal ? box.height : box.width
+      // Spread slots while the face has room: wider gaps let an attachment
+      // slide into line with the block it connects to.
       const spacing = Math.min(
-        4,
+        6,
         (span - 4) / Math.max(1, facePorts.length - 1),
       )
       facePorts.forEach((port, index) => {
@@ -152,8 +186,8 @@ export function routeSystemBlocks(
               y: box.center.y + (sign * box.height) / 2,
             }
         port.escape = horizontal
-          ? { x: port.point.x + sign * 4, y: port.point.y }
-          : { x: port.point.x, y: port.point.y + sign * 4 }
+          ? { x: port.point.x + sign * PORT_STUB_LENGTH, y: port.point.y }
+          : { x: port.point.x, y: port.point.y + sign * PORT_STUB_LENGTH }
       })
     }
   }
@@ -172,138 +206,271 @@ export function routeSystemBlocks(
   for (const connection of tree.connections) {
     const label = connection._parsedProps.label
     const center = initialRoutes.get(connection)!.label_anchor_center
-    if (label !== undefined && center) {
-      const halfWidth = getSystemConnectionLabelWidth(label) / 2
-      const [start, end] = portsByConnection.get(connection)!
-      const endpoints = tree.endpoints.get(connection)!
-      const selfLoop = endpoints.from === endpoints.to
-      // A cross-subsystem label may coincide with an internal label. Search
-      // nearby slots explicitly before reserving the label as a routing obstacle.
-      const occupied = [...obstacles, ...labels.values(), ...portObstacles]
-      const fits = (rectangle: SystemRoutingObstacle, besideOwnLoop = false) =>
-        !occupied.some((r) => {
-          if (besideOwnLoop && "connection" in r && r.connection === connection)
-            return false
-          // Neighboring ports already reserve 1 mm around their escape points.
-          // A compact loop label can use that clearance without doubling it.
-          const margin = besideOwnLoop && "connection" in r ? 0 : 1
-          return (
-            rectangle.left < r.right + margin &&
-            rectangle.right > r.left - margin &&
-            rectangle.bottom < r.top + margin &&
-            rectangle.top > r.bottom - margin
-          )
-        })
-      const vertical = start.escape.x === end.escape.x
-      const horizontal = start.escape.y === end.escape.y
-      const oppositeFaces = (start.side + 2) % 4 === end.side
-      const straightAxis =
-        vertical && start.side % 2 === 1
-          ? "y"
-          : horizontal && start.side % 2 === 0
-            ? "x"
-            : undefined
-      const straight =
-        !selfLoop &&
-        oppositeFaces &&
-        straightAxis !== undefined &&
-        (end.escape[straightAxis] - start.escape[straightAxis]) *
-          (start.escape[straightAxis] - start.point[straightAxis]) >=
-          0
-      const sameFaceReturn = selfLoop && start.side === end.side
-      const textFitsHorizontalSpan =
-        horizontal &&
-        !selfLoop &&
-        Math.abs(start.escape.x - end.escape.x) >= halfWidth * 2
-      // A straight arrow or same-face return already has a simple backbone.
-      // Put text beside it instead of inserting a horizontal span into the wire.
-      // Keep a single attachment waypoint so later port swaps cannot orphan text.
-      if (
-        (straight || sameFaceReturn) &&
-        !textFitsHorizontalSpan &&
-        !obstacles.some((r) =>
-          vertical
-            ? start.escape.x > r.left &&
-              start.escape.x < r.right &&
-              Math.max(start.escape.y, end.escape.y) > r.bottom &&
-              Math.min(start.escape.y, end.escape.y) < r.top
-            : start.escape.y > r.bottom &&
-              start.escape.y < r.top &&
-              Math.max(start.escape.x, end.escape.x) > r.left &&
-              Math.min(start.escape.x, end.escape.x) < r.right,
+    const endpoints = tree.endpoints.get(connection)!
+    // Only a self-loop reserves its text before routing: its shape is built
+    // around the label. Every other label is placed on its finished wire.
+    if (label === undefined || !center || endpoints.from !== endpoints.to)
+      continue
+    const halfWidth = getSystemConnectionLabelWidth(label) / 2
+    const [start, end] = portsByConnection.get(connection)!
+    const occupied = [...obstacles, ...labels.values(), ...portObstacles]
+    const fits = (rectangle: SystemRoutingObstacle, besideOwnLoop = false) =>
+      !occupied.some((r) => {
+        if (besideOwnLoop && "connection" in r && r.connection === connection)
+          return false
+        // Neighboring ports already reserve 1 mm around their escape points.
+        // A compact loop label can use that clearance without doubling it.
+        const margin = besideOwnLoop && "connection" in r ? 0 : 1
+        return (
+          rectangle.left < r.right + margin &&
+          rectangle.right > r.left - margin &&
+          rectangle.bottom < r.top + margin &&
+          rectangle.top > r.bottom - margin
         )
-      ) {
-        const attachment = {
-          x: (start.escape.x + end.escape.x) / 2,
-          y: (start.escape.y + end.escape.y) / 2,
-        }
-        const signs = selfLoop ? [start.side < 2 ? 1 : -1] : [1, -1]
-        for (const sign of signs) {
-          // The label lies outside the loop's return. Its text halo already
-          // supplies horizontal clearance; do not add the loop's own port
-          // keepouts on top of that padding.
-          const candidate = vertical
-            ? {
-                x: attachment.x + sign * (halfWidth + (selfLoop ? 0 : 2)),
-                y: attachment.y,
-              }
-            : {
-                x: attachment.x,
-                y: attachment.y + sign * (selfLoop ? 3.5 : 4.5),
-              }
-          const rectangle = {
-            left: candidate.x - halfWidth,
-            right: candidate.x + halfWidth,
-            bottom: candidate.y - 2.5,
-            top: candidate.y + 2.5,
-          }
-          if (!fits(rectangle, sameFaceReturn)) continue
-          labels.set(connection, rectangle)
-          labelCenters.set(connection, candidate)
-          labelAttachments.set(connection, attachment)
-          break
-        }
-        if (labelAttachments.has(connection)) continue
+      })
+    const vertical = start.escape.x === end.escape.x
+    // A same-face return already has a simple backbone. Put text beside it
+    // instead of inserting a horizontal span into the wire. Keep a single
+    // attachment waypoint so later port swaps cannot orphan text.
+    if (
+      start.side === end.side &&
+      !obstacles.some((r) =>
+        vertical
+          ? start.escape.x > r.left &&
+            start.escape.x < r.right &&
+            Math.max(start.escape.y, end.escape.y) > r.bottom &&
+            Math.min(start.escape.y, end.escape.y) < r.top
+          : start.escape.y > r.bottom &&
+            start.escape.y < r.top &&
+            Math.max(start.escape.x, end.escape.x) > r.left &&
+            Math.min(start.escape.x, end.escape.x) < r.right,
+      )
+    ) {
+      const attachment = {
+        x: (start.escape.x + end.escape.x) / 2,
+        y: (start.escape.y + end.escape.y) / 2,
       }
-      let placed = false
-      for (let radius = 0; !placed; radius++) {
-        const offsets =
-          radius === 0
-            ? [[0, 0]]
-            : [
-                [0, radius * 6],
-                [0, -radius * 6],
-                [radius * 6, 0],
-                [-radius * 6, 0],
-              ]
-        for (const [dx, dy] of offsets) {
-          const candidate = { x: center.x + dx, y: center.y + dy }
-          const rectangle = {
-            left: candidate.x - halfWidth,
-            right: candidate.x + halfWidth,
-            bottom: candidate.y - 2.5,
-            top: candidate.y + 2.5,
-          }
-          if (!fits(rectangle)) continue
-          labels.set(connection, rectangle)
-          labelCenters.set(connection, candidate)
-          placed = true
-          break
+      // The label lies outside the loop's return. Its text halo already
+      // supplies horizontal clearance; do not add the loop's own port
+      // keepouts on top of that padding.
+      const sign = start.side < 2 ? 1 : -1
+      const candidate = vertical
+        ? { x: attachment.x + sign * halfWidth, y: attachment.y }
+        : { x: attachment.x, y: attachment.y + sign * 3.5 }
+      const rectangle = {
+        left: candidate.x - halfWidth,
+        right: candidate.x + halfWidth,
+        bottom: candidate.y - 2.5,
+        top: candidate.y + 2.5,
+      }
+      if (fits(rectangle, true)) {
+        labels.set(connection, rectangle)
+        labelCenters.set(connection, candidate)
+        labelAttachments.set(connection, attachment)
+        continue
+      }
+    }
+    let placed = false
+    for (let radius = 0; !placed; radius++) {
+      const offsets =
+        radius === 0
+          ? [[0, 0]]
+          : [
+              [0, radius * 6],
+              [0, -radius * 6],
+              [radius * 6, 0],
+              [-radius * 6, 0],
+            ]
+      for (const [dx, dy] of offsets) {
+        const candidate = { x: center.x + dx, y: center.y + dy }
+        const rectangle = {
+          left: candidate.x - halfWidth,
+          right: candidate.x + halfWidth,
+          bottom: candidate.y - 2.5,
+          top: candidate.y + 2.5,
         }
+        if (!fits(rectangle)) continue
+        labels.set(connection, rectangle)
+        labelCenters.set(connection, candidate)
+        placed = true
+        break
       }
     }
   }
+  const segmentsOf = (
+    resolvedRoutes: Iterable<SystemConnectionRoute>,
+  ): [Point, Point][] =>
+    [...resolvedRoutes].flatMap(({ route }) =>
+      route
+        .slice(1)
+        .map((point, index): [Point, Point] => [route[index], point]),
+    )
+  const simplify = (route: Point[]): Point[] => {
+    const simplified: Point[] = []
+    for (const point of route) {
+      const previous = simplified.at(-1)
+      if (previous?.x === point.x && previous.y === point.y) continue
+      const before = simplified.at(-2)
+      if (
+        before &&
+        previous &&
+        ((before.x === previous.x && previous.x === point.x) ||
+          (before.y === previous.y && previous.y === point.y))
+      )
+        simplified.pop()
+      simplified.push(point)
+    }
+    return simplified
+  }
+  /**
+   * Slide an attachment along its block face when that removes the jog between
+   * the port stub and the wire's next run. Slots only fix the order of ports on
+   * a face, so a misaligned slot should not put a kink into a straight wire.
+   */
+  const alignPorts = (
+    connection: SystemBlockConnection,
+    initial: Point[],
+    routed: Map<SystemBlockConnection, SystemConnectionRoute>,
+    blocked: SystemRoutingObstacle[],
+  ): Point[] => {
+    const ports = portsByConnection.get(connection)!
+    const others = [...routed.values()].map((r) => r.route)
+    /** Whether a port may attach at this coordinate along its block face. */
+    const canAttach = (owner: Port, across: "x" | "y", coordinate: number) => {
+      const box = bounds.get(owner.block)!
+      const span = across === "y" ? box.height : box.width
+      if (Math.abs(coordinate - box.center[across]) > span / 2 - 2 + 1e-6)
+        return false
+      // Keep the routing clearance to every other attachment on this face,
+      // whether its wire has been routed (and possibly slid) or not, and never
+      // pass one: the order of the slots is what keeps their wires uncrossed.
+      return !portsByBlock.get(owner.block)!.some((other) => {
+        if (other === owner || other.side !== owner.side) return false
+        const otherRoute = routed.get(other.connection)?.route
+        const point = !otherRoute
+          ? other.point
+          : portsByConnection.get(other.connection)![0] === other
+            ? otherRoute[0]
+            : otherRoute.at(-1)!
+        return (
+          Math.abs(point[across] - coordinate) < 3 - 1e-6 ||
+          Math.sign(point[across] - coordinate) !==
+            Math.sign(point[across] - owner.point[across])
+        )
+      })
+    }
+    /** Accept a straightened route unless it runs into something new. */
+    const isImprovement = (current: Point[], candidate: Point[]) => {
+      // Both attachment stubs lie inside their own blocks' routing margins.
+      const inner = candidate.map((point, index) => {
+        const neighbor =
+          index === 0
+            ? candidate[1]
+            : index === candidate.length - 1
+              ? candidate[index - 1]
+              : undefined
+        return neighbor
+          ? {
+              x: point.x + Math.sign(neighbor.x - point.x) * PORT_STUB_LENGTH,
+              y: point.y + Math.sign(neighbor.y - point.y) * PORT_STUB_LENGTH,
+            }
+          : point
+      })
+      for (let index = 1; index < inner.length; index++) {
+        const from = inner[index - 1]
+        const to = inner[index]
+        if (
+          blocked.some(
+            (r) =>
+              Math.min(from.x, to.x) < r.right - 1e-6 &&
+              Math.max(from.x, to.x) > r.left + 1e-6 &&
+              Math.min(from.y, to.y) < r.top - 1e-6 &&
+              Math.max(from.y, to.y) > r.bottom + 1e-6,
+          )
+        )
+          return false
+      }
+      const before = measureSystemRouteQuality([...others, current])
+      const after = measureSystemRouteQuality([...others, candidate])
+      return (
+        after.crossings <= before.crossings &&
+        after.sharedLength <= before.sharedLength + 1e-6 &&
+        after.closeParallelLength <= before.closeParallelLength + 1e-6
+      )
+    }
+    let route = initial
+    for (const end of [1, 0]) {
+      if (route.length < 4) break
+      const oriented = end === 0 ? route : [...route].reverse()
+      const [port, elbow, jogEnd, next] = oriented
+      const axis = port.x === elbow.x ? "y" : "x"
+      const across = axis === "x" ? "y" : "x"
+      // A Z-shaped jog continues in the stub's direction; a U-turn does not.
+      if (
+        Math.sign(elbow[axis] - port[axis]) !==
+        Math.sign(next[axis] - jogEnd[axis])
+      )
+        continue
+      const slide = (coordinate: number): Point[] | undefined => {
+        if (!canAttach(ports[end], across, coordinate)) return
+        const moved = { ...port, [across]: coordinate } as Point
+        if (coordinate === jogEnd[across]) return [moved, ...oriented.slice(3)]
+        // Two facing blocks: move both attachments onto one shared line.
+        if (
+          oriented.length !== 4 ||
+          !canAttach(ports[1 - end], across, coordinate)
+        )
+          return
+        return [moved, { ...next, [across]: coordinate } as Point]
+      }
+      // Prefer moving one attachment; otherwise meet between the two slots.
+      const jog = jogEnd[across] - port[across]
+      const partial: number[] = []
+      for (let step = 1; oriented.length === 4 && step < Math.abs(jog); step++)
+        partial.push(Math.sign(jog) * step)
+      partial.sort((a, b) => Math.abs(a - jog / 2) - Math.abs(b - jog / 2))
+      for (const offset of [jog, ...partial]) {
+        const candidate = slide(port[across] + offset)
+        if (!candidate || !isImprovement(oriented, candidate)) continue
+        route = end === 0 ? candidate : candidate.reverse()
+        break
+      }
+    }
+    return route
+  }
   const routeConnection = (
     connection: SystemBlockConnection,
-    routedSegments: [Point, Point][],
+    routed: Map<SystemBlockConnection, SystemConnectionRoute>,
   ): SystemConnectionRoute => {
     const [start, end] = portsByConnection.get(connection)!
+    const routedSegments = segmentsOf(routed.values())
     const label = labels.get(connection)
     const attachment = labelAttachments.get(connection)
     const blocked = [
       ...obstacles,
       ...[...labels].filter(([c]) => c !== connection).map(([, r]) => r),
     ]
+    // A wire leaves its block through a full stub, which leaves room for the
+    // first fillet and the arrowhead. It should not turn back into the strip
+    // between the face and the escape line.
+    const stubStrips = (start.block === end.block ? [] : [start, end]).map(
+      (port) => {
+        const box = bounds.get(port.block)!
+        return port.side % 2 === 0
+          ? {
+              left: Math.min(port.point.x, port.escape.x),
+              right: Math.max(port.point.x, port.escape.x),
+              bottom: box.center.y - box.height / 2 - 2,
+              top: box.center.y + box.height / 2 + 2,
+            }
+          : {
+              left: box.center.x - box.width / 2 - 2,
+              right: box.center.x + box.width / 2 + 2,
+              bottom: Math.min(port.point.y, port.escape.y),
+              top: Math.max(port.point.y, port.escape.y),
+            }
+      },
+    )
     const waypoints = [start.escape]
     if (attachment) {
       waypoints.push(attachment)
@@ -323,12 +490,29 @@ export function routeSystemBlocks(
       // on the other legs avoids backtracking beneath the same text or self-loop.
       const legObstacles =
         label && (attachment || i !== 2) ? [...blocked, label] : blocked
-      const leg = findSystemOrthogonalPath(
-        waypoints[i - 1],
-        waypoints[i],
-        legObstacles,
-        routedSegments,
-      )
+      const headings = {
+        start: i === 1 ? (["x", "y"] as const)[start.side % 2] : undefined,
+        end:
+          i === waypoints.length - 1
+            ? (["x", "y"] as const)[end.side % 2]
+            : undefined,
+      }
+      // Blocks packed closer than two stubs leave no way around the strips.
+      const leg =
+        findSystemOrthogonalPath(
+          waypoints[i - 1],
+          waypoints[i],
+          [...legObstacles, ...stubStrips],
+          routedSegments,
+          headings,
+        ) ??
+        findSystemOrthogonalPath(
+          waypoints[i - 1],
+          waypoints[i],
+          legObstacles,
+          routedSegments,
+          headings,
+        )
       if (!leg) {
         throw new Error(
           `Cannot route system connection from "${connection._parsedProps.from}" to "${connection._parsedProps.to}" around blocks and labels`,
@@ -337,22 +521,12 @@ export function routeSystemBlocks(
       route.push(...leg)
     }
     route.push(end.point)
-    const simplified: Point[] = []
-    for (const point of route) {
-      const previous = simplified.at(-1)
-      if (previous?.x === point.x && previous.y === point.y) continue
-      const before = simplified.at(-2)
-      if (
-        before &&
-        previous &&
-        ((before.x === previous.x && previous.x === point.x) ||
-          (before.y === previous.y && previous.y === point.y))
-      )
-        simplified.pop()
-      simplified.push(point)
-    }
+    const simplified = simplify(route)
     return {
-      route: simplified,
+      route:
+        start.block === end.block
+          ? simplified
+          : alignPorts(connection, simplified, routed, blocked),
       label_anchor_center: labelCenters.get(connection),
     }
   }
@@ -371,20 +545,9 @@ export function routeSystemBlocks(
       (a._parsedProps.label ?? "").localeCompare(b._parsedProps.label ?? "")
     )
   })
-  const segmentsOf = (
-    resolvedRoutes: Iterable<SystemConnectionRoute>,
-  ): [Point, Point][] =>
-    [...resolvedRoutes].flatMap(({ route }) =>
-      route
-        .slice(1)
-        .map((point, index): [Point, Point] => [route[index], point]),
-    )
   let routes = new Map<SystemBlockConnection, SystemConnectionRoute>()
   for (const connection of connections)
-    routes.set(
-      connection,
-      routeConnection(connection, segmentsOf(routes.values())),
-    )
+    routes.set(connection, routeConnection(connection, routes))
   let score = measureSystemRouteQuality(
     [...routes.values()].map((r) => r.route),
   ).score
@@ -397,10 +560,7 @@ export function routeSystemBlocks(
       [...routes].filter(([connection]) => !affected.has(connection)),
     )
     for (const connection of connections.filter((c) => affected.has(c)))
-      candidate.set(
-        connection,
-        routeConnection(connection, segmentsOf(candidate.values())),
-      )
+      candidate.set(connection, routeConnection(connection, candidate))
     const candidateScore = measureSystemRouteQuality(
       [...candidate.values()].map((r) => r.route),
     ).score
@@ -431,6 +591,16 @@ export function routeSystemBlocks(
           ;[a.side, b.side] = [b.side, a.side]
         }
         swap()
+        // A swap across a corner must not turn a port away from its wire's
+        // other end; the wire would have to hook around its own block.
+        if (
+          [a, b].some(
+            (port) => port.other && facesAway(port.side, center, port.other),
+          )
+        ) {
+          swap()
+          continue
+        }
         if (reroute(new Set([a.connection, b.connection]))) {
           improved = true
           // Keep the scan in geometric slot order after moving the occupants.
@@ -453,5 +623,30 @@ export function routeSystemBlocks(
   // One cleanup sweep can shorten detours left by an earlier route without
   // reopening the bounded search over endpoint permutations.
   for (const connection of connections) reroute(new Set([connection]))
+  // Wires are final. Give each remaining label a clear slot on its own wire,
+  // shortest wires first because they have the fewest slots to choose from.
+  const placedLabels = [...labels.values()]
+  for (const connection of connections) {
+    const label = connection._parsedProps.label
+    const resolved = routes.get(connection)!
+    if (label === undefined || resolved.label_anchor_center) continue
+    const width = getSystemConnectionLabelWidth(label)
+    const center = placeSystemConnectionLabel({
+      route: resolved.route,
+      width,
+      obstacles,
+      labels: placedLabels,
+      otherRoutes: [...routes]
+        .filter(([other]) => other !== connection)
+        .map(([, r]) => r.route),
+    })
+    placedLabels.push({
+      left: center.x - width / 2,
+      right: center.x + width / 2,
+      bottom: center.y - 2.5,
+      top: center.y + 2.5,
+    })
+    resolved.label_anchor_center = center
+  }
   return routes
 }
