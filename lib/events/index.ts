@@ -2,6 +2,7 @@ import type { FanoutTracePath } from "@tscircuit/props"
 import type { RenderPhase } from "lib/components/base-components/Renderable"
 import type { SOLVERS } from "lib/solvers"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
+import type { PendingRoutingAccessReport } from "@tscircuit/bus-lanes-solver"
 
 export type RootCircuitEventName =
   | "asyncEffect:start"
@@ -162,6 +163,8 @@ export interface SolverEndedEvent {
   failed: boolean
   iterations: number
   error: string | null
+  /** Accepted full-copper access check, omitted for other solvers or no intent. */
+  pendingRoutingAccessReport?: PendingRoutingAccessReport
 }
 
 export interface DebugLogOutputEvent {
