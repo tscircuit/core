@@ -24,8 +24,9 @@ export async function resolveSpiceIncludes({
   includeChain?: string[]
 }): Promise<string> {
   const projectBaseUrl = new URL("https://spice-project.invalid/")
+  const netlist = parseSpiceNetlist(source)
   let expandedSource = source
-  for (const include of getSpiceIncludes(parseSpiceNetlist(source).cards)) {
+  for (const include of getSpiceIncludes(netlist.cards)) {
     const includeUrl = new URL(
       include.path,
       new URL(sourcePath, projectBaseUrl),
@@ -56,6 +57,22 @@ export async function resolveSpiceIncludes({
       include.originalSource ?? include.toSource(),
       () => includedSource,
     )
+  }
+  // The first subcircuit selects the component model. Includes must not replace it.
+  const entryModel = netlist.subckts[0]
+  if (entryModel) {
+    const expandedNetlist = parseSpiceNetlist(expandedSource)
+    if (expandedNetlist.subckts[0]?.name !== entryModel.name) {
+      const entrySource = expandedNetlist.findSubckt(
+        entryModel.name,
+      )?.originalSource
+      if (!entrySource) {
+        throw new Error(
+          `Could not preserve SPICE entry model "${entryModel.name}".`,
+        )
+      }
+      expandedSource = `${entrySource}\n${expandedSource.replace(entrySource, "")}`
+    }
   }
   return expandedSource
 }
