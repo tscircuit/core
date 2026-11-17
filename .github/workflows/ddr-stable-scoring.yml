@@ -1,4 +1,4 @@
-name: Benchmark stable fixed-copper scoring
+name: Benchmark A13 repair safeguards
 on:
   push:
     branches: [artifacts/ddr-stable-fixed-copper-experiment]
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [base, candidate]
+        variant: [regional-contact, exact-reference]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,13 +43,27 @@ jobs:
           bun install --frozen-lockfile --ignore-scripts
           python3 - <<'PY'
           import os,pathlib
-          p=pathlib.Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9JointDrcRepairSolver.ts')
-          source=p.read_text()
-          old="hasNativePreloadedTraces ||\n        !this.initialBoundedRegionalRepairSolver?.solved"
-          assert source.count(old)==2
-          if os.environ['VARIANT']=='candidate':
-              p.write_text(source.replace(old,'hasNativePreloadedTraces'))
-          print('SCORING_VARIANT='+os.environ['VARIANT'])
+          variant=os.environ['VARIANT']
+          root=pathlib.Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph')
+          if variant=='exact-reference':
+              p=root/'Pipeline9JointDrcRepairSolver.ts'
+              source=p.read_text()
+              old='      viaInPadDrcEvaluator: drcEvaluator,\n'
+              assert source.count(old)==1
+              p.write_text(source.replace(old,old+'      referenceDrcEvaluator: cachedReferenceDrcEvaluator,\n'))
+          elif variant=='regional-contact':
+              p=root/'Pipeline9BoundedRegionalRepairSolver.ts'
+              source=p.read_text()
+              source=source.replace('import type { DrcEvaluator } from "high-density-repair03/lib"','import { type DrcEvaluator, TraceContactGuard, type SimpleRouteJson as RepairSimpleRouteJson } from "high-density-repair03/lib"')
+              source=source.replace('  private reservedChildMaximum = 0','  private reservedChildMaximum = 0\n  private readonly traceContactGuard: TraceContactGuard')
+              source=source.replace('    this.params = params','    this.params = params\n    this.traceContactGuard = new TraceContactGuard({\n      srj: params.originalSrj as RepairSimpleRouteJson,\n      inputRoutes: params.routes,\n      connMap: params.connMap,\n    })')
+              old='      }).length > 0\n    ) {'
+              assert source.count(old)==1
+              source=source.replace(old,'      }).length > 0 ||\n      this.traceContactGuard.getNewContactPairs(candidateRoutes).length > 0\n    ) {')
+              p.write_text(source)
+          else:
+              raise Exception(variant)
+          print('SCORING_VARIANT='+variant)
           PY
       - name: Solve the same native Core remaining request
         env:
