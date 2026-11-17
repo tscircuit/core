@@ -10,7 +10,14 @@ test("bus adapter reports accepted access from the real solver and preserves no-
     layerCount: 2,
     minTraceWidth: 0.1,
     minTraceToPadEdgeClearance: 0.1,
-    allowedLayers: ["top"],
+    buses: [
+      {
+        busId: "current_bus",
+        connectionNames: ["active_signal"],
+        traceWidth: 0.1,
+        allowedLayers: ["top"],
+      },
+    ],
     bounds: { minX: -3, maxX: 3, minY: -3, maxY: 3 },
     obstacles: [],
     connections: [

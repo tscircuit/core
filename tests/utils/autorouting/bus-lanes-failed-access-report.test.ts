@@ -10,7 +10,14 @@ test("failed actual bus routing emits one ended event without an accepted report
     layerCount: 2,
     minTraceWidth: 0.1,
     minTraceToPadEdgeClearance: 0.1,
-    allowedLayers: ["top"],
+    buses: [
+      {
+        busId: "current_bus",
+        connectionNames: ["blocked_signal"],
+        traceWidth: 0.1,
+        allowedLayers: ["top"],
+      },
+    ],
     bounds: { minX: -3, maxX: 3, minY: -3, maxY: 3 },
     obstacles: [
       {
