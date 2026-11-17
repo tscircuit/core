@@ -28,15 +28,6 @@ circuit.add(
 circuit.getCircuitJson()
 ```
 
-## Schematic example
-
-The [RP2040 motor controller by imrishabh18](https://tscircuit.com/imrishabh18/rp2040-motor-controller#schematic)
-shows how a ten-sheet design groups power, programming, motor drive, and telemetry.
-
-The [NEMA 17 example directory](./tests/examples/nema17-motor-controller)
-contains all ten schematic sheets and a runnable TSX example of the two
-INA240 winding-current channels.
-
 ## System block diagrams
 
 For high-level functional diagrams, use the [`systemblock` namespace](./docs/system-blocks.md).
