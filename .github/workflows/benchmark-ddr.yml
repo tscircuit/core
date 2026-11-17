@@ -1,56 +1,49 @@
-name: Inspect native A13 DDR comparison
+name: Read centered-grid DDR comparisons
 on:
   workflow_dispatch:
     inputs:
-      pr_number:
-        required: false
+      run_id:
+        required: true
         type: string
 permissions:
   contents: read
   actions: read
 jobs:
-  audit:
+  report:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
     steps:
-      - name: Wait for fresh base and head results
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for audit_attempt in $(seq 1 180); do
-            state=$(gh api repos/tscircuit/core/actions/runs/43958176525 --jq '.status')
-            if [ "$state" = completed ]; then exit 0; fi
-            sleep 20
-          done
-          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: ddr-benchmark-results
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: current
       - uses: actions/download-artifact@v4
         with:
           name: ddr-benchmark-results
           run-id: 43958176525
           github-token: ${{ github.token }}
-          path: results
-      - name: Print board comparisons and assess copper changes
-        run: |
-          cat results/comparison.md
-          python3 - <<'PY_AUDIT'
+          path: previous
+      - run: |
+          python3 - <<'PY'
           import pathlib,json,hashlib
-          r=pathlib.Path('results')
-          a=json.loads((r/'base/results.json').read_text())
-          b=json.loads((r/'head/results.json').read_text())
-          for key in ['benchmarkRevision','assessmentRevision','fixtureHashes','bunVersion','platform','cpu','timeoutSeconds']:
-            assert a[key]==b[key],key
-          assert len(a['cases'])==len(b['cases'])==10
-          rows=[]
-          for x,y in zip(a['cases'],b['cases']):
-            assert x['circuit']==y['circuit']
-            name=x['circuit']
-            aa={k:v for k,v in x['assessment'].items() if k!='validationMs'}
-            bb={k:v for k,v in y['assessment'].items() if k!='validationMs'}
-            copper=[]
-            for ref in ['base','head']:
-              elements=json.loads((r/ref/name/'circuit.json').read_text())
-              copper.append([e for e in elements if e.get('type') in ['pcb_trace','pcb_via']])
-            rows.append({'circuit':name,'beforeStatus':x['status'],'afterStatus':y['status'],'beforeSeconds':x['wallMs']/1000,'afterSeconds':y['wallMs']/1000,'beforeAssessment':aa,'afterAssessment':bb,'sameCopper':copper[0]==copper[1],'beforePhases':x['progress']['phases'],'afterPhases':y['progress']['phases'],'beforeErrors':x['progress']['errors'],'afterErrors':y['progress']['errors']})
-          report={'baseCommit':a['coreCommit'],'headCommit':b['coreCommit'],'beforeDependencies':a['dependencies'],'afterDependencies':b['dependencies'],'runtime':{'bun':a['bunVersion'],'cpu':a['cpu'],'timeout':a['timeoutSeconds']},'cases':rows}
-          print('CORE_COMPARISON_JSON='+json.dumps(report,separators=(',',':')))
-          PY_AUDIT
+          result={}
+          for tag,root in [('base',pathlib.Path('current/base')),('head',pathlib.Path('current/head')),('previousHead',pathlib.Path('previous/head'))]:
+              report=json.loads((root/'results.json').read_text())
+              metadata={k:v for k,v in report.items() if k!='cases'}
+              rows=[]
+              for c in report['cases']:
+                  assessment=c.get('assessment') or {}
+                  circuit=root/c['circuit']/'circuit.json'
+                  copper_hash=None
+                  if circuit.exists():
+                      elements=json.loads(circuit.read_text())
+                      copper=[e for e in elements if e['type'] in ['pcb_trace','pcb_via']]
+                      copper_hash=hashlib.sha256(json.dumps(copper,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+                  findings=assessment.get('findings',{})
+                  rows.append({'circuit':c['circuit'],'status':c['status'],'seconds':c['wallMs']/1000,'peakRssMb':c['peakRssMb'],'connected':assessment.get('connectedNets'),'requested':assessment.get('requestedNets'),'findings':findings,'physicalFindings':sum(v for k,v in findings.items() if k not in ['missing_traces','disconnected_ports']),'geometryErrors':assessment.get('geometryErrors'),'copperSha256':copper_hash,'progress':c.get('progress')})
+              result[tag]={'metadata':metadata,'cases':rows}
+          print('CORE_COMPARISON_JSON='+json.dumps(result,separators=(',',':')))
+          print(pathlib.Path('current/comparison.md').read_text())
+          assert all(len(x['cases'])==10 for x in result.values())
+          PY
