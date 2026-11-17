@@ -8,6 +8,32 @@ import type { SimulationEyeDiagram } from "./SimulationEyeDiagram"
 type TransientSimulationId =
   SimulationPcbTransientChannelSimulation["simulation_pcb_transient_channel_simulation_id"]
 
+function getEyeDiagramTimeMs(
+  time: SimulationEyeDiagram["_parsedProps"]["startTime"],
+  bitRate: number,
+) {
+  if (time === undefined) return undefined
+  return simulationTimeToMilliseconds(time, bitRate)
+}
+
+function getEyeDiagramChannelIds(
+  group: SimulationPcbDriverReceiverChannel[],
+  includeChannelIds: boolean,
+) {
+  if (!includeChannelIds) return undefined
+  return group.map(
+    (channel) => channel.simulation_pcb_driver_receiver_channel_id,
+  )
+}
+
+function getEyeDiagramWindowRate(
+  channel: SimulationPcbDriverReceiverChannel,
+  usesUnitIntervals: boolean,
+) {
+  if (!usesUnitIntervals) return 0
+  return channel.bit_rate_bps
+}
+
 function getEyeDiagramRecord(
   { name, startTime, endTime }: SimulationEyeDiagram["_parsedProps"],
   simulationId: TransientSimulationId,
@@ -15,14 +41,8 @@ function getEyeDiagramRecord(
   includeChannelIds: boolean,
 ) {
   const rate = group[0].bit_rate_bps
-  const startMs =
-    startTime === undefined
-      ? undefined
-      : simulationTimeToMilliseconds(startTime, rate)
-  const endMs =
-    endTime === undefined
-      ? undefined
-      : simulationTimeToMilliseconds(endTime, rate)
+  const startMs = getEyeDiagramTimeMs(startTime, rate)
+  const endMs = getEyeDiagramTimeMs(endTime, rate)
   if (
     (startMs !== undefined && !Number.isFinite(startMs)) ||
     (endMs !== undefined &&
@@ -31,17 +51,15 @@ function getEyeDiagramRecord(
     throw new Error(
       `Eye diagram "${name}" must have a finite window with the end after the start.`,
     )
-  const channelIds = group.map(
-    (channel) => channel.simulation_pcb_driver_receiver_channel_id,
-  )
   return {
     name,
     simulation_pcb_transient_channel_simulation_id: simulationId,
-    ...(includeChannelIds
-      ? { simulation_pcb_driver_receiver_channel_ids: channelIds }
-      : {}),
-    ...(startMs === undefined ? {} : { start_time_ms: startMs }),
-    ...(endMs === undefined ? {} : { end_time_ms: endMs }),
+    simulation_pcb_driver_receiver_channel_ids: getEyeDiagramChannelIds(
+      group,
+      includeChannelIds,
+    ),
+    start_time_ms: startMs,
+    end_time_ms: endMs,
   }
 }
 
@@ -72,7 +90,7 @@ export function SimulationEyeDiagram_getRecords(
   for (const channel of channels) {
     if (channelRef && !channelRef.includes(channel.name)) continue
     if (channel.driver_disabled || /^(?:0+|1+)$/.test(channel.pattern)) continue
-    const rate = usesUnitIntervals ? channel.bit_rate_bps : 0
+    const rate = getEyeDiagramWindowRate(channel, usesUnitIntervals)
     const group = channelsByWindowRate.get(rate)
     if (!group) {
       channelsByWindowRate.set(rate, [channel])
