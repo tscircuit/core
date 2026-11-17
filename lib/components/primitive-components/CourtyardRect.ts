@@ -46,6 +46,20 @@ export class CourtyardRect extends PrimitiveComponent<
       ccw_rotation = (180 - ccw_rotation + 360) % 360
     }
 
+    // For quarter-turn rotations, bake the rotation into width/height so the
+    // rect is axis-aligned. Many consumers (e.g. calculate-packing in pack
+    // layout) read only center/width/height and ignore ccw_rotation.
+    let width = props.width
+    let height = props.height
+    const quarterTurns = ccw_rotation / 90
+    if (Math.abs(quarterTurns - Math.round(quarterTurns)) < 1e-6) {
+      if (Math.round(quarterTurns) % 2 === 1) {
+        width = props.height
+        height = props.width
+      }
+      ccw_rotation = 0
+    }
+
     const pcb_courtyard_rect = db.pcb_courtyard_rect.insert({
       pcb_component_id,
       layer,
@@ -53,8 +67,8 @@ export class CourtyardRect extends PrimitiveComponent<
         x: position.x,
         y: position.y,
       },
-      width: props.width,
-      height: props.height,
+      width,
+      height,
       ccw_rotation: ccw_rotation || undefined,
       subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
       pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,

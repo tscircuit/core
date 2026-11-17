@@ -22,7 +22,10 @@ test("pcb_courtyard_rect rotation 180 on bottom layer", async () => {
     .getCircuitJson()
     .filter((c) => c.type === "pcb_courtyard_rect")
 
-  expect(pcbCourtyardRects[0].ccw_rotation).toBe(180)
+  // Quarter-turn rotations are baked into width/height (axis-aligned rect)
+  expect(pcbCourtyardRects[0].ccw_rotation).toBeUndefined()
+  expect(pcbCourtyardRects[0].width).toBeCloseTo(16.24)
+  expect(pcbCourtyardRects[0].height).toBeCloseTo(3.54)
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path, { showCourtyards: true })
 })
