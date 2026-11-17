@@ -2269,12 +2269,19 @@ export class NormalComponent<
     source_component: any,
     footprinterString?: string,
   ): string {
+    const {
+      type: _type,
+      source_component_id: _sourceComponentId,
+      subcircuit_id: _subcircuitId,
+      source_group_id: _sourceGroupId,
+      name: _name,
+      display_name: _displayName,
+      supplier_part_numbers: _supplierPartNumbers,
+      internally_connected_source_port_ids: _internallyConnectedSourcePortIds,
+      ...searchableFields
+    } = source_component ?? {}
     return JSON.stringify({
-      ftype: source_component.ftype,
-      name: source_component.name,
-      manufacturer_part_number: source_component.manufacturer_part_number,
-      standard: source_component.standard,
-      pin_count: source_component.pin_count,
+      ...searchableFields,
       footprinterString,
     })
   }
