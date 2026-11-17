@@ -8,11 +8,15 @@ import { SimulationEyeDiagram_getRecords } from "./SimulationEyeDiagram_getRecor
 type EyeDiagramId = EyeDiagramRecord["simulation_eye_diagram_id"]
 type EyeDiagramTable = CircuitJsonUtilObjects["simulation_eye_diagram"]
 
-function insertEyeDiagramRecord(
-  eyes: EyeDiagramTable,
-  record: Parameters<EyeDiagramTable["insert"]>[0],
-  previousId: EyeDiagramId | undefined,
-) {
+function insertEyeDiagramRecord({
+  eyes,
+  record,
+  previousId,
+}: {
+  eyes: EyeDiagramTable
+  record: Parameters<EyeDiagramTable["insert"]>[0]
+  previousId: EyeDiagramId | undefined
+}) {
   // An explicit undefined ID would overwrite the database's generated ID.
   if (!previousId) return eyes.insert(record)
   const recordWithId = { ...record, simulation_eye_diagram_id: previousId }
@@ -51,7 +55,10 @@ export class SimulationEyeDiagram extends PrimitiveComponent<
     const [block] = blocks
     // The simulation marks its eye diagrams dirty after writing its record.
     const simulationId = block.simulation_pcb_transient_channel_simulation_id
-    if (!simulationId) return
+    if (!simulationId) {
+      this.removeSimulationSpiceEngineRender()
+      return
+    }
 
     const records = SimulationEyeDiagram_getRecords(this, simulationId)
     const previousIds = this.eyeDiagramIds
@@ -59,7 +66,7 @@ export class SimulationEyeDiagram extends PrimitiveComponent<
     const eyes = this.root!.db.simulation_eye_diagram
     this.eyeDiagramIds = records.map(
       (record, index) =>
-        insertEyeDiagramRecord(eyes, record, previousIds[index])
+        insertEyeDiagramRecord({ eyes, record, previousId: previousIds[index] })
           .simulation_eye_diagram_id,
     )
   }

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
-import { simulation } from "lib"
+import { PcbTransientChannelSimulation, simulation } from "lib"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("eye window in UI resolves to milliseconds at the channel bit rate", async () => {
+test("the eye window follows the transient channel simulation lifecycle", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -75,4 +75,11 @@ test("eye window in UI resolves to milliseconds at the channel bit rate", async 
   expect(eye.start_time_ms).toBeCloseTo(0.00004, 12)
   expect(eye.end_time_ms).toBeCloseTo(0.00008, 12)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
+  const block =
+    circuit.firstChild!.selectOne<PcbTransientChannelSimulation>(".LINK")!
+  block.removePcbSimulationRender()
+  await circuit.renderUntilSettled()
+
+  expect(circuit.db.simulation_eye_diagram.list()).toHaveLength(0)
 })

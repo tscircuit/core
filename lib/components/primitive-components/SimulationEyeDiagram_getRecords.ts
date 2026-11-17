@@ -34,12 +34,18 @@ function getEyeDiagramWindowRate(
   return channel.bit_rate_bps
 }
 
-function getEyeDiagramRecord(
-  { name, startTime, endTime }: SimulationEyeDiagram["_parsedProps"],
-  simulationId: TransientSimulationId,
-  group: SimulationPcbDriverReceiverChannel[],
-  includeChannelIds: boolean,
-) {
+function getEyeDiagramRecord({
+  props,
+  simulationId,
+  group,
+  includeChannelIds,
+}: {
+  props: SimulationEyeDiagram["_parsedProps"]
+  simulationId: TransientSimulationId
+  group: SimulationPcbDriverReceiverChannel[]
+  includeChannelIds: boolean
+}) {
+  const { name, startTime, endTime } = props
   const rate = group[0].bit_rate_bps
   const startMs = getEyeDiagramTimeMs(startTime, rate)
   const endMs = getEyeDiagramTimeMs(endTime, rate)
@@ -101,6 +107,6 @@ export function SimulationEyeDiagram_getRecords(
 
   const includeChannelIds = Boolean(channelRef) || channelsByWindowRate.size > 1
   return [...channelsByWindowRate.values()].map((group) =>
-    getEyeDiagramRecord(props, simulationId, group, includeChannelIds),
+    getEyeDiagramRecord({ props, simulationId, group, includeChannelIds }),
   )
 }
