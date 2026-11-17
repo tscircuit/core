@@ -2,6 +2,7 @@ import { pcbTransientChannelSimulationProps } from "@tscircuit/props"
 import type { SimulationPcbTransientChannelSimulation } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { PcbTransientChannelSimulation_doInitialPcbSimulationRender } from "./PcbTransientChannelSimulation_doInitialPcbSimulationRender"
+import { getSignalIntegrityEyes } from "lib/utils/simulation/get-signal-integrity-blocks"
 
 /** Declares a coupled SI run; solvers consume its Circuit JSON separately. */
 export class PcbTransientChannelSimulation extends PrimitiveComponent<
@@ -28,6 +29,7 @@ export class PcbTransientChannelSimulation extends PrimitiveComponent<
       )
     if (this.getInheritedProperty("analogSimulationDisabled")) return
     PcbTransientChannelSimulation_doInitialPcbSimulationRender(this)
+    this.markEyesDirty()
   }
 
   updatePcbSimulationRender(): void {
@@ -48,5 +50,11 @@ export class PcbTransientChannelSimulation extends PrimitiveComponent<
       this.simulation_pcb_transient_channel_simulation_id,
     )
     this.simulation_pcb_transient_channel_simulation_id = null
+    this.markEyesDirty()
+  }
+
+  private markEyesDirty(): void {
+    for (const eye of getSignalIntegrityEyes(this._getBoard()))
+      eye._markDirty("SimulationSpiceEngineRender")
   }
 }
