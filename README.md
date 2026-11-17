@@ -28,6 +28,16 @@ circuit.add(
 circuit.getCircuitJson()
 ```
 
+## Schematic example
+
+The [RP2040 motor controller by imrishabh18](https://tscircuit.com/imrishabh18/rp2040-motor-controller#schematic)
+shows how a ten-sheet design groups power, programming, motor drive, and telemetry.
+
+The [winding-current TSX example](./tests/examples/example43-rp2040-motor-controller.circuit.tsx)
+extracts the two INA240 measurement channels. Each channel uses the same shunt,
+amplifier pin arrangement, and RC filter. Core routes the wires and renders the
+signal names along them. [View the schematic snapshot](./tests/examples/__snapshots__/example43-rp2040-motor-controller-schematic_stacked.snap.svg).
+
 ## System block diagrams
 
 For high-level functional diagrams, use the [`systemblock` namespace](./docs/system-blocks.md).
