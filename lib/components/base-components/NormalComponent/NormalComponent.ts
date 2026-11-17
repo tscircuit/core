@@ -2365,7 +2365,9 @@ export class NormalComponent<
   }
 
   /** Resolve once and persist for both early polarity inference and PartsEngineRender. */
-  protected async _resolveSupplierPartNumbers(partsEngine: PartsEngine) {
+  protected async _resolveSupplierPartNumbers(
+    partsEngine: PartsEngine,
+  ): Promise<SupplierPartNumbers | undefined> {
     const { db } = this.root!
     const sourceComponent = db.source_component.get(this.source_component_id!)
     if (!sourceComponent) return undefined

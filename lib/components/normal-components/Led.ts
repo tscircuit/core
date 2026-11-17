@@ -14,7 +14,6 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
-import { isValidElement } from "react"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import {
@@ -24,28 +23,47 @@ import {
 } from "../base-components/NormalComponent/NormalComponent_doInitialPartOrientationAnalysis"
 import { isFootprinterString } from "../base-components/NormalComponent/utils/isFootprinterString"
 import type { PrimitiveComponent } from "../base-components/PrimitiveComponent"
-import type { FabricationNotePath } from "../primitive-components/FabricationNotePath"
-import type { FabricationNoteText } from "../primitive-components/FabricationNoteText"
 import type { Port } from "../primitive-components/Port"
 import { resolvePortSourcePinAttributes } from "../primitive-components/Port/resolve-port-source-pin-attributes"
-import type { SilkscreenPath } from "../primitive-components/SilkscreenPath"
 
 const POLARITY_ALIASES = new Set(["anode", "pos", "cathode", "neg"])
-const POLARITY_ARTWORK_COMPONENT_NAMES = new Set([
-  "SilkscreenPath",
-  "FabricationNotePath",
-  "FabricationNoteText",
-])
-const POLARITY_ARTWORK_ELEMENT_TYPES = new Set([
-  "pcb_silkscreen_path",
-  "pcb_fabrication_note_path",
-  "pcb_fabrication_note_text",
-])
+const PIN_LABELS_BY_PIN1_POLARITY = {
+  anode: { pin1: ["anode", "pos"], pin2: ["cathode", "neg"] },
+  cathode: { pin1: ["cathode", "neg"], pin2: ["anode", "pos"] },
+} satisfies Record<Pin1Polarity, Record<string, string[]>>
+/** Polarity artwork component -> [db table, id field] to clear when replacing it. */
+const POLARITY_ARTWORK_DB_IDS: Record<string, readonly [string, string]> = {
+  SilkscreenPath: ["pcb_silkscreen_path", "pcb_silkscreen_path_id"],
+  FabricationNotePath: [
+    "pcb_fabrication_note_path",
+    "fabrication_note_path_id",
+  ],
+  FabricationNoteText: [
+    "pcb_fabrication_note_text",
+    "pcb_fabrication_note_text_id",
+  ],
+}
+const POLARITY_ARTWORK_ELEMENT_TYPES = new Set(
+  Object.values(POLARITY_ARTWORK_DB_IDS).map(([table]) => table),
+)
+const isPolarityArtwork = (child: PrimitiveComponent): boolean =>
+  child.componentName in POLARITY_ARTWORK_DB_IDS
+
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
 
 export class Led extends NormalComponent<
   typeof ledProps,
   PolarizedPassivePorts
 > {
+  /** Supplier polarity lookup blocks layout phases, so never wait longer than this. */
+  static supplierPolarityTimeoutMs = 2000
+
   private declare _hasExplicitPortChildren?: boolean
   private declare _hasStartedSupplierPolarityResolution?: boolean
   private declare _stringFootprintChildren?: PrimitiveComponent[]
@@ -59,7 +77,7 @@ export class Led extends NormalComponent<
     }).footprint
   }
 
-  _addChildrenFromStringFootprint() {
+  _addChildrenFromStringFootprint(): void {
     const existingChildren = new Set(this.children)
     super._addChildrenFromStringFootprint()
     this._stringFootprintChildren = this.children.filter(
@@ -96,14 +114,13 @@ export class Led extends NormalComponent<
     }
   }
 
-  add(component: Parameters<NormalComponent["add"]>[0]) {
-    // React children arrive after the constructor has already generated ports.
-    // Track authored ports before NormalComponent can deduplicate them.
+  add(component: Parameters<NormalComponent["add"]>[0]): void {
+    // JSX ports arrive after the constructor generated defaults; generated ports
+    // carry an originDescription, authored ones do not.
     if (
-      (isValidElement(component) && component.type === "port") ||
-      ("componentName" in component &&
-        component.componentName === "Port" &&
-        !(component as Port).originDescription)
+      "componentName" in component &&
+      component.componentName === "Port" &&
+      !(component as Port).originDescription
     ) {
       this._hasExplicitPortChildren = true
     }
@@ -114,7 +131,7 @@ export class Led extends NormalComponent<
     super.initPorts(getDiodePortOptions(this))
   }
 
-  private _shouldAdoptSupplierPin1Polarity(): {
+  private _getSupplierPolarityContext(): {
     partsEngine: PartsEngine
     baseFootprint: string
   } | null {
@@ -133,7 +150,7 @@ export class Led extends NormalComponent<
       return null
     }
 
-    if (this._parsedProps.pinLabels || this.props.pinLabels) return null
+    if (this._parsedProps.pinLabels) return null
     if (this._hasExplicitPortChildren) return null
     if (this.children.some((child) => child.componentName === "Footprint")) {
       return null
@@ -153,24 +170,15 @@ export class Led extends NormalComponent<
     return { partsEngine, baseFootprint }
   }
 
-  private _applyImpliedPin1Polarity(targetPin1Polarity: Pin1Polarity) {
-    const previousPinLabels = this._impliedFootprintPinLabels
-    this._impliedFootprintPinLabels =
-      targetPin1Polarity === "cathode"
-        ? { pin1: ["cathode", "neg"], pin2: ["anode", "pos"] }
-        : { pin1: ["anode", "pos"], pin2: ["cathode", "neg"] }
-
+  /** Returns the replacement artwork, or null if the footprint cannot be rebuilt. */
+  private _buildPolarityArtwork(): PrimitiveComponent[] | null {
     const resolvedFootprint = this.resolveFootprint()
-    if (typeof resolvedFootprint !== "string") {
-      this._impliedFootprintPinLabels = previousPinLabels
-      return
-    }
-    let newArtworkComponents: PrimitiveComponent[]
+    if (typeof resolvedFootprint !== "string") return null
     try {
       const fpCircuitJson = (
         fp.string(resolvedFootprint).soup() as AnyCircuitElement[]
       ).filter((element) => POLARITY_ARTWORK_ELEMENT_TYPES.has(element.type))
-      newArtworkComponents = createComponentsFromCircuitJson(
+      return createComponentsFromCircuitJson(
         {
           sourcePortOwner: this,
           componentName: this.name ?? this.componentName,
@@ -181,23 +189,22 @@ export class Led extends NormalComponent<
         fpCircuitJson,
       )
     } catch {
-      this._impliedFootprintPinLabels = previousPinLabels
-      return
+      return null
     }
+  }
 
-    for (const port of this._getAllPortsFromChildren()) {
-      const pinNumber = port._parsedProps.pinNumber
-      if (pinNumber !== 1 && pinNumber !== 2) continue
+  private _relabelPolarityPorts(): void {
+    const isPolarityPin = (port: Port): boolean =>
+      port._parsedProps.pinNumber === 1 || port._parsedProps.pinNumber === 2
+    const withoutPolarity = (aliases: string[]): string[] =>
+      aliases.filter((alias) => !POLARITY_ALIASES.has(alias))
 
+    for (const port of this._getAllPortsFromChildren().filter(isPolarityPin)) {
       port.resolvedNameAndAliases = {
-        name: `pin${pinNumber}`,
-        aliases: port
-          .getNameAndAliases()
-          .filter((alias) => !POLARITY_ALIASES.has(alias)),
+        name: `pin${port._parsedProps.pinNumber}`,
+        aliases: withoutPolarity(port.getNameAndAliases()),
       }
-      port.externallyAddedAliases = port.externallyAddedAliases.filter(
-        (alias) => !POLARITY_ALIASES.has(alias),
-      )
+      port.externallyAddedAliases = withoutPolarity(port.externallyAddedAliases)
       port.schematicSymbolPortDef = null
     }
 
@@ -213,86 +220,98 @@ export class Led extends NormalComponent<
         ...resolvePortSourcePinAttributes(port),
       })
     }
+  }
 
-    for (const child of [...(this._stringFootprintChildren ?? [])]) {
-      if (!POLARITY_ARTWORK_COMPONENT_NAMES.has(child.componentName)) continue
-      if (
-        child.componentName === "SilkscreenPath" &&
-        (child as SilkscreenPath).pcb_silkscreen_path_id
-      ) {
-        db.pcb_silkscreen_path.delete(
-          (child as SilkscreenPath).pcb_silkscreen_path_id!,
-        )
-      }
-      if (
-        child.componentName === "FabricationNotePath" &&
-        (child as FabricationNotePath).fabrication_note_path_id
-      ) {
-        db.pcb_fabrication_note_path.delete(
-          (child as FabricationNotePath).fabrication_note_path_id!,
-        )
-      }
-      if (
-        child.componentName === "FabricationNoteText" &&
-        (child as FabricationNoteText).pcb_fabrication_note_text_id
-      ) {
-        db.pcb_fabrication_note_text.delete(
-          (child as FabricationNoteText).pcb_fabrication_note_text_id!,
-        )
-      }
+  private _replacePolarityArtwork(newArtwork: PrimitiveComponent[]): void {
+    const db = this.root!.db as unknown as Record<
+      string,
+      { delete: (id: string) => void }
+    >
+    const oldArtwork = (this._stringFootprintChildren ?? []).filter(
+      isPolarityArtwork,
+    )
+    for (const child of oldArtwork) {
+      const [table, idField] = POLARITY_ARTWORK_DB_IDS[child.componentName]!
+      const id = (child as unknown as Record<string, string | undefined>)[
+        idField
+      ]
+      if (id) db[table]!.delete(id)
       this.remove(child)
     }
-    this._stringFootprintChildren = (
-      this._stringFootprintChildren ?? []
-    ).filter(
-      (child) => !POLARITY_ARTWORK_COMPONENT_NAMES.has(child.componentName),
-    )
 
-    this.addAll(newArtworkComponents)
-    this._stringFootprintChildren.push(...newArtworkComponents)
+    this._stringFootprintChildren = [
+      ...(this._stringFootprintChildren ?? []).filter(
+        (child) => !isPolarityArtwork(child),
+      ),
+      ...newArtwork,
+    ]
+    this.addAll(newArtwork)
+  }
 
+  private _applyImpliedPin1Polarity(targetPin1Polarity: Pin1Polarity): void {
+    const previousPinLabels = this._impliedFootprintPinLabels
+    this._impliedFootprintPinLabels =
+      PIN_LABELS_BY_PIN1_POLARITY[targetPin1Polarity]
+
+    const newArtwork = this._buildPolarityArtwork()
+    if (!newArtwork) {
+      this._impliedFootprintPinLabels = previousPinLabels
+      return
+    }
+
+    this._relabelPolarityPorts()
+    this._replacePolarityArtwork(newArtwork)
     this.getSubcircuit()?._markDirty("OptimizeSelectorCache")
+  }
+
+  /** The single pin-1 polarity every supplier candidate agrees on, if any. */
+  private async _inferSupplierPin1Polarity(
+    partsEngine: PartsEngine,
+  ): Promise<Pin1Polarity | null> {
+    const supplierPartNumbers =
+      await this._resolveSupplierPartNumbers(partsEngine)
+    const supplierCandidates = getSupplierPartCandidates(supplierPartNumbers)
+
+    const inferredPolarities = new Set<Pin1Polarity>()
+    for (const supplierPartCandidate of supplierCandidates) {
+      const analysis = await analyzeSupplierPartOrientation({
+        component: this,
+        partsEngine,
+        supplierPartCandidate,
+      }).catch(() => null)
+      if (analysis?.pin1Polarity) inferredPolarities.add(analysis.pin1Polarity)
+    }
+
+    if (inferredPolarities.size !== 1) return null
+    return [...inferredPolarities][0]!
   }
 
   doInitialFetchPartFootprint(): void {
     if (this._hasStartedSupplierPolarityResolution) return
-    const resolutionContext = this._shouldAdoptSupplierPin1Polarity()
-    if (!resolutionContext) return
+    const context = this._getSupplierPolarityContext()
+    if (!context) return
 
     this._hasStartedSupplierPolarityResolution = true
-    const { partsEngine, baseFootprint } = resolutionContext
+    const { partsEngine, baseFootprint } = context
     this._queueAsyncEffect("resolve-led-supplier-polarity", async () => {
       // Yield one microtask so Cycle 1 finishes SourceRender and populates source_component_id.
       await Promise.resolve()
       if (!this.root) return
-      const supplierPartNumbers =
-        await this._resolveSupplierPartNumbers(partsEngine)
-      if (!supplierPartNumbers) return
 
-      const supplierCandidates = getSupplierPartCandidates(supplierPartNumbers)
-      if (supplierCandidates.length === 0) return
+      // A slow parts engine must not stall the whole board's layout; on timeout
+      // keep the default polarity and let the mismatch check report it.
+      const targetPin1Polarity = await withTimeout(
+        this._inferSupplierPin1Polarity(partsEngine),
+        Led.supplierPolarityTimeoutMs,
+      )
+      if (!targetPin1Polarity) return
 
-      const inferredPolarities = new Set<Pin1Polarity>()
-      for (const supplierPartCandidate of supplierCandidates) {
-        try {
-          const { pin1Polarity } = await analyzeSupplierPartOrientation({
-            component: this,
-            partsEngine,
-            supplierPartCandidate,
-          })
-          if (pin1Polarity) inferredPolarities.add(pin1Polarity)
-        } catch {}
-      }
-
-      if (inferredPolarities.size !== 1) return
-      const [targetPin1Polarity] = inferredPolarities
-      const defaultTerminals = resolveDiodeFootprint(baseFootprint, {
+      const { positivePin } = resolveDiodeFootprint(baseFootprint, {
         name: this.name ?? "Led",
       })
-      const defaultPin1Polarity: Pin1Polarity =
-        defaultTerminals.positivePin === 1 ? "anode" : "cathode"
+      const defaultPin1Polarity = positivePin === 1 ? "anode" : "cathode"
       if (targetPin1Polarity === defaultPin1Polarity) return
-      this._applyImpliedPin1Polarity(targetPin1Polarity!)
+      this._applyImpliedPin1Polarity(targetPin1Polarity)
     })
   }
 

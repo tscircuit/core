@@ -239,7 +239,7 @@ const setComponentPartOrientationAnalysis = (
   component: NormalComponent<any, any>,
   cacheKey: SupplierPartOrientationCacheKey,
   analysis: SupplierPartOrientationAnalysis,
-) => {
+): void => {
   let map = resolvedComponentPartOrientationAnalyses.get(component)
   if (!map) {
     map = new Map()
