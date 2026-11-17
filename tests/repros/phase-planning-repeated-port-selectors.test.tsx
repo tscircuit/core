@@ -12,7 +12,11 @@ test("phase planning resolves shared bus selectors and pin aliases", async () =>
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={48} height={29} autorouter="local" schematicDisabled>
-      <pcbnotetext text="16-bit memory bus: two routing phases" pcbY={12} fontSize={1} />
+      <pcbnotetext
+        text="16-bit memory bus: two routing phases"
+        pcbY={12}
+        fontSize={1}
+      />
       {["U1", "U2"].map((name, index) => (
         <chip
           key={name}
@@ -48,17 +52,25 @@ test("phase planning resolves shared bus selectors and pin aliases", async () =>
         <group key={byte}>
           <bus
             name={`BYTE${byte}`}
-            connections={bitIndexes.slice(byte * 8, byte * 8 + 8).map((bit) => `D${bit}`)}
+            connections={bitIndexes
+              .slice(byte * 8, byte * 8 + 8)
+              .map((bit) => `D${bit}`)}
             routingPhaseIndex={byte}
           />
           <autoroutingphase
             name={`BYTE${byte}`}
             phaseIndex={byte}
-            connections={bitIndexes.slice(byte * 8, byte * 8 + 8).map((bit) => `.U1 > .DQ${bit}`)}
+            connections={bitIndexes
+              .slice(byte * 8, byte * 8 + 8)
+              .map((bit) => `.U1 > .DQ${bit}`)}
           />
         </group>
       ))}
-      <pcbnotetext text="Phase 0: DQ0-7   |   Phase 1: DQ8-15" pcbY={-10} fontSize={0.8} />
+      <pcbnotetext
+        text="Phase 0: DQ0-7   |   Phase 1: DQ8-15"
+        pcbY={-10}
+        fontSize={0.8}
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -68,10 +80,12 @@ test("phase planning resolves shared bus selectors and pin aliases", async () =>
   try {
     const plans = Group_getRoutingPhasePlans(board)
     selectorSearches = selectOne.mock.calls.length
-    expect(plans.map((plan) => plan.traces.map((trace) => trace.name))).toEqual([
-      bitIndexes.slice(0, 8).map((bit) => `D${bit}`),
-      bitIndexes.slice(8).map((bit) => `D${bit}`),
-    ])
+    expect(plans.map((plan) => plan.traces.map((trace) => trace.name))).toEqual(
+      [
+        bitIndexes.slice(0, 8).map((bit) => `D${bit}`),
+        bitIndexes.slice(8).map((bit) => `D${bit}`),
+      ],
+    )
   } finally {
     selectOne.mockRestore()
   }
@@ -83,5 +97,7 @@ test("phase planning resolves shared bus selectors and pin aliases", async () =>
     />,
   )
   await circuit.renderUntilSettled()
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path, { showDebugObjects: false })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    showDebugObjects: false,
+  })
 })
