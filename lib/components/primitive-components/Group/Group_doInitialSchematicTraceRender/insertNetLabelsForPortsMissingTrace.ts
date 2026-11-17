@@ -180,6 +180,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
       anchor_position?: { x: number; y: number } | null
     }) => {
       if (!nl.anchor_position) return false
+      const dxSelf = nl.anchor_position.x - schPort.center.x
+      const dySelf = nl.anchor_position.y - schPort.center.y
+      if (
+        dxSelf * dxSelf + dySelf * dySelf <
+        SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
+      ) {
+        return false
+      }
       return connectedSourcePortIdsForKey.some((sourcePortId) => {
         if (sourcePortId === srcPortId) return false
         const otherSchPortId = Array.from(
@@ -188,6 +196,14 @@ export const insertNetLabelsForPortsMissingTrace = ({
         if (!otherSchPortId) return false
         const otherSchPort = db.schematic_port.get(otherSchPortId)
         if (!otherSchPort?.center) return false
+        const dxPorts = otherSchPort.center.x - schPort.center.x
+        const dyPorts = otherSchPort.center.y - schPort.center.y
+        if (
+          dxPorts * dxPorts + dyPorts * dyPorts <
+          SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
+        ) {
+          return false
+        }
         const dx = nl.anchor_position!.x - otherSchPort.center.x
         const dy = nl.anchor_position!.y - otherSchPort.center.y
         return (
