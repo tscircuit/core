@@ -1,0 +1,105 @@
+# Snapshot updates remain on the ephemeral runner; no board data or SVG artifacts are exported.
+name: Check fixed-short scoring with existing test plans
+on:
+  push:
+    branches: [artifacts/ddr-fixed-short-checks]
+permissions:
+  contents: read
+jobs:
+  test:
+    # Native routing snapshots were recorded on Ubuntu 24.04. Keep the OS
+    # stable instead of changing geometry when ubuntu-latest moves forward.
+    runs-on: ubuntu-24.04
+    # The full-board bugreport107 repro takes about sixteen minutes locally.
+    # Allow its thirty-minute test budget plus checkout and installation.
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 9558375f0c827db5424cb4a21255ecccd4c3811d
+          persist-credentials: false
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.4.3
+
+      - name: Install dependencies
+        run: bun install
+
+      # Replaces `npm install -g @tscircuit/bun-test-plan && bun-test-plan`.
+      # Distributes by recorded runtime instead of alphabetical round-robin,
+      # and drops a global npm install from every shard.
+      - name: Generate balanced test plans
+        run: bun scripts/generate-balanced-test-plan.ts
+        env:
+          NODE_COUNT: 9
+
+      - name: Run tests for node ${{ matrix.node }}
+        run: |
+          test_plan=".bun-test-plan/testplans/testplan${{ matrix.node }}.txt"
+          if [ ! -f "$test_plan" ]; then
+            echo "Test plan not found: $test_plan"
+            exit 1
+          fi
+
+          mapfile -t test_files < "$test_plan"
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "No test files found in: $test_plan"
+            exit 1
+          fi
+
+          echo "Running ${#test_files[@]} test files from $test_plan"
+          # Full-board sample 2 and STMP157 mesh validation can exceed five minutes.
+          # Keep their assertions and allow the same runner-variance budget.
+          regular_tests=()
+          slow_tests=()
+          full_board_tests=()
+          for test_file in "${test_files[@]}"; do
+            if [ "$test_file" = "tests/repro/pipeline9-orangecrab-via-roundoff.test.ts" ]; then
+              bun install --ignore-scripts --cwd tests/repro/orangecrab-via-roundoff
+            fi
+            case "$test_file" in
+              tests/bugs/bugreport107-board-1726.test.ts|tests/bugs/bugreport110/motherboard-power-full-route.test.ts)
+                full_board_tests+=("$test_file")
+                ;;
+              tests/features/pipeline9-srj18-sample2-bounded-regional-drc.test.ts|tests/features/pipeline9-a13-srj18-sample2-drc.test.ts|tests/features/pipeline9-srj18-sample2-via-simplification.test.ts|tests/repro/pipeline9-stmp157-mesh-memory.test.ts|tests/repro/pipeline10-artix7-ddr-bus-length-matching.test.ts)
+                slow_tests+=("$test_file")
+                ;;
+              *) regular_tests+=("$test_file") ;;
+            esac
+          done
+          run_group() {
+            local seconds="$1"
+            shift
+            set +e
+            BUN_UPDATE_SNAPSHOTS=1 bun test "$@" --timeout "$seconds" > unit.private.log 2>&1
+            local test_status="$?"
+            set -e
+            python3 - <<'PY'
+          import pathlib,re
+          text=pathlib.Path('unit.private.log').read_text()
+          current=''
+          for line in text.splitlines():
+              if re.match(r'^tests/.*\\.test\\.[tj]sx?:$',line): current=line
+              if '(fail)' in line: print('Failed test file: '+current)
+              if re.match(r'^\\s*\\d+ (pass|fail|expect)',line): print(line)
+          PY
+            return "$test_status"
+          }
+          if [ "${#regular_tests[@]}" -gt 0 ]; then
+            run_group 300000 "${regular_tests[@]}"
+          fi
+          if [ "${#slow_tests[@]}" -gt 0 ]; then
+            run_group 600000 "${slow_tests[@]}"
+          fi
+          if [ "${#full_board_tests[@]}" -gt 0 ]; then
+            run_group 1800000 "${full_board_tests[@]}"
+          fi
