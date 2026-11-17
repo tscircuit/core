@@ -1,0 +1,49 @@
+# Counts only. Circuit files and search geometry stay on the runner.
+name: Check native A13 DM1 escape availability
+on:
+  push:
+    branches: [artifacts/a13-dm1-escape-availability]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: cbd27db2e7de5697d24fc63928c43fb92d3431d1
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-a13
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - run: bun install --ignore-scripts
+      - name: Ask the existing physical fanout search for DM1 escape sites
+        run: |
+          cat > inspect.private.ts <<'TS'
+          import {readFileSync} from 'node:fs'
+          import {expandedSignalSites} from './lib/expanded-signal-sites'
+          const input=JSON.parse(readFileSync('captured/head/a13/phase-5-start.srj.json','utf8'))
+          input.minViaPadDiameter=input.minViaDiameter
+          const connection=input.connections.find(c=>c.name==='source_net_77')
+          for(const allowPadEdgeSites of [false,true]) {
+            const sites=expandedSignalSites({input:{...input,connections:[connection]},connection,targetLayer:'inner1',allowPadEdgeSites})
+            let next=sites.next()
+            let steps=0
+            while(!next.done){steps++;next=sites.next()}
+            console.log('DM1_ESCAPE_AVAILABILITY_JSON='+JSON.stringify({allowPadEdgeSites,ramSiteCount:next.value[0].length,resistorSiteCount:next.value[1].length,steps}))
+          }
+          TS
+          timeout 600s bun inspect.private.ts > inspection.private.log 2>&1
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path('inspection.private.log').read_text().splitlines():
+              if line.startswith('DM1_ESCAPE_AVAILABILITY_JSON='):print(line)
+          PY
