@@ -1,0 +1,92 @@
+# Aggregate native-H3 results only. No board files are exported.
+name: Test reserving sole future terminal escape sites
+on:
+  push:
+    branches: [artifacts/h3-sole-escape-probe]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: cbd27db2e7de5697d24fc63928c43fb92d3431d1
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 9c5b0276bfb018b66053bfe0c5c07572978f7432
+          path: head
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: bfd2f2e7686a48148dd8fb9f7504276ad36c16a8
+          path: repro
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: |
+          (cd base && bun install --ignore-scripts)
+          (cd head && bun install --ignore-scripts)
+          cp repro/tests/fixtures/pad-escapes.ts base/tests/fixtures/pad-escapes.private.ts
+          cp repro/tests/fixtures/pad-escapes.ts head/tests/fixtures/pad-escapes.private.ts
+          cp repro/tests/fixtures/expect-connected-and-clear.ts base/tests/fixtures/expect-connected-and-clear.private.ts
+          cp repro/tests/fixtures/expect-connected-and-clear.ts head/tests/fixtures/expect-connected-and-clear.private.ts
+      - name: Fresh native before and after solves with all 76 later terminals checked
+        run: |
+          cat > inspect.private.ts <<'TS'
+          import {readFileSync} from 'node:fs'
+          import {gunzipSync} from 'node:zlib'
+          import {createHash} from 'node:crypto'
+          import {BusLanesPipelineSolver} from './lib'
+          import {expandedSignalSites} from './lib/expanded-signal-sites'
+          import {signalDogboneOptions} from './lib/repair-bus-dogbones'
+          import {getPadEscape} from './tests/fixtures/pad-escapes.private'
+          import {expectConnectedAndClear} from './tests/fixtures/expect-connected-and-clear.private'
+          const fixture=JSON.parse(gunzipSync(readFileSync('../repro/tests/fixtures/h3-pending-pad-escapes/input.json.gz')).toString())
+          const input=fixture.byte1Request
+          const original=JSON.stringify(input)
+          const pending=fixture.pendingConnections.flatMap(connection=>connection.pointsToConnect.map((point,end)=>({connection,end})))
+          const count=(request)=>pending.map(({connection,end})=>getPadEscape({input:request,connection,end,viaTargetLayer:'bottom'}))
+          const before=count(input)
+          const started=performance.now()
+          let reservations=[]
+          if(process.env.VARIANT==='head') {
+            for(const connection of fixture.pendingConnections) {
+              for(const [end,point] of connection.pointsToConnect.entries()) {
+                const selected={...connection,pointsToConnect:[point,...connection.pointsToConnect.filter((_,index)=>index!==end)]}
+                const search=expandedSignalSites({input:{...input,connections:[selected]},connection:selected,targetLayer:'bottom',allowPadEdgeSites:false})
+                let next=search.next()
+                while(!next.done)next=search.next()
+                const sites=next.value[0]
+                if(sites.length===1&&sites[0].escape.route.some(p=>p.route_type==='via'))reservations.push({...sites[0].escape,pcb_trace_id:'reserved_'+point.pcb_port_id})
+              }
+            }
+          }
+          const reservedIds=new Set(reservations.map(trace=>trace.pcb_trace_id))
+          const solver=new BusLanesPipelineSolver({...input,traces:[...(input.traces??[]),...reservations]})
+          while(!solver.solved&&!solver.failed&&performance.now()-started<600000)solver.step()
+          const seconds=(performance.now()-started)/1000
+          if(!solver.solved||solver.failed){console.log('H3_NATIVE_FALLBACK_JSON='+JSON.stringify({variant:process.env.VARIANT,solved:false,seconds,phase:solver.phase}));process.exit(0)}
+          const traces=solver.getOutput().traces.filter(trace=>!reservedIds.has(trace.pcb_trace_id))
+          const after=count({...input,traces})
+          let valid=true
+          try{expectConnectedAndClear({request:input,connections:[...fixture.fixedConnections,...input.connections],traces})}catch{valid=false}
+          console.log('H3_NATIVE_FALLBACK_JSON='+JSON.stringify({variant:process.env.VARIANT,solved:true,valid,seconds,completeRoutes:traces.length,reservationCount:reservations.length,inputUnchanged:original===JSON.stringify(input),fixedTracesPreserved:JSON.stringify(traces.slice(0,input.traces.length))===JSON.stringify(input.traces),initiallyBlocked:before.filter(s=>!s).length,newlyBlocked:after.filter((s,i)=>before[i]&&!s).length,remainingViaEscapes:after.filter(s=>s==='via_site').length,copperHash:createHash('sha256').update(JSON.stringify(traces)).digest('hex')}))
+          TS
+          cp inspect.private.ts base/inspect.private.ts
+          cp inspect.private.ts head/inspect.private.ts
+          for variant in base head; do
+            (cd "$variant" && VARIANT="$variant" timeout 650s bun inspect.private.ts > inspection.private.log 2>&1)
+            VARIANT="$variant" python3 - <<'PY'
+          import pathlib,os
+          for line in pathlib.Path(os.environ['VARIANT']+'/inspection.private.log').read_text().splitlines():
+              if line.startswith('H3_NATIVE_FALLBACK_JSON='):print(line)
+          PY
+          done
