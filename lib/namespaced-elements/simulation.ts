@@ -3,6 +3,7 @@ import type {
   PcbTransientChannelSimulationProps,
   PcbDriverReceiverChannelProps,
   SimulationIbisModelProps,
+  SimulationEyeDiagramProps,
   PcbReturnCurrentSimulationProps,
 } from "@tscircuit/props"
 import { createNamespacedElement } from "./create-namespaced-element"
@@ -16,6 +17,9 @@ export const simulation = {
     createNamespacedElement<PcbDriverReceiverChannelProps>(
       "simulation.pcbdriverreceiverchannel",
     ),
+  eyediagram: createNamespacedElement<SimulationEyeDiagramProps>(
+    "simulation.eyediagram",
+  ),
   ibismodel: createNamespacedElement<SimulationIbisModelProps>(
     "simulation.ibismodel",
   ),
