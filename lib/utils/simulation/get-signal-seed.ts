@@ -36,6 +36,7 @@ export function getSignalSeed(
   signal: PcbDriverReceiverChannel,
 ) {
   const { pattern, seed, name } = signal._parsedProps
+  if (seed !== undefined) return seed
   const order = getPrbsOrder(pattern)
   if (!order) return undefined
   const period = 2 ** order - 1
@@ -57,7 +58,6 @@ export function getSignalSeed(
     throw new Error(
       `${pattern} supports at most ${period} distinct signal names on a board.`,
     )
-  if (seed !== undefined) return seed
   let steps = Math.floor((names.indexOf(name) * period) / names.length)
   const tap = getPrbsTap(order)
   // Exponentiate the linear PRBS transition so PRBS31 phases take O(n² log P),
