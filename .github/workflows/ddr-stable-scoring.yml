@@ -13,11 +13,11 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
+        variant: [endcaps, validation]
         circuit: [a13, butterstick]
         include:
           - {variant: endcaps, ref: 6bc2f5ad26d09f59aad8ccb705a6f5ea496603a5}
           - {variant: validation, ref: 9ddd7a2c8c13374620afe51e922902349eee11b3}
-          - {variant: combined, ref: 8f26bb0890aab03c9fc18c0e6f0d9e05d5bce981}
     steps:
       - uses: actions/checkout@v4
         with:
