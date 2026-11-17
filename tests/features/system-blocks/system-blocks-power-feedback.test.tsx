@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { systemblock } from "lib"
 import { convertCircuitJsonToSystemSvg } from "circuit-to-svg"
 import { assertSystemGeometry } from "./assert-system-geometry"
+import { assertSystemWireSmoothness } from "./assert-system-wire-smoothness"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("TSX power fanout, parallel interfaces, cycles, and self-loops", () => {
@@ -56,12 +57,13 @@ test("TSX power fanout, parallel interfaces, cycles, and self-loops", () => {
   expect(watchdog.label_anchor_center!.x).toBeGreaterThan(
     Math.max(...watchdog.route.map((point) => point.x)),
   )
-  for (const connection of circuit.db.system_block_connection.list()) {
-    expect(
-      connection.route.some((point) => point.cubic_bezier_control_points),
-    ).toBe(true)
+  // Straight wires need no fillet; every wire that bends must be rounded.
+  assertSystemWireSmoothness(circuit.db.system_block_connection.list(), {
+    minRadius: 1.5,
+    maxBends: 4,
+  })
+  for (const connection of circuit.db.system_block_connection.list())
     expect(connection.is_signal).toBe(!connection.is_power)
-  }
   return expect(
     convertCircuitJsonToSystemSvg(circuit.getCircuitJson(), { width: 800 }),
   ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
