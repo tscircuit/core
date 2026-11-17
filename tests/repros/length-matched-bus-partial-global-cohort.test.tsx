@@ -82,7 +82,7 @@ test("complete fanout escapes cannot hide a split matched global bus", async () 
       <pcbnotetext
         pcbY={-7.2}
         fontSize={0.35}
-        text="0.1mm DATA limit stops FIRST_DATA; no routes committed."
+        text="0.1mm DATA limit stops FIRST_DATA; saved TX escapes remain."
       />
     </board>,
   )
@@ -93,7 +93,21 @@ test("complete fanout escapes cannot hide a split matched global bus", async () 
   expect(phaseInputs[0].connections).toHaveLength(2)
   expect(phaseInputs[0].buses?.[0].connectionNames).toHaveLength(2)
   expect(phaseOutputs[0].traces).toHaveLength(2)
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(circuit.db.pcb_trace.list()).toMatchObject([
+    {
+      route: [
+        { route_type: "wire", x: -10, y: 3, layer: "top" },
+        { route_type: "wire", x: -7, y: 3, layer: "top" },
+      ],
+    },
+    {
+      route: [
+        { route_type: "wire", x: -10, y: -3, layer: "top" },
+        { route_type: "wire", x: -7, y: -3, layer: "top" },
+      ],
+    },
+  ])
   expect(circuit.db.source_bus.list()[0].source_trace_ids).toHaveLength(2)
   expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
     {

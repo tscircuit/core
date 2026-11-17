@@ -229,14 +229,16 @@ export class IsolatedCircuit {
         const resume = () => {
           clearTimeout(timer)
           this.removeListener("asyncEffect:end", resume)
+          this.removeListener("autorouting:end", resume)
           resolve()
         }
         const timer = setTimeout(resume, 100)
         this.on("asyncEffect:end", resume)
+        this.on("autorouting:end", resume)
         if (this._hasUnrenderedUpdatesFromAsyncEffects) resume()
       })
       // A running effect blocks its dependent phases. Revisit the tree when
-      // an effect completes, rather than traversing every component on idle polls.
+      // an effect completes or publishes an accepted routing phase.
       if (
         this._hasUnrenderedUpdatesFromAsyncEffects ||
         this._asyncEffectPhaseById.size === 0
@@ -355,6 +357,8 @@ export class IsolatedCircuit {
       this._registerAsyncEffectStart(args[0] as { asyncEffectId?: string })
     } else if (event === "asyncEffect:end") {
       this._registerAsyncEffectEnd(args[0] as { asyncEffectId?: string })
+    } else if (event === "autorouting:end") {
+      this._hasUnrenderedUpdatesFromAsyncEffects = true
     }
     if (!this._eventListeners[event]) return
     for (const listener of this._eventListeners[event]) {
