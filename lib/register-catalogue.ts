@@ -30,6 +30,7 @@ extendCatalogue({
   "assembly.cadassembly": Components.AssemblySubassembly,
   "simulation.pcbtransientchannelsimulation":
     Components.PcbTransientChannelSimulation,
+  "simulation.pcbdriverreceiverchannel": Components.PcbDriverReceiverChannel,
   "simulation.ibismodel": Components.SimulationIbisModel,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
