@@ -1,6 +1,6 @@
 # Aggregate metrics only. Native board JSON and SVG stay on the ephemeral runners.
 # The sole uploaded artifact is compiled autorouter source, with no board inputs.
-name: Native DDR boundary-to-boundary corner comparison
+name: Native DDR actual boundary geometry comparison
 on:
   push:
     branches: [artifacts/ddr-3230-boundary-corners]
@@ -133,7 +133,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          ref: 2b4555ec58aae9d78dfbf0c01b5d178fcd184263
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -169,7 +169,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          ref: 2b4555ec58aae9d78dfbf0c01b5d178fcd184263
           path: same-machine-controller
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -181,7 +181,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          ref: 2b4555ec58aae9d78dfbf0c01b5d178fcd184263
           path: same-machine-pr
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
