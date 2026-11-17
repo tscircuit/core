@@ -14,6 +14,7 @@ import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromC
 import { getDiodePortOptions } from "lib/utils/footprints/get-diode-port-options"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveDiodeFootprint } from "lib/utils/footprints/resolve-diode-footprint"
+import { withTimeout } from "lib/utils/with-timeout"
 import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import {
@@ -48,14 +49,6 @@ const POLARITY_ARTWORK_ELEMENT_TYPES = new Set(
 )
 const isPolarityArtwork = (child: PrimitiveComponent): boolean =>
   child.componentName in POLARITY_ARTWORK_DB_IDS
-
-const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> => {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), ms)
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
 
 export class Led extends NormalComponent<
   typeof ledProps,
@@ -303,6 +296,7 @@ export class Led extends NormalComponent<
       const targetPin1Polarity = await withTimeout(
         this._inferSupplierPin1Polarity(partsEngine),
         Led.supplierPolarityTimeoutMs,
+        null,
       )
       if (!targetPin1Polarity) return
 
