@@ -28,6 +28,7 @@ extendCatalogue({
   "assembly.screen": Components.AssemblyScreen,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,
+  "simulation.ibismodel": Components.SimulationIbisModel,
   Bug: Components.Chip,
   "enclosure.cutoutaperture": Components.EnclosureCutoutAperture,
   "enclosure.fdm.box": Components.EnclosureFdmBox,

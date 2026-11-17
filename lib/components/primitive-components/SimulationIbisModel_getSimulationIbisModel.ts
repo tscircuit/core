@@ -1,13 +1,23 @@
 import type { SimulationIbisModelInput } from "circuit-json"
 import type { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { resolveExternalSimulationPort } from "lib/utils/simulation/resolveExternalSimulation"
-import type { IbisModel } from "./IbisModel"
+import type { SimulationIbisModel } from "./SimulationIbisModel"
 
 type SourcePortId =
   SimulationIbisModelInput["ibis_pin_name_to_source_port_id"][string]
 
-export function IbisModel_getSimulationIbisModel(
-  declaration: IbisModel,
+function resolveIbisPin(
+  declaration: SimulationIbisModel,
+  label: string,
+): SourcePortId {
+  return resolveExternalSimulationPort({
+    declaration,
+    selector: `${declaration._parsedProps.componentRef} > .${label}`,
+  }).source_port_id!
+}
+
+export function SimulationIbisModel_getSimulationIbisModel(
+  declaration: SimulationIbisModel,
 ): SimulationIbisModelInput {
   const props = declaration._parsedProps
   const chips = declaration
@@ -38,10 +48,7 @@ export function IbisModel_getSimulationIbisModel(
   const pinMap = Object.fromEntries(
     Object.entries(props.ibisPinNameToPortLabel).map(([pin, label]) => [
       pin,
-      resolveExternalSimulationPort({
-        declaration,
-        selector: `${props.componentRef} > .${label}`,
-      }).source_port_id!,
+      resolveIbisPin(declaration, label),
     ]),
   )
   const ibisPinNameBySourcePortId = new Map<SourcePortId, string>()
@@ -58,11 +65,10 @@ export function IbisModel_getSimulationIbisModel(
     ...Object.keys(props.ibisPinNameToReferencePortLabels ?? {}),
     ...Object.keys(props.ibisPinNameToModelName ?? {}),
   ]) {
-    if (!Object.hasOwn(props.ibisPinNameToPortLabel, pin)) {
-      throw new Error(
-        `IBIS pin "${pin}" is referenced but not present in ibisPinNameToPortLabel.`,
-      )
-    }
+    if (Object.hasOwn(pinMap, pin)) continue
+    throw new Error(
+      `IBIS pin "${pin}" is referenced but not present in ibisPinNameToPortLabel.`,
+    )
   }
   let references: SimulationIbisModelInput["ibis_pin_name_to_reference_source_port_ids"]
   if (props.ibisPinNameToReferencePortLabels) {
@@ -71,7 +77,7 @@ export function IbisModel_getSimulationIbisModel(
       props.ibisPinNameToReferencePortLabels,
     )) {
       references[pin] = {}
-      for (const [role, sourcePortIdField] of [
+      for (const [role, field] of [
         ["pullup", "pullup_reference_source_port_id"],
         ["pulldown", "pulldown_reference_source_port_id"],
         ["powerClamp", "power_clamp_reference_source_port_id"],
@@ -80,10 +86,7 @@ export function IbisModel_getSimulationIbisModel(
       ] as const) {
         const label = pinReferences[role]
         if (label === undefined) continue
-        references[pin][sourcePortIdField] = resolveExternalSimulationPort({
-          declaration,
-          selector: `${props.componentRef} > .${label}`,
-        }).source_port_id!
+        references[pin][field] = resolveIbisPin(declaration, label)
       }
     }
   }
