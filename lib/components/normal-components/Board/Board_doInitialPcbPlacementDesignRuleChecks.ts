@@ -50,7 +50,12 @@ export const Board_doInitialPcbPlacementDesignRuleChecks = (board: Board) => {
       const relevantPlacementCheckResults = consolidatePcbOverlapErrors(
         subcircuitCircuitJson,
         placementCheckResults.filter(
-          (result) => !board._isExpectedCastellatedHoleDrcError(result),
+          (result) =>
+            !board._isExpectedCastellatedHoleDrcError(result) &&
+            !board._isExpectedSameComponentCutoutDrcError(
+              result,
+              subcircuitCircuitJson,
+            ),
         ),
       )
       const newPlacementDiagnostics = relevantPlacementCheckResults.filter(
