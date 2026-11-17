@@ -242,6 +242,10 @@ export function Group_doInitialPcbCalcPlacementResolution(
 function shouldResolvePlacementInCalcPhase(
   component: NormalComponent,
 ): boolean {
+  if (component.isGroup || component.isSubcircuit) {
+    return false
+  }
+
   const parsedProps = component._parsedProps as any
   const rawProps = component.props as any
 
@@ -306,7 +310,13 @@ function getComponentRefsForCalcPlacement(
 
   const addRefs = (rawValue: unknown) => {
     if (typeof rawValue !== "string") return
-    const identifiers = extractCalcIdentifiers(rawValue)
+    let identifiers: string[]
+    try {
+      identifiers = extractCalcIdentifiers(rawValue)
+    } catch {
+      // Malformed calc() expressions are already reported by ValidatePcbCoordinates
+      return
+    }
     for (const identifier of identifiers) {
       if (!identifier.startsWith("board.")) {
         refs.add(identifier)
