@@ -336,6 +336,50 @@ export function Group_getRoutingPhasePlans(
       resolvePhaseConnectionTraces(group, traces, phaseProps),
     ]),
   )
+  // A complete saved path's port identifies its electrical net. A routed
+  // branch can span several source traces, so implicit path selectors must
+  // retain all same-net demands belonging to this phase. Explicit selections,
+  // fanout escapes and traces assigned to other phases keep their ownership.
+  for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
+    if (
+      phaseProps.pcbTracePaths === undefined ||
+      phaseProps.connection !== undefined ||
+      phaseProps.connections !== undefined ||
+      phaseProps.reroute
+    )
+      continue
+    const config =
+      phaseProps.autorouter !== undefined
+        ? getPresetAutoroutingConfig(
+            phaseProps.autorouter,
+            group.root?.platform,
+          )
+        : group._getAutorouterConfig()
+    if (["fanout", "single_layer_fanout"].includes(config.preset ?? ""))
+      continue
+    const selected = selectedTracesByPhaseIndex.get(phaseIndex)!
+    const netKeys = new Set(
+      [...selected]
+        .map((trace) => trace.subcircuit_connectivity_map_key)
+        .filter((key) => key !== null),
+    )
+    for (const trace of traces) {
+      const assignedPhase = getTraceRoutingPhaseIndex(trace, buses)
+      if (assignedPhase !== null && assignedPhase !== phaseIndex) continue
+      if (
+        [...selectedTracesByPhaseIndex].some(
+          ([otherPhase, otherSelected]) =>
+            otherPhase !== phaseIndex && otherSelected.has(trace),
+        )
+      )
+        continue
+      if (
+        trace.subcircuit_connectivity_map_key !== null &&
+        netKeys.has(trace.subcircuit_connectivity_map_key)
+      )
+        selected.add(trace)
+    }
+  }
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const routeRemaining = group.getInheritedProperty("routeRemaining") !== false
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)

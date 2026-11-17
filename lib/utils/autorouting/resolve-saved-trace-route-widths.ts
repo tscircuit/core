@@ -1,4 +1,8 @@
 import type { PcbTraceRoutePoint } from "circuit-json"
+import type { fanoutTracePath } from "@tscircuit/props"
+import type { z } from "zod"
+
+export type SavedPcbRoute = z.output<typeof fanoutTracePath>["route"]
 
 /**
  * Resolve saved path point widths into outgoing Circuit JSON wire tapers.
@@ -51,4 +55,56 @@ export function getSavedTraceViaContactWidths(
     fromWidth: before ?? after ?? fallbackWidth,
     toWidth: after ?? before ?? fallbackWidth,
   }
+}
+
+/**
+ * Add explicit wire contacts on both sides of saved vias without moving copper.
+ * Points retain the caller's PCB frame, in mm (+X right, +Y up, +Z above;
+ * right-handed).
+ */
+export function getSavedTraceRouteWithViaContacts(
+  route: SavedPcbRoute,
+  fallbackWidth: number,
+): SavedPcbRoute {
+  const withContacts = route.flatMap((point, index): SavedPcbRoute => {
+    if (point.route_type !== "via") return [point]
+    const { fromWidth, toWidth } = getSavedTraceViaContactWidths(
+      route,
+      index,
+      fallbackWidth,
+    )
+    return [
+      {
+        route_type: "wire",
+        x: point.x,
+        y: point.y,
+        layer: point.from_layer,
+        width: fromWidth,
+      },
+      point,
+      {
+        route_type: "wire",
+        x: point.x,
+        y: point.y,
+        layer: point.to_layer,
+        width: toWidth,
+      },
+    ]
+  })
+  const last = route.at(-1)!
+  if (last.route_type === "via") {
+    const { toWidth } = getSavedTraceViaContactWidths(
+      route,
+      route.length - 1,
+      fallbackWidth,
+    )
+    withContacts.push({
+      route_type: "wire",
+      x: last.x,
+      y: last.y,
+      layer: last.to_layer,
+      width: toWidth,
+    })
+  }
+  return withContacts
 }

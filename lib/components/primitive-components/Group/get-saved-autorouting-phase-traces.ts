@@ -1,6 +1,6 @@
 import {
   resolveSavedTraceRouteWidths,
-  getSavedTraceViaContactWidths,
+  getSavedTraceRouteWithViaContacts,
 } from "lib/utils/autorouting/resolve-saved-trace-route-widths"
 import { applyToPoint } from "transformation-matrix"
 import { fanoutTracePath } from "@tscircuit/props"
@@ -19,6 +19,7 @@ import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Port } from "../Port"
 import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
 import type { RootCircuit } from "lib/RootCircuit"
+import { getCompleteSavedAutoroutingPhaseTraces } from "./get-complete-saved-autorouting-phase-traces"
 
 const touchesEndpoint = (
   {
@@ -45,7 +46,8 @@ const touchesEndpoint = (
  * Physical board layers do not change with placement.
  *
  * Each connection selects a port, as with fanout pcbTracePaths. Complete paths
- * join connection endpoints. In fanout phases, a free end replaces its source
+ * form a physical connectivity graph joining every required endpoint. In fanout
+ * phases, a free end replaces its source
  * endpoint for the follow-up router. Saved copper is fixed by the phase runner.
  */
 export function getSavedAutoroutingPhaseTraces(
@@ -79,6 +81,15 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   input: SimpleRouteJson
   isFanout: boolean
 }): PrecomputedRoutingResult {
+  if (!isFanout) {
+    return getCompleteSavedAutoroutingPhaseTraces({
+      group,
+      subcircuit,
+      paths,
+      phaseIndex,
+      input,
+    })
+  }
   const boardLayers = getViaBoardLayers(input.layerCount)
   const remainingPointsByConnection = new Map(
     input.connections.map((connection) => [
@@ -172,11 +183,6 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
       )
     }
     const pcbTraceId = `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`
-    if (endIndex < 0 && !isFanout) {
-      throw new Error(
-        `Saved phase path "${path.connection}" must end at another connection endpoint; use autorouter="fanout" for saved escapes`,
-      )
-    }
     if (endIndex >= 0) {
       remainingPoints.splice(startIndex, 1)
     } else {
@@ -189,45 +195,10 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     }
     // Explicit wire contacts expose via connectivity to Circuit JSON consumers
     // without moving any saved copper. Interior vias need contacts too.
-    const routeWithViaContacts = route.flatMap((point, index): typeof route => {
-      if (point.route_type !== "via") return [point]
-      const { fromWidth, toWidth } = getSavedTraceViaContactWidths(
-        route,
-        index,
-        input.minTraceWidth,
-      )
-      return [
-        {
-          route_type: "wire",
-          x: point.x,
-          y: point.y,
-          layer: point.from_layer,
-          width: fromWidth,
-        },
-        point,
-        {
-          route_type: "wire",
-          x: point.x,
-          y: point.y,
-          layer: point.to_layer,
-          width: toWidth,
-        },
-      ]
-    })
-    if (last.route_type === "via") {
-      const { toWidth } = getSavedTraceViaContactWidths(
-        route,
-        route.length - 1,
-        input.minTraceWidth,
-      )
-      routeWithViaContacts.push({
-        route_type: "wire",
-        x: last.x,
-        y: last.y,
-        layer: last.to_layer,
-        width: toWidth,
-      })
-    }
+    const routeWithViaContacts = getSavedTraceRouteWithViaContacts(
+      route,
+      input.minTraceWidth,
+    )
     coveredConnections.add(connection)
     traces.push({
       type: "pcb_trace",
@@ -246,11 +217,6 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
         `pcbTracePaths must cover every connection in the phase; missing: ${connection.name}`,
       )
     }
-    if (!isFanout && remainingPointsByConnection.get(connection)!.length > 1) {
-      throw new Error(
-        `Saved phase paths for "${connection.name}" must connect every endpoint; use autorouter="fanout" for saved escapes`,
-      )
-    }
   }
   const remainingConnections = input.connections.flatMap((connection) => {
     const pointsToConnect = remainingPointsByConnection.get(connection)!
@@ -263,25 +229,23 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   )
   return {
     traces,
-    outputSimpleRouteJson: isFanout
-      ? {
-          ...input,
-          connections: remainingConnections,
-          buses: input.buses
-            ?.map((bus) => ({
-              ...bus,
-              connectionNames: bus.connectionNames.filter((name) =>
-                remainingConnectionNames.has(name),
-              ),
-            }))
-            .filter((bus) => bus.connectionNames.length > 0),
-          differentialPairs: input.differentialPairs?.filter((pair) =>
-            pair.connectionNames.every((name) =>
-              remainingConnectionNames.has(name),
-            ),
+    outputSimpleRouteJson: {
+      ...input,
+      connections: remainingConnections,
+      buses: input.buses
+        ?.map((bus) => ({
+          ...bus,
+          connectionNames: bus.connectionNames.filter((name) =>
+            remainingConnectionNames.has(name),
           ),
-          traces: [...(input.traces ?? []), ...traces],
-        }
-      : undefined,
+        }))
+        .filter((bus) => bus.connectionNames.length > 0),
+      differentialPairs: input.differentialPairs?.filter((pair) =>
+        pair.connectionNames.every((name) =>
+          remainingConnectionNames.has(name),
+        ),
+      ),
+      traces: [...(input.traces ?? []), ...traces],
+    },
   }
 }

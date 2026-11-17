@@ -12,6 +12,7 @@ import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
 import { getSavedAutoroutingPhaseTracesFromPaths } from "./get-saved-autorouting-phase-traces"
+import { getSavedRouteConnectivity } from "lib/utils/autorouting/get-saved-route-connectivity"
 
 export type AutoroutingPhasePcbTracePaths = {
   pcbTracePaths?: z.output<typeof fanoutTracePath>[]
@@ -76,6 +77,54 @@ export function getAutoroutingPhasePcbTracePaths({
       }
       return trace.route as WireOrVia[]
     })
+    if (!isFanout) {
+      const savedRoutes = routes.map((route) =>
+        fanoutTracePath.shape.route.parse(route),
+      )
+      const graph = getSavedRouteConnectivity({
+        routes: savedRoutes,
+        input,
+        pcbPorts: [...portsByPcbPortId.values()].map(
+          (port) => port.root!.db.pcb_port.get(port.pcb_port_id!)!,
+        ),
+      })
+      const paths = savedRoutes.map((route, routeIndex) => {
+        const candidates = graph
+          .connectedTerminals(routeIndex)
+          .filter(
+            (terminal) =>
+              terminal.point.pcb_port_id &&
+              portsByPcbPortId.has(terminal.point.pcb_port_id),
+          )
+        const terminal =
+          candidates.find(({ point }) => touches(route[0]!, point)) ??
+          candidates[0]
+        if (!terminal)
+          throw new Error(
+            "Saved routes must connect to a PCB port in this phase",
+          )
+        const port = portsByPcbPortId.get(terminal.point.pcb_port_id!)!
+        const selector = terminal.point.port_selector ?? port.getPortSelector()
+        if (subcircuit.selectOne(selector, { type: "port" }) !== port)
+          throw new Error(`PCB port selector is not unique: ${selector}`)
+        const transform = inverse(getSavedPcbTracePathTransform(group, port))
+        return {
+          connection: selector,
+          route: route.map((point) => ({
+            ...point,
+            ...applyToPoint(transform, point),
+          })),
+        }
+      })
+      getSavedAutoroutingPhaseTracesFromPaths({
+        group,
+        subcircuit,
+        paths,
+        input,
+        isFanout,
+      })
+      return { pcbTracePaths: paths }
+    }
     const endpoints = routes.map((route) => [
       terminals.filter((terminal) => touches(route[0]!, terminal)),
       terminals.filter((terminal) => touches(route.at(-1)!, terminal, true)),
