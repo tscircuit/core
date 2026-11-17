@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - {variant: base, ref: 51dcb6ebad33c0310cf5179c56969d60f98a4548}
-          - {variant: head, ref: 3c569cd3527c427d40c05fa23ca8afa31297283c}
+          - {variant: head, ref: 2133eabb478cd3094ed0dc7800788cb7eb62ff7b}
     name: Repair04 checks ${{ matrix.variant }}
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,18 @@ jobs:
           if path.exists():
               root=ET.parse(path).getroot()
               cases=root.findall('.//testcase')
+              print('JUNIT_ROOT_METADATA='+json.dumps({'attributes':root.attrib,'suites':[suite.attrib for suite in root.findall('.//testsuite') if int(suite.get('errors','0')) or int(suite.get('failures','0'))]}))
               print('EXISTING_TEST_METRICS_JSON='+json.dumps({'cases':len(cases),'failed':[{'file':case.get('file') or case.get('classname'),'name':case.get('name')} for case in cases if case.find('failure') is not None or case.find('error') is not None]}))
+          PY
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path('tests.private.log').read_text().splitlines():
+              text=line.strip()
+              words=text.split()
+              if text.startswith('(fail)') or (words and words[0].isdigit() and any(word in text for word in [' pass',' fail',' errors',' skip'])):
+                  print(text)
+              if 'Cannot find module' in text or 'ModuleNotFound' in text or 'TimeoutError' in text:
+                  print(text[:240])
           PY
           exit "$status"
       - name: Type checking
