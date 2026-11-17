@@ -2,7 +2,7 @@ import { simulationIbisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel as SimulationIbisModelRecord } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { SimulationIbisModel_getSimulationIbisModel } from "./SimulationIbisModel_getSimulationIbisModel"
-import type { PcbTransientChannelSimulation } from "./PcbTransientChannelSimulation"
+import { getSignalIntegrityBlocks } from "lib/utils/simulation/get-signal-integrity-blocks"
 
 type SimulationIbisModelId =
   SimulationIbisModelRecord["simulation_ibis_model_id"]
@@ -25,18 +25,8 @@ export class SimulationIbisModel extends PrimitiveComponent<
   }
 
   private markIbisBindingsDirty(): void {
-    // Simulations in this subcircuit and in any enclosing subcircuit can bind
-    // this model's pins.
-    for (let node = this.parent; node; node = node.parent) {
-      if (!node.isSubcircuit) continue
-      const subcircuit = node.getSubcircuit()
-      for (const simulation of subcircuit.selectAll<PcbTransientChannelSimulation>(
-        "pcbtransientchannelsimulation",
-      )) {
-        if (simulation.getSubcircuit() !== subcircuit) continue
-        simulation._markDirty("PcbSimulationRender")
-      }
-    }
+    for (const simulation of getSignalIntegrityBlocks(this._getBoard()))
+      simulation._markDirty("PcbSimulationRender")
   }
 
   doInitialSimulationRender(): void {
