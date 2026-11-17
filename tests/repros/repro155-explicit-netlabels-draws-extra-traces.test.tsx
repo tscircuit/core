@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import "tests/fixtures/extend-expect-circuit-snapshot"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import { sel } from "tscircuit"
+import { sel } from "lib"
 
 test("explicit netlabels draw extra schematic traces", async () => {
   const { circuit } = getTestFixture()

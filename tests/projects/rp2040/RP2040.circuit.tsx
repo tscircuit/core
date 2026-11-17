@@ -1,4 +1,4 @@
-import { sel } from "tscircuit"
+import { sel } from "lib"
 
 export const RP2040_SECTION = "rp2040"
 

@@ -1,36 +1,22 @@
-import { ibisModelProps } from "@tscircuit/props"
+import { simulationIbisModelProps } from "@tscircuit/props"
 import type { SimulationIbisModel } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { IbisModel_getSimulationIbisModel } from "./IbisModel_getSimulationIbisModel"
-import type { AnalogTransientSimulation } from "./AnalogTransientSimulation"
 
 type SimulationIbisModelId = SimulationIbisModel["simulation_ibis_model_id"]
 
 /** Declares a vendor source and physical pin mapping without fetching model files. */
-export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
+export class IbisModel extends PrimitiveComponent<
+  typeof simulationIbisModelProps
+> {
   simulation_ibis_model_id: SimulationIbisModelId | null = null
 
   get config() {
-    return { componentName: "IbisModel", zodProps: ibisModelProps }
+    return { componentName: "IbisModel", zodProps: simulationIbisModelProps }
   }
 
   onPropsChange(): void {
     this._markDirty("SimulationRender")
-  }
-
-  private markIbisBindingsDirty(): void {
-    // Simulations in this subcircuit and in any enclosing subcircuit can bind
-    // this model's pins.
-    for (let node = this.parent; node; node = node.parent) {
-      if (!node.isSubcircuit) continue
-      const subcircuit = node.getSubcircuit()
-      for (const simulation of subcircuit.selectAll<AnalogTransientSimulation>(
-        "analogtransientsimulation",
-      )) {
-        if (simulation.getSubcircuit() === subcircuit)
-          simulation._markDirty("SimulationSpiceEngineRender")
-      }
-    }
   }
 
   doInitialSimulationRender(): void {
@@ -47,7 +33,6 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
         this.root!.db.simulation_ibis_model.insert(
           model,
         ).simulation_ibis_model_id
-    this.markIbisBindingsDirty()
   }
 
   updateSimulationRender(): void {
@@ -58,6 +43,5 @@ export class IbisModel extends PrimitiveComponent<typeof ibisModelProps> {
     if (this.simulation_ibis_model_id)
       this.root!.db.simulation_ibis_model.delete(this.simulation_ibis_model_id)
     this.simulation_ibis_model_id = null
-    this.markIbisBindingsDirty()
   }
 }
