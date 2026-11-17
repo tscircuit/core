@@ -1,105 +1,69 @@
-name: Benchmark wire-crossing regional guard
+name: Native immutable DDR copper routing
 on:
   push:
     branches: [artifacts/ddr-stable-fixed-copper-experiment]
 permissions:
   contents: read
-concurrency:
-  group: stable-ddr-scoring
-  cancel-in-progress: true
 jobs:
   benchmark:
-    name: Wire guard ${{ matrix.circuit }}
+    name: Immutable ${{ matrix.variant }} ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 25
+    timeout-minutes: 30
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
-        variant: [regional-contact]
         circuit: [a13, butterstick]
+        include:
+          - {variant: endcaps, ref: 6bc2f5ad26d09f59aad8ccb705a6f5ea496603a5}
+          - {variant: validation, ref: 9ddd7a2c8c13374620afe51e922902349eee11b3}
+          - {variant: combined, ref: 8f26bb0890aab03c9fc18c0e6f0d9e05d5bce981}
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
           repository: tscircuit/tscircuit-autorouter
-          ref: dd3383cfcb5c82960952bd44e6e1dc1d95a7f84f
-          path: router
+          ref: ${{ matrix.ref }}
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: published-ddr-3209-${{ matrix.circuit }}
-          run-id: 44050671541
+          name: exact-fixed-copper-${{ matrix.circuit }}
+          run-id: 44090035121
           github-token: ${{ github.token }}
           path: captured
-      - name: Install and apply isolated scoring experiment
+      - run: bun install --ignore-scripts
+      - name: Solve the actual Core request
         env:
-          VARIANT: ${{ matrix.variant }}
           CIRCUIT: ${{ matrix.circuit }}
-        run: |
-          cd router
-          bun install --frozen-lockfile --ignore-scripts
-          python3 - <<'PY'
-          import os,pathlib
-          variant=os.environ['VARIANT']
-          root=pathlib.Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph')
-          if variant=='exact-reference':
-              p=root/'Pipeline9JointDrcRepairSolver.ts'
-              source=p.read_text()
-              old='      viaInPadDrcEvaluator: drcEvaluator,\n'
-              assert source.count(old)==1
-              p.write_text(source.replace(old,old+'      referenceDrcEvaluator: cachedReferenceDrcEvaluator,\n'))
-          elif variant=='regional-contact':
-              p=root/'Pipeline9BoundedRegionalRepairSolver.ts'
-              source=p.read_text()
-              source=source.replace('import type { DrcEvaluator } from "high-density-repair03/lib"','import { type DrcEvaluator, TraceContactGuard, type SimpleRouteJson as RepairSimpleRouteJson } from "high-density-repair03/lib"')
-              source=source.replace('  private reservedChildMaximum = 0','  private reservedChildMaximum = 0\n  private readonly traceContactGuard: TraceContactGuard')
-              source=source.replace('    this.params = params','    this.params = params\n    this.traceContactGuard = new TraceContactGuard({\n      srj: params.originalSrj as RepairSimpleRouteJson,\n      inputRoutes: params.routes,\n      connMap: params.connMap,\n    })')
-              old='      }).length > 0\n    ) {'
-              assert source.count(old)==1
-              source=source.replace(old,'      }).length > 0 ||\n      this.traceContactGuard.getNewWireContactPairs(candidateRoutes).length > 0\n    ) {')
-              p.write_text(source)
-          else:
-              raise Exception(variant)
-          print('SCORING_VARIANT='+variant)
-          PY
-      - name: Solve the same native Core remaining request
-        env:
           VARIANT: ${{ matrix.variant }}
-          CIRCUIT: ${{ matrix.circuit }}
         run: |
-          cat > router/experiment.private.ts <<'TS'
+          cat > immutable.private.ts <<'TS'
           import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
-          import {createHash} from 'node:crypto'
           import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
-          import {getBugReportSnapshotSvg} from './lib/testing/getBugReportSnapshotSvg'
           import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
           const circuit=process.env.CIRCUIT!
           const phase=circuit==='a13'?5:3
-          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
-          mkdirSync('../results',{recursive:true})
+          const input=JSON.parse(readFileSync('captured/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
           const started=performance.now()
           const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
           solver.solve()
-          if(!solver.solved||solver.failed)throw Error(solver.error??'A13 did not solve')
-          const traces=solver.getOutputSimplifiedPcbTraces()
-          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:traces,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
-          const drc=evaluateRelaxedDrc(drcInput)
-          const summary={circuit:process.env.CIRCUIT,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,traces:traces.length,errors:drc.errors,stats:solver.pipeline9JointDrcRepairSolver?.stats,timeSpent:solver.timeSpentOnPhase,copperHash:createHash('sha256').update(JSON.stringify(traces)).digest('hex')}
-          console.log('SCORING_EXPERIMENT_JSON='+JSON.stringify(summary))
-          writeFileSync('../results/summary.json',JSON.stringify(summary,null,2))
-          writeFileSync('../results/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
-          writeFileSync('../results/board.svg',getBugReportSnapshotSvg(drcInput))
+          const summary={circuit,variant:process.env.VARIANT,solved:solver.solved,failed:solver.failed,error:solver.error,seconds:(performance.now()-started)/1000,stats:solver.highDensityRouteSolver?.stats,timeSpent:solver.timeSpentOnPhase}
+          mkdirSync('results',{recursive:true})
+          if(solver.solved) {
+            const output=solver.getOutputSimplifiedPcbTraces()
+            const drc=evaluateRelaxedDrc({inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:output,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}})
+            Object.assign(summary,{traces:output.length,drcErrors:drc.errors})
+            writeFileSync('results/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
+          }
+          console.log('IMMUTABLE_EXPERIMENT_JSON='+JSON.stringify(summary))
+          writeFileSync('results/result.json',JSON.stringify(summary,null,2))
           TS
-          cd router
-          bun experiment.private.ts
+          bun immutable.private.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: wire-guard-${{ matrix.circuit }}
+          name: immutable-${{ matrix.variant }}-${{ matrix.circuit }}
           path: results/
           retention-days: 14
