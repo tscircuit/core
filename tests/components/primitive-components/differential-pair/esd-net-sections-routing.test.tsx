@@ -1,3 +1,4 @@
+import { captureActualConsumerBusInput } from "tests/fixtures/capture-actual-consumer-bus-input"
 import { expect, test } from "bun:test"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -24,8 +25,9 @@ const pads = () => (
   </footprint>
 )
 
-test("routes net-attached CPU and connector pair sections through the same ESD pads", async () => {
+test.only("routes net-attached CPU and connector pair sections through the same ESD pads", async () => {
   const { circuit } = getTestFixture()
+  captureActualConsumerBusInput(circuit, "esd_net_sections")
   const asyncErrors: string[] = []
   circuit.on("asyncEffect:end", (event) => {
     if (event.error) asyncErrors.push(String(event.error))

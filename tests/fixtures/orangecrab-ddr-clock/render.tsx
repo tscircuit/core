@@ -1,3 +1,4 @@
+import type { RootCircuit } from "lib/RootCircuit"
 import type { PcbSvgOptions } from "circuit-to-svg"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -14,8 +15,12 @@ export const orangeCrabClockSnapshotOptions: PcbSvgOptions = {
   showDebugObjects: false,
 }
 
-export async function renderOrangeCrabDdrClock(routeTerminations = false) {
+export async function renderOrangeCrabDdrClock(
+  routeTerminations = false,
+  observeCircuit?: (circuit: RootCircuit) => void,
+) {
   const { circuit } = getTestFixture()
+  observeCircuit?.(circuit)
   const inputs: SimpleRouteJson[] = []
   const outputs: SimpleRouteJson[] = []
   const asyncErrors: string[] = []

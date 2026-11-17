@@ -1,0 +1,27 @@
+name: Capture pending consumer inputs
+
+on:
+  push:
+    branches: [diagnostics/consumer-phase-inputs]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install
+      - name: Capture the three unchanged routing regressions
+        run: >-
+          bun test --only --timeout 120000
+          tests/components/primitive-components/differential-pair/esd-net-sections-routing.test.tsx
+          tests/components/primitive-components/differential-pair/named-trunks-with-termination-taps.test.tsx
+          tests/repros/repro-orangecrab-ddr-clock-termination.test.tsx

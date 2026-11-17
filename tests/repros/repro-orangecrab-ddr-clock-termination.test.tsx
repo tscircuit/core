@@ -1,3 +1,4 @@
+import { captureActualConsumerBusInput } from "tests/fixtures/capture-actual-consumer-bus-input"
 import { expect, test } from "bun:test"
 import {
   checkDifferentNetViaSpacing,
@@ -14,9 +15,11 @@ import {
   renderOrangeCrabDdrClock,
 } from "tests/fixtures/orangecrab-ddr-clock/render"
 
-test("routes the real OrangeCrab clock trunks and termination branches", async (): Promise<void> => {
+test.only("routes the real OrangeCrab clock trunks and termination branches", async (): Promise<void> => {
   const { circuit, inputs, outputs, asyncErrors, phaseNames } =
-    await renderOrangeCrabDdrClock(true)
+    await renderOrangeCrabDdrClock(true, (circuit) =>
+      captureActualConsumerBusInput(circuit, "orangecrab_clock"),
+    )
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(387)
   expect(
     circuit.db.pcb_smtpad.list().filter((pad) => pad.shape === "circle"),
