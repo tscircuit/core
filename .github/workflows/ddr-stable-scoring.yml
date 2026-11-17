@@ -16,7 +16,7 @@ jobs:
         variant: [envelope]
         circuit: [a13, butterstick]
         include:
-          - {variant: envelope, ref: 032a4e2a8dd676ca5ae9dac356afc195b315f723}
+          - {variant: envelope, ref: 2c89d64cf4d4eb4bfe7eb30e78d4e2c940e992b5}
     steps:
       - uses: actions/checkout@v4
         with:
