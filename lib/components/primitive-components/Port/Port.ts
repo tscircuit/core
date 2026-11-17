@@ -220,7 +220,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     }
 
     const customSymbol = parentNormalComponent?.children.find(
-      (c) => c.componentName === "Symbol",
+      (c: PrimitiveComponent) => c.componentName === "Symbol",
     )
     if (customSymbol && customSymbol.selectAll("port").length > 0) {
       const hasCustomSymbolRepresentation =
