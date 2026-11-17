@@ -19,13 +19,14 @@ function getEndpointModelNames(endpoint: SignalEndpointProps) {
   return [model, model]
 }
 
-function validateEndpoints(
-  signal: PcbDriverReceiverChannel,
-  role: "driver" | "receiver",
-  selectors: string[],
-  ports: SourcePortId[],
-  block: PcbTransientChannelSimulation,
-) {
+function validateEndpoints(args: {
+  signal: PcbDriverReceiverChannel
+  role: "driver" | "receiver"
+  selectors: string[]
+  ports: SourcePortId[]
+  block: PcbTransientChannelSimulation
+}) {
+  const { signal, role, selectors, ports, block } = args
   const models = block.root!.db.simulation_ibis_model.list()
   for (const [leg, portId] of ports.entries()) {
     if (
@@ -44,12 +45,13 @@ function validateEndpoints(
     )
 }
 
-export function resolveSignalEndpoint(
-  block: PcbTransientChannelSimulation,
-  signal: PcbDriverReceiverChannel,
-  endpoint: SignalEndpointProps,
-  role: "driver" | "receiver",
-) {
+export function resolveSignalEndpoint(args: {
+  block: PcbTransientChannelSimulation
+  signal: PcbDriverReceiverChannel
+  endpoint: SignalEndpointProps
+  role: "driver" | "receiver"
+}) {
+  const { block, signal, endpoint, role } = args
   const selectors = getEndpointSelectors(endpoint)
   const ports = selectors.map(
     (selector) =>
@@ -57,7 +59,7 @@ export function resolveSignalEndpoint(
         .source_port_id!,
   )
   const [firstModelName, secondModelName] = getEndpointModelNames(endpoint)
-  validateEndpoints(signal, role, selectors, ports, block)
+  validateEndpoints({ signal, role, selectors, ports, block })
   if (ports.length === 1) {
     return {
       ports,

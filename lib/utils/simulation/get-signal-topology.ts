@@ -9,12 +9,13 @@ import type { PcbTransientChannelSimulation } from "lib/components/primitive-com
 type SourceComponentId = SourceComponentBase["source_component_id"]
 type SourcePortId = SourcePort["source_port_id"]
 
-function isPowerPort(
-  port: SourcePort,
-  copper: ConnectivityMap,
-  powerPorts: Set<SourcePortId>,
-  powerNets: SourceNet[],
-) {
+function isPowerPort(args: {
+  port: SourcePort
+  copper: ConnectivityMap
+  powerPorts: Set<SourcePortId>
+  powerNets: SourceNet[]
+}) {
+  const { port, copper, powerPorts, powerNets } = args
   return (
     powerPorts.has(port.source_port_id) ||
     [...powerPorts].some((powerPortId) =>
@@ -121,7 +122,9 @@ export function getSignalTopology(block: PcbTransientChannelSimulation) {
     if (
       !isPassive ||
       terminals.length !== 2 ||
-      terminals.some((port) => isPowerPort(port, copper, powerPorts, powerNets))
+      terminals.some((port) =>
+        isPowerPort({ port, copper, powerPorts, powerNets }),
+      )
     )
       continue
     const terminalIds = terminals.map((port) => port.source_port_id)

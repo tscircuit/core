@@ -62,21 +62,22 @@ function getReceiverRefs(
   return [receiverRef]
 }
 
-function resolveSignal(
-  block: PcbTransientChannelSimulation,
-  signal: PcbDriverReceiverChannel,
-  topology: ReturnType<typeof getSignalTopology>,
-) {
+function resolveSignal(args: {
+  block: PcbTransientChannelSimulation
+  signal: PcbDriverReceiverChannel
+  topology: ReturnType<typeof getSignalTopology>
+}) {
+  const { block, signal, topology } = args
   const signalProps = signal._parsedProps
   const { seed } = signalProps
-  const driver = resolveSignalEndpoint(
+  const driver = resolveSignalEndpoint({
     block,
     signal,
-    signalProps.driverRef,
-    "driver",
-  )
-  const receivers = getReceiverRefs(signalProps.receiverRef).map((receiver) =>
-    resolveSignalEndpoint(block, signal, receiver, "receiver"),
+    endpoint: signalProps.driverRef,
+    role: "driver",
+  })
+  const receivers = getReceiverRefs(signalProps.receiverRef).map((endpoint) =>
+    resolveSignalEndpoint({ block, signal, endpoint, role: "receiver" }),
   )
   if (
     receivers.some((receiver) => receiver.ports.length !== driver.ports.length)
@@ -92,12 +93,14 @@ function resolveSignal(
   return { signal, driver, receivers, ports, seed }
 }
 
-function validateCopperRouting(
-  block: PcbTransientChannelSimulation,
-  { signal, driver, ports }: ReturnType<typeof resolveSignal>,
-  topology: ReturnType<typeof getSignalTopology>,
-) {
+function validateCopperRouting(args: {
+  block: PcbTransientChannelSimulation
+  resolvedSignal: ReturnType<typeof resolveSignal>
+  topology: ReturnType<typeof getSignalTopology>
+}) {
+  const { block, resolvedSignal, topology } = args
   if (block._parsedProps.allowUnroutedTraces) return
+  const { signal, driver, ports } = resolvedSignal
   const unroutedPort = ports.find(
     (port) =>
       port.source_component_id &&
@@ -111,11 +114,12 @@ function validateCopperRouting(
   )
 }
 
-function validateSignals(
-  block: PcbTransientChannelSimulation,
-  resolved: ReturnType<typeof resolveSignal>[],
-  topology: ReturnType<typeof getSignalTopology>,
-) {
+function validateSignals(args: {
+  block: PcbTransientChannelSimulation
+  resolved: ReturnType<typeof resolveSignal>[]
+  topology: ReturnType<typeof getSignalTopology>
+}) {
+  const { block, resolved, topology } = args
   const { db } = block.root!
   const props = block._parsedProps
   for (let i = 0; i < resolved.length; i++) {
@@ -150,7 +154,7 @@ function validateSignals(
           )
       }
     }
-    validateCopperRouting(block, resolved[i], topology)
+    validateCopperRouting({ block, resolvedSignal: resolved[i], topology })
     for (const port of ports) {
       if (!port.source_component_id) continue
       const component = db.source_component.get(port.source_component_id)!
@@ -188,8 +192,8 @@ export function PcbTransientChannelSimulation_doInitialPcbSimulationRender(
   const signals = getBlockSignals(block)
   const topology = getSignalTopology(block)
   const resolved = signals.map((signal) =>
-    resolveSignal(block, signal, topology),
+    resolveSignal({ block, signal, topology }),
   )
-  validateSignals(block, resolved, topology)
+  validateSignals({ block, resolved, topology })
   writeSignalIntegrityRecords(block, resolved)
 }
