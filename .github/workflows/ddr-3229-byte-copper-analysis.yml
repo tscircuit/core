@@ -72,7 +72,7 @@ jobs:
           p=Path("head/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx")
           s=p.read_text()
           anchor='    if (event.simpleRouteJson) writeFileSync'
-          insertion='    if (eventName === "autorouting:start" && phase === "remaining") { save(); process.exit(0) }\\n'
+          insertion='    if (eventName === "autorouting:start" && phase === "remaining") { save(); process.exit(0) }\n'
           if s.count(anchor)!=1:raise Exception('Worker boundary moved')
           p.write_text(s.replace(anchor,insertion+anchor))
           PY
