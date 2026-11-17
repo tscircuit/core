@@ -1,0 +1,180 @@
+name: Isolated pending-access DDR evidence
+
+on:
+  push:
+    branches: [diagnostics/pending-consumer-isolated-ddr]
+
+permissions:
+  contents: read
+
+env:
+  CONTROLLER_SHA: eec574170499b2e7ce9b23c4c72b5f2ea7fc2dad
+  BASE_SHA: 17bd033553ee56ea1130315d2910fd810abf928f
+  HEAD_SHA: 06173cbee3caa7421227d568efeea22102e4c3a7
+
+jobs:
+  benchmark:
+    if: github.repository == 'tscircuit/core'
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 150
+    steps:
+      - name: Check out the disposable evidence commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: capture
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Check out the pinned canonical controller
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.CONTROLLER_SHA }}
+          path: tooling
+          persist-credentials: false
+      - name: Check out the released 0.0.61 control
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.BASE_SHA }}
+          path: base
+          persist-credentials: false
+      - name: Check out the exact final Core consumer
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.HEAD_SHA }}
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.3'
+      - name: Install the unchanged dependency sets
+        run: |
+          cd tooling
+          bun install --ignore-scripts
+          cd ../base
+          bun install --ignore-scripts
+          cd ../head
+          bun install --ignore-scripts
+      - name: Verify exact source, fixtures and installed executables
+        id: verified
+        run: bun capture/scripts/diagnostics/pending-consumer-isolated-ddr.ts before "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/results"
+      - name: Run the unmodified canonical all-ten comparison
+        id: comparison
+        run: |
+          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          base_status=0
+          head_status=0
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" --timeout 300 || base_status=$?
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" --timeout 300 || head_status=$?
+          bun "$benchmark/report.ts" results/head/results.json results/base/results.json results/comparison.md
+          cat results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
+          printf 'base_exit=%s\nhead_exit=%s\n' "$base_status" "$head_status" >> "$GITHUB_OUTPUT"
+          if (( base_status != 0 || head_status != 0 )); then exit 1; fi
+      - name: Verify immutable inputs and render only saved actual copper
+        if: always() && steps.verified.outcome == 'success'
+        run: bun capture/scripts/diagnostics/pending-consumer-isolated-ddr.ts after "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/results"
+      - name: Upload all results, partial evidence and checksums
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: isolated-core-ddr-${{ env.HEAD_SHA }}
+          path: results/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Record the actual artifact receipt
+        if: always() && steps.artifact.outputs.artifact-id != ''
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          ARTIFACT_SHA256: ${{ steps.artifact.outputs.artifact-digest }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          receipt = {"kind": "isolated-core-ddr", "artifactId": os.environ["ARTIFACT_ID"], "url": os.environ["ARTIFACT_URL"], "zipSha256": os.environ["ARTIFACT_SHA256"], "head": os.environ["HEAD_SHA"], "base": os.environ["BASE_SHA"]}
+          print("ISOLATED_DDR_ARTIFACT_RECEIPT " + json.dumps(receipt))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("\nFixed released-0.0.61 control; feature PR base unchanged. Artifact receipt: `" + json.dumps(receipt) + "`\n")
+          PY
+
+  native-h3-proof:
+    if: github.repository == 'tscircuit/core'
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: capture
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.CONTROLLER_SHA }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.BASE_SHA }}
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.HEAD_SHA }}
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.3'
+      - name: Install the same unchanged dependency sets
+        run: |
+          cd tooling
+          bun install --ignore-scripts
+          cd ../base
+          bun install --ignore-scripts
+          cd ../head
+          bun install --ignore-scripts
+      - name: Verify exact source and native inputs
+        id: verified
+        run: bun capture/scripts/diagnostics/pending-consumer-isolated-ddr.ts before "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/native-h3"
+      - name: Run the existing native TSX proof through its real later phases
+        id: native
+        run: |
+          proof="$GITHUB_WORKSPACE/head/scripts/diagnostics/run-native-h3-routing-access.ts"
+          comparison="$GITHUB_WORKSPACE/head/scripts/diagnostics/compare-native-h3-routing-inputs.ts"
+          baseline_status=0
+          consumer_status=0
+          input_status=0
+          bun "$proof" "$GITHUB_WORKSPACE/base" "$GITHUB_WORKSPACE/native-h3/baseline" baseline || baseline_status=$?
+          bun "$proof" "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/native-h3/consumer" consumer || consumer_status=$?
+          bun --tsconfig-override "$GITHUB_WORKSPACE/head/tsconfig.json" "$comparison" "$GITHUB_WORKSPACE/native-h3/baseline" "$GITHUB_WORKSPACE/native-h3/consumer" || input_status=$?
+          printf 'baseline_exit=%s\nconsumer_exit=%s\ninput_comparison_exit=%s\n' "$baseline_status" "$consumer_status" "$input_status" > native-h3/exit-statuses.txt
+          cat native-h3/exit-statuses.txt
+          cat native-h3/exit-statuses.txt >> "$GITHUB_STEP_SUMMARY"
+          if (( baseline_status != 0 || consumer_status != 0 || input_status != 0 )); then exit 1; fi
+      - name: Verify source preservation and index all native proof artifacts
+        if: always() && steps.verified.outcome == 'success'
+        run: bun capture/scripts/diagnostics/pending-consumer-isolated-ddr.ts native-after "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/native-h3"
+      - name: Upload actual native H3 proof and explicitly incomplete views
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-h3-pending-proof-${{ env.HEAD_SHA }}
+          path: native-h3/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Record the actual native artifact receipt
+        if: always() && steps.artifact.outputs.artifact-id != ''
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          ARTIFACT_SHA256: ${{ steps.artifact.outputs.artifact-digest }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          receipt = {"kind": "native-h3-pending-proof", "artifactId": os.environ["ARTIFACT_ID"], "url": os.environ["ARTIFACT_URL"], "zipSha256": os.environ["ARTIFACT_SHA256"], "head": os.environ["HEAD_SHA"], "base": os.environ["BASE_SHA"]}
+          print("ISOLATED_DDR_ARTIFACT_RECEIPT " + json.dumps(receipt))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("\nNative H3 baseline may be incomplete; keep the existing comparator's failure fields. Artifact receipt: `" + json.dumps(receipt) + "`\n")
+          PY

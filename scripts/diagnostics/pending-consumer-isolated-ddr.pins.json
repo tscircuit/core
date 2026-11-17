@@ -1,0 +1,42 @@
+{
+  "schema": "pending-consumer-isolated-ddr/v1",
+  "repository": "tscircuit/core",
+  "diagnosticBranch": "diagnostics/pending-consumer-isolated-ddr",
+  "controllerCommit": "eec574170499b2e7ce9b23c4c72b5f2ea7fc2dad",
+  "benchmarkCommit": "24dc44c166d4258c3538f8b1f66953f1b6f58690",
+  "benchmarkFingerprint": "sha256:07241d5c0af855ba5f7d0516d9cdbf62e00f0a048df8c7011165bcce697eb73c",
+  "baselineCommit": "17bd033553ee56ea1130315d2910fd810abf928f",
+  "consumerCommit": "06173cbee3caa7421227d568efeea22102e4c3a7",
+  "consumerBusCommit": "e6c3ffd80983afc3bfc570b7d9618a0001e79505",
+  "consumerBusUrl": "https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@e6c3ffd",
+  "consumerBusExecutableSha256": "93138890b90e1c9aa4ffed7873265354d2e1b3f5e203209186991a1922e54170",
+  "baselineBusUrl": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.61.tgz",
+  "baselineBusExecutableSha256": "fa6390c904b678f7dc197d0d3d671a28e273554369f8475457ea86374c5dad8c",
+  "bunVersion": "1.4.3",
+  "renderBudgetSeconds": 300,
+  "expectedDependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.61",
+    "@tscircuit/capacity-autorouter": "0.0.1109",
+    "@tscircuit/fanout-solver": "0.0.84",
+    "@tscircuit/checks": "0.0.279",
+    "@tscircuit/props": "0.0.732",
+    "circuit-json": "0.0.551"
+  },
+  "expectedControllerDependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.61",
+    "@tscircuit/capacity-autorouter": "0.0.1119",
+    "@tscircuit/fanout-solver": "0.0.84",
+    "@tscircuit/checks": "0.0.279",
+    "@tscircuit/props": "0.0.732",
+    "circuit-json": "0.0.551"
+  },
+  "expectedCircuitIds": [
+    "h3", "a64", "stmp157", "orangecrab", "a13", "h616",
+    "butterstick", "glider", "imx6", "icepi"
+  ],
+  "diagnosticFiles": [
+    ".github/workflows/pending-consumer-isolated-ddr.yml",
+    "scripts/diagnostics/pending-consumer-isolated-ddr.ts",
+    "scripts/diagnostics/pending-consumer-isolated-ddr.pins.json"
+  ]
+}
