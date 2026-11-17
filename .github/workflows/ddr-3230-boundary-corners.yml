@@ -1,0 +1,211 @@
+# Aggregate metrics only. Native board JSON and SVG stay on the ephemeral runners.
+# The sole uploaded artifact is compiled autorouter source, with no board inputs.
+name: Native DDR boundary-to-boundary corner comparison
+on:
+  push:
+    branches: [artifacts/ddr-3230-boundary-corners]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    needs: build
+    name: Native ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - { circuit: h3, order: "base head" }
+          - { circuit: a64, order: "head base" }
+          - { circuit: stmp157, order: "base head" }
+          - { circuit: orangecrab, order: "head base" }
+          - { circuit: a13, order: "base head" }
+          - { circuit: h616, order: "head base" }
+          - { circuit: butterstick, order: "base head" }
+          - { circuit: glider, order: "head base" }
+          - { circuit: imx6, order: "base head" }
+          - { circuit: icepi, order: "head base" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: latest-ddr-corner-router-package
+          path: router-build
+      - name: Install published packages with only the autorouter overridden
+        run: |
+          cat > prepare-published.private.mjs <<'JS'
+          import {mkdir,writeFile,readFile,symlink} from 'node:fs/promises'
+          import path from 'node:path'
+          const benchmark='github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690'
+          async function registry(name,version) {
+            const response=await fetch('https://registry.npmjs.org/'+name+'/'+version)
+            if(!response.ok)throw Error('Registry metadata failed: '+name+' '+version+' '+response.status)
+            return await response.json()
+          }
+          function exact(version) {
+            const parsed=version.replace(/^[\^~]/,'')
+            if(!/^\d+\.\d+\.\d+$/.test(parsed))throw Error('Expected an exact release: '+version)
+            return parsed
+          }
+          for(const [label,version] of [['base','0.0.3230'],['head','0.0.3230']]) {
+            const published=await registry('tscircuit',version)
+            const coreVersion=version==='0.0.3230'?'0.0.2408':exact(published.dependencies['@tscircuit/core'])
+            const core=await registry('@tscircuit/core',coreVersion)
+            const dependencies={'tscircuit':version,'@tscircuit/core':coreVersion,'@tscircuit/core-ddr-benchmark':benchmark}
+            for(const name of ['@tscircuit/capacity-autorouter','@tscircuit/checks','@tscircuit/props','circuit-json','@tscircuit/fanout-solver']) {
+              const declared=published.dependencies[name]??core.devDependencies[name]
+              if(!declared)throw Error('Missing published routing dependency '+name)
+              dependencies[name]=version==='0.0.3230'&&name==='@tscircuit/capacity-autorouter'?'0.0.1123':exact(declared)
+            }
+            dependencies['@tscircuit/bus-lanes-solver']=core.devDependencies['@tscircuit/bus-lanes-solver']
+            if(!dependencies['@tscircuit/bus-lanes-solver'])throw Error('Missing bus package provenance')
+            await mkdir(label,{recursive:true})
+            const overrides=label==='head'?{'@tscircuit/capacity-autorouter':'file:'+path.resolve('router-build/router-package.tgz')}:{}
+            if(label==='head')dependencies['@tscircuit/capacity-autorouter']=overrides['@tscircuit/capacity-autorouter']
+            await writeFile(label+'/package.json',JSON.stringify({name:'ddr-published-'+label,private:true,type:'module',dependencies,overrides},null,2))
+            await writeFile(label+'/index.ts','export { RootCircuit } from "tscircuit"\n')
+            await writeFile(label+'/tsconfig.json',await readFile('tsconfig.json'))
+            // The unchanged benchmark accepts a Core checkout. This real source
+            // tree supplies its checkout guard only; index.ts uses npm code.
+            await symlink(path.resolve('lib'),label+'/lib','dir')
+            await writeFile(label+'/published-runtime.json',JSON.stringify({tscircuit:version,core:coreVersion,entry:'export { RootCircuit } from "tscircuit"',tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,dependencies,boardBenchmark:benchmark,sourceTreeExecuted:false},null,2))
+          }
+          JS
+          node prepare-published.private.mjs
+          (cd base && bun install --ignore-scripts)
+          (cd head && bun install --ignore-scripts)
+      - name: Fresh real TSX and published Core solves on the same machine
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+          RELEASE_ORDER: ${{ matrix.order }}
+        run: |
+          mkdir -p results
+          infrastructure_status=0
+          for release in $RELEASE_ORDER; do
+            bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" \
+              --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" \
+              --circuit "$CIRCUIT" --timeout 600 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
+            cp "$release/published-runtime.json" "results/$release/"
+            cp "$release/bun.lock" "results/$release/install.lock"
+          done
+          exit "$infrastructure_status"
+      - name: Print results and preserve native circuit SVGs
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > inspect-published.private.ts <<'TS'
+          import {readFileSync,writeFileSync,existsSync} from 'node:fs'
+          import path from 'node:path'
+          import {createHash} from 'node:crypto'
+          const checks=await import(path.resolve('head/node_modules/@tscircuit/checks/dist/index.js'))
+          for(const release of ['base','head']) {
+            const root=path.resolve('results',release)
+            if(!existsSync(root+'/results.json'))continue
+            const report=JSON.parse(readFileSync(root+'/results.json','utf8'))
+            const published=JSON.parse(readFileSync(root+'/published-runtime.json','utf8'))
+            for(const row of report.cases) {
+              const circuitFile=root+'/'+row.circuit+'/circuit.json'
+              const circuit=existsSync(circuitFile)?JSON.parse(readFileSync(circuitFile,'utf8')):[]
+              const copper=circuit.filter(p=>p.type==='pcb_trace'||p.type==='pcb_via')
+              const assessment=row.assessment
+              const physical=assessment?Object.entries(assessment.findings).filter(([name])=>!['missing_traces','disconnected_ports'].includes(name)).reduce((sum,[,count])=>sum+Number(count),0):null
+              const options={minClearance:0}
+              const zeroClearance=Object.fromEntries(Object.entries({trace_overlap:checks.checkEachPcbTraceNonOverlapping(circuit,options),pad_trace:checks.checkPadTraceClearance(circuit,options),via_trace:checks.checkViaTraceClearance(circuit,options),via_pad:checks.checkViaPadClearance(circuit,options)}).map(([kind,errors])=>[kind,errors.filter(e=>e.type.endsWith('_error')).length]))
+              const compact={release,published,zeroClearance,metadata:Object.fromEntries(Object.entries(report).filter(([key])=>key!=='cases')),circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,assessment,physicalFindings:physical,progress:row.progress,copperSha256:createHash('sha256').update(JSON.stringify(copper)).digest('hex')}
+              writeFileSync(root+'/compact.json',JSON.stringify(compact,null,2))
+              console.log('QUALIFIED_CASE_METRICS_JSON='+JSON.stringify({release,circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment?.connectedNets,requested:assessment?.requestedNets,vias:assessment?.vias,findings:assessment?.findings,zeroClearance,physicalFindings:physical,copperSha256:compact.copperSha256}))
+            }
+          }
+          TS
+          bun inspect-published.private.ts
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install with a reachable development-only CSS type package
+        run: |
+          python3 - <<'PY'
+          import pathlib,json
+          p=pathlib.Path('package.json')
+          package=json.loads(p.read_text())
+          package['overrides']={**package.get('overrides',{}),'csstype':'3.1.3'}
+          p.write_text(json.dumps(package,indent=2)+'\n')
+          PY
+          bun install --ignore-scripts
+      - run: bun run build
+      - run: |
+          mkdir -p pack/package
+          cp package.json pack/package/
+          cp -r dist pack/package/
+          tar -czf router-package.tgz -C pack package
+          sha256sum router-package.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: latest-ddr-corner-router-package
+          path: router-package.tgz
+          retention-days: 14
+
+  dataset18:
+    name: Paired dataset18
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          path: same-machine-controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: ef34ee498e959c189a61ac58d4b04e28091e23e4
+          path: same-machine-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 55d4b0d0906b39ae7f3e5b3df2c7abd59a55056d
+          path: same-machine-pr
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: |
+          (cd same-machine-base && bun install --frozen-lockfile --ignore-scripts)
+          (cd same-machine-pr && bun install --frozen-lockfile --ignore-scripts)
+      - name: Benchmark base and PR sequentially on one runner
+        working-directory: same-machine-controller
+        env:
+          BENCHMARK_DATASET: srj18
+          BENCHMARK_ARGS_JSON: '["--dataset","srj18","--pipeline","9","--concurrency","4","--sample-timeout","300s"]'
+        run: bun scripts/benchmark/runSameMachineBenchmarks.ts > benchmark.private.log 2>&1
+      - name: Print reports
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import pathlib,json
+          for revision in ['base','pr']:
+              p=pathlib.Path('same-machine-results')/revision/'benchmark-result.json'
+              if p.exists():
+                  report=json.loads(p.read_text())
+                  keys=['sampleNumber','scenarioName','didSolve','didTimeout','elapsedTimeMs','relaxedDrcPassed','drcErrorCount','viaCount','peakRssBytes','traceLintIssueCounts']
+                  metrics={'summary':report.get('summary'),'tests':[{k:t.get(k) for k in keys} for t in report.get('tests',[])]}
+                  print('DATASET18_METRICS_'+revision.upper()+'='+json.dumps(metrics,separators=(',',':')))
+          PY
