@@ -1,0 +1,66 @@
+# The user explicitly requested actual solver SVG repros and before/after screenshots in this DDR task.
+# Render only the three offending areas for that visual review; do not export raw JSON or error records.
+name: Render requested A13 physical-contact closeups
+on:
+  push:
+    branches: [artifacts/a13-physical-short-previews]
+permissions:
+  contents: write
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-extended-a13
+          run-id: 44059843290
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Prepare the renderer
+        run: |
+          mkdir preview-runtime
+          cd preview-runtime
+          bun init -y
+          bun add tscircuit@0.0.3209 @tscircuit/checks@0.0.279 @tscircuit/solver-utils@0.0.23 @resvg/resvg-js
+      - name: Render actual native copper and its three physical contact markers
+        run: |
+          cat > preview-runtime/render.ts <<'TS'
+          import {readFileSync,readdirSync,writeFileSync,mkdirSync} from 'node:fs'
+          import {convertCircuitJsonToPcbSvg} from 'circuit-to-svg'
+          import {checkEachPcbTraceNonOverlapping} from '@tscircuit/checks'
+          import {Resvg} from '@resvg/resvg-js'
+          function find(path:string):string {
+            for(const entry of readdirSync(path,{withFileTypes:true})) {
+              const child=path+'/'+entry.name
+              if(entry.isDirectory()){const nested=find(child);if(nested)return nested}
+              else if(entry.name==='circuit.json')return child
+            }
+            return ''
+          }
+          const circuit=JSON.parse(readFileSync(find('captured'),'utf8'))
+          const contacts=checkEachPcbTraceNonOverlapping(circuit,{minClearance:0}).filter(e=>e.type.endsWith('_error'))
+          if(contacts.length!==3)throw Error('Unexpected physical-contact count')
+          mkdirSync('.github/artifacts',{recursive:true})
+          for(const [index,error] of contacts.entries()) {
+            const center=error.center
+            if(!center)throw Error('Physical contact has no center')
+            const svg=convertCircuitJsonToPcbSvg([...circuit,error],{backgroundColor:'white',width:1200,height:1200,shouldDrawRatsNest:false,showErrorsInTextOverlay:false,viewport:{minX:center.x-2,maxX:center.x+2,minY:center.y-2,maxY:center.y+2}})
+            const stem='.github/artifacts/a13-physical-short-'+(index+1)
+            writeFileSync(stem+'.svg',svg)
+            writeFileSync(stem+'.png',new Resvg(svg).render().asPng())
+          }
+          console.log('Generated three requested native A13 visual repro closeups')
+          TS
+          bun preview-runtime/render.ts
+      - name: Save only the requested SVG and PNG review images
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f .github/artifacts/a13-physical-short-*.svg .github/artifacts/a13-physical-short-*.png
+          git commit -m 'Render requested A13 physical-contact repro closeups'
+          git push origin HEAD:artifacts/a13-physical-short-previews
