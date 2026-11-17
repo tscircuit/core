@@ -88,8 +88,8 @@ jobs:
             const net:any=nets.get(trace.source_trace_id)??(source?.connected_source_net_ids??[]).map((id:string)=>nets.get(id)).find(Boolean)
             return String(phaseByName.get(net?.name)??'unknown')
           }
-          function count(circuit:any[]):Record<string,number> {
-            const options={minClearance:fixture.rules.appliedGlobalClearance}
+          function count(circuit:any[],clearance=fixture.rules.appliedGlobalClearance):Record<string,number> {
+            const options={minClearance:clearance}
             const results={trace_overlap:checks.checkEachPcbTraceNonOverlapping(circuit,options),pad_trace:checks.checkPadTraceClearance(circuit,options),via_trace:checks.checkViaTraceClearance(circuit,options),via_pad:checks.checkViaPadClearance(circuit,options),via_spacing:checks.checkDifferentNetViaSpacing(circuit)}
             return Object.fromEntries(Object.entries(results).map(([kind,errors])=>[kind,errors.filter((e:any)=>e.type.endsWith('_error')).length]))
           }
@@ -103,6 +103,7 @@ jobs:
           }
           const schema=Object.fromEntries(Object.entries(saved).filter(([kind])=>!['missing_traces','disconnected_ports','width'].includes(kind)).map(([kind,errors]:any)=>[kind,[...new Set(errors.flatMap((e:any)=>Object.keys(e)))]]))
           console.log('A13_PHASE_SUBSET_COUNTS_JSON='+JSON.stringify(subsets))
+          console.log('A13_ZERO_CLEARANCE_COUNTS_JSON='+JSON.stringify(count(json,0)))
           console.log('DRC_ERROR_FIELD_NAMES_JSON='+JSON.stringify(schema))
           TS
           bun analysis-runtime/inspect.ts
