@@ -20,6 +20,7 @@ export function Board_doInitialPcbStackupRender(
       element.pcb_board_id === importedPcbBoard?.pcb_board_id,
   )
   let layers = importedStackup?.layers
+  let platedHoleCopperThickness = importedStackup?.plated_hole_copper_thickness
   const { fabricatorPreset } = board._parsedProps
   if (!layers && fabricatorPreset) {
     const {
@@ -29,6 +30,9 @@ export function Board_doInitialPcbStackupRender(
     } = importedPcbBoard ?? db.pcb_board.get(pcb_board_id)!
     const thickness = boardThickness ?? board.boardThickness
     layers = getJlcStackup({ num_layers, thickness, material })?.layers
+    // JLCPCB's average hole plating thickness is 18 µm (0.018 mm):
+    // https://jlcpcb.com/capabilities/pcb-capabilities (Drilling).
+    platedHoleCopperThickness = 0.018
     if (!layers) {
       // Explain why the preset produced no stackup instead of silently
       // omitting it, e.g. a 2-layer 1.5mm board.
@@ -59,7 +63,7 @@ export function Board_doInitialPcbStackupRender(
   if (!layers) return
 
   db.pcb_stackup.insert({
-    plated_hole_copper_thickness: importedStackup?.plated_hole_copper_thickness,
+    plated_hole_copper_thickness: platedHoleCopperThickness,
     pcb_board_id,
     subcircuit_id: subcircuit_id ?? undefined,
     layers: structuredClone(layers),
