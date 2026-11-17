@@ -15,7 +15,6 @@ jobs:
       matrix:
         include:
           - {variant: base, ref: e3aa8103907e43bf530f4c46572d7abb05f4e726}
-          - {variant: score, ref: 9558375f0c827db5424cb4a21255ecccd4c3811d}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,6 +57,7 @@ jobs:
           }
           const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
           const started=performance.now()
+          let previousContacts=new Map<string,number>()
           while(!solver.solved&&!solver.failed) {
             const index=solver.currentPipelineStepIndex
             const name=solver.getCurrentPhase()
@@ -66,8 +66,17 @@ jobs:
             const routes=selectors[name]!(solver)
             const violations=getFixedObstacleViolations({srj:physical,routes,traceClearance:0,viaClearance:0})
             const pairs=new Set(violations.map(v=>JSON.stringify([routes[v.routeIndex]!.rootConnectionName??routes[v.routeIndex]!.connectionName,physical.obstacles[v.obstacleIndex]!.connectedTo.slice().sort(),v.kind])))
-            const metrics={phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
+            const contacts=new Map<string,number>()
+            for(const violation of violations) {
+              const key=JSON.stringify([routes[violation.routeIndex]!.rootConnectionName??routes[violation.routeIndex]!.connectionName,physical.obstacles[violation.obstacleIndex]!.connectedTo.slice().sort(),violation.kind])
+              contacts.set(key,Math.max(contacts.get(key)??0,violation.severity))
+            }
+            const introduced=[...contacts.keys()].filter(key=>!previousContacts.has(key)).length
+            const cleared=[...previousContacts.keys()].filter(key=>!contacts.has(key)).length
+            const deepened=[...contacts].filter(([key,severity])=>previousContacts.has(key)&&severity>previousContacts.get(key)!+1e-8).length
+            const metrics={introducedContactPairCount:introduced,clearedContactPairCount:cleared,deepenedContactPairCount:deepened,phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
             console.log('PIPELINE_COPPER_STAGE_METRICS_JSON='+JSON.stringify(metrics))
+            previousContacts=contacts
           }
           if(solver.failed)throw Error('Native A13 pipeline failed')
           TS
