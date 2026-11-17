@@ -1,4 +1,4 @@
-name: Paired DDR layer-index experiment
+name: Native DDR exact fixed-copper experiment
 on:
   push:
     branches: [artifacts/ddr-layer-index-experiment]
@@ -6,25 +6,17 @@ permissions:
   contents: read
 jobs:
   benchmark:
-    name: Layer index ${{ matrix.circuit }}
+    name: Exact copper ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 35
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        circuit: [a13, butterstick]
+        circuit: [a13, butterstick, h3]
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: e3aa8103907e43bf530f4c46572d7abb05f4e726
-          path: base
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: c20ec25f3aa19c1b7d2392f62005a4c946c5a468
-          path: head
+          ref: 778ee4a2f3eca1e7222f0f33a0c358fc834875ad
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -34,57 +26,42 @@ jobs:
           name: published-ddr-3209-${{ matrix.circuit }}
           run-id: 44050671541
           github-token: ${{ github.token }}
-          path: captured
-      - name: Install both routing revisions
+          path: published
+      - name: Match the published routing dependencies
         run: |
-          (cd base && bun install --ignore-scripts)
-          (cd head && bun install --ignore-scripts)
-      - name: Replay identical Core requests sequentially on one machine
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs'
+          const p=JSON.parse(readFileSync('package.json','utf8'))
+          const published=JSON.parse(readFileSync('published/head/published-runtime.json','utf8'))
+          for(const [name,version] of Object.entries(published.dependencies)) {
+            if(['tscircuit','@tscircuit/core'].includes(name))continue
+            p.devDependencies[name]=version
+            p.overrides={...p.overrides,[name]:version}
+          }
+          writeFileSync('package.json',JSON.stringify(p,null,2))
+          JS
+          bun install --ignore-scripts
+      - name: Route unchanged native TSX through Core
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out results --circuit "$CIRCUIT" --timeout 600
+      - name: Report real routing and input geometry
+        if: always()
         env:
           CIRCUIT: ${{ matrix.circuit }}
         run: |
-          cat > layer-experiment.private.ts <<'TS'
-          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
-          import {createHash} from 'node:crypto'
-          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
-          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
-          const circuit=process.env.CIRCUIT!
-          const phase=circuit==='a13'?5:3
-          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
-          mkdirSync('../results/'+process.env.VARIANT,{recursive:true})
-          const started=performance.now()
-          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
-          solver.solve()
-          if(!solver.solved||solver.failed)throw Error(solver.error??'Native DDR routing failed')
-          const routes=solver.getOutputSimplifiedPcbTraces()
-          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
-          const errors=evaluateRelaxedDrc(drcInput).errors
-          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),stats:solver.pipeline9JointDrcRepairSolver?.stats,timeSpent:solver.timeSpentOnPhase}
-          console.log('LAYER_EXPERIMENT_JSON='+JSON.stringify(summary))
-          writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
-          writeFileSync('../results/'+process.env.VARIANT+'/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
-          TS
-          cp layer-experiment.private.ts base/
-          cp layer-experiment.private.ts head/
-          if [ "$CIRCUIT" = "a13" ]; then
-            order="base head"
-          else
-            order="head base"
-          fi
-          for revision in $order; do
-            (cd "$revision" && VARIANT="$revision" bun layer-experiment.private.ts)
-          done
-          python3 - <<'PY'
-          import json,pathlib
-          b=json.loads(pathlib.Path('results/base/summary.json').read_text())
-          h=json.loads(pathlib.Path('results/head/summary.json').read_text())
-          assert b['copperHash']==h['copperHash'],(b,h)
-          assert b['errors']==h['errors']
-          print('LAYER_COMPARISON_JSON='+json.dumps({'base':b,'head':h}))
-          PY
+          node --input-type=module <<'JS'
+          import {readFileSync,readdirSync,existsSync} from 'node:fs'
+          const root='results/'+process.env.CIRCUIT
+          if(existsSync('results/results.json'))console.log('EXACT_CORE_RESULT_JSON='+readFileSync('results/results.json','utf8'))
+          for(const file of readdirSync(root).filter(f=>/phase-.*-start.srj.json/.test(f))) {
+            const input=JSON.parse(readFileSync(root+'/'+file,'utf8'))
+            console.log('EXACT_CORE_INPUT_JSON='+JSON.stringify({file,connections:input.connections.length,obstacles:input.obstacles.length,traces:input.traces?.length??0,fixedTraces:input.traces?.filter(t=>t.isFixed).length??0}))
+          }
+          JS
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: layer-index-${{ matrix.circuit }}
+          name: exact-fixed-copper-${{ matrix.circuit }}
           path: results/
           retention-days: 14
