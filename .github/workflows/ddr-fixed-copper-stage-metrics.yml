@@ -44,7 +44,18 @@ jobs:
           convertToCircuitJson(input,[],{originalSrj:input,representedPadObstacleIndexes:represented,includeOriginalConnections:true})
           const fixed=getFixedCopperObstacleIndexes({inputSrj:input,representedPadObstacleIndexes:represented})
           const physical={...input,traces:undefined,defaultObstacleMargin:0,minTraceToPadEdgeClearance:0,minViaEdgeToPadEdgeClearance:0,minTraceToHoleEdgeClearance:0,minPadEdgeToPadEdgeClearance:0,obstacles:input.obstacles.filter((_:unknown,index:number)=>fixed.has(index))}
+          function portRoutes(nodes:any[],solver:any):any[] {
+            const unique=new Map<string,any>()
+            for(const node of nodes)for(const point of node.portPoints) {
+              const key=JSON.stringify([point.portPointId,point.z,point.connectionName])
+              if(unique.has(key))continue
+              unique.set(key,{connectionName:point.connectionName,rootConnectionName:point.rootConnectionName,traceThickness:solver.minTraceWidth,viaDiameter:solver.viaDiameter,route:[{...point},{...point}],vias:[]})
+            }
+            return [...unique.values()]
+          }
           const selectors:Record<string,(solver:any)=>any[]>={
+            portPointPathingSolver:s=>portRoutes(s.portPointPathingSolver.getOutput().nodesWithPortPoints,s),
+            uniformPortDistributionSolver:s=>portRoutes(s.uniformPortDistributionSolver.getOutput(),s),
             highDensityRouteSolver:s=>s.highDensityRouteSolver.routes,
             highDensityForceImproveSolver:s=>s.highDensityForceImproveSolver.getOutput(),
             highDensityRepairSolver:s=>s.highDensityRepairSolver.getOutput(),
@@ -74,9 +85,10 @@ jobs:
             const introduced=[...contacts.keys()].filter(key=>!previousContacts.has(key)).length
             const cleared=[...previousContacts.keys()].filter(key=>!contacts.has(key)).length
             const deepened=[...contacts].filter(([key,severity])=>previousContacts.has(key)&&severity>previousContacts.get(key)!+1e-8).length
-            const metrics={introducedContactPairCount:introduced,clearedContactPairCount:cleared,deepenedContactPairCount:deepened,phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
+            const metrics={blockedUniquePorts:new Set(violations.map(v=>v.routeIndex)).size,introducedContactPairCount:introduced,clearedContactPairCount:cleared,deepenedContactPairCount:deepened,phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
             console.log('PIPELINE_COPPER_STAGE_METRICS_JSON='+JSON.stringify(metrics))
             previousContacts=contacts
+            if(name==='uniformPortDistributionSolver')break
           }
           if(solver.failed)throw Error('Native A13 pipeline failed')
           TS
