@@ -1,0 +1,72 @@
+# Quality-only diagnostic; no board files, geometry, or images are exported.
+name: Paired DDR priority-consistency experiment
+on:
+  push:
+    branches: [artifacts/ddr-priority-consistency-experiment]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    name: Priority consistency ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [a13, butterstick]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e3aa8103907e43bf530f4c46572d7abb05f4e726
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 6ebeedacb59ea24d914ac97eb663dbd4c58f46ed
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-${{ matrix.circuit }}
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Install both routing revisions
+        run: |
+          (cd head && bun install --ignore-scripts)
+      - name: Replay identical Core requests sequentially on one machine
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > layer-experiment.private.ts <<'TS'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
+          import {createHash} from 'node:crypto'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
+          const circuit=process.env.CIRCUIT!
+          const phase=circuit==='a13'?5:3
+          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
+          mkdirSync('../results/'+process.env.VARIANT,{recursive:true})
+          const started=performance.now()
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          solver.solve()
+          if(!solver.solved||solver.failed)throw Error(solver.error??'Native DDR routing failed')
+          const routes=solver.getOutputSimplifiedPcbTraces()
+          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
+          const errors=evaluateRelaxedDrc(drcInput).errors
+          const summary={circuit,variant:process.env.VARIANT,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),stats:solver.pipeline9JointDrcRepairSolver?.stats,timeSpent:solver.timeSpentOnPhase}
+          console.log('LAYER_EXPERIMENT_JSON='+JSON.stringify(summary))
+          writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
+          writeFileSync('../results/'+process.env.VARIANT+'/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
+          TS
+          cp layer-experiment.private.ts base/
+          cp layer-experiment.private.ts head/
+          order="head"
+          for revision in $order; do
+            (cd "$revision" && VARIANT="$revision" timeout 600s bun layer-experiment.private.ts)
+          done
