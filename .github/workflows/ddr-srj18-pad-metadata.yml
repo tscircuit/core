@@ -1,0 +1,38 @@
+name: Inspect public SRJ18 component-pad metadata
+on:
+  push:
+    branches: [artifacts/ddr-srj18-pad-metadata]
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/dataset-srj18
+          ref: 100e8957ce789b5b288e14c476dc83f4efc5214b
+          persist-credentials: false
+      - name: Report aggregate pad metadata counts only
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,readdirSync} from "node:fs";
+          const results=[];
+          for(const file of readdirSync("samples").filter(file=>file.endsWith(".json")).sort()) {
+            const srj=JSON.parse(readFileSync("samples/"+file,"utf8"));
+            const circles=srj.obstacles.filter(o=>o.shape==="circle"&&!o.isNonPlatedHole&&!o.isCopperPour);
+            const pads=circles.filter(o=>o.layers.length===1&&o.componentId!==undefined);
+            const groups=new Map();
+            for(const pad of pads){if(!groups.has(pad.componentId))groups.set(pad.componentId,[]);groups.get(pad.componentId).push(pad);}
+            let eligiblePadArrays=0;
+            for(const group of groups.values()){
+              const xs=[...new Set(group.map(p=>p.center.x))].sort((a,b)=>a-b);
+              const ys=[...new Set(group.map(p=>p.center.y))].sort((a,b)=>a-b);
+              const diameter=Math.max(...group.map(p=>p.width));
+              if(xs.length>=2&&ys.length>=2&&xs.slice(1).every((x,i)=>x-xs[i]>=diameter-1e-7)&&ys.slice(1).every((y,i)=>y-ys[i]>=diameter-1e-7))eligiblePadArrays++;
+            }
+            results.push({sampleNumber:Number(file.match(/[0-9]+/)[0]),obstacles:srj.obstacles.length,circleObstacles:circles.length,componentCirclePads:pads.length,eligiblePadArrays});
+          }
+          console.log("SRJ18_PAD_METADATA_COUNTS="+JSON.stringify(results));
+          JS
