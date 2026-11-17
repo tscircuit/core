@@ -3,6 +3,8 @@ import type {
   Trace as BusLanesTrace,
 } from "@tscircuit/bus-lanes-solver"
 import type { SimpleRouteJson } from "./SimpleRouteJson"
+import { layer_ref } from "circuit-json"
+import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 
 /** Builds the bus solver's fixed-copper view in board-world millimetres
  * (+X right, +Y up). A through-obstacle passage already conducts between
@@ -33,6 +35,24 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
       route = []
     }
     for (const segment of trace.route) {
+      if (segment.route_type === "via") {
+        // Explicit physical copper belongs to the existing via. A later
+        // manufacturing policy must not expand a supplied blind barrel.
+        route.push(
+          segment.layers !== undefined
+            ? segment
+            : {
+                ...segment,
+                layers: getAutoroutedViaLayers({
+                  fromLayer: layer_ref.parse(segment.from_layer),
+                  toLayer: layer_ref.parse(segment.to_layer),
+                  layerCount: input.layerCount,
+                  allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+                }),
+              },
+        )
+        continue
+      }
       if (segment.route_type === "jumper") {
         throw new Error(
           "Bus lanes routing does not support supplied jumper copper",

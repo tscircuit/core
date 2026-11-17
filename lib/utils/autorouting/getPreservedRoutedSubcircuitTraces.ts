@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { LayerRef, PcbTrace } from "circuit-json"
+import type { LayerRef, PcbTrace, PcbVia } from "circuit-json"
 import type { SimplifiedPcbTrace } from "./SimpleRouteJson"
 
 type PreservedTrace = PcbTrace & {
@@ -7,12 +7,74 @@ type PreservedTrace = PcbTrace & {
   connectsTo?: string[]
 }
 
+type SrjViaRoutePoint = Extract<
+  SimplifiedPcbTrace["route"][number],
+  { route_type: "via" }
+>
+
 type PreservedViaRoutePoint = Extract<
   PcbTrace["route"][number],
   { route_type: "via" }
-> & {
-  via_diameter?: number
-  via_hole_diameter?: number
+> &
+  Pick<SrjViaRoutePoint, "layers" | "via_diameter" | "via_hole_diameter">
+
+type ViaPositionKey = `${PcbVia["x"]},${PcbVia["y"]}`
+
+const getViaPositionKey = (point: Pick<PcbVia, "x" | "y">): ViaPositionKey =>
+  `${point.x},${point.y}`
+
+/** Recover a known barrel in board-world mm (+X right, +Y up, +Z above).
+ * Coordinates are copied from the same Circuit JSON, so exact point matching
+ * is intentional. Shared vias may be linked to a sibling trace; both logical
+ * endpoint layers must lie on the physical barrel. No manufacture rule can
+ * replace a known old barrel. Conflicting physical facts stay an explicit error.
+ */
+const getPreservedViaLayers = ({
+  trace,
+  routePoint,
+  physicalVias,
+}: {
+  trace: PreservedTrace
+  routePoint: PreservedViaRoutePoint
+  physicalVias: readonly PcbVia[]
+}): SrjViaRoutePoint["layers"] => {
+  if (routePoint.layers !== undefined) return [...routePoint.layers]
+  const relevantVias = physicalVias.filter(
+    (via) =>
+      via.pcb_trace_id === trace.pcb_trace_id ||
+      via.subcircuit_id === trace.subcircuit_id ||
+      via.subcircuit_id == null,
+  )
+  if (relevantVias.length === 0) return undefined
+  const endpointVias = relevantVias.filter(
+    (via) =>
+      via.layers.some(
+        (layer) => layer === getLayerName(routePoint.from_layer),
+      ) &&
+      via.layers.some((layer) => layer === getLayerName(routePoint.to_layer)),
+  )
+  if (endpointVias.length === 0) {
+    throw new Error(
+      "Existing routed via's physical span does not include its routed layers",
+    )
+  }
+  const linkedVias = endpointVias.filter(
+    (via) => via.pcb_trace_id === trace.pcb_trace_id,
+  )
+  const candidates = linkedVias.length ? linkedVias : endpointVias
+  const firstSpan = new Set(candidates[0]!.layers)
+  if (
+    candidates.some((via) => {
+      const span = new Set(via.layers)
+      return (
+        span.size !== firstSpan.size ||
+        [...span].some((layer) => !firstSpan.has(layer))
+      )
+    })
+  ) {
+    throw new Error("Existing routed via has ambiguous physical layer spans")
+  }
+  return [...candidates[0]!.layers]
 }
 
 const getLayerName = (layer: LayerRef | { name: string }): string =>
@@ -36,9 +98,13 @@ const getPhysicalConnectionIdsForPreservedTrace = (trace: PreservedTrace) => {
   return Array.from(physicallyConnectedIds)
 }
 
-const getSimpleRouteForPreservedTrace = (
-  trace: PreservedTrace,
-): SimplifiedPcbTrace["route"] =>
+const getSimpleRouteForPreservedTrace = ({
+  trace,
+  physicalViasByPosition,
+}: {
+  trace: PreservedTrace
+  physicalViasByPosition: ReadonlyMap<ViaPositionKey, readonly PcbVia[]>
+}): SimplifiedPcbTrace["route"] =>
   trace.route.map((routePoint) => {
     if (routePoint.route_type === "wire") {
       return {
@@ -58,12 +124,19 @@ const getSimpleRouteForPreservedTrace = (
       const viaHoleDiameter =
         preservedViaRoutePoint.hole_diameter ??
         preservedViaRoutePoint.via_hole_diameter
+      const layers = getPreservedViaLayers({
+        trace,
+        routePoint: preservedViaRoutePoint,
+        physicalVias:
+          physicalViasByPosition.get(getViaPositionKey(routePoint)) ?? [],
+      })
       return {
         route_type: "via",
         x: routePoint.x,
         y: routePoint.y,
         from_layer: getLayerName(routePoint.from_layer),
         to_layer: getLayerName(routePoint.to_layer),
+        ...(layers !== undefined ? { layers } : {}),
         ...(viaDiameter !== undefined ? { via_diameter: viaDiameter } : {}),
         ...(viaHoleDiameter !== undefined
           ? { via_hole_diameter: viaHoleDiameter }
@@ -100,9 +173,30 @@ export const getPreservedRoutedSubcircuitTraces = ({
 }: {
   scopedDb: CircuitJsonUtilObjects
   relevantSubcircuitIds: Set<string> | null
-}): SimplifiedPcbTrace[] =>
-  scopedDb.pcb_trace
-    .list()
+}): SimplifiedPcbTrace[] => {
+  const pcbTraces = scopedDb.pcb_trace.list()
+  const pcbTracesById = new Map(
+    pcbTraces.map((trace) => [trace.pcb_trace_id, trace]),
+  )
+  const physicalViasByPosition = new Map<ViaPositionKey, PcbVia[]>()
+  for (const via of scopedDb.pcb_via.list()) {
+    // Public Circuit JSON imports can omit a via's optional scope. Its actual
+    // linked trace supplies ownership, including shared barrels linked once.
+    const subcircuitId =
+      via.subcircuit_id ??
+      (via.pcb_trace_id
+        ? pcbTracesById.get(via.pcb_trace_id)?.subcircuit_id
+        : undefined)
+    const physicalVia =
+      subcircuitId === via.subcircuit_id
+        ? via
+        : { ...via, subcircuit_id: subcircuitId }
+    const position = getViaPositionKey(via)
+    const atPosition = physicalViasByPosition.get(position)
+    if (atPosition) atPosition.push(physicalVia)
+    else physicalViasByPosition.set(position, [physicalVia])
+  }
+  return pcbTraces
     .filter((trace) => {
       if (!trace.subcircuit_id) return false
       if (trace.pcb_component_id && !trace.source_trace_id) return false
@@ -120,7 +214,11 @@ export const getPreservedRoutedSubcircuitTraces = ({
         source_trace_id: trace.source_trace_id,
         connection_name: connectionName,
         connectsTo: getPhysicalConnectionIdsForPreservedTrace(preservedTrace),
-        route: getSimpleRouteForPreservedTrace(preservedTrace),
+        route: getSimpleRouteForPreservedTrace({
+          trace: preservedTrace,
+          physicalViasByPosition,
+        }),
       }
     })
     .filter((trace) => trace.route.length >= 2)
+}

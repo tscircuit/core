@@ -198,6 +198,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         : [],
     ),
   )
+  const pcbTraceById = new Map(
+    allElements.flatMap((element) =>
+      element.type === "pcb_trace"
+        ? [[element.pcb_trace_id, element] as const]
+        : [],
+    ),
+  )
   // Imported copper can omit its optional scope metadata while its source
   // trace still declares the owning subcircuit. Resolve that ownership before
   // filtering, preserving the physical route and the caller's input objects.
@@ -205,15 +212,22 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const scopedElements = allElements.map((element) => {
     if (
       ignoreExistingTopLevelPcbRouteState ||
-      element.type !== "pcb_trace" ||
-      element.subcircuit_id ||
-      !element.source_trace_id
+      (element.type !== "pcb_trace" && element.type !== "pcb_via") ||
+      element.subcircuit_id
     ) {
       return element
     }
-    const inheritedSubcircuitId = sourceTraceById.get(
-      element.source_trace_id,
-    )?.subcircuit_id
+    const owningTrace =
+      element.type === "pcb_trace"
+        ? element
+        : element.pcb_trace_id
+          ? pcbTraceById.get(element.pcb_trace_id)
+          : undefined
+    const inheritedSubcircuitId =
+      owningTrace?.subcircuit_id ??
+      (owningTrace?.source_trace_id
+        ? sourceTraceById.get(owningTrace.source_trace_id)?.subcircuit_id
+        : undefined)
     return inheritedSubcircuitId
       ? { ...element, subcircuit_id: inheritedSubcircuitId }
       : element
@@ -309,15 +323,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         return false
       }
       const routeViaLayerNames = new Set(
-        getViaSpanLayers({
-          fromLayer: routePoint.from_layer as LayerRef,
-          toLayer: routePoint.to_layer as LayerRef,
-          layerCount: board?.num_layers ?? 2,
-        }),
+        routePoint.layers ??
+          getViaSpanLayers({
+            fromLayer: routePoint.from_layer as LayerRef,
+            toLayer: routePoint.to_layer as LayerRef,
+            layerCount: board?.num_layers ?? 2,
+          }),
       )
       return (
         routeViaLayerNames.size === pcbViaLayerNames.size &&
-        [...routeViaLayerNames].every((layer) => pcbViaLayerNames.has(layer))
+        [...pcbViaLayerNames].every((layer) => routeViaLayerNames.has(layer))
       )
     })
   }
