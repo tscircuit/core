@@ -39,6 +39,7 @@ jobs:
               root=ET.parse(path).getroot()
               cases=root.findall('.//testcase')
               print('JUNIT_ROOT_METADATA='+json.dumps({'attributes':root.attrib,'suites':[suite.attrib for suite in root.findall('.//testsuite') if int(suite.get('errors','0')) or int(suite.get('failures','0'))]}))
+              print('FAILURE_CLASS_COUNTS='+json.dumps({'svgSnapshotFailures':sum(1 for failure in root.findall('.//failure') if any(word in (failure.text or '').lower() for word in ['svg','snapshot'])), 'otherFailures':sum(1 for failure in root.findall('.//failure') if not any(word in (failure.text or '').lower() for word in ['svg','snapshot']))}))
               print('EXISTING_TEST_METRICS_JSON='+json.dumps({'cases':len(cases),'failed':[{'file':case.get('file') or case.get('classname'),'name':case.get('name')} for case in cases if case.find('failure') is not None or case.find('error') is not None]}))
           PY
           python3 - <<'PY'
