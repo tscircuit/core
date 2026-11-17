@@ -68,9 +68,12 @@ test("native H3 preserves pending pad access through all actual routing phases",
     "BusLanesPipelineSolver",
     "AutoroutingPipelineSolver9_PreloadedTraceGraph",
   ])
-  expect(stages.map((stage) => stage.start.solverName)).toEqual(
-    result.solverNames,
-  )
+  expect(result.solverNames).toEqual([
+    "LayoutPipelineSolver",
+    "BusLanesPipelineSolver",
+    "BusLanesPipelineSolver",
+    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  ])
   expect(stages.every((stage) => stage.end && !stage.error)).toBe(true)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
   expect(

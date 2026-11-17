@@ -8,6 +8,7 @@ import type {
   AutoroutingStartEvent,
   AutoroutingEndEvent,
   AutoroutingErrorEvent,
+  SolverStartedEvent,
   SolverEndedEvent,
 } from "lib/events"
 import type { BusLanesSolverStarted } from "lib/utils/autorouting/BusLanesAutorouter"
@@ -20,6 +21,11 @@ export interface H3RoutingStage {
   observedBusInput?: BusLanesSolverStarted["solverParams"]
   announcedConstructorInputMatches?: boolean
   solverEnded?: SolverEndedEvent
+  /** Actual constructor/end observations during this routing phase; no geometry. */
+  solverEvents?: Pick<
+    SolverStartedEvent | SolverEndedEvent,
+    "type" | "solverName" | "componentName"
+  >[]
 }
 
 export const NATIVE_H3_FIXTURE_SHA256 =
@@ -60,6 +66,7 @@ export const runNativeH3Routing = async (circuit: RootCircuit) => {
   const source = loadNativeH3Source()
   const stages: H3RoutingStage[] = []
   const solverNames: SolverName[] = []
+  let activeStage: H3RoutingStage | undefined
   let initialGeometry: AnyCircuitElement[] = []
   let initialCircuitJson: AnyCircuitElement[] = []
   const started = performance.now()
@@ -68,34 +75,56 @@ export const runNativeH3Routing = async (circuit: RootCircuit) => {
       initialCircuitJson = structuredClone(circuit.getCircuitJson())
       initialGeometry = structuredClone(getNativeH3Geometry(initialCircuitJson))
     }
-    stages.push({ start: structuredClone(event) })
+    if (activeStage)
+      throw new Error("H3 routing phase started before its previous phase ended")
+    activeStage = { start: structuredClone(event), solverEvents: [] }
+    stages.push(activeStage)
   })
   circuit.on("solver:started", (event) => {
     solverNames.push(event.solverName)
+    if (!activeStage) {
+      // The native board performs real layout before its three routing phases.
+      // Retain it in the complete timeline; do not filter unknown solvers away.
+      if (event.solverName !== "LayoutPipelineSolver" || stages.length !== 0)
+        throw new Error("H3 solver started outside its routing phase")
+      return
+    }
+    const solverEvents = (activeStage.solverEvents ??= [])
+    solverEvents.push({
+      type: event.type,
+      solverName: event.solverName,
+      componentName: event.componentName,
+    })
     if (event.solverName !== "BusLanesPipelineSolver") return
-    const stage = stages.at(-1)
-    if (!stage)
-      throw new Error("H3 bus solver started before its routing phase")
-    stage.observedBusInput = structuredClone(event.solverParams)
-    stage.announcedConstructorInputMatches =
+    activeStage.observedBusInput = structuredClone(event.solverParams)
+    activeStage.announcedConstructorInputMatches =
       JSON.stringify(event.solverConstructorArgs[0]) ===
       JSON.stringify(event.solverParams)
   })
   circuit.on("solver:ended", (event) => {
-    if (event.solverName !== "BusLanesPipelineSolver") return
-    const stage = stages.at(-1)
-    if (!stage) throw new Error("H3 bus solver ended before its routing phase")
-    stage.solverEnded = structuredClone(event)
+    if (!activeStage) {
+      if (event.solverName !== "LayoutPipelineSolver" || stages.length !== 0)
+        throw new Error("H3 solver ended outside its routing phase")
+      return
+    }
+    const solverEvents = (activeStage.solverEvents ??= [])
+    solverEvents.push({
+      type: event.type,
+      solverName: event.solverName,
+      componentName: event.componentName,
+    })
+    if (event.solverName === "BusLanesPipelineSolver")
+      activeStage.solverEnded = structuredClone(event)
   })
   circuit.on("autorouting:end", (event) => {
-    const stage = stages.at(-1)
-    if (!stage) throw new Error("H3 routing ended without a phase start")
-    stage.end = structuredClone(event)
+    if (!activeStage) throw new Error("H3 routing ended without a phase start")
+    activeStage.end = structuredClone(event)
+    activeStage = undefined
   })
   circuit.on("autorouting:error", (event) => {
-    const stage = stages.at(-1)
-    if (!stage) throw new Error("H3 routing failed without a phase start")
-    stage.error = structuredClone(event)
+    if (!activeStage) throw new Error("H3 routing failed without a phase start")
+    activeStage.error = structuredClone(event)
+    activeStage = undefined
   })
   circuit.add(<H3RoutingPhaseIntentBoard source={source} />)
   let renderError: string | undefined

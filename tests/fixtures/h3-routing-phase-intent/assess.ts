@@ -15,6 +15,7 @@ import { arePortsConnected } from "@tscircuit/core-ddr-benchmark/scripts/connect
 import { source_trace, type AnyCircuitElement } from "circuit-json"
 import type { RootCircuit } from "lib/RootCircuit"
 import type { Port } from "lib/components/primitive-components/Port"
+import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import type { NativeH3Source } from "./board"
 import type { H3RoutingStage } from "./run"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
@@ -23,6 +24,27 @@ import {
   getNativeH3SrjCopper,
   getNativeH3ViaCopperKey,
 } from "./copper"
+
+/** Check a phase's new via copper against its declared via-to-pad rule.
+ * Board-world geometry is in mm, +X right, +Y up. The specific via rule takes
+ * precedence over the generic pad fallback, including an explicit zero, as
+ * specified by checks279's via-pad-board-clearance regression.
+ */
+export const checkNativeH3PhaseViaPadClearance = (
+  circuitJson: AnyCircuitElement[],
+  rules: Pick<
+    SimpleRouteJson,
+    "minViaEdgeToPadEdgeClearance" | "minPadEdgeToPadEdgeClearance"
+  >,
+  connMap = getFullConnectivityMapFromCircuitJson(circuitJson),
+) => {
+  const minClearance =
+    rules.minViaEdgeToPadEdgeClearance ?? rules.minPadEdgeToPadEdgeClearance
+  return {
+    minClearance,
+    findings: checkViaPadClearance(circuitJson, { connMap, minClearance }),
+  }
+}
 
 /** Assess physical wire connectivity and the pinned DDR benchmark's DRC suite.
  * All geometry comes from Core's emitted board-world mm (+X right, +Y up).
@@ -148,16 +170,6 @@ export const assessNativeH3Routing = ({
   )
   const phaseViaPad = stages.map((stage) => {
     const rules = stage.start.simpleRouteJson
-    // Same precedence/max rule as the native bridge's landing clearance
-    // (bus-lanes pending-pad-geometry.ts). Generic pad clearance can exceed
-    // the fixture's global0.0889mm rule; never silently score only the latter.
-    const minClearance = Math.max(
-      rules.minViaEdgeToPadEdgeClearance ??
-        rules.minTraceToPadEdgeClearance ??
-        rules.defaultObstacleMargin ??
-        0.075,
-      rules.minPadEdgeToPadEdgeClearance ?? 0,
-    )
     const newViaKeys = new Set(
       getNativeH3StageCopper(stage)
         .filter((element) => element.type === "pcb_via")
@@ -176,10 +188,8 @@ export const assessNativeH3Routing = ({
         element.type !== "pcb_via" ||
         newViaKeys.has(getNativeH3ViaCopperKey(element)),
     )
-    const phaseFindings = checkViaPadClearance(phaseView, {
-      connMap,
-      minClearance,
-    })
+    const { minClearance, findings: phaseFindings } =
+      checkNativeH3PhaseViaPadClearance(phaseView, rules, connMap)
     return {
       phaseName: stage.start.phaseName,
       completed: stage.end !== undefined,

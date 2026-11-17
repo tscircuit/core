@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util"
 import type { SolverName } from "lib/solvers"
+import { hasNativeH3RoutingSolverEvidence } from "./solver-evidence"
 import { getBusLanesInputFromSrj } from "lib/utils/autorouting/get-bus-lanes-input-from-srj"
 import type { H3RoutingStage } from "./run"
 
@@ -15,20 +16,14 @@ export const getNativeH3AccessEvidence = ({
   stages: H3RoutingStage[]
   solverNames: readonly SolverName[]
 }) => {
-  const expectedSolvers: SolverName[] = [
-    "BusLanesPipelineSolver",
-    "BusLanesPipelineSolver",
-    "AutoroutingPipelineSolver9_PreloadedTraceGraph",
-  ]
   const phaseOrderVerified = isDeepStrictEqual(
     stages.map((stage) => stage.start.phaseName),
     ["byte0", "byte1", "remaining"],
   )
-  const solverOrderVerified =
-    isDeepStrictEqual(
-      stages.map((stage) => stage.start.solverName),
-      expectedSolvers,
-    ) && isDeepStrictEqual(solverNames, expectedSolvers)
+  const solverOrderVerified = hasNativeH3RoutingSolverEvidence({
+    stages,
+    solverNames,
+  })
   const futureRequestsVerified = isDeepStrictEqual(
     stages.map((stage) =>
       stage.start.simpleRouteJson.pendingRoutingAccess?.map(
