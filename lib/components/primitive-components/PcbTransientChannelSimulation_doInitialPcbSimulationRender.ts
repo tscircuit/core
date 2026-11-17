@@ -3,6 +3,7 @@ import { resolveSignalEndpoint } from "lib/utils/simulation/resolve-signal-endpo
 import { writeSignalIntegrityRecords } from "lib/utils/simulation/write-signal-integrity-records"
 import { getSignalIntegrityBlocks } from "lib/utils/simulation/get-signal-integrity-blocks"
 import { getSignalTopology } from "lib/utils/simulation/get-signal-topology"
+import { getSignalSeed } from "lib/utils/simulation/get-signal-seed"
 import { PcbDriverReceiverChannel } from "./PcbDriverReceiverChannel"
 import type { PcbTransientChannelSimulation } from "./PcbTransientChannelSimulation"
 
@@ -69,7 +70,7 @@ function resolveSignal(args: {
 }) {
   const { block, signal, topology } = args
   const signalProps = signal._parsedProps
-  const { seed } = signalProps
+  const seed = getSignalSeed(block, signal)
   const driver = resolveSignalEndpoint({
     block,
     signal,
