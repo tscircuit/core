@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("replay rejects two saved traces starting at the same pad", async () => {
+test("replay restores two saved traces starting at the same pad", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={12} routeRemaining={false} schematicDisabled>
@@ -36,14 +36,11 @@ test("replay rejects two saved traces starting at the same pad", async () => {
         pcbY={5}
         fontSize={0.4}
       />
-      <pcbnotetext text="Replay rejected both paths" pcbY={-3} fontSize={0.5} />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
-    { message: 'Duplicate saved phase path for "A.1"' },
-  ])
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("replay rejects a branch ending in the middle of a saved trace", async () => {
+test("replay restores a branch ending in the middle of a saved trace", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={12} routeRemaining={false} schematicDisabled>
@@ -36,18 +36,11 @@ test("replay rejects a branch ending in the middle of a saved trace", async () =
         pcbY={5}
         fontSize={0.4}
       />
-      <pcbnotetext text="Replay rejected both paths" pcbY={-3} fontSize={0.5} />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
-  expect(circuit.db.pcb_autorouting_error.list()).toMatchObject([
-    {
-      message: expect.stringContaining(
-        'Saved phase path "C.1" must end at another connection endpoint',
-      ),
-    },
-  ])
+  expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
