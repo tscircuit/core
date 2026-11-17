@@ -61,7 +61,7 @@ jobs:
           mkdir analysis-runtime
           cd analysis-runtime
           bun init -y
-          bun add @tscircuit/checks@0.0.279
+          bun add @tscircuit/checks@0.0.279 @tscircuit/solver-utils@0.0.23
       - name: Compare aggregate physical findings with and without completed data copper
         run: |
           cat > analysis-runtime/inspect.ts <<'TS'
