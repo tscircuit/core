@@ -1,0 +1,92 @@
+name: Test fixed-copper crossings before DDR path planning
+on:
+  push:
+    branches: [artifacts/ddr-port-copper-probe]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    name: Port filtering ${{ matrix.circuit }} ${{ matrix.clearance }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [a13, butterstick]
+        clearance: [physical, declared]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e3aa8103907e43bf530f4c46572d7abb05f4e726
+          path: base
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-${{ matrix.circuit }}
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Install both routing revisions
+        run: |
+          (cd base && bun install --ignore-scripts)
+      - name: Replay identical Core requests sequentially on one machine
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+          CLEARANCE: ${{ matrix.clearance }}
+        run: |
+          cat > layer-experiment.private.ts <<'TS'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs'
+          import {createHash} from 'node:crypto'
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph'
+          import {getFixedObstacleViolations} from '@tscircuit/repair04'
+          import {convertToCircuitJson} from './lib/utils/convertToCircuitJson'
+          import {getFixedCopperObstacleIndexes} from './lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/getFixedCopperObstacleIndexes'
+          import {evaluateRelaxedDrc} from './lib/testing/evaluate-relaxed-drc'
+          const circuit=process.env.CIRCUIT!
+          const phase=circuit==='a13'?5:3
+          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
+          mkdirSync('../results/'+process.env.VARIANT,{recursive:true})
+          const started=performance.now()
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          const represented=new Set<number>()
+          convertToCircuitJson(input,[],{originalSrj:input,representedPadObstacleIndexes:represented,includeOriginalConnections:true})
+          const fixed=getFixedCopperObstacleIndexes({inputSrj:input,representedPadObstacleIndexes:represented})
+          const obstacles=input.obstacles.filter((_:unknown,index:number)=>fixed.has(index))
+          const clearance=process.env.CLEARANCE==='physical'?0:input.minTraceToPadEdgeClearance
+          const physical={...input,traces:undefined,defaultObstacleMargin:clearance,minTraceToPadEdgeClearance:clearance,minViaEdgeToPadEdgeClearance:0,minTraceToHoleEdgeClearance:0,minPadEdgeToPadEdgeClearance:0,obstacles}
+          let filtered=false
+          let removedPorts=0
+          while(!solver.solved&&!solver.failed) {
+            if(solver.getCurrentPhase()==='portPointPathingSolver'&&!filtered) {
+              const segments=solver.sharedEdgeSegmentsWithNecessaryCrampedPortPoints
+              const points=segments.flatMap(segment=>segment.portPoints)
+              const routes=points.map(point=>({connectionName:'probe-no-net',traceThickness:solver.minTraceWidth,viaDiameter:solver.viaDiameter,route:[{...point,z:point.availableZ[0]},{...point,z:point.availableZ[0]}],vias:[]}))
+              const violations=getFixedObstacleViolations({srj:physical,routes,traceClearance:clearance,viaClearance:0})
+              const blocked=new Set(violations.map(v=>points[v.routeIndex]))
+              removedPorts=blocked.size
+              for(const segment of segments)segment.portPoints=segment.portPoints.filter(port=>!blocked.has(port))
+              filtered=true
+              console.log('PORT_FILTER_COUNTS_JSON='+JSON.stringify({removedPorts,inputPorts:points.length}))
+            }
+            solver.step()
+          }
+          if(!solver.solved||solver.failed){console.log('PORT_FILTER_OUTCOME_JSON='+JSON.stringify({circuit,clearance:process.env.CLEARANCE,failed:true,removedPorts,seconds:(performance.now()-started)/1000}));process.exit(0)}
+          const routes=solver.getOutputSimplifiedPcbTraces()
+          const drcInput={inputSrj:input,srjWithPointPairs:solver.srjWithPointPairs!,routedTraces:routes,drcOptions:{traceClearance:input.minTraceToPadEdgeClearance,viaToPadClearance:input.minViaEdgeToPadEdgeClearance}}
+          const errors=evaluateRelaxedDrc(drcInput).errors
+          const summary={circuit,clearance:process.env.CLEARANCE,removedPorts,seconds:(performance.now()-started)/1000,routes:routes.length,errors:errors.length,copperHash:createHash('sha256').update(JSON.stringify(routes)).digest('hex'),timeSpent:solver.timeSpentOnPhase}
+          console.log('PORT_FILTER_OUTCOME_JSON='+JSON.stringify(summary))
+          writeFileSync('../results/'+process.env.VARIANT+'/summary.json',JSON.stringify(summary,null,2))
+          TS
+          cp layer-experiment.private.ts base/
+          (cd base && VARIANT=probe timeout 600s bun layer-experiment.private.ts > result.private.log 2>&1)
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path('base/result.private.log').read_text().splitlines():
+              if line.startswith(('PORT_FILTER_COUNTS_JSON=','PORT_FILTER_OUTCOME_JSON=')):
+                  print(line)
+          PY
