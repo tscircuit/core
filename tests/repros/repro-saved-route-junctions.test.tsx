@@ -16,10 +16,12 @@ beforeAll(async () => {
   expect(event.pcbTracePathsUnavailableReason).toBe(
     "Routes contain a junction or endpoint that cannot select a unique PCB port",
   )
-  addSavedRouteBranchStatus(
-    fixture.circuit,
-    `Save: ${event.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${event.pcbTracePaths?.length ?? 0} / 4 paths)`,
-  )
+  addSavedRouteBranchStatus(fixture.circuit, {
+    operation: "save",
+    actualCount: event.pcbTracePaths?.length ?? 0,
+    expectedCount: 4,
+    error: event.pcbTracePathsUnavailableReason,
+  })
   // Snapshot errors must fail CI, independently of the expected export failure.
   await expect(fixture.circuit).toMatchPcbSnapshot(import.meta.path)
 })
@@ -38,10 +40,12 @@ test.failing(
     expect(replay.circuit.db.pcb_autorouting_error.list()).toEqual([])
     expect(getSavedRouteBranchCopper(replay.circuit)).toEqual(fixture.routes)
     const replayEvent = replay.events[0]!
-    addSavedRouteBranchStatus(
-      replay.circuit,
-      `Save: ${replayEvent.pcbTracePathsUnavailableReason ? "BLOCKED" : "OK"} (${replayEvent.pcbTracePaths?.length ?? 0} / 4 paths)`,
-    )
+    addSavedRouteBranchStatus(replay.circuit, {
+      operation: "save",
+      actualCount: replayEvent.pcbTracePaths?.length ?? 0,
+      expectedCount: 4,
+      error: replayEvent.pcbTracePathsUnavailableReason,
+    })
     await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
   },
 )

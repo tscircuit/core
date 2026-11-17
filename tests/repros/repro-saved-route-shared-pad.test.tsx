@@ -25,10 +25,12 @@ beforeAll(async () => {
     'Saved phase path "A.1" must select exactly one connection in this phase',
   ])
   expect(replay.circuit.db.pcb_trace.list()).toHaveLength(0)
-  addSavedRouteBranchStatus(
-    replay.circuit,
-    `Replay: ${errors.length ? "BLOCKED" : "OK"} (${replay.circuit.db.pcb_trace.list().length} / 2 traces)`,
-  )
+  addSavedRouteBranchStatus(replay.circuit, {
+    operation: "replay",
+    actualCount: replay.circuit.db.pcb_trace.list().length,
+    expectedCount: 2,
+    error: errors[0]?.message,
+  })
   // A failed replay has pads but no copper. Keep its visual check outside test.failing.
   await expect(replay.circuit).toMatchPcbSnapshot(import.meta.path)
 })
