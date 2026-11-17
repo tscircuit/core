@@ -1,0 +1,109 @@
+name: Profile captured published DDR remaining stages
+on:
+  push:
+    branches: [artifacts/ddr-3209-root-cause-profile]
+permissions:
+  contents: read
+jobs:
+  profile:
+    name: Profile ${{ matrix.circuit }} ${{ matrix.release }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        circuit: [a13, butterstick]
+        release: [base, head]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-ddr-3209-${{ matrix.circuit }}
+          run-id: 44050671541
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Restore exact release dependency graph
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync,writeFileSync,readFileSync,copyFileSync} from 'node:fs'
+          const release=process.env.RELEASE
+          const runtime=JSON.parse(readFileSync('captured/'+release+'/published-runtime.json','utf8'))
+          mkdirSync('runtime',{recursive:true})
+          writeFileSync('runtime/package.json',JSON.stringify({name:'ddr-published-'+release,private:true,type:'module',dependencies:runtime.dependencies},null,2))
+          copyFileSync('captured/'+release+'/install.lock','runtime/bun.lock')
+          JS
+          (cd runtime && bun install --frozen-lockfile --ignore-scripts)
+      - name: Profile unchanged captured latest SRJ on both published autorouters
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+          RELEASE: ${{ matrix.release }}
+        run: |
+          cat > runtime/profile.ts <<'TS'
+          import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+          import { AutoroutingPipelineSolver } from '@tscircuit/capacity-autorouter'
+          import { gzipSync } from 'node:zlib'
+          const circuit=process.env.CIRCUIT!
+          const release=process.env.RELEASE!
+          const phase=circuit==='a13'?5:3
+          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
+          mkdirSync('../profile',{recursive:true})
+          writeFileSync('../profile/input.srj.json',JSON.stringify(input))
+          const started=performance.now()
+          const solver=new AutoroutingPipelineSolver(input,{cacheProvider:null})
+          let previous=''
+          let lastReport=0
+          const seen=new Set<string>()
+          function chain(s: any): unknown[] {
+            const out=[]
+            for(let i=0;s&&i<9;i++,s=s.activeSubSolver??s.traceContactRepairSolver) {
+              const state:any={name:s.constructor.name,iterations:s.iterations,solved:s.solved,failed:s.failed}
+              for(const key of ['currentPipelineStepIndex','currentStepIndex','phase','stage','stats','error']) {
+                const value=s[key]
+                if(value===undefined)continue
+                if(key==='stats')state.stats=Object.fromEntries(Object.entries(value).filter(([,v])=>typeof v!=='object'))
+                else state[key]=value
+              }
+              for(const key of ['routes','failedSolvers','failedRoutes','solvers'])if(Array.isArray(s[key]))state[key+'Count']=s[key].length
+              out.push(state)
+            }
+            return out
+          }
+          while(!solver.solved&&!solver.failed&&performance.now()-started<600000) {
+            const phaseName=solver.getCurrentPhase()
+            if(phaseName!==previous) {
+              console.log('PHASE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,phase:phaseName,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}))
+              previous=phaseName
+              if(['pipeline9JointDrcRepairSolver','effortCleanupSolver'].includes(phaseName)&&!seen.has(phaseName)) {
+                seen.add(phaseName)
+                const joint=solver.pipeline9JointDrcRepairSolver
+                const routes=phaseName==='effortCleanupSolver'?joint?.getOutput():solver.globalDrcForceImproveSolver?.getOutput()
+                if(routes)writeFileSync('../profile/'+phaseName+'.routes.json',JSON.stringify(routes))
+              }
+            }
+            solver.step()
+            if(performance.now()-lastReport>15000) {
+              lastReport=performance.now()
+              console.log('ACTIVE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,chain:chain(solver)}))
+            }
+          }
+          const result={circuit,release,solved:solver.solved,failed:solver.failed,error:solver.error,seconds:(performance.now()-started)/1000,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}
+          writeFileSync('../profile/result.json',JSON.stringify(result,null,2))
+          if(solver.solved)writeFileSync('../profile/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
+          console.log('PROFILE_RESULT_JSON='+JSON.stringify(result))
+          TS
+          cd runtime
+          bun profile.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ddr-3209-profile-${{ matrix.circuit }}-${{ matrix.release }}
+          path: profile/
+          retention-days: 14
