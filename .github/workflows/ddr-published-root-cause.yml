@@ -1,20 +1,20 @@
-name: Profile captured published DDR remaining stages
+name: Extended published A13 baseline
 on:
   push:
     branches: [artifacts/ddr-3209-root-cause-profile]
 permissions:
   contents: read
 jobs:
-  profile:
-    name: Profile ${{ matrix.circuit }} ${{ matrix.release }}
+  benchmark:
+    name: Published ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 18
+    timeout-minutes: 35
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 5
       matrix:
-        circuit: [a13, butterstick]
-        release: [base, head]
+        include:
+          - { circuit: a13, order: "head" }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,88 +22,99 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
-      - uses: actions/download-artifact@v4
-        with:
-          name: published-ddr-3209-${{ matrix.circuit }}
-          run-id: 44050671541
-          github-token: ${{ github.token }}
-          path: captured
-      - name: Restore exact release dependency graph
-        env:
-          RELEASE: ${{ matrix.release }}
+      - name: Install exact published packages without changing the board fixtures
         run: |
-          node --input-type=module <<'JS'
-          import {mkdirSync,writeFileSync,readFileSync,copyFileSync} from 'node:fs'
-          const release=process.env.RELEASE
-          const runtime=JSON.parse(readFileSync('captured/'+release+'/published-runtime.json','utf8'))
-          mkdirSync('runtime',{recursive:true})
-          writeFileSync('runtime/package.json',JSON.stringify({name:'ddr-published-'+release,private:true,type:'module',dependencies:runtime.dependencies},null,2))
-          copyFileSync('captured/'+release+'/install.lock','runtime/bun.lock')
+          cat > prepare-published.private.mjs <<'JS'
+          import {mkdir,writeFile,readFile,symlink} from 'node:fs/promises'
+          import path from 'node:path'
+          const benchmark='github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690'
+          async function registry(name,version) {
+            const response=await fetch('https://registry.npmjs.org/'+name+'/'+version)
+            if(!response.ok)throw Error('Registry metadata failed: '+name+' '+version+' '+response.status)
+            return await response.json()
+          }
+          function exact(version) {
+            const parsed=version.replace(/^[\^~]/,'')
+            if(!/^\d+\.\d+\.\d+$/.test(parsed))throw Error('Expected an exact release: '+version)
+            return parsed
+          }
+          for(const [label,version] of [['base','0.0.3209'],['head','0.0.3209']]) {
+            const published=await registry('tscircuit',version)
+            const coreVersion=exact(published.dependencies['@tscircuit/core'])
+            const core=await registry('@tscircuit/core',coreVersion)
+            const dependencies={'tscircuit':version,'@tscircuit/core':coreVersion,'@tscircuit/core-ddr-benchmark':benchmark}
+            for(const name of ['@tscircuit/capacity-autorouter','@tscircuit/checks','@tscircuit/props','circuit-json','@tscircuit/fanout-solver']) {
+              const declared=published.dependencies[name]??core.devDependencies[name]
+              if(!declared)throw Error('Missing published routing dependency '+name)
+              dependencies[name]=exact(declared)
+            }
+            dependencies['@tscircuit/bus-lanes-solver']=core.devDependencies['@tscircuit/bus-lanes-solver']
+            if(!dependencies['@tscircuit/bus-lanes-solver'])throw Error('Missing bus package provenance')
+            await mkdir(label,{recursive:true})
+            await writeFile(label+'/package.json',JSON.stringify({name:'ddr-published-'+label,private:true,type:'module',dependencies},null,2))
+            await writeFile(label+'/index.ts','export { RootCircuit } from "tscircuit"\n')
+            await writeFile(label+'/tsconfig.json',await readFile('tsconfig.json'))
+            // The unchanged benchmark accepts a Core checkout. This real source
+            // tree supplies its checkout guard only; index.ts uses npm code.
+            await symlink(path.resolve('lib'),label+'/lib','dir')
+            await writeFile(label+'/published-runtime.json',JSON.stringify({tscircuit:version,core:coreVersion,entry:'export { RootCircuit } from "tscircuit"',tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,dependencies,boardBenchmark:benchmark,sourceTreeExecuted:false},null,2))
+          }
           JS
-          (cd runtime && bun install --frozen-lockfile --ignore-scripts)
-      - name: Profile unchanged captured latest SRJ on both published autorouters
+          node prepare-published.private.mjs
+          (cd base && bun install --ignore-scripts)
+          (cd head && bun install --ignore-scripts)
+      - name: Fresh real TSX and published Core solves on the same machine
         env:
           CIRCUIT: ${{ matrix.circuit }}
-          RELEASE: ${{ matrix.release }}
+          RELEASE_ORDER: ${{ matrix.order }}
         run: |
-          cat > runtime/profile.ts <<'TS'
-          import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
-          import { AutoroutingPipelineSolver } from '@tscircuit/capacity-autorouter'
-          import { gzipSync } from 'node:zlib'
-          const circuit=process.env.CIRCUIT!
-          const release=process.env.RELEASE!
-          const phase=circuit==='a13'?5:3
-          const input=JSON.parse(readFileSync('../captured/head/'+circuit+'/phase-'+phase+'-start.srj.json','utf8'))
-          mkdirSync('../profile',{recursive:true})
-          writeFileSync('../profile/input.srj.json',JSON.stringify(input))
-          const started=performance.now()
-          const solver=new AutoroutingPipelineSolver(input,{cacheProvider:null})
-          let previous=''
-          let lastReport=0
-          const seen=new Set<string>()
-          function chain(s: any): unknown[] {
-            const out=[]
-            for(let i=0;s&&i<9;i++,s=s.activeSubSolver??s.traceContactRepairSolver) {
-              const state:any={name:s.constructor.name,iterations:s.iterations,solved:s.solved,failed:s.failed}
-              for(const key of ['currentPipelineStepIndex','currentStepIndex','phase','stage','stats','error']) {
-                const value=s[key]
-                if(value===undefined)continue
-                if(key==='stats')state.stats=Object.fromEntries(Object.entries(value).filter(([,v])=>typeof v!=='object'))
-                else state[key]=value
-              }
-              for(const key of ['routes','failedSolvers','failedRoutes','solvers'])if(Array.isArray(s[key]))state[key+'Count']=s[key].length
-              out.push(state)
-            }
-            return out
-          }
-          while(!solver.solved&&!solver.failed&&performance.now()-started<600000) {
-            const phaseName=solver.getCurrentPhase()
-            if(phaseName!==previous) {
-              console.log('PHASE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,phase:phaseName,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}))
-              previous=phaseName
-              if(['pipeline9JointDrcRepairSolver','effortCleanupSolver'].includes(phaseName)&&!seen.has(phaseName)) {
-                seen.add(phaseName)
-                const joint=solver.pipeline9JointDrcRepairSolver
-                const routes=phaseName==='effortCleanupSolver'?joint?.getOutput():solver.globalDrcForceImproveSolver?.getOutput()
-                if(routes)writeFileSync('../profile/'+phaseName+'.routes.json',JSON.stringify(routes))
-              }
-            }
-            solver.step()
-            if(performance.now()-lastReport>15000) {
-              lastReport=performance.now()
-              console.log('ACTIVE_PROFILE_JSON='+JSON.stringify({circuit,release,elapsedMs:performance.now()-started,chain:chain(solver)}))
+          mkdir -p results
+          infrastructure_status=0
+          for release in $RELEASE_ORDER; do
+            bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" \
+              --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" \
+              --circuit "$CIRCUIT" --timeout 600 || infrastructure_status=$?
+            cp "$release/published-runtime.json" "results/$release/"
+            cp "$release/bun.lock" "results/$release/install.lock"
+          done
+          exit "$infrastructure_status"
+      - name: Print results and preserve native circuit SVGs
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > inspect-published.private.ts <<'TS'
+          import {readFileSync,writeFileSync,existsSync} from 'node:fs'
+          import path from 'node:path'
+          import {createHash} from 'node:crypto'
+          const renderer=await import(path.resolve('head/node_modules/circuit-to-svg/dist/index.js'))
+          for(const release of ['head']) {
+            const root=path.resolve('results',release)
+            if(!existsSync(root+'/results.json'))continue
+            const report=JSON.parse(readFileSync(root+'/results.json','utf8'))
+            const published=JSON.parse(readFileSync(root+'/published-runtime.json','utf8'))
+            for(const row of report.cases) {
+              const circuitFile=root+'/'+row.circuit+'/circuit.json'
+              const circuit=existsSync(circuitFile)?JSON.parse(readFileSync(circuitFile,'utf8')):[]
+              const copper=circuit.filter(p=>p.type==='pcb_trace'||p.type==='pcb_via')
+              const assessment=row.assessment
+              const physical=assessment?Object.entries(assessment.findings).filter(([name])=>!['missing_traces','disconnected_ports'].includes(name)).reduce((sum,[,count])=>sum+Number(count),0):null
+              const compact={release,published,metadata:Object.fromEntries(Object.entries(report).filter(([key])=>key!=='cases')),circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,assessment,physicalFindings:physical,progress:row.progress,copperSha256:createHash('sha256').update(JSON.stringify(copper)).digest('hex')}
+              writeFileSync(root+'/compact.json',JSON.stringify(compact,null,2))
+              console.log('PUBLISHED_CASE_JSON='+JSON.stringify(compact))
+              const board=circuit.find(p=>p.type==='pcb_board')
+              if(!board)continue
+              // Board-world millimetres, +X right, +Y up. Padding is viewport only.
+              const caption={type:'pcb_note_text',pcb_note_text_id:'published_status',text:published.tscircuit+' / '+row.circuit+': '+(assessment?.connectedNets??'?')+'/'+(assessment?.requestedNets??'?')+' connected; '+physical+' physical findings; '+row.status,anchor_position:{x:board.center.x,y:board.center.y+board.height/2+1.5},anchor_alignment:'center',font:'tscircuit2024',layer:'top',font_size:Math.max(0.35,board.width/100)}
+              const svg=renderer.convertCircuitJsonToPcbSvg([...circuit,caption],{backgroundColor:'white',width:1400,height:1000,shouldDrawRatsNest:false,showErrorsInTextOverlay:false,viewport:{minX:board.center.x-board.width/2-2,maxX:board.center.x+board.width/2+2,minY:board.center.y-board.height/2-2,maxY:board.center.y+board.height/2+4}})
+              writeFileSync(root+'/'+row.circuit+'/board.svg',svg)
             }
           }
-          const result={circuit,release,solved:solver.solved,failed:solver.failed,error:solver.error,seconds:(performance.now()-started)/1000,chain:chain(solver),timeSpent:solver.timeSpentOnPhase}
-          writeFileSync('../profile/result.json',JSON.stringify(result,null,2))
-          if(solver.solved)writeFileSync('../profile/output.srj.json',JSON.stringify(solver.getOutputSimpleRouteJson()))
-          console.log('PROFILE_RESULT_JSON='+JSON.stringify(result))
           TS
-          cd runtime
-          bun profile.ts
+          bun inspect-published.private.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ddr-3209-profile-${{ matrix.circuit }}-${{ matrix.release }}
-          path: profile/
+          name: published-ddr-3209-extended-${{ matrix.circuit }}
+          path: results/
           retention-days: 14
