@@ -197,26 +197,6 @@ export const insertNetLabelsForPortsMissingTrace = ({
       })
     }
 
-    const existingAtPort = db.schematic_net_label.list().some((nl) => {
-      if (nl.schematic_sheet_id !== portSchematicSheetId) return false
-      if (!nl.anchor_position) return false
-      const dx = nl.anchor_position.x - schPort.center.x
-      const dy = nl.anchor_position.y - schPort.center.y
-      if (
-        dx * dx + dy * dy >=
-        SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
-      ) {
-        return false
-      }
-      return doesSchematicNetLabelRepresentCurrentSourceConnection({
-        nl,
-        connKey,
-        sourceNet,
-        text,
-      })
-    })
-    if (existingAtPort) continue
-
     const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
       .list()
       .find((nl) => {
@@ -301,6 +281,25 @@ export const insertNetLabelsForPortsMissingTrace = ({
         }
         continue
       }
+
+      const existingAtPort = db.schematic_net_label.list().some((nl) => {
+        if (nl.schematic_sheet_id !== portSchematicSheetId) return false
+        const dx = nl.anchor_position!.x - schPort.center.x
+        const dy = nl.anchor_position!.y - schPort.center.y
+        if (
+          dx * dx + dy * dy >=
+          SAME_ANCHOR_POSITION_DISTANCE * SAME_ANCHOR_POSITION_DISTANCE
+        ) {
+          return false
+        }
+        return doesSchematicNetLabelRepresentCurrentSourceConnection({
+          nl,
+          connKey,
+          sourceNet,
+          text,
+        })
+      })
+      if (existingAtPort) continue
     }
 
     if (!sourceNet && !shouldPreserveDirectConnectionEndpointLabels) {
