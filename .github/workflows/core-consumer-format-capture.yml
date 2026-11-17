@@ -1,0 +1,26 @@
+name: Core consumer canonical format capture
+
+on:
+  push:
+    branches: [diagnostics/core-consumer-proof-format-197]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.repository == 'tscircuit/core' && github.ref_name == 'diagnostics/core-consumer-proof-format-197'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - name: Install formatter and parser dependencies
+        run: bun install --ignore-scripts
+      - name: Capture only the canonical formatter output
+        run: bun test tests/core-consumer-format-capture.test.ts --timeout 240000
