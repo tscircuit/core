@@ -53,3 +53,56 @@ jobs:
               if counts: summary[kind]=dict(counts)
           print('A13_DRC_PHASE_COUNTS_JSON='+json.dumps(summary,separators=(',',':')))
           PY
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install the published checker only
+        run: |
+          mkdir analysis-runtime
+          cd analysis-runtime
+          bun init -y
+          bun add @tscircuit/checks@0.0.279
+      - name: Compare aggregate physical findings with and without completed data copper
+        run: |
+          cat > analysis-runtime/inspect.ts <<'TS'
+          import {readFileSync,readdirSync} from 'node:fs'
+          import * as checks from '@tscircuit/checks'
+          import {gunzipSync} from 'node:zlib'
+          function find(name:string,path='captured'):string {
+            for(const entry of readdirSync(path,{withFileTypes:true})) {
+              const child=path+'/'+entry.name
+              if(entry.isDirectory()){const nested=find(name,child);if(nested)return nested}
+              else if(entry.name===name)return child
+            }
+            return ''
+          }
+          const json=JSON.parse(readFileSync(find('circuit.json'),'utf8'))
+          const saved=JSON.parse(readFileSync(find('findings.json'),'utf8'))
+          const fixture=JSON.parse(gunzipSync(readFileSync('circuits/a13.json.gz')).toString())
+          const phaseByName=new Map(fixture.traces.map((t:any)=>[t.name,t.group]))
+          const sources=new Map(json.filter((p:any)=>p.type==='source_trace').map((p:any)=>[p.source_trace_id,p]))
+          const nets=new Map(json.filter((p:any)=>p.type==='source_net').map((p:any)=>[p.source_net_id,p]))
+          const traces=json.filter((p:any)=>p.type==='pcb_trace')
+          function phase(trace:any):string {
+            const source:any=sources.get(trace.source_trace_id)
+            const net:any=nets.get(trace.source_trace_id)??(source?.connected_source_net_ids??[]).map((id:string)=>nets.get(id)).find(Boolean)
+            return String(phaseByName.get(net?.name)??'unknown')
+          }
+          function count(circuit:any[]):Record<string,number> {
+            const options={minClearance:fixture.rules.appliedGlobalClearance}
+            const results={trace_overlap:checks.checkEachPcbTraceNonOverlapping(circuit,options),pad_trace:checks.checkPadTraceClearance(circuit,options),via_trace:checks.checkViaTraceClearance(circuit,options),via_pad:checks.checkViaPadClearance(circuit,options),via_spacing:checks.checkDifferentNetViaSpacing(circuit)}
+            return Object.fromEntries(Object.entries(results).map(([kind,errors])=>[kind,errors.filter((e:any)=>e.type.endsWith('_error')).length]))
+          }
+          const subsets:Record<string,unknown>={}
+          for(const subset of ['data','remaining']) {
+            const retained=traces.filter((t:any)=>subset==='remaining'?phase(t)==='remaining':phase(t)!=='remaining')
+            const ids=new Set(retained.map((t:any)=>t.pcb_trace_id))
+            const viaPositions=new Set(retained.flatMap((t:any)=>t.route.filter((p:any)=>p.route_type==='via').map((p:any)=>p.x+','+p.y)))
+            const circuit=json.filter((p:any)=>p.type==='pcb_trace'?ids.has(p.pcb_trace_id):p.type==='pcb_via'?viaPositions.has(p.x+','+p.y):true)
+            subsets[subset]=count(circuit)
+          }
+          const schema=Object.fromEntries(Object.entries(saved).filter(([kind])=>!['missing_traces','disconnected_ports','width'].includes(kind)).map(([kind,errors]:any)=>[kind,[...new Set(errors.flatMap((e:any)=>Object.keys(e)))]]))
+          console.log('A13_PHASE_SUBSET_COUNTS_JSON='+JSON.stringify(subsets))
+          console.log('DRC_ERROR_FIELD_NAMES_JSON='+JSON.stringify(schema))
+          TS
+          bun analysis-runtime/inspect.ts
