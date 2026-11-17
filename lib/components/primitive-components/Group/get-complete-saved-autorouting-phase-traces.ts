@@ -19,6 +19,7 @@ import type { Port } from "../Port"
 import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
+import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
 
 /**
  * Replay a complete phase as connected copper, rather than consuming pads in
@@ -209,16 +210,33 @@ export function getCompleteSavedAutoroutingPhaseTraces({
       )
   }
   const traces: SimplifiedPcbTrace[] = preparedPaths.map(
-    ({ route, connection }, pathIndex) => ({
-      type: "pcb_trace",
-      pcb_trace_id: `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`,
-      connection_name: connection.name,
-      connectsTo: [
-        connection.source_trace_id,
-        ...connection.pointsToConnect.map((point) => point.pointId),
-      ].filter((id): id is string => Boolean(id)),
-      route: getSavedTraceRouteWithViaContacts(route, input.minTraceWidth),
-    }),
+    ({ route, connection, port }, pathIndex) => {
+      const trace: SimplifiedPcbTrace = {
+        type: "pcb_trace",
+        pcb_trace_id: `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`,
+        connection_name: connection.name,
+        connectsTo: [
+          connection.source_trace_id,
+          ...connection.pointsToConnect.map((point) => point.pointId),
+        ].filter((id): id is string => Boolean(id)),
+        route: getSavedTraceRouteWithViaContacts(route, input.minTraceWidth),
+      }
+      const { db } = port.root!
+      const sourceNet = db.source_net.get(
+        connection.netConnectionName ?? connection.name,
+      )
+      // Preserve the validated SRJ source before insertion. Endpoint geometry
+      // can identify a local trace; a shared named-net branch retains the net.
+      // An internal trunk without pad endpoints still has its SRJ connection,
+      // so its identity does not depend on which neighboring path is inserted first.
+      const sourceTraceId =
+        getSourceTraceIdForRoutedTrace({
+          db,
+          trace: { ...trace, source_trace_id: sourceNet?.source_net_id },
+          subcircuit_id: port.getSubcircuit().subcircuit_id,
+        }) ?? connection.source_trace_id
+      return { ...trace, source_trace_id: sourceTraceId }
+    },
   )
   return { traces }
 }

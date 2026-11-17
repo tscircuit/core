@@ -8,15 +8,11 @@ import type {
   SourceTrace,
 } from "circuit-json"
 import { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type {
-  SimplifiedPcbTrace,
-  SrjConnectionName,
-} from "lib/utils/autorouting/SimpleRouteJson"
+import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { applyToPoint, rotateDEG } from "transformation-matrix"
 
 type RoutedTrace = (PcbTrace | SimplifiedPcbTrace) & {
   source_trace_id?: string
-  connection_name?: SrjConnectionName
 }
 type SourcePortId = SourcePort["source_port_id"]
 
@@ -282,9 +278,8 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
-  const routedSourceId = trace.source_trace_id ?? trace.connection_name
-  const routedSourceNet = routedSourceId
-    ? db.source_net.get(routedSourceId)
+  const routedSourceNet = trace.source_trace_id
+    ? db.source_net.get(trace.source_trace_id)
     : undefined
   const sourceTraces = db.source_trace.list()
   const connMap = buildSourceConnectivityMap(sourceTraces)
@@ -305,11 +300,6 @@ export function getSourceTraceIdForRoutedTrace({
     return (
       soleRoutedNetSourceTrace?.source_trace_id ??
       routedSourceNet?.source_net_id ??
-      // A junction-to-junction route has no pad endpoints. Retain its SRJ
-      // source identity even when it is inserted before the adjacent branches.
-      (routedSourceId
-        ? db.source_trace.get(routedSourceId)?.source_trace_id
-        : undefined) ??
       getSourceIdsFromConnectedPcbTraces(db, trace)[0]
     )
   }
