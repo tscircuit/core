@@ -2,16 +2,33 @@ import { expect, test } from "bun:test"
 import type { AutoroutingStartEvent } from "lib/events"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a saved branch claims only connections covered by its copper", async () => {
+test("a saved branch through a plated pad only claims covered connections", async () => {
   const { circuit } = getTestFixture()
   const stages: AutoroutingStartEvent[] = []
   circuit.on("autorouting:start", (event) => stages.push(event))
   circuit.add(
     <board width={18} height={12} schematicDisabled>
-      <testpoint name="A" footprintVariant="pad" pcbX={-5} />
+      <testpoint
+        name="A"
+        footprintVariant="through_hole"
+        pcbX={-5}
+        holeDiameter={0.4}
+      />
       <testpoint name="B" footprintVariant="pad" pcbX={1} />
-      <testpoint name="C" footprintVariant="pad" pcbX={-1} pcbY={3} />
-      <testpoint name="D" footprintVariant="pad" pcbX={5} pcbY={3} />
+      <testpoint
+        name="C"
+        footprintVariant="pad"
+        pcbX={-1}
+        pcbY={3}
+        layer="bottom"
+      />
+      <testpoint
+        name="D"
+        footprintVariant="pad"
+        pcbX={5}
+        pcbY={3}
+        layer="bottom"
+      />
       <trace from="A.1" to="B.1" />
       <trace from="B.1" to="C.1" />
       <trace from="C.1" to="D.1" />
@@ -28,14 +45,14 @@ test("a saved branch claims only connections covered by its copper", async () =>
           {
             connection: "A.1",
             route: [
-              { route_type: "wire", x: -5, y: 0, width: 0.25, layer: "top" },
-              { route_type: "wire", x: -1, y: 3, width: 0.25, layer: "top" },
+              { route_type: "wire", x: -5, y: 0, width: 0.25, layer: "bottom" },
+              { route_type: "wire", x: -1, y: 3, width: 0.25, layer: "bottom" },
             ],
           },
         ]}
       />
       <pcbnotetext
-        text="Saved copper joins A, B and C"
+        text="Plated pad A joins saved copper on both layers"
         pcbY={5}
         fontSize={0.45}
       />

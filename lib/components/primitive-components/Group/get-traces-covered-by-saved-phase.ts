@@ -8,7 +8,7 @@ import { getSavedRouteContacts } from "./get-saved-route-contacts"
 /** Find implicit phase targets whose PCB ports are joined by saved copper. */
 export function getTracesCoveredBySavedPhase(
   phase: AutoroutingPhase,
-  candidates: Trace[],
+  traces: Trace[],
 ) {
   const group = phase.getGroup()!
   const subcircuit = phase.getSubcircuit()
@@ -23,7 +23,7 @@ export function getTracesCoveredBySavedPhase(
   )
 
   const terminals: PcbPort[] = []
-  const terminalIndicesByTrace = candidates.map((trace) =>
+  const terminalIndicesByTrace = traces.map((trace) =>
     (trace._findConnectedPorts().ports ?? []).flatMap(({ pcb_port_id }) => {
       const port = pcb_port_id ? db.pcb_port.get(pcb_port_id) : null
       return port ? [terminals.push(port) - 1] : []
@@ -37,7 +37,7 @@ export function getTracesCoveredBySavedPhase(
       : undefined,
   })
   const copperComponents = new Set(contacts.routeComponents)
-  return candidates.filter((_, index) => {
+  return traces.filter((_, index) => {
     const terminalIndices = terminalIndicesByTrace[index]!
     const component = contacts.terminalComponents[terminalIndices[0]!]
     return (

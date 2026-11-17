@@ -429,7 +429,10 @@ export function Group_getRoutingPhasePlans(
         getTraceRoutingPhaseIndex({ trace, buses }, selectionContext) === null,
     )
     if (!candidates.length) continue
-    for (const trace of getTracesCoveredBySavedPhase(phase, candidates)) {
+    for (const trace of getTracesCoveredBySavedPhase(phase, [
+      ...selected,
+      ...candidates,
+    ])) {
       selected.add(trace)
       selectedTraces.add(trace)
     }
