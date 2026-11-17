@@ -15,17 +15,23 @@ test("renders all ten NEMA 17 motor controller schematic sheets", async () => {
   )
   const sheets = circuitJson
     .filter((element) => element.type === "schematic_sheet")
-    .sort((a, b) => a.sheet_index - b.sheet_index)
+    .map(({ name, sheet_index: sheetIndex, schematic_sheet_id: sheetId }) => {
+      if (!name || sheetIndex === undefined) {
+        throw new Error("Every NEMA 17 schematic sheet needs a name and index")
+      }
+      return { name, sheetIndex, sheetId }
+    })
+    .sort((a, b) => a.sheetIndex - b.sheetIndex)
 
-  expect(sheets.map((sheet) => sheet.sheet_index)).toEqual([
+  expect(sheets.map((sheet) => sheet.sheetIndex)).toEqual([
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
   ])
 
-  for (const sheet of sheets) {
-    const number = String(sheet.sheet_index).padStart(2, "0")
-    const snapshotName = `${number}-${sheet.name.replaceAll("_", "-")}`
+  for (const { name, sheetIndex, sheetId } of sheets) {
+    const number = String(sheetIndex).padStart(2, "0")
+    const snapshotName = `${number}-${name.replaceAll("_", "-")}`
     const svg = convertCircuitJsonToSchematicSvg(circuitJson, {
-      schematicSheetId: sheet.schematic_sheet_id,
+      schematicSheetId: sheetId,
       width: 1600,
       height: 1100,
     })
