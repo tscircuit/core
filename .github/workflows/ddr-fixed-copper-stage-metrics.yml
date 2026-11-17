@@ -85,7 +85,13 @@ jobs:
             const introduced=[...contacts.keys()].filter(key=>!previousContacts.has(key)).length
             const cleared=[...previousContacts.keys()].filter(key=>!contacts.has(key)).length
             const deepened=[...contacts].filter(([key,severity])=>previousContacts.has(key)&&severity>previousContacts.get(key)!+1e-8).length
-            const metrics={blockedUniquePorts:new Set(violations.map(v=>v.routeIndex)).size,introducedContactPairCount:introduced,clearedContactPairCount:cleared,deepenedContactPairCount:deepened,phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
+            const blockedRoutes=[...new Set(violations.map(v=>v.routeIndex))].map(index=>routes[index])
+            const ports=solver.availableSegmentPointSolver.getOutput().flatMap(segment=>segment.portPoints.map(port=>({...port,numericalGap:!!segment.crossesNumericalGap})))
+            const byId=new Map(ports.map(port=>[port.segmentPortPointId,port]))
+            const nodeById=new Map(solver.capacityNodes.map(node=>[node.capacityMeshNodeId,node]))
+            const blockedPortCategories={terminal:0,cramped:0,numericalGap:0,qfpOwner:0,obstacleOwner:0,componentOwner:0,notFound:0}
+            for(const route of blockedRoutes){const point=route.route[0];const original=byId.get(point.portPointId);if(point.pcb_port_id)blockedPortCategories.terminal++;if(!original){blockedPortCategories.notFound++;continue;}if(original.cramped)blockedPortCategories.cramped++;if(original.numericalGap)blockedPortCategories.numericalGap++;const owners=original.nodeIds.map(id=>nodeById.get(id));if(owners.some(n=>n?._qfpRegionType))blockedPortCategories.qfpOwner++;if(owners.some(n=>n?._containsObstacle))blockedPortCategories.obstacleOwner++;if(owners.some(n=>n?._isComponentTopologyNode))blockedPortCategories.componentOwner++;}
+            const metrics={blockedPortCategories,blockedUniquePorts:new Set(violations.map(v=>v.routeIndex)).size,introducedContactPairCount:introduced,clearedContactPairCount:cleared,deepenedContactPairCount:deepened,phase:name,elapsedSeconds:(performance.now()-started)/1000,routes:routes.length,vias:routes.reduce((n,r)=>n+r.vias.length,0),points:routes.reduce((n,r)=>n+r.route.length,0),wireContactCount:violations.filter(v=>v.kind==='wire').length,viaContactCount:violations.filter(v=>v.kind==='via').length,contactPairCount:pairs.size,maxPenetrationMm:violations.reduce((m,v)=>Math.max(m,v.severity),0)}
             console.log('PIPELINE_COPPER_STAGE_METRICS_JSON='+JSON.stringify(metrics))
             previousContacts=contacts
             if(name==='uniformPortDistributionSolver')break
