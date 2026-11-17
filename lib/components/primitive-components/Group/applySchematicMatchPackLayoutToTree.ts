@@ -373,6 +373,57 @@ const getSchematicComponentForSourceComponent = ({
     ...(schematicSheetId ? { schematic_sheet_id: schematicSheetId } : {}),
   })
 
+function getSchematicGroupIdsForTreeNode(
+  db: CircuitJsonUtilObjects,
+  treeNode: CircuitJsonTreeNode,
+  schematicGroup: SchematicGroup,
+): Set<string> {
+  const sourceGroupIds = new Set<string>()
+  const collectGroupIds = (node: CircuitJsonTreeNode) => {
+    if (node.nodeType === "group" && node.sourceGroup?.source_group_id) {
+      sourceGroupIds.add(node.sourceGroup.source_group_id)
+    }
+    for (const child of node.childNodes ?? []) {
+      collectGroupIds(child)
+    }
+  }
+  collectGroupIds(treeNode)
+
+  const schematicGroupIds = new Set<string>([schematicGroup.schematic_group_id])
+  for (const sg of db.schematic_group.list()) {
+    if (sg.source_group_id && sourceGroupIds.has(sg.source_group_id)) {
+      schematicGroupIds.add(sg.schematic_group_id)
+    }
+  }
+  return schematicGroupIds
+}
+
+function getSchematicComponentsForGroupTreeNode({
+  db,
+  treeNode,
+  schematicGroup,
+  schematicSheetId,
+}: {
+  db: CircuitJsonUtilObjects
+  treeNode: CircuitJsonTreeNode
+  schematicGroup: SchematicGroup
+  schematicSheetId?: SchematicSheetId
+}): SchematicComponent[] {
+  const schematicGroupIds = getSchematicGroupIdsForTreeNode(
+    db,
+    treeNode,
+    schematicGroup,
+  )
+  return db.schematic_component
+    .list()
+    .filter(
+      (comp) =>
+        comp.schematic_group_id !== undefined &&
+        schematicGroupIds.has(comp.schematic_group_id) &&
+        (!schematicSheetId || comp.schematic_sheet_id === schematicSheetId),
+    )
+}
+
 function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
@@ -535,8 +586,11 @@ function convertTreeToMatchPackInputProblem(
       if (schematicGroup) {
         debug(`[${group.name}] Treating group ${groupId} as composite chip`)
 
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
+        const groupComponents = getSchematicComponentsForGroupTreeNode({
+          db,
+          treeNode: child,
+          schematicGroup,
+          schematicSheetId: opts.schematicSheetId,
         })
 
         debug(
@@ -622,8 +676,11 @@ function convertTreeToMatchPackInputProblem(
         })
 
         if (schematicGroup) {
-          const groupComponents = db.schematic_component.list({
-            schematic_group_id: schematicGroup.schematic_group_id,
+          const groupComponents = getSchematicComponentsForGroupTreeNode({
+            db,
+            treeNode,
+            schematicGroup,
+            schematicSheetId: opts.schematicSheetId,
           })
 
           for (const comp of groupComponents) {
@@ -1082,8 +1139,11 @@ export function applySchematicMatchPackLayoutToTree<
           `Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`,
         )
 
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
+        const groupComponents = getSchematicComponentsForGroupTreeNode({
+          db,
+          treeNode,
+          schematicGroup,
+          schematicSheetId: opts.schematicSheetId,
         })
 
         debug(
