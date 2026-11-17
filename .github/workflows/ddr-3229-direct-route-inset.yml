@@ -133,7 +133,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 9f01e90f00a5ead9cc7a184d6349445b7ca10c2b
+          ref: 1da31fe14be393a110260d64c17b53b3538bab1d
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -169,7 +169,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 9f01e90f00a5ead9cc7a184d6349445b7ca10c2b
+          ref: 1da31fe14be393a110260d64c17b53b3538bab1d
           path: same-machine-controller
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -181,7 +181,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 9f01e90f00a5ead9cc7a184d6349445b7ca10c2b
+          ref: 1da31fe14be393a110260d64c17b53b3538bab1d
           path: same-machine-pr
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
