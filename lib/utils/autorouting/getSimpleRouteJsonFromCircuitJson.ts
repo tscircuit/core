@@ -624,13 +624,15 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       orderedPathsBySourceTraceId.set(sourceTraceId, path)
     }
   }
-  // Preserve two-terminal pair sections and every ordered multi-port path
-  // before reducing the rest of each net.
+  // Preserve two-terminal pair sections, netless custom-thickness two-terminal
+  // traces, and every ordered multi-port path before reducing the rest of each net.
   const explicitPathSourceTraceIds = new Set([
     ...sourceTraces
       .filter(
         (trace) =>
-          differentialPairSourceTraceIds.has(trace.source_trace_id) &&
+          (differentialPairSourceTraceIds.has(trace.source_trace_id) ||
+            (trace.connected_source_net_ids.length === 0 &&
+              trace.min_trace_thickness !== undefined)) &&
           trace.connected_source_port_ids.length === 2,
       )
       .map((trace) => trace.source_trace_id),
@@ -839,23 +841,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         sourceNet.trace_width,
       )
     }
-    for (const sourceTrace of connectedSourceTraces) {
-      if (sourceTrace.min_trace_thickness === undefined) continue
-      nominalTraceWidthForConnection = Math.max(
-        nominalTraceWidthForConnection ?? 0,
-        sourceTrace.min_trace_thickness,
-      )
+    const netWidthSourceTraces = connectedSourceTraces.filter(
+      (st) => !explicitPathSourceTraceIds.has(st.source_trace_id),
+    )
+    if (
+      netWidthSourceTraces.length > 0 &&
+      netWidthSourceTraces.every((st) => st.min_trace_thickness !== undefined)
+    ) {
+      for (const sourceTrace of netWidthSourceTraces) {
+        nominalTraceWidthForConnection = Math.max(
+          nominalTraceWidthForConnection ?? 0,
+          sourceTrace.min_trace_thickness!,
+        )
+      }
     }
 
-    // Explicit paths preserve their identity, but still inherit net width rules.
+    // Explicit paths preserve their identity, but still inherit net width rules
+    // when they do not declare their own trace thickness.
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
     for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
       connection.netConnectionName = net.source_net_id
-      connection.nominalTraceWidth = nominalTraceWidthForConnection
-      connection.width = nominalTraceWidthForConnection
+      connection.nominalTraceWidth ??= nominalTraceWidthForConnection
+      connection.width ??= nominalTraceWidthForConnection
     }
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
