@@ -27,9 +27,112 @@ jobs:
       - run: bun install --ignore-scripts
       - name: Ask the existing physical fanout search for DM1 escape sites
         run: |
+          cat > pad-escapes.private.ts <<'PAD'
+          import { applyToPoint } from "transformation-matrix"
+          import { expandedSignalSites } from "./lib/expanded-signal-sites"
+          import { GridVisibilitySearch } from "./lib/grid-visibility"
+          import { packageApproachRegions } from "./lib/package-approach-regions"
+          import { getPackagePadFrame } from "./lib/package-pad-frame"
+          import type { Connection, Obstacle, SimpleRouteJson } from "./lib/types"
+          import { VectorScene, fixedCopper } from "./lib/vector-scene"
+          
+          type PcbPortId = string
+          type NativePad = Obstacle & {
+            circuitJsonMetadata?: { pcb_port_id?: PcbPortId }
+          }
+          
+          /** How a pad can still be reached: through a native expanded site (including
+           * an existing target-layer handoff), or by leaving its package's pad field on
+           * its own layer. `null` means neither. */
+          export type PadEscape = "via_site" | "surface_exit" | null
+          
+          /** What one pad of a not-yet-routed connection can still do beside the copper
+           * in `input`. Uses the solver's own site and visibility searches; the surface
+           * search runs only when no via site is left. Board coordinates in mm, +X
+           * right, +Y up. */
+          export function getPadEscape(params: {
+            input: SimpleRouteJson
+            connection: Connection
+            end: number
+            viaTargetLayer: string
+          }): PadEscape {
+            const { input, connection, end, viaTargetLayer } = params
+            const start = connection.pointsToConnect[end]
+            if (!start) throw Error(connection.name + " has no terminal " + end)
+            const pcbPortId = start.pcb_port_id
+            if (!pcbPortId) throw Error(`${connection.name} end ${end} has no pcb port`)
+            // The production site generator searches its first two terminals. Put the
+            // requested native terminal first, retaining every other terminal and its
+            // metadata, so this oracle can inspect any endpoint of a multi-terminal net.
+            const selectedConnection = {
+              ...connection,
+              pointsToConnect: [
+                start,
+                ...connection.pointsToConnect.filter((_, index) => index !== end),
+              ],
+            }
+            const sites = expandedSignalSites({
+              input: { ...input, connections: [selectedConnection] },
+              connection: selectedConnection,
+              targetLayer: viaTargetLayer,
+              allowPadEdgeSites: true,
+            })
+            let siteStep = sites.next()
+            while (!siteStep.done) siteStep = sites.next()
+            if (siteStep.value[0].length > 0) return "via_site"
+          
+            const pads: NativePad[] = input.obstacles.filter((pad) => pad.componentId)
+            const pad = pads.find(
+              (candidate) => candidate.circuitJsonMetadata?.pcb_port_id === pcbPortId,
+            )
+            if (!pad) throw Error(`No native pad for ${pcbPortId}`)
+            const componentIds = [
+              ...new Set(pads.map((candidate) => candidate.componentId)),
+            ]
+            const { field, boardToPackage, packageToBoard } = getPackagePadFrame(
+              pads.filter((candidate) => candidate.componentId === pad.componentId),
+              packageApproachRegions(input, 0)[componentIds.indexOf(pad.componentId)]
+                .pads,
+            )
+            const width = input.minTraceWidth
+            const clearance =
+              input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
+            const extension = (input.minViaPadDiameter ?? 0.6) / 2 + width / 2 + clearance
+            const padCenterInPackage = applyToPoint(boardToPackage, pad.center)
+            const copper = fixedCopper(input)
+            for (const exitInPackage of [
+              { x: field.minX - extension, y: padCenterInPackage.y },
+              { x: field.maxX + extension, y: padCenterInPackage.y },
+              { x: padCenterInPackage.x, y: field.minY - extension },
+              { x: padCenterInPackage.x, y: field.maxY + extension },
+            ]) {
+              const exit = {
+                ...applyToPoint(packageToBoard, exitInPackage),
+                layer: start.layer,
+              }
+              const search = new GridVisibilitySearch(
+                new VectorScene(
+                  input,
+                  { ...connection, pointsToConnect: [start, exit] },
+                  width,
+                  copper,
+                ),
+                start,
+                exit,
+                [],
+                0,
+              )
+              while (!search.solved && !search.failed) search.step()
+              if (search.solved) return "surface_exit"
+            }
+            return null
+          }
+          
+          PAD
           cat > inspect.private.ts <<'TS'
           import {readFileSync} from 'node:fs'
           import {expandedSignalSites} from './lib/expanded-signal-sites'
+          import {getPadEscape} from './pad-escapes.private'
           const input=JSON.parse(readFileSync('captured/head/a13/phase-5-start.srj.json','utf8'))
           input.minViaPadDiameter=input.minViaDiameter
           const connection=input.connections.find(c=>c.name==='source_net_77')
@@ -40,6 +143,7 @@ jobs:
             while(!next.done){steps++;next=sites.next()}
             console.log('DM1_ESCAPE_AVAILABILITY_JSON='+JSON.stringify({allowPadEdgeSites,ramSiteCount:next.value[0].length,resistorSiteCount:next.value[1].length,steps}))
           }
+          console.log('DM1_ESCAPE_AVAILABILITY_JSON='+JSON.stringify({completeEscape:getPadEscape({input,connection,end:0,viaTargetLayer:'inner1'})}))
           TS
           timeout 600s bun inspect.private.ts > inspection.private.log 2>&1
           python3 - <<'PY'
