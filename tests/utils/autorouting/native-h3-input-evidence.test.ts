@@ -11,7 +11,17 @@ test("paired H3 evidence keeps initial copper exact while allowing different lat
     fixtureSha256: "fixture",
     boardTsxSha256: "native_board",
     nativePartSha256: "native_part",
-    initialCopper: [{ type: "pcb_via", pcb_via_id: "supplied_via", x: 0, y: 0, layers: ["top", "bottom"], outer_diameter: 0.6, hole_diameter: 0.3 }],
+    initialCopper: [
+      {
+        type: "pcb_via",
+        pcb_via_id: "supplied_via",
+        x: 0,
+        y: 0,
+        layers: ["top", "bottom"],
+        outer_diameter: 0.6,
+        hole_diameter: 0.3,
+      },
+    ],
     initialGeometry: [
       {
         type: "pcb_board",
@@ -71,9 +81,14 @@ test("paired H3 evidence keeps initial copper exact while allowing different lat
     ).every(Boolean),
   ).toBe(true)
   const changedPhysical = structuredClone(baseline)
-  const via = changedPhysical.initialCopper.filter((element) => element.type === "pcb_via")[0]!
+  const via = changedPhysical.initialCopper.filter(
+    (element) => element.type === "pcb_via",
+  )[0]!
   via.outer_diameter = 0.7
-  expect(compareNativeH3InitialInputs({ baseline, consumer: changedPhysical }).initialCopperMatches).toBe(false)
+  expect(
+    compareNativeH3InitialInputs({ baseline, consumer: changedPhysical })
+      .initialCopperMatches,
+  ).toBe(false)
   const changedSupplied = structuredClone(baseline)
   changedSupplied.initialPhaseInput.traces![0]!.route[0] = {
     route_type: "wire",
@@ -124,9 +139,7 @@ test("paired H3 evidence keeps initial copper exact while allowing different lat
       initialBaseline: baseline.initialPhaseInput,
       initialConsumer: same.initialPhaseInput,
     })
-  expect(
-    comparePhase(after),
-  ).toBe(true)
+  expect(comparePhase(after)).toBe(true)
   const movedPad = structuredClone(after)
   movedPad.simpleRouteJson.obstacles[0]!.center.x += 0.1
   expect(comparePhase(movedPad)).toBe(false)
@@ -141,14 +154,10 @@ test("paired H3 evidence keeps initial copper exact while allowing different lat
   expect(comparePhase(changedOwner)).toBe(false)
   const changedRule = structuredClone(after)
   changedRule.simpleRouteJson.minViaEdgeToPadEdgeClearance = 0.3
-  expect(
-    comparePhase(changedRule),
-  ).toBe(false)
+  expect(comparePhase(changedRule)).toBe(false)
   const changedRequest = structuredClone(after)
   changedRequest.simpleRouteJson.connections[0]!.nominalTraceWidth = 0.15
-  expect(
-    comparePhase(changedRequest),
-  ).toBe(false)
+  expect(comparePhase(changedRequest)).toBe(false)
   const moved = structuredClone(baseline)
   const board = moved.initialGeometry.filter(
     (element) => element.type === "pcb_board",

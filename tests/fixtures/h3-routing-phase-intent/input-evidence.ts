@@ -36,7 +36,10 @@ export const compareNativeH3InitialInputs = ({
     baseline.initialGeometry,
     consumer.initialGeometry,
   ),
-  initialCopperMatches: isDeepStrictEqual(baseline.initialCopper, consumer.initialCopper),
+  initialCopperMatches: isDeepStrictEqual(
+    baseline.initialCopper,
+    consumer.initialCopper,
+  ),
   initialPhaseInputMatches: isDeepStrictEqual(
     baseline.initialPhaseInput,
     consumer.initialPhaseInput,

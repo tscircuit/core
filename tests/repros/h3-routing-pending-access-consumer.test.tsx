@@ -73,7 +73,11 @@ test("native H3 preserves pending pad access through all actual routing phases",
   )
   expect(stages.every((stage) => stage.end && !stage.error)).toBe(true)
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(result.initialCircuitJson.filter((element) => element.type === "pcb_trace" || element.type === "pcb_via")).toHaveLength(0)
+  expect(
+    result.initialCircuitJson.filter(
+      (element) => element.type === "pcb_trace" || element.type === "pcb_via",
+    ),
+  ).toHaveLength(0)
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(445)
   expect(getNativeH3Geometry(circuitJson)).toEqual(result.initialGeometry)
   expect(

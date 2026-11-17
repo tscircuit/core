@@ -78,7 +78,9 @@ const installedBusPackage: {
   module?: string
   main?: string
   exports?: { "."?: { import?: string } }
-} = JSON.parse(readFileSync(join(installedBusDirectory, "package.json"), "utf8"))
+} = JSON.parse(
+  readFileSync(join(installedBusDirectory, "package.json"), "utf8"),
+)
 const busExecutable =
   installedBusPackage.exports?.["."]?.import ??
   installedBusPackage.module ??
@@ -122,7 +124,10 @@ for (const eventName of [
       const inputEvidence = {
         ...fixtureFiles,
         initialGeometry,
-        initialCopper: initialCircuitJson.filter((element) => element.type === "pcb_trace" || element.type === "pcb_via"),
+        initialCopper: initialCircuitJson.filter(
+          (element) =>
+            element.type === "pcb_trace" || element.type === "pcb_via",
+        ),
         initialPhaseInput: event.simpleRouteJson,
       }
       saveJson("initial-circuit.json", initialCircuitJson)
@@ -151,7 +156,9 @@ const renderHighWater =
   process.platform === "linux"
     ? readFileSync("/proc/self/status", "utf8").match(/VmHWM:\s+(\d+)/)
     : null
-const renderPeakRssMb = renderHighWater ? Number(renderHighWater[1]) / 1024 : null
+const renderPeakRssMb = renderHighWater
+  ? Number(renderHighWater[1]) / 1024
+  : null
 saveJson("routing-run.json", {
   corePath,
   mode,
