@@ -1,5 +1,9 @@
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import {
+  getMouseBiteClearanceViolation,
+  PANEL_TRACE_MOUSE_BITE_CLEARANCE,
+} from "lib/utils/panels/get-mouse-bite-clearance-violation"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
   materializeRoutedTestPoints,
@@ -25,6 +29,7 @@ import {
 import {
   type AnyCircuitElement,
   type LayerRef,
+  type PcbHoleCircle,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -2478,6 +2483,18 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const materializedPcbVias = db.pcb_via.list()
     // Jumpers have been inserted above; pad geometry is fixed for this batch.
     const jumperPadInfos = getJumperPadInfos(db)
+    // A panel's traces must cross its tabs clear of the mouse-bite drills.
+    const isPanelRouting =
+      this.componentName === "Panel" || this.componentName === "Subpanel"
+    const panelMouseBiteHoles = isPanelRouting
+      ? db.pcb_hole
+          .list()
+          .filter(
+            (hole): hole is PcbHoleCircle =>
+              hole.hole_shape === "circle" &&
+              hole.subcircuit_id === this.subcircuit_id,
+          )
+      : []
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
@@ -2512,6 +2529,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         sourceTraceId: routeSourceTraceId,
       })
       pcb_trace.route = cjRoute as typeof pcb_trace.route
+
+      const mouseBiteViolation = getMouseBiteClearanceViolation({
+        route: pcb_trace.route,
+        mouseBiteHoles: panelMouseBiteHoles,
+      })
+      if (mouseBiteViolation) {
+        const traceName =
+          (routeSourceTraceId &&
+            db.source_trace.get(routeSourceTraceId)?.display_name) ||
+          pcb_trace.pcb_trace_id
+        db.pcb_autorouting_error.insert({
+          pcb_error_id: `pcb_autorouter_error_mouse_bite_${pcb_trace.pcb_trace_id}`,
+          error_type: "pcb_autorouting_error",
+          message: `Trace ${traceName} cannot cross the panel's mouse-bite tab: its best route ${
+            mouseBiteViolation.gap < 0
+              ? `overlaps a mouse-bite drill by ${(-mouseBiteViolation.gap).toFixed(3)}mm`
+              : `passes ${mouseBiteViolation.gap.toFixed(3)}mm from a mouse-bite drill`
+          }, but ${PANEL_TRACE_MOUSE_BITE_CLEARANCE}mm of clearance is required. Change the mouse-bite size or position, or the tab width or placement, to leave room for the trace.`,
+        })
+        continue
+      }
 
       // Split traces at jumper locations (based on explicit jumper route markers)
       let segments = splitPcbTracesOnJumperSegments(cjRoute)
