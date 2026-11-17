@@ -1,0 +1,44 @@
+# Reports only test counts and public failing test names.
+name: Qualify component-pad clearance axes
+on:
+  push:
+    branches: [artifacts/repair04-pad-only-grid-checks]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {variant: base, ref: 51dcb6ebad33c0310cf5179c56969d60f98a4548}
+          - {variant: head, ref: 3c569cd3527c427d40c05fa23ca8afa31297283c}
+    name: Repair04 checks ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/repair04
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --ignore-scripts
+      - name: Existing tests
+        run: |
+          status=0
+          bun test --reporter=junit --reporter-outfile=test-results.private.xml > tests.private.log 2>&1 || status=$?
+          python3 - <<'PY'
+          import pathlib,xml.etree.ElementTree as ET,json
+          path=pathlib.Path('test-results.private.xml')
+          if path.exists():
+              root=ET.parse(path).getroot()
+              cases=root.findall('.//testcase')
+              print('EXISTING_TEST_METRICS_JSON='+json.dumps({'cases':len(cases),'failed':[{'file':case.get('file') or case.get('classname'),'name':case.get('name')} for case in cases if case.find('failure') is not None or case.find('error') is not None]}))
+          PY
+          exit "$status"
+      - name: Type checking
+        if: always()
+        run: bun run typecheck
