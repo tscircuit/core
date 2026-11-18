@@ -1,0 +1,15 @@
+{
+  "description": "Native H3 fixed-copper producer boundary before flattening. Derived intermediate, not an actual constructor capture: actual phase-2 fields plus actual 445 unchanged native obstacles and actual 16 accepted phase-1 traces. Existing withFixedTraces reproduces the entire actual P9 constructor input exactly. No routing performed by this fixture.",
+  "coreCommit": "06173cbee3caa7421227d568efeea22102e4c3a7",
+  "busSolverCommit": "e6c3ffd80983afc3bfc570b7d9618a0001e79505",
+  "actualP9InputSha256": "f4415642718c82ce03f02ce214b9400a5c18c30227454d29a2befcdd189a3971",
+  "fixtureGzipSha256": "28204b54e27e98ee490bb9b9c4949a9f03f2534325159633125460336c8cf28b",
+  "fixtureDecodedSha256": "11529b5670571c1f127106f0ca0e2baa4ef662f4f91c87b521a03aa4e7241862",
+  "actualFlattenedSrjJsonSha256": "2fa8eb9fe49de5c38d37dc7d0a69aa68b56b4c547726743027bd8e9a59089a6e",
+  "nativeObstacleCount": 445,
+  "acceptedFixedTraceCount": 16,
+  "generatedProxyObstacleCount": 1040,
+  "actualConstructorObstacleCount": 1485,
+  "actualConstructorTraceCount": 0,
+  "fullRunPhysicalVerdict": "FAILED: 53/53 connected but 587 DRC errors, including 3 bus via-in-pad errors. This representation fixture makes no claim that the handoff alone fixes routing or DRC."
+}

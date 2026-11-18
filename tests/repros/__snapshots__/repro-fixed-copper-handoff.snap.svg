@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="800" viewBox="0 0 2100 800"><rect width="100%" height="100%" fill="white"/><g font-family="Arial, sans-serif" fill="#172235"><g transform="translate(0 0)">
+      <text x="30" y="36" font-size="22" font-weight="700">Existing manufactured copper</text>
+      <text x="30" y="66" font-size="15">A to B: fixed path and physical via; C to D: later net.</text>
+      <text x="30" y="93" font-size="15">1 structured traces (0 fixed); 4 obstacles</text>
+      <g transform="translate(350 440) scale(45.714285714285715 -45.714285714285715)">
+        <rect x="-7" y="-5" width="14" height="10" fill="#f7f8fb" stroke="#9099a8" stroke-width="0.021875"/>
+        <rect x="-4.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="-4.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<line x1="-4" y1="-2" x2="-4" y2="-2" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-4" y1="-2" x2="-2" y2="-2" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-2" y1="-2" x2="-2" y2="-0.5" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-2" y1="-0.5" x2="2" y2="-0.5" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="2" y1="-0.5" x2="2" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="2" y1="-2" x2="4" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="4" y1="-2" x2="4" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+        <circle cx="-2" cy="-0.5" r="0.3" fill="#186c66"/><circle cx="-2" cy="-0.5" r="0.15" fill="white"/>
+      </g>
+      <text x="30" y="773" font-size="14">Red: top wire; blue: bottom wire; green: physical via; amber: proxy obstacle.</text>
+    </g>
+<g transform="translate(700 0)">
+      <text x="30" y="36" font-size="22" font-weight="700">Actual native solver input</text>
+      <text x="30" y="66" font-size="15">Defect: one structured path became eight proxy obstacles.</text>
+      <text x="30" y="93" font-size="15">0 structured traces (0 fixed); 12 obstacles</text>
+      <g transform="translate(350 440) scale(45.714285714285715 -45.714285714285715)">
+        <rect x="-7" y="-5" width="14" height="10" fill="#f7f8fb" stroke="#9099a8" stroke-width="0.021875"/>
+        <rect x="-4.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="-4.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="-4.1" y="-2.1" width="0.2" height="0.2" fill="#d78624" fill-opacity="0.65"/>
+<rect x="-4.1" y="-2.1" width="2.2" height="0.2" fill="#d78624" fill-opacity="0.65"/>
+<rect x="-2.1" y="-2.1" width="0.2" height="1.7" fill="#d78624" fill-opacity="0.65"/>
+<ellipse cx="-2" cy="-0.5" rx="0.3" ry="0.3" fill="#d78624" fill-opacity="0.65"/>
+<rect x="-2.1" y="-0.6" width="4.2" height="0.2" fill="#d78624" fill-opacity="0.65"/>
+<rect x="1.9" y="-2.1" width="0.2" height="1.7" fill="#d78624" fill-opacity="0.65"/>
+<rect x="1.9" y="-2.1" width="2.2" height="0.2" fill="#d78624" fill-opacity="0.65"/>
+<rect x="3.9" y="-2.1" width="0.2" height="0.2" fill="#d78624" fill-opacity="0.65"/>
+        
+      </g>
+      <text x="30" y="773" font-size="14">Red: top wire; blue: bottom wire; green: physical via; amber: proxy obstacle.</text>
+    </g>
+<g transform="translate(1400 0)">
+      <text x="30" y="36" font-size="22" font-weight="700">Final board: 2 connected nets, 11 DRC checks clean</text>
+      <text x="30" y="66" font-size="15">Original path and via remain byte-for-byte unchanged.</text>
+      <text x="30" y="93" font-size="15">2 structured traces (0 fixed); 4 obstacles</text>
+      <g transform="translate(350 440) scale(45.714285714285715 -45.714285714285715)">
+        <rect x="-7" y="-5" width="14" height="10" fill="#f7f8fb" stroke="#9099a8" stroke-width="0.021875"/>
+        <rect x="-4.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="-2.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="-4.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<rect x="3.5" y="1.5" width="1" height="1" fill="#b7bdc8" fill-opacity="0.65"/>
+<line x1="-4" y1="-2" x2="-4" y2="-2" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-4" y1="-2" x2="-2" y2="-2" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-2" y1="-2" x2="-2" y2="-0.5" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-2" y1="-0.5" x2="2" y2="-0.5" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="2" y1="-0.5" x2="2" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="2" y1="-2" x2="4" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="4" y1="-2" x2="4" y2="-2" stroke="#305fc2" stroke-width="0.2" stroke-linecap="round"/>
+<line x1="-4" y1="2" x2="4" y2="2" stroke="#c43e3e" stroke-width="0.2" stroke-linecap="round"/>
+        <circle cx="-2" cy="-0.5" r="0.3" fill="#186c66"/><circle cx="-2" cy="-0.5" r="0.15" fill="white"/>
+      </g>
+      <text x="30" y="773" font-size="14">Red: top wire; blue: bottom wire; green: physical via; amber: proxy obstacle.</text>
+    </g></g></svg>
