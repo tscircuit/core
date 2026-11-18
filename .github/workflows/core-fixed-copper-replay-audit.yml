@@ -1,0 +1,36 @@
+name: Core fixed copper replay audit
+on:
+  push:
+    branches:
+      - "diagnostics/core-fixed-copper-handoff-replay-audit"
+permissions:
+  contents: read
+jobs:
+  replay-audit:
+    name: Replay on ${{ matrix.os }} with Bun ${{ matrix.bun }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        bun: ["1.4.2", "1.4.4"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: diagnostic
+          fetch-depth: 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ce1d31cd9c089cf45034c2b156d1b9306c98bd44
+          path: source
+          fetch-depth: 1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ matrix.bun }}
+      - name: Install unchanged source dependencies
+        working-directory: source
+        run: bun install
+      - name: Capture immutable replay without routing
+        working-directory: source
+        run: bun ../diagnostic/.github/diagnostics/core-fixed-copper-replay-audit.mjs "$PWD"
