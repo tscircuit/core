@@ -73,6 +73,18 @@ jobs:
           writeFileSync(file,source)
           JS
           node patch-pad.private.mjs
+      - name: Investigate pad-clearance enforcement
+        run: |
+          cat > patch-pad-clearance.private.mjs <<'JS'
+          import {readFileSync,writeFileSync} from "node:fs"
+          const path="head/node_modules/@tscircuit/capacity-autorouter/dist/index.js"
+          const original=readFileSync(path,"utf8")
+          const needle="if(Ar({...e,obstacle:o})<n-1e-6)"
+          if(original.split(needle).length!==2)throw Error("Expected one published pad check")
+          writeFileSync(path,original.replace(needle,"if(Ar({...e,obstacle:o})<n+this.obstacleMargin-1e-6)"))
+          console.log("EXPERIMENT=Include existing obstacleMargin in the SingleHD pad check")
+          JS
+          node patch-pad-clearance.private.mjs
       - name: Route real TSX circuits through published Core
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -94,6 +106,7 @@ jobs:
           import {readFileSync,writeFileSync,existsSync,mkdirSync} from "node:fs"
           import path from "node:path"
           import {createHash} from "node:crypto"
+          const {gunzipSync}=await import("node:zlib")
           const checks=await import(path.resolve("head/node_modules/@tscircuit/checks/dist/index.js"))
           const svg=await import(Bun.resolveSync("circuit-to-svg",path.resolve("head")))
           const assessmentScript=path.resolve("head/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts")
@@ -124,6 +137,19 @@ jobs:
             writeFileSync("metrics/"+row.circuit+"-"+release+".json",JSON.stringify(metric,null,2))
             writeFileSync("svgs/"+row.circuit+"-"+release+".svg",await svg.convertCircuitJsonToPcbSvg(circuit,{backgroundColor:"white",width:1400,height:1000,includeVersion:false,renderSolderMask:false,shouldDrawRatsNest:false}))
             console.log("PUBLISHED_DDR_METRICS="+JSON.stringify(metric))
+            const native=JSON.parse(gunzipSync(readFileSync(path.resolve("head/node_modules/@tscircuit/core-ddr-benchmark/circuits",row.circuit+".json.gz"))).toString())
+            const findings=JSON.parse(readFileSync(dir+"/findings.json","utf8"))
+            const counts={}
+            for(const error of findings.pad_trace.filter(e=>e.type.endsWith("_error"))) {
+             const trace=circuit.find(e=>e.type==="pcb_trace"&&e.pcb_trace_id===error.pcb_trace_id)
+             const source=circuit.find(e=>e.type==="source_trace"&&e.source_trace_id===trace?.source_trace_id)
+             const net=circuit.find(e=>e.type==="source_net"&&source?.connected_source_net_ids?.includes(e.source_net_id))
+             const request=native.traces.find(e=>e.name===source?.name||e.name===net?.name)
+             const key=request?.group??"unmatched"
+             counts[key]=(counts[key]??0)+1
+            }
+            console.log("PAD_CLEARANCE_BY_PHASE="+JSON.stringify({release,counts}))
+
             const findings=JSON.parse(readFileSync(dir+"/findings.json","utf8"))
             const sourcePath=path.resolve(release,"node_modules/@tscircuit/core-ddr-benchmark/circuits",row.circuit+".json.gz")
             const {gunzipSync}=await import("node:zlib")
