@@ -257,7 +257,11 @@ export class IsolatedCircuit {
   }
 
   isDoneRendering(): boolean {
-    return this._hasRenderedAtleastOnce && !this._hasIncompleteAsyncEffects()
+    return (
+      !this._isRendering &&
+      this._hasRenderedAtleastOnce &&
+      !this._hasIncompleteAsyncEffects()
+    )
   }
 
   _hasIncompleteAsyncEffects(): boolean {
