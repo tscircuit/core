@@ -30,6 +30,7 @@ import type {
   SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
 import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
+import { applyNetTraceClearancesToSrj } from "./apply-net-trace-clearances-to-srj"
 import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {
@@ -1143,6 +1144,13 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     minPadEdgeToPadEdgeClearance ?? board?.min_pad_edge_to_pad_edge_clearance
   const resolvedMinBoardEdgeClearance =
     minBoardEdgeClearance ?? board?.min_board_edge_clearance
+
+  applyNetTraceClearancesToSrj({
+    circuitJson: allElements,
+    connections: allConns,
+    obstacles,
+    traces: preservedRoutedSubcircuitTraces,
+  })
 
   return {
     simpleRouteJson: {

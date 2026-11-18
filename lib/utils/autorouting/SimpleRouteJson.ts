@@ -23,6 +23,8 @@ export type SimplifiedPcbTrace = Omit<
   pcb_trace_id: string
   connection_name?: string
   connectsTo?: string[]
+  /** Net's minimum trace-to-foreign-copper edge clearance in mm. */
+  minTraceClearance?: number
   route: Array<
     | {
         route_type: "wire"
@@ -93,6 +95,12 @@ export type SimpleRouteConnection = {
   isOffBoard?: boolean
   netConnectionName?: string
   nominalTraceWidth?: number
+  /**
+   * Net's minimum trace-to-foreign-trace, pad, or via copper edge gap in mm
+   * on shared layers. Routing must use the maximum of both nets' requirements
+   * and existing applicable minima; zero does not relax another minimum.
+   */
+  minTraceClearance?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
   pointsToConnect: SingleLayerConnectionPoint[]

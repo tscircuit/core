@@ -25,6 +25,8 @@ export type Obstacle = {
   height: number
   ccwRotationDegrees?: number
   connectedTo: string[]
+  /** Net's minimum edge gap in mm to a different net's trace on shared layers. */
+  minTraceClearance?: number
   isCopperPour?: boolean
   netIsAssignable?: boolean
   offBoardConnectsTo?: string[]
