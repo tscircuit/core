@@ -1,6 +1,6 @@
 # Aggregate metrics only. Native board JSON and SVG stay on the ephemeral runners.
 # The sole uploaded artifact is compiled autorouter source, with no board inputs.
-name: Native DDR component pad collision comparison
+name: Native A13 paired extended-budget verification
 on:
   push:
     branches: [artifacts/ddr-3230-boundary-corners]
@@ -11,20 +11,13 @@ jobs:
     needs: build
     name: Native ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 35
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       max-parallel: 5
       matrix:
         include:
-          - { circuit: h3, order: "base head" }
-          - { circuit: a64, order: "head base" }
-          - { circuit: stmp157, order: "base head" }
-          - { circuit: orangecrab, order: "head base" }
-          - { circuit: h616, order: "head base" }
-          - { circuit: glider, order: "head base" }
-          - { circuit: imx6, order: "base head" }
-          - { circuit: icepi, order: "head base" }
+          - { circuit: a13, order: "base head" }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -89,7 +82,7 @@ jobs:
           for release in $RELEASE_ORDER; do
             bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" \
               --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" \
-              --circuit "$CIRCUIT" --timeout 600 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
+              --circuit "$CIRCUIT" --timeout 1200 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
             cp "$release/published-runtime.json" "results/$release/"
             cp "$release/bun.lock" "results/$release/install.lock"
           done
@@ -119,7 +112,7 @@ jobs:
               const zeroClearance=Object.fromEntries(Object.entries({trace_overlap:checks.checkEachPcbTraceNonOverlapping(circuit,options),pad_trace:checks.checkPadTraceClearance(circuit,options),via_trace:checks.checkViaTraceClearance(circuit,options),via_pad:checks.checkViaPadClearance(circuit,options)}).map(([kind,errors])=>[kind,errors.filter(e=>e.type.endsWith('_error')).length]))
               const compact={release,published,zeroClearance,metadata:Object.fromEntries(Object.entries(report).filter(([key])=>key!=='cases')),circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,assessment,physicalFindings:physical,progress:row.progress,copperSha256:createHash('sha256').update(JSON.stringify(copper)).digest('hex')}
               writeFileSync(root+'/compact.json',JSON.stringify(compact,null,2))
-              console.log('QUALIFIED_CASE_METRICS_JSON='+JSON.stringify({release,circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment?.connectedNets,requested:assessment?.requestedNets,vias:assessment?.vias,findings:assessment?.findings,zeroClearance,physicalFindings:physical,copperSha256:compact.copperSha256}))
+              console.log('QUALIFIED_CASE_METRICS_JSON='+JSON.stringify({release,circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment?.connectedNets,requested:assessment?.requestedNets,vias:assessment?.vias,findings:assessment?.findings,zeroClearance,physicalFindings:physical,phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:row.progress?.errors.length,copperSha256:compact.copperSha256}))
             }
           }
           TS
@@ -160,6 +153,7 @@ jobs:
           retention-days: 14
 
   dataset18:
+    if: false
     name: Paired dataset18
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 75
