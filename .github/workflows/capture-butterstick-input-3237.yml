@@ -58,6 +58,21 @@ jobs:
           JS
           node prepare-published.private.mjs
           (cd head && bun install --ignore-scripts)
+      - name: Verify the autorouter module actually resolved by published Core
+        run: |
+          cat > resolve-runtime.private.ts <<'TS'
+          import path from "node:path"
+          import {readFileSync,realpathSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          const root=path.resolve("head")
+          const tscircuit=Bun.resolveSync("tscircuit",root)
+          const core=Bun.resolveSync("@tscircuit/core",path.dirname(realpathSync(tscircuit)))
+          const ar=Bun.resolveSync("@tscircuit/capacity-autorouter",path.dirname(realpathSync(core)))
+          const manifest=Bun.resolveSync("@tscircuit/capacity-autorouter/package.json",path.dirname(realpathSync(core)))
+          const requested=Bun.resolveSync("@tscircuit/capacity-autorouter",root)
+          console.log("EXECUTED_MODULE="+JSON.stringify({version:JSON.parse(readFileSync(manifest,"utf8")).version,autorouterSha:createHash("sha256").update(readFileSync(ar)).digest("hex"),rootModuleIsExecuted:realpathSync(ar)===realpathSync(requested),core,ar,rootAutorouter:requested}))
+          TS
+          bun resolve-runtime.private.ts
       - name: Render the real byte phases and capture Core's remaining routing request
         run: |
           cp -a "$(readlink -f head/node_modules/@tscircuit/core-ddr-benchmark)" native-fixture
