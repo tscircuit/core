@@ -146,6 +146,13 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       solderPasteMargin !== undefined
         ? Math.max(padSize + marginScale * solderPasteMargin, 0)
         : padSize * 0.7
+    const getRectangularPasteSize = (padSize: number, ratio?: number) => {
+      if (ratio === undefined) return getSolderPasteSize(padSize)
+      return Math.max(
+        padSize * (1 + 2 * ratio) + 2 * (solderPasteMargin ?? 0),
+        0,
+      )
+    }
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
@@ -251,8 +258,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRect) as PcbSmtPadRect
       }
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      let pasteWidth = getRectangularPasteSize(
+        props.width,
+        props.solderPasteMarginRatio?.x,
+      )
+      let pasteHeight = getRectangularPasteSize(
+        props.height,
+        props.solderPasteMarginRatio?.y,
+      )
+      if (pcb_smtpad.shape === "rect" && isRotated90Degrees) {
+        const localWidth = pasteWidth
+        pasteWidth = pasteHeight
+        pasteHeight = localWidth
+      }
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0) {
         if (pcb_smtpad.shape === "rect") {
           db.pcb_solder_paste.insert({
@@ -310,8 +328,14 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
 
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const pasteWidth = getRectangularPasteSize(
+        props.width,
+        props.solderPasteMarginRatio?.x,
+      )
+      const pasteHeight = getRectangularPasteSize(
+        props.height,
+        props.solderPasteMarginRatio?.y,
+      )
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0)
         db.pcb_solder_paste.insert({
           layer: pcbLayer,
