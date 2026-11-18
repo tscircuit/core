@@ -4,10 +4,13 @@ import type { Group } from "../../components/primitive-components/Group/Group"
 import type {
   InflatorContext,
   SourceGroupId,
+  SourceSubcircuitId,
 } from "../../components/primitive-components/Group/Subcircuit/InflatorFn"
 import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSimulation } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSimulation"
+import { inflateNetClasses } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateNetClasses"
+import { getInflatedNetClassContext } from "../../components/primitive-components/Group/Subcircuit/inflators/getInflatedNetClassContext"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
@@ -40,11 +43,23 @@ export const inflateCircuitJson = (
   }
 
   const groupsMap = new Map<SourceGroupId, Group<any>>()
+  const netClassSubcircuitIds = new Set<SourceSubcircuitId>()
+  const sourceNetClasses = injectionDb.source_net_class.list()
+  for (const netClass of sourceNetClasses) {
+    if (netClass.subcircuit_id)
+      netClassSubcircuitIds.add(netClass.subcircuit_id)
+  }
+  for (const sourceNet of injectionDb.source_net.list()) {
+    if (sourceNet.subcircuit_id && sourceNet.source_net_class_ids?.length) {
+      netClassSubcircuitIds.add(sourceNet.subcircuit_id)
+    }
+  }
 
   const inflationCtx: InflatorContext = {
     injectionDb,
     subcircuit: target,
     groupsMap,
+    netClassSubcircuits: new Map(),
   }
 
   // Inflate source_groups in dependency order (parents before children)
@@ -71,7 +86,17 @@ export const inflateCircuitJson = (
     }
 
     const groupToRender = groupsToRender[groupIndex]
-    inflateSourceGroup(groupToRender, inflationCtx)
+    const preserveNetClassScope =
+      groupToRender.is_subcircuit === true &&
+      groupToRender.subcircuit_id !== undefined &&
+      netClassSubcircuitIds.has(groupToRender.subcircuit_id)
+    const group = inflateSourceGroup(
+      groupToRender,
+      inflationCtx,
+      preserveNetClassScope,
+    )
+    if (preserveNetClassScope)
+      inflationCtx.netClassSubcircuits!.set(groupToRender.subcircuit_id!, group)
     renderedGroupIds.add(groupToRender.source_group_id)
     groupsToRender.splice(groupIndex, 1)
   }
@@ -139,8 +164,12 @@ export const inflateCircuitJson = (
   }
 
   const sourceTraces = injectionDb.source_trace.list()
+  inflateNetClasses(inflationCtx)
   for (const sourceTrace of sourceTraces) {
-    inflateSourceTrace(sourceTrace, inflationCtx)
+    inflateSourceTrace(
+      sourceTrace,
+      getInflatedNetClassContext(inflationCtx, sourceTrace.subcircuit_id),
+    )
   }
 
   // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)

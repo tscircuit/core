@@ -6,6 +6,7 @@ import type { GroupProps, SubcircuitGroupProps } from "@tscircuit/props"
 export function inflateSourceGroup(
   sourceGroup: SourceGroup,
   inflatorContext: InflatorContext,
+  preserveSubcircuitScope = false,
 ) {
   const { injectionDb, subcircuit, groupsMap } = inflatorContext
 
@@ -42,7 +43,9 @@ export function inflateSourceGroup(
   }
 
   // Create a Group instance
-  const group = new Group(groupProps)
+  const group = preserveSubcircuitScope
+    ? new Group({ ...groupProps, subcircuit: true })
+    : new Group(groupProps)
   group._isInflatedFromCircuitJson = true
 
   // Set the source_group_id so the group can be found
