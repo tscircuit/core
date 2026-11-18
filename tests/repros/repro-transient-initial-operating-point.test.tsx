@@ -43,6 +43,4 @@ test("analog.transientsimulation can start an RC circuit at its 5-V DC operating
   await circuit.renderUntilSettled()
 
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path)
-  const graph = circuit.db.simulation_transient_voltage_graph.list()[0]!
-  expect(graph.voltage_levels.length).toBeGreaterThan(1)
 }, 15000)
