@@ -1,0 +1,83 @@
+{
+  "release": "base",
+  "sourceRevision": "ce89da32c1c31f84ad5f5a753a665ac056df66a9",
+  "executedAutorouterSha256": "20f66f77146c9133722e69b723d4af7ba08e98a7d3d6b2238f3c168b33287139",
+  "upstreamForceSource": "4f4aeb9d1589c913cf34172fdba71dfe1f6dd6ea",
+  "comparisonValidatorVersion": "0.0.282",
+  "circuit": "a64",
+  "status": "failed",
+  "seconds": 148.979027208,
+  "peakRssMb": 3288.55078125,
+  "connected": 32,
+  "requested": 75,
+  "vias": 44,
+  "findings": {
+    "missing_traces": 0,
+    "disconnected_ports": 120,
+    "trace_overlap": 0,
+    "pad_trace": 0,
+    "via_trace": 0,
+    "via_pad": 0,
+    "via_spacing": 0,
+    "contiguous": 0,
+    "via_in_pad": 0,
+    "hole_trace": 0,
+    "width": 0
+  },
+  "geometryErrorCount": 0,
+  "zeroClearance": {
+    "trace_overlap": 0,
+    "pad_trace": 0,
+    "via_trace": 0,
+    "via_pad": 0
+  },
+  "physicalFindings": 0,
+  "validationVersion": "0.0.282",
+  "dependencies": {
+    "tscircuit": "0.0.3240",
+    "@tscircuit/core": "0.0.2423",
+    "@tscircuit/capacity-autorouter": "0.0.1131",
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "fixtureHash": "17a66f8fd13ade81aa3b504928ffd77451e50968934ade42671d74b9009b965f",
+  "phases": [
+    {
+      "phase": "byte0",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 585.626984
+    },
+    {
+      "phase": "byte1",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 706.0382180000006
+    },
+    {
+      "phase": "byte2",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 59217.568149
+    },
+    {
+      "phase": "byte3",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 5342.874360999995
+    },
+    {
+      "phase": "remaining",
+      "status": "failed",
+      "connections": 43,
+      "durationMs": 78187.34762199999
+    }
+  ],
+  "lastSolver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  "progressErrorCount": 2,
+  "reason": "search_limit",
+  "copperSha256": "ee930f8d51caac308ec8718d67c8e46367000d12bb9f0e688faacfcad803b7b2"
+}

@@ -1,0 +1,71 @@
+{
+  "release": "head",
+  "sourceRevision": "5a86812e3eaef29b22205223633efaeee967c05f",
+  "executedAutorouterSha256": "6d613ebec7944ab8c99d61d6d1e9cc4b11e58a29df6380df9f7a109b4c3b5078",
+  "upstreamForceSource": "c975085e8059de99d46c707e1cb17d7e125b227a",
+  "comparisonValidatorVersion": "0.0.282",
+  "circuit": "h616",
+  "status": "passed",
+  "seconds": 43.103626000999995,
+  "peakRssMb": 1835.171875,
+  "connected": 53,
+  "requested": 53,
+  "vias": 95,
+  "findings": {
+    "missing_traces": 0,
+    "disconnected_ports": 0,
+    "trace_overlap": 0,
+    "pad_trace": 0,
+    "via_trace": 0,
+    "via_pad": 0,
+    "via_spacing": 0,
+    "contiguous": 0,
+    "via_in_pad": 0,
+    "hole_trace": 0,
+    "width": 0
+  },
+  "geometryErrorCount": 0,
+  "zeroClearance": {
+    "trace_overlap": 0,
+    "pad_trace": 0,
+    "via_trace": 0,
+    "via_pad": 0
+  },
+  "physicalFindings": 0,
+  "validationVersion": "0.0.282",
+  "dependencies": {
+    "tscircuit": "0.0.3240",
+    "@tscircuit/core": "0.0.2423",
+    "@tscircuit/capacity-autorouter": "0.0.1130",
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "fixtureHash": "64aacd287e030ccced3c4351d7db984d0df0a23c4f59a335a4289ee8dc377b82",
+  "phases": [
+    {
+      "phase": "byte0",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 455.08119499999975
+    },
+    {
+      "phase": "byte1",
+      "status": "completed",
+      "connections": 8,
+      "durationMs": 3901.1810869999995
+    },
+    {
+      "phase": "remaining",
+      "status": "completed",
+      "connections": 37,
+      "durationMs": 34996.747974
+    }
+  ],
+  "lastSolver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+  "progressErrorCount": 0,
+  "reason": null,
+  "copperSha256": "7f001360cfa44341951019d65f11699da0bc90a12cb87103a019ca5cddf5b744"
+}
