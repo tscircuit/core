@@ -20,12 +20,7 @@ test("panel routing uses panel bounds and includes panelization obstacles", asyn
       <board name="B2" width={10} height={10}>
         <resistor name="R2" resistance="1k" footprint="0805" />
       </board>
-      <trace
-        name="panel_link"
-        from=".B1 .R1 .pin2"
-        to=".B2 .R2 .pin1"
-        pcbStraightLine
-      />
+      <trace name="panel_link" from=".B1 .R1 .pin2" to=".B2 .R2 .pin1" />
     </panel>,
   )
   await circuit.renderUntilSettled()
