@@ -24,21 +24,21 @@ test("small-board mouse bites stay drillable", () => {
   expect(circuit.db.pcb_hole.list().slice(0, 2)).toMatchInlineSnapshot(`
     [
       {
-        "hole_diameter": 0.27,
+        "hole_diameter": 0.5,
         "hole_shape": "circle",
         "pcb_hole_id": "panel_mouse_bite_0",
         "subcircuit_id": "subcircuit_source_group_2",
         "type": "pcb_hole",
-        "x": -5.6075,
+        "x": -5.4,
         "y": -3,
       },
       {
-        "hole_diameter": 0.27,
+        "hole_diameter": 0.5,
         "hole_shape": "circle",
         "pcb_hole_id": "panel_mouse_bite_1",
         "subcircuit_id": "subcircuit_source_group_2",
         "type": "pcb_hole",
-        "x": -5.2025,
+        "x": -4.6,
         "y": -3,
       },
     ]
