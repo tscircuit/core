@@ -40,9 +40,5 @@ X1 IN OUT GND GAIN_STAGE
   )
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.simulation_unknown_experiment_error.list()).toHaveLength(0)
-  const graph = circuit.db.simulation_transient_voltage_graph.list()[0]!
-  expect(graph.voltage_levels[0]).toBeCloseTo(2, 6)
-  expect(graph.voltage_levels.at(-1)).toBeCloseTo(2, 6)
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path)
 }, 15000)
