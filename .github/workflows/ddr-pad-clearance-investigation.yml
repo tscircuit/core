@@ -1,4 +1,4 @@
-name: Investigate native A13 pad clearance
+name: Compare native DDR pad-clearance candidate
 on:
   push:
     branches: [analysis/ddr-3235-pad-clearance]
@@ -15,7 +15,16 @@ jobs:
       max-parallel: 5
       matrix:
         include:
+          - {circuit: h3, order: "base head"}
+          - {circuit: a64, order: "head base"}
+          - {circuit: stmp157, order: "base head"}
+          - {circuit: orangecrab, order: "head base"}
           - {circuit: a13, order: "base head"}
+          - {circuit: h616, order: "head base"}
+          - {circuit: butterstick, order: "head base"}
+          - {circuit: glider, order: "head base"}
+          - {circuit: imx6, order: "base head"}
+          - {circuit: icepi, order: "head base"}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,31 +69,29 @@ jobs:
           node prepare-published.private.mjs
           (cd base && bun install --ignore-scripts)
           (cd head && bun install --ignore-scripts)
-
-      - name: Investigate pad clearance in the existing solver
+      - name: Install the isolated pad-clearance experiment
         run: |
           cat > patch-pad.private.mjs <<'JS'
-          import {readFileSync,writeFileSync} from "node:fs"
+          import {readFileSync,writeFileSync,renameSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          const base="base/node_modules/@tscircuit/capacity-autorouter/dist/index.js"
           const file="head/node_modules/@tscircuit/capacity-autorouter/dist/index.js"
+          const baseHash=createHash("sha256").update(readFileSync(base)).digest("hex")
           let source=readFileSync(file,"utf8")
-          const old="Ar({...e,obstacle:o})<n-1e-6"
-          if(source.split(old).length!==2)throw Error("Unexpected published solver")
-          source=source.replace(old,"Ar({...e,obstacle:o})<n+this.obstacleMargin-1e-6")
-          writeFileSync(file,source)
+          for(const [before,after] of [
+           ["Ar({...e,obstacle:o})<n-1e-6","Ar({...e,obstacle:o})<n+this.obstacleMargin-1e-6"],
+           ["Yr=({nodeWithPortPoints:e,obstacles:t=[],traceWidth:n=.15,viaDiameter:o=.3,layerCount:i=2})","Yr=({nodeWithPortPoints:e,obstacles:t=[],traceWidth:n=.15,viaDiameter:o=.3,layerCount:i=2,obstacleMargin:padMargin=.15})"],
+           ["const c=ro(e),l=Math.max(n,o)/2,h=t.filter","const c=ro(e),l=Math.max(n,o)/2+padMargin,h=t.filter"]
+          ]) {
+           if(source.split(before).length!==2)throw Error("Expected exactly one patch site")
+           source=source.replace(before,after)
+          }
+          writeFileSync(file+".candidate",source)
+          renameSync(file+".candidate",file)
+          if(createHash("sha256").update(readFileSync(base)).digest("hex")!==baseHash)throw Error("Published baseline was modified")
+          console.log("PAD_CANDIDATE_ISOLATED=true")
           JS
           node patch-pad.private.mjs
-      - name: Investigate pad-clearance enforcement
-        run: |
-          cat > patch-pad-clearance.private.mjs <<'JS'
-          import {readFileSync,writeFileSync} from "node:fs"
-          const path="head/node_modules/@tscircuit/capacity-autorouter/dist/index.js"
-          const original=readFileSync(path,"utf8")
-          const needle="if(Ar({...e,obstacle:o})<n-1e-6)"
-          if(original.split(needle).length!==2)throw Error("Expected one published pad check")
-          writeFileSync(path,original.replace(needle,"if(Ar({...e,obstacle:o})<n+this.obstacleMargin-1e-6)"))
-          console.log("EXPERIMENT=Include existing obstacleMargin in the SingleHD pad check")
-          JS
-          node patch-pad-clearance.private.mjs
       - name: Route real TSX circuits through published Core
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -106,7 +113,6 @@ jobs:
           import {readFileSync,writeFileSync,existsSync,mkdirSync} from "node:fs"
           import path from "node:path"
           import {createHash} from "node:crypto"
-          const {gunzipSync}=await import("node:zlib")
           const checks=await import(path.resolve("head/node_modules/@tscircuit/checks/dist/index.js"))
           const svg=await import(Bun.resolveSync("circuit-to-svg",path.resolve("head")))
           const assessmentScript=path.resolve("head/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts")
@@ -137,37 +143,21 @@ jobs:
             writeFileSync("metrics/"+row.circuit+"-"+release+".json",JSON.stringify(metric,null,2))
             writeFileSync("svgs/"+row.circuit+"-"+release+".svg",await svg.convertCircuitJsonToPcbSvg(circuit,{backgroundColor:"white",width:1400,height:1000,includeVersion:false,renderSolderMask:false,shouldDrawRatsNest:false}))
             console.log("PUBLISHED_DDR_METRICS="+JSON.stringify(metric))
-            const native=JSON.parse(gunzipSync(readFileSync(path.resolve("head/node_modules/@tscircuit/core-ddr-benchmark/circuits",row.circuit+".json.gz"))).toString())
             const findings=JSON.parse(readFileSync(dir+"/findings.json","utf8"))
-            const counts={}
-            for(const error of findings.pad_trace.filter(e=>e.type.endsWith("_error"))) {
-             const trace=circuit.find(e=>e.type==="pcb_trace"&&e.pcb_trace_id===error.pcb_trace_id)
-             const source=circuit.find(e=>e.type==="source_trace"&&e.source_trace_id===trace?.source_trace_id)
-             const net=circuit.find(e=>e.type==="source_net"&&source?.connected_source_net_ids?.includes(e.source_net_id))
-             const request=native.traces.find(e=>e.name===source?.name||e.name===net?.name)
-             const key=request?.group??"unmatched"
-             counts[key]=(counts[key]??0)+1
-            }
-            console.log("PAD_CLEARANCE_BY_PHASE="+JSON.stringify({release,counts}))
-
-            const findings=JSON.parse(readFileSync(dir+"/findings.json","utf8"))
-            const sourcePath=path.resolve(release,"node_modules/@tscircuit/core-ddr-benchmark/circuits",row.circuit+".json.gz")
             const {gunzipSync}=await import("node:zlib")
-            const native=JSON.parse(gunzipSync(readFileSync(sourcePath)).toString())
+            const native=JSON.parse(gunzipSync(readFileSync(path.resolve(release,"node_modules/@tscircuit/core-ddr-benchmark/circuits",row.circuit+".json.gz"))).toString())
             const ownership={}
-            for(const [kind,errors] of Object.entries(findings)) {
-             for(const error of errors) {
-              if(!error.type.endsWith("_error"))continue
-              const trace=circuit.find(part=>part.type==="pcb_trace"&&part.pcb_trace_id===error.pcb_trace_id)
-              const source=circuit.find(part=>part.type==="source_trace"&&part.source_trace_id===trace?.source_trace_id)
-              const net=circuit.find(part=>part.type==="source_net"&&source?.connected_source_net_ids?.includes(part.source_net_id))
-              const requested=native.traces.find(t=>t.name===source?.name||t.name===net?.name)
-              const owner=requested?.group??"unknown"
-              const key=kind+":"+owner
-              ownership[key]=(ownership[key]??0)+1
-             }
+            for(const [kind,errors] of Object.entries(findings)) for(const error of errors) {
+             if(!error.type.endsWith("_error"))continue
+             const trace=circuit.find(part=>part.type==="pcb_trace"&&part.pcb_trace_id===error.pcb_trace_id)
+             const source=circuit.find(part=>part.type==="source_trace"&&part.source_trace_id===trace?.source_trace_id)
+             const net=circuit.find(part=>part.type==="source_net"&&source?.connected_source_net_ids?.includes(part.source_net_id))
+             const request=native.traces.find(t=>t.name===source?.name||t.name===net?.name)
+             const key=kind+":"+(request?.group??"unknown")
+             ownership[key]=(ownership[key]??0)+1
             }
             console.log("PAD_FINDING_OWNERSHIP="+JSON.stringify({release,ownership}))
+
            }
           }
           TS
@@ -175,7 +165,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-ddr-pad-investigation-${{ matrix.circuit }}
+          name: native-ddr-pad-clearance-${{ matrix.circuit }}
           path: |
             metrics/*.json
             svgs/*.svg
