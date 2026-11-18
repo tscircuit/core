@@ -97,7 +97,7 @@ jobs:
             return traces
           }
           '''
-          s=s.replace('const circuit = new RootCircuit()',intercept+'\\nconst circuit = new RootCircuit()')
+          s=s.replace('const circuit = new RootCircuit()',intercept+'\nconst circuit = new RootCircuit()')
           p.write_text(s)
           PY
           mkdir -p captured
