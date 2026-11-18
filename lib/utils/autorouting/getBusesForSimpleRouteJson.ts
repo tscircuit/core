@@ -8,14 +8,20 @@ import type {
   SrjConnectionName,
 } from "./SimpleRouteJson"
 
+type SourceTraceId = SourceTrace["source_trace_id"]
+type SourceNetId = SourceNet["source_net_id"]
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
   buses: Bus[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
-  preservedSourceTraceIds?: ReadonlySet<SourceTrace["source_trace_id"]>
-  planeTerminatedSourceTraceLayers?: ReadonlyMap<string, string>
+  preservedSourceTraceIds?: ReadonlySet<SourceTraceId>
+  planeTerminatedSourceTraceLayers?: ReadonlyMap<
+    SourceTraceId,
+    ReadonlySet<string>
+  >
+  boardLayers: readonly string[]
 }
 
 export type FanoutPourNetMap = Readonly<
@@ -31,7 +37,7 @@ const getBusSrjConnectionNamesOrThrow = ({
 }: {
   srjConnections: SimpleRouteConnection[]
   bus: Bus
-  sourceTraceId: SourceTrace["source_trace_id"]
+  sourceTraceId: SourceTraceId
   traceNameOrPortSelector: string
   busSourceTraces: SourceTrace[]
 }): SrjConnectionName[] => {
@@ -87,26 +93,22 @@ export const getPlaneTerminatedSourceTraceLayers = ({
   sourceNets: SourceNet[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
-}): Map<string, string> => {
-  const traceLayers = new Map<string, string>()
-  if (!fanoutPourNetMap) return traceLayers
+}): Map<SourceTraceId, Set<string>> => {
+  const planeLayersBySourceTraceId = new Map<SourceTraceId, Set<string>>()
+  if (!fanoutPourNetMap) return planeLayersBySourceTraceId
 
-  const planeLayerBySourceNetId = new Map<string, string>()
+  const planeLayersBySourceNetId = new Map<SourceNetId, Set<string>>()
   for (const [layer, netOrNets] of Object.entries(fanoutPourNetMap)) {
     const netNames = Array.isArray(netOrNets) ? netOrNets : [netOrNets]
     for (const netNameOrSelector of netNames) {
       const netName = normalizeNetName(netNameOrSelector)
       for (const sourceNet of sourceNets) {
         if (sourceNet.name !== netName) continue
-        const previousLayer = planeLayerBySourceNetId.get(
-          sourceNet.source_net_id,
-        )
-        if (previousLayer && previousLayer !== layer) {
-          throw new Error(
-            `Fanout plane net "${netName}" maps to multiple layers ("${previousLayer}" and "${layer}"); use fanoutPourNetMap to select one`,
-          )
-        }
-        planeLayerBySourceNetId.set(sourceNet.source_net_id, layer)
+        const sourceNetId = sourceNet.source_net_id
+        const layers =
+          planeLayersBySourceNetId.get(sourceNetId) ?? new Set<string>()
+        layers.add(layer)
+        planeLayersBySourceNetId.set(sourceNetId, layers)
       }
     }
   }
@@ -115,21 +117,26 @@ export const getPlaneTerminatedSourceTraceLayers = ({
     if (subcircuitId && sourceTrace.subcircuit_id !== subcircuitId) continue
     if (sourceTrace.connected_source_port_ids.length !== 1) continue
 
-    const mappedLayers = new Set(
-      (sourceTrace.connected_source_net_ids ?? [])
-        .map((sourceNetId) => planeLayerBySourceNetId.get(sourceNetId))
-        .filter((layer): layer is string => layer !== undefined),
+    const mappedPlaneLayerSets = (sourceTrace.connected_source_net_ids ?? [])
+      .map((sourceNetId) => planeLayersBySourceNetId.get(sourceNetId))
+      .filter((layers): layers is Set<string> => layers !== undefined)
+    const [firstPlaneLayers] = mappedPlaneLayerSets
+    if (!firstPlaneLayers) continue
+    // A port tied to multiple plane nets must have a common target layer.
+    const layers = new Set(
+      [...firstPlaneLayers].filter((layer) =>
+        mappedPlaneLayerSets.every((planeLayers) => planeLayers.has(layer)),
+      ),
     )
-    if (mappedLayers.size > 1) {
+    if (!layers.size) {
       throw new Error(
-        `Source trace "${sourceTrace.name ?? sourceTrace.source_trace_id}" connects to fanout planes on multiple layers`,
+        `Source trace "${sourceTrace.name ?? "unnamed trace"}" connects to fanout planes on multiple layers`,
       )
     }
-    const layer = mappedLayers.values().next().value
-    if (layer) traceLayers.set(sourceTrace.source_trace_id, layer)
+    planeLayersBySourceTraceId.set(sourceTrace.source_trace_id, layers)
   }
 
-  return traceLayers
+  return planeLayersBySourceTraceId
 }
 
 /** Converts bus trace names or port selectors into SRJ constraints. */
@@ -140,6 +147,7 @@ export const getBusesForSimpleRouteJson = ({
   subcircuitId,
   planeTerminatedSourceTraceLayers,
   preservedSourceTraceIds,
+  boardLayers,
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
   for (const bus of buses) {
@@ -201,7 +209,8 @@ export const getBusesForSimpleRouteJson = ({
   }
 
   const planeSrjBuses: SimpleRouteBus[] = []
-  for (const [sourceTraceId, layer] of planeTerminatedSourceTraceLayers ?? []) {
+  for (const [sourceTraceId, layers] of planeTerminatedSourceTraceLayers ??
+    []) {
     const sourceTrace = sourceTraces.find(
       (candidate) => candidate.source_trace_id === sourceTraceId,
     )
@@ -215,9 +224,31 @@ export const getBusesForSimpleRouteJson = ({
       [...declaredSrjBuses, ...planeSrjBuses].some((bus) => bus.busId === busId)
     ) {
       throw new Error(
-        `Fanout plane trace "${busId}" conflicts with an existing bus name`,
+        `Fanout plane trace "${sourceTrace.name ?? "unnamed trace"}" conflicts with an existing bus name`,
       )
     }
+    const sourceLayer = srjConnection.pointsToConnect[0]!.layer
+    const sourceLayerIndex = boardLayers.indexOf(sourceLayer)
+    const candidatePlaneLayers = boardLayers.filter((layer) =>
+      layers.has(layer),
+    )
+    if (
+      sourceLayerIndex === -1 ||
+      candidatePlaneLayers.length !== layers.size
+    ) {
+      throw new Error(
+        `Fanout plane trace "${sourceTrace.name ?? "unnamed trace"}" references a layer outside the board stack`,
+      )
+    }
+    // A drop needs one endpoint. Use physical stack distance, with board
+    // order breaking ties independently of how the pour map was authored.
+    const layer = candidatePlaneLayers.reduce(
+      (nearestPlaneLayer, candidatePlaneLayer) =>
+        Math.abs(boardLayers.indexOf(candidatePlaneLayer) - sourceLayerIndex) <
+        Math.abs(boardLayers.indexOf(nearestPlaneLayer) - sourceLayerIndex)
+          ? candidatePlaneLayer
+          : nearestPlaneLayer,
+    )
     planeSrjBuses.push({
       busId,
       name: busId,
