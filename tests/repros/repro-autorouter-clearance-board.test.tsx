@@ -3,7 +3,7 @@ import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import SepicBoard from "./assets/sepic-clearance/board"
 
-test("repro: changing autorouter traceClearance leaves board routing input unchanged", async () => {
+test("autorouter traceClearance reaches the board routing input", async () => {
   const inputs: SimpleRouteJson[] = []
   for (const traceClearance of ["0.25mm", "0.50mm"]) {
     const { circuit } = getTestFixture({
@@ -22,9 +22,9 @@ test("repro: changing autorouter traceClearance leaves board routing input uncha
     if (!input) throw new Error("Expected the board to start autorouting")
     inputs.push(input)
 
-    // Characterize the bug: neither requested clearance reaches the router.
-    // A fix should replace this with the requested clearance in millimetres.
-    expect(input.minTraceToPadEdgeClearance).toBe(0.1)
+    expect(input.minTraceToPadEdgeClearance).toBe(
+      Number.parseFloat(traceClearance),
+    )
     expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(8)
 
     // Annotation positions are in board coordinates (mm, +X right, +Y up).
@@ -51,5 +51,7 @@ test("repro: changing autorouter traceClearance leaves board routing input uncha
       { showPcbNotes: true, shouldDrawRatsNest: false },
     )
   }
-  expect(inputs[0]).toEqual(inputs[1])
+  expect(inputs[0].minTraceToPadEdgeClearance).not.toBe(
+    inputs[1].minTraceToPadEdgeClearance,
+  )
 })

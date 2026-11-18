@@ -1234,6 +1234,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseSimpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      if (phaseAutorouterConfig.traceClearance !== undefined) {
+        phaseSimpleRouteJson = {
+          ...phaseSimpleRouteJson,
+          minTraceToPadEdgeClearance: Math.max(
+            phaseSimpleRouteJson.minTraceToPadEdgeClearance ?? 0,
+            distance.parse(phaseAutorouterConfig.traceClearance),
+          ),
+        }
+      }
       const breakoutPoints = db.pcb_breakout_point
         .list()
         .filter((point) => point.pcb_group_id === fanoutRegionPcbGroupId)
@@ -1565,6 +1574,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
       )
+      if (phaseAutorouterConfig.traceClearance !== undefined) {
+        simpleRouteJson = {
+          ...simpleRouteJson,
+          minTraceToPadEdgeClearance: Math.max(
+            simpleRouteJson.minTraceToPadEdgeClearance ?? 0,
+            distance.parse(phaseAutorouterConfig.traceClearance),
+          ),
+        }
+      }
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
 
