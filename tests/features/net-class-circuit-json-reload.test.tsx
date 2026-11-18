@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import type { Board } from "lib/components/normal-components/Board/Board"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test.failing(
@@ -53,12 +54,14 @@ test.failing(
       )
       .map((netClass: { name: string }) => netClass.name)
       .sort()
-    restored.firstChild!.add(
-      <pcbnotetext
-        pcbY={4}
-        text={classNames.join(", ") || "No class definitions restored"}
-      />,
-    )
+    restored
+      .selectOne<Board>("board")!
+      .add(
+        <pcbnotetext
+          pcbY={4}
+          text={classNames.join(", ") || "No class definitions restored"}
+        />,
+      )
     await restored.renderUntilSettled()
     await expect(restored).toMatchPcbSnapshot(import.meta.path)
     expect(classNames).toEqual(["Power", "Unused"])
