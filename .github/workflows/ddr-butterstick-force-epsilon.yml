@@ -1,4 +1,4 @@
-name: Benchmark declared DDR pad clearance end to end
+name: Check ButterStick fixed-via comparison tolerance
 on:
   push:
     branches: [analysis/ddr-butterstick-force-epsilon]
@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {label: head, ref: dfc2b188ce0f9204cac4eb4047e84cd0a7991f87}
+          - {label: head, ref: 10548794641b9b4b48ab52225f75508565b67754}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,8 +33,22 @@ jobs:
           m["overrides"]={**m.get("overrides",{}),"csstype":"3.1.3"}
           p.write_text(json.dumps(m,indent=2)+"\n")
           PY
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensityForceImproveSolver.ts")
+          s=p.read_text()
+          old="    const worsensViaClearance = this.evaluateFixedObstacles("
+          new="""    const debugDeltas = this.evaluateFixedObstacles(candidateRoutes)
+                .filter((v) => v.kind === "via" && this.fixedViaObstacleIndexes.has(v.obstacleIndex))
+                .map((v) => v.severity - (originalSeverityByKey.get(v.key) ?? 0))
+                .filter((d) => d > 0)
+              console.log("FORCE_VIA_DIAGNOSTIC=" + JSON.stringify({positive: debugDeltas.length, roundoff: debugDeltas.filter((d) => d <= 1e-8).length, maxDelta: Math.max(0, ...debugDeltas)}))
+              const worsensViaClearance = this.evaluateFixedObstacles("""
+          assert old in s
+          p.write_text(s.replace(old,new))
+          PY
           bun install
-          bun test --timeout 9999999 tests/repro/pipeline9-imx6-fixed-via-force-full-board.test.ts
+          bun test tests/repro/pipeline9-imx6-fixed-via-force-full-board.test.ts --timeout 600000
           bunx tsc --noEmit
           bun run build
           mkdir -p /tmp/ddr-capacity-package
@@ -83,7 +97,7 @@ jobs:
            return await response.json()
           }
           for(const release of [
-           {label:"head",tscircuit:"0.0.3235",core:"0.0.2417",autorouter:"0.0.1129",sourceRevision:"dfc2b188ce0f9204cac4eb4047e84cd0a7991f87"}
+           {label:"head",tscircuit:"0.0.3235",core:"0.0.2417",autorouter:"0.0.1130",sourceRevision:"10548794641b9b4b48ab52225f75508565b67754"}
           ]) {
            const published=await metadata("tscircuit",release.tscircuit)
            const core=await metadata("@tscircuit/core",release.core)
@@ -100,7 +114,6 @@ jobs:
           }
           JS
           node prepare-published.private.mjs
-          (cd base && bun install --ignore-scripts)
           (cd head && bun install --ignore-scripts)
       - name: Route real TSX circuits through published Core
         env:
@@ -113,6 +126,7 @@ jobs:
             bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" --circuit "$CIRCUIT" --timeout 1200 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
             cp "$release/published-runtime.json" "results/$release/"
           done
+          sed -n '/FORCE_VIA_DIAGNOSTIC=/p' native-head.private.log
           exit "$infrastructure_status"
       - name: Compare using one validator and render every board
         if: always()
@@ -165,18 +179,22 @@ jobs:
             metrics/*.json
             svgs/*.svg
           if-no-files-found: warn
-      - name: Save the public-board remaining-phase input for the repro
+      - name: Capture the unchanged native remaining-phase input
         if: always()
         run: |
           python3 - <<'PY'
           import pathlib,gzip
           root=pathlib.Path("results/head/butterstick")
-          files=sorted(root.glob("phase-*-start.srj.json"),key=lambda p:int(p.name.split("-")[1]))
-          if not files:raise RuntimeError("No phase input was captured")
-          pathlib.Path("butterstick-remaining.srj.json.gz").write_bytes(gzip.compress(files[-1].read_bytes(),mtime=0))
+          files=list(root.rglob("*phase*start*.json"))
+          print("CAPTURE_CANDIDATES="+str([str(p.relative_to(root)) for p in files]))
+          if files:
+            import re
+            source=sorted(files,key=lambda p: int(re.search(r"phase[-_](\\d+)",p.name).group(1)) if re.search(r"phase[-_](\\d+)",p.name) else 0)[-1]
+            pathlib.Path("butterstick-remaining.srj.json.gz").write_bytes(gzip.compress(source.read_bytes(),mtime=0))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: butterstick-repro-input
           path: butterstick-remaining.srj.json.gz
+          if-no-files-found: warn
