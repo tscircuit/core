@@ -1,0 +1,143 @@
+{
+  "schema": "pending-routing-access-continuation/v2",
+  "date": "2026-11-18",
+  "status": "INCOMPLETE; workspace unavailable; no new PR is safe to merge",
+  "authorization": {
+    "task": "Finish pendingRoutingAccess consumer, Core integration, same native H3 all phases, paired DDR/AM3352, no-intent controls",
+    "workflow": "One issue per paired stacked repro/fix PR with real before/after visuals; preserve all native geometry/rules/copper/budgets",
+    "mergeNewPRs": false
+  },
+  "featureHeads": {
+    "bus203": {
+      "sha": "779b9df28e7978760daf7f96df6a2d1a65c471b6"
+    },
+    "bus213": {
+      "sha": "083c6a097d00062ad638ef231c620f2341657f6e",
+      "tree": "7f8924f96343cc96aeee709b1c2161ec7c0e3141",
+      "branch": "fix/consume-pending-routing-access",
+      "algorithmCheckpoint": "e6c3ffd80983afc3bfc570b7d9618a0001e79505",
+      "latestDelta": "Two tests only, production/config unchanged; canonical files already formatted"
+    },
+    "bus216": {
+      "sha": "6b218da9705641a51ed8035d9741616d438dc3e4",
+      "tree": "7a1fbf4171f7b579f6eb86cf17d51fbba4b251b8",
+      "branch": "repro/h3-current-via-drill-overlap",
+      "parents": [
+        "6604fb00f4124bad08745c745b113b1521493d51",
+        "083c6a097d00062ad638ef231c620f2341657f6e"
+      ],
+      "verified": "Exact original12 added repro files and four SVGs preserved vs new213 base"
+    },
+    "core5586": "914daa787936f8a3a7b290de7a37ecc508479080",
+    "core5625": "a7c3465811c8ae5ab4d11b8a906ed1ff99e6abf4",
+    "coreReleased61Control": "17bd033553ee56ea1130315d2910fd810abf928f",
+    "core5635": {
+      "sha": "06173cbee3caa7421227d568efeea22102e4c3a7",
+      "tree": "04dc8405a8856f246fcae5bcae314cb4bdd85162",
+      "branch": "fix/pending-routing-access-consumer",
+      "dependency": "https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@e6c3ffd",
+      "actualExecutableSha256": "93138890b90e1c9aa4ffed7873265354d2e1b3f5e203209186991a1922e54170"
+    }
+  },
+  "testSupervision": {
+    "diagnostic": "a3ac8fa598853274c74e757077ffdafb21c2e7eb",
+    "run": 44222007178,
+    "job": 134525902049,
+    "status": "PASS: canonical Biome2.5.15/83 guard cases,9 focused tests/341assertions,types;2 canonical files unchanged by formatter",
+    "typeRun": 44222007143,
+    "scopeBlob": "72473972d478ded828dfa0c0a4052f2a4b7081fe",
+    "seedBlob": "6a7453d1c7c0fd77f6c8fbd0985162c4fb98dbba",
+    "latestFeatureFullSuite": "Rerunning; prior213842pass2timingfail and216851pass2same timingfail"
+  },
+  "smTDrillFix": {
+    "status": "Frozen local16-file fix, NOT published; rebind to216 new6b218 head on restore",
+    "manifest": "work/bus-current-via-drill-fix-publish.manifest.json",
+    "sha256": "df9556e1c7a94c0017b477a47f7f449c0ad5ff465024bbf44e0ba035fb930b9b",
+    "frozen": "work/bus-current-via-drill-fix-frozen",
+    "validation": "20/570 focused, native16routes/8fixed preserved/76positive certificates/zeroSMTdrillviolations, source no-intent exact; broad251pass1old timingfail",
+    "oldBase": "6604fb00f4124bad08745c745b113b1521493d51",
+    "productionFiles": 5,
+    "allDeltaFiles": 16
+  },
+  "coreHandoff": {
+    "reproOriginalLogic": "e8a18a2e0f2d5365549e935c5bbdbd3649ef8f3b",
+    "correctedUnreferencedLogic": "ce1d31cd9c089cf45034c2b156d1b9306c98bd44",
+    "correctedTree": "f119df179ae8b4e51cd7c442668e3de63c506db7",
+    "apiRepair": "Only checkHoleTraceClearance(final,options) -> checkHoleTraceClearance(final); options ignored at runtime, actual API does not accept connMap",
+    "correctedTestBlob": "498158d6192e45ba680136b5304f39e9a96f775a",
+    "base": "a7c3465811c8ae5ab4d11b8a906ed1ff99e6abf4",
+    "fixV2Manifest": "work/core-fixed-copper-handoff-fix.v2.draft.manifest.json",
+    "fixV2Sha256": "e224838ced8837ce4ffb1f08282b13595a355d8174d8e8474060e00cd5f95841",
+    "frozen": "work/core-fixed-copper-handoff-pair-v2-frozen",
+    "featurePRsPublished": false,
+    "formatDiagnostic": "819325fd88977f3f50d4bf0fee73693b091ccdc1",
+    "formatRun": 44221922708,
+    "formatJob": 134525620406,
+    "formatStatus": "PASS4sources/9immutable/108guards/2actualTSX runtime AST+comments proofs; bounded UTF8 bytes in completed logs; DO NOT apply until runtime replay fixed",
+    "guardBlob": "cae9926b52b99676c934ac31f6ddff8c65de852f",
+    "typeRun": 44221922609,
+    "typeJob": 134525620828,
+    "typeStatus": "Strict actual4913program/3084root files PASS with actual.58; minimal runtime board PASS; H3 legacy replay rawhash FAIL",
+    "portabilityAudit": {
+      "branch": "diagnostics/core-fixed-copper-handoff-replay-audit",
+      "sha": "dc78f7717f10d49afa9b30c5e837ca83922e774d",
+      "tree": "aa67eda8db6a17a504d8059963c43de0e002feb1",
+      "soleParent": "ce1d31cd9c089cf45034c2b156d1b9306c98bd44",
+      "run": 44223172203,
+      "jobs": [
+        134529810285,
+        134529810554,
+        134529810585,
+        134529810667
+      ],
+      "status": "All4SUCCESS: Linuxx64 Bun1.4.2/1.4.4 vs Darwinarm64 both versions; exact source/input/fivepeerhashes",
+      "macFlatSha256": "2fa8eb9fe49de5c38d37dc7d0a69aa68b56b4c547726743027bd8e9a59089a6e",
+      "macFlatGitBlob": "588dc4ab8c74d35b9dfde9a48bc92a0dd4535224",
+      "linuxFlatSha256": "5158252c05fa4e7c8243253692546c6791e64305b046def41f0c90ae9652b46c",
+      "linuxFlatGitBlob": "97f49654374b4c5f43224abe7abff2e9762ee5ff",
+      "rootVerifiedDifference": "Only11 numeric fields, ALL derived proxy width/height, maxabs2.7755575615628914e-17; no original445 pad/metadata/centers/layers/rules/keys mismatch. Both Mac runs EXACT original captured hash, so machine floating point issue, not dependency/keyorder.",
+      "next": "Coreowner preparing principled test-only comparison preserving original capture with generic derived-width/height IEEE rounding bound and strong negatives; independent agent core_replay_portability_review. No allowlist of platform hashes, no production math/geometry changes. Must review/canonical CI before publication.",
+      "macFlatGzip": {
+        "bytes": 29991,
+        "sha256": "f4d17c6ee6b975b9894b56f7975ae4bec825b776abb9e5777c8c72db1481797f",
+        "gitBlob": "c8043ee98c434404a19d3f18d2dcfb2784f2bcf7"
+      },
+      "review": "Independent reviewer confirms only11 dimensions; propose tolerance ONLY generated rectangular stroke proxy width/height, exclude generated circle/via dimensions copied from declared via size; finitepositive scale-relative bound WITHOUT max(1,...); allnative/centers/layers/owners/rules/cardinalityexact. Compare SAME JSON serialization domain as oldrawhash. ExistingSVGunchanged; pinnedbun-match-svg usesResvgpixelcompare. Exactcodeproposal/negativecontrols notyetreviewed/published."
+    }
+  },
+  "h616": {
+    "status": "Two-file analytic via-goal prototype LOCAL only; controls+visuals NOT finished before outage",
+    "source": "work/h616-pending-via-goal-fix",
+    "repro": "work/h616-consumer-regression",
+    "freshResult": "8current/94pendingcertificates PASS, same previously-rejected candidate copper,17315/800000iters,.542s local; all94 independent physical certificates/typecheck pass",
+    "cause": "Finite grid misses real ~5micron legal via window; streamed generic boundary intersections/physical validation, no board coordinates or budgets changed",
+    "pending": "Complete generic closed-pocket/layer/rotation/cancellation controls, actual visuals, paired PRs; source and SMT workspaces sealed"
+  },
+  "nativeH3": {
+    "baseline": "Released61+same physical-via fix:16/53connected;remainingP9 NoPathN046_SDQS1N;76disconnected,otherphysical/width0",
+    "e6ActualLocal": "53/53connected,266.456s,but587genuinephysicalDRC findings;3bus same-netSMTdrill and584remaining/P9. NOT valid board.",
+    "e6ActualCI": "Timeout300.100s,RSS1893.58MiB; normal strict test350.662s>300. No accepted after golden.",
+    "evidence": "work/core-native-h3-consumer-06173-e6c3ffd-run1",
+    "inputSha256": "ba1e01af77eab4046b97cd81e832408ee1a39e449762f7ae316042339b7d0b18"
+  },
+  "benchmarks": {
+    "ddr": {
+      "isolatedRun": 44202688839,
+      "standardRun": 44202448360,
+      "headCore": "06173cbee3caa7421227d568efeea22102e4c3a7",
+      "baselineControl": "17bd033553ee56ea1130315d2910fd810abf928f",
+      "result": "5/10 ->4/10passes;335->218/606connected;2->3timeouts; H61653->0UNKNOWN false rejection;4commonpassing boards time284.313->302.659s(+6.45%), medianRSS2284->2341.3MiB(+2.51%);single observation, early fail savings not improvement",
+      "local": "work/final-ddr-evidence"
+    },
+    "am3352": {
+      "canonicalRun": 44200806315,
+      "supplementRun": 44200965752,
+      "supplementJob": 134454606865,
+      "source": "e6c3ffd80983afc3bfc570b7d9618a0001e79505",
+      "result": "11/11both;22workers47/47; all11 exact no-intent input/copper/native-output parities, canonical physical/fixed/matching/coupling gates PASS. Root independently parsed exact plain records.",
+      "costs": "Total solve2763.395372845->2765.356552528s(+.07097%);p50 72.445731773->72.837852538s(+.5413%);p95 908.79017824->913.5716968555s(+.5261%);medianRSS1846.9453125->1820.23828125MiB(-1.446%);single paired run",
+      "workflowStatus": "RED ONLY later gallery log transport3MiB exceeded;3/22SVGpackets complete,19absent;artifactsAPIempty;onlylogsrecoverable;compressed strict local decode still pending",
+      "futureMatrix": "11freshpairjobs unchanged3600/3720/JSC -> globalall22physical+11paritygate -> fullRAW+22imagesartifact FIRST ->22read-onlyimagecapturejobs oneimageeach underexisting3MiB cap; design only, files notcreated"
+    }
+  }
+}
