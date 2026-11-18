@@ -3,6 +3,7 @@ import {
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
+import type { PcbCopperPour, PcbTrace } from "circuit-json"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
@@ -11,9 +12,45 @@ import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-i
 // Each CopperPour queues this phase, but the solver processes every pour in a
 // subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
+const previewCopperPours = new WeakMap<ISubcircuit, PcbCopperPour[]>()
 const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
 
-const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
+type CopperPourRenderMode = "preview" | "final"
+type PcbCopperPourId = PcbCopperPour["pcb_copper_pour_id"]
+
+const removePreviewPourReferences = (
+  trace: PcbTrace,
+  previewPourIds: Set<PcbCopperPourId>,
+): PcbTrace => {
+  if (
+    !trace.route.some(
+      (point) =>
+        "copper_pour_id" in point &&
+        point.copper_pour_id &&
+        previewPourIds.has(point.copper_pour_id),
+    )
+  )
+    return trace
+
+  return {
+    ...trace,
+    route: trace.route.map((point) => {
+      if (
+        !("copper_pour_id" in point) ||
+        !point.copper_pour_id ||
+        !previewPourIds.has(point.copper_pour_id)
+      )
+        return point
+      const { copper_pour_id, is_inside_copper_pour, ...wireOrVia } = point
+      return wireOrVia
+    }),
+  }
+}
+
+const renderAllCopperPoursForSubcircuit = async (
+  subcircuit: ISubcircuit,
+  mode: CopperPourRenderMode,
+) => {
   if (!subcircuit.root) return
 
   const { db } = subcircuit.root
@@ -40,7 +77,22 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   if (resolvedCopperPours.length === 0) return
 
-  const circuitJson = db.toArray()
+  const previewPours = previewCopperPours.get(subcircuit) ?? []
+  const previewPourIds = new Set(
+    previewPours.map((pour) => pour.pcb_copper_pour_id),
+  )
+  // Rebuild from routed copper without provisional pours or their annotations.
+  const circuitJson = db
+    .toArray()
+    .filter(
+      (circuitElement) =>
+        circuitElement.type !== "pcb_copper_pour" ||
+        !previewPourIds.has(circuitElement.pcb_copper_pour_id),
+    )
+    .map((circuitElement) => {
+      if (circuitElement.type !== "pcb_trace") return circuitElement
+      return removePreviewPourReferences(circuitElement, previewPourIds)
+    })
   const boardComponent = subcircuit._getBoard()
   const pcbBoard = boardComponent?.pcb_board_id
     ? db.pcb_board.get(boardComponent.pcb_board_id)
@@ -107,6 +159,22 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   const { brep_shapes_by_region } = solver.getOutput()
 
+  // Keep the preview until replacement geometry is ready, including on failure.
+  for (const pour of previewPours) {
+    db.pcb_copper_pour.delete(pour.pcb_copper_pour_id)
+  }
+  for (const trace of db.pcb_trace.list()) {
+    const updatedTrace = removePreviewPourReferences(trace, previewPourIds)
+    if (updatedTrace !== trace) {
+      db.pcb_trace.update(trace.pcb_trace_id, { route: updatedTrace.route })
+    }
+  }
+  previewCopperPours.delete(subcircuit)
+  const renderedPreviewPours: PcbCopperPour[] = []
+  if (mode === "preview") {
+    previewCopperPours.set(subcircuit, renderedPreviewPours)
+  }
+
   for (const [
     regionIndex,
     { copperPour, sourceNetId },
@@ -128,6 +196,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
       })
+      if (mode === "preview") renderedPreviewPours.push(insertedPour)
 
       markTraceSegmentsInsideCopperPour({
         db,
@@ -139,10 +208,13 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
 export function CopperPour_doInitialPcbCopperPourRender(
   copperPour: CopperPour,
+  mode: CopperPourRenderMode = "final",
 ): void {
   if (copperPour.root?.pcbDisabled) return
 
-  copperPour._queueAsyncEffect("PcbCopperPourRender", async () => {
+  const effectName =
+    mode === "preview" ? "PcbCopperPourPreviewRender" : "PcbCopperPourRender"
+  copperPour._queueAsyncEffect(effectName, async () => {
     const subcircuit = copperPour.getSubcircuit()
     const pendingRender = pendingCopperPourRenders.get(subcircuit)
     if (pendingRender) {
@@ -150,7 +222,7 @@ export function CopperPour_doInitialPcbCopperPourRender(
       return
     }
 
-    const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit)
+    const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit, mode)
     pendingCopperPourRenders.set(subcircuit, renderPromise)
     try {
       await renderPromise

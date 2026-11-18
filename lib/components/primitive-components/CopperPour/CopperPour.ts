@@ -26,6 +26,11 @@ export class CopperPour extends PrimitiveComponent<typeof copperPourProps> {
     createNetsFromProps(this, [props.connectsTo])
   }
 
+  doInitialPcbCopperPourPreviewRender(): void {
+    if (!this._hasIncompleteAsyncEffectsForPhase("PcbTraceRender")) return
+    CopperPour_doInitialPcbCopperPourRender(this, "preview")
+  }
+
   doInitialPcbCopperPourRender(): void {
     CopperPour_doInitialPcbCopperPourRender(this)
   }

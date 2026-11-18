@@ -2254,11 +2254,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
     this._hasStartedAsyncAutorouting = true
+    const routing = Promise.withResolvers<void>()
     if (this._getAutorouterConfig().local) {
-      this._queueAsyncEffect("autorouting", async () => {
-        try {
-          await this._runLocalAutorouting()
-        } catch (error) {
+      // Register the routing dependency before its events can render the circuit.
+      this._queueAsyncEffect("autorouting", () => routing.promise)
+      this._runLocalAutorouting()
+        .catch((error) => {
           if (!(error instanceof RoutingPhasePreparationError)) throw error
 
           // Matching constraints can fail before the per-stage solver catch.
@@ -2286,11 +2287,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             })
           }
           throw error
-        }
-      })
+        })
+        .then(routing.resolve, routing.reject)
     } else {
-      this._queueAsyncEffect("make-http-autorouting-request", async () =>
-        this._runEffectMakeHttpAutoroutingRequest(),
+      this._queueAsyncEffect(
+        "make-http-autorouting-request",
+        () => routing.promise,
+      )
+      this._runEffectMakeHttpAutoroutingRequest().then(
+        routing.resolve,
+        routing.reject,
       )
     }
   }
