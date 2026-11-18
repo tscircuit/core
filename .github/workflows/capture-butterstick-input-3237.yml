@@ -65,9 +65,9 @@ jobs:
           from pathlib import Path
           p=Path("native-fixture/scripts/worker.tsx")
           s=p.read_text()
-          marker='    if (eventName === "autorouting:start") {'
-          replacement='''    if (eventName === "autorouting:start" && phase === "remaining") {
-                writeFileSync(join(output, "butterstick-remaining.srj.json"), JSON.stringify(event.simpleRouteJson))
+          marker='    const { solverParams, solverConstructorArgs, ...metadata } = event'
+          replacement='''    if (eventName === "solver:started" && event.solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph") {
+                writeFileSync(join(output, "butterstick-solver-args.json"), JSON.stringify(event.solverParams))
                 process.exit(0)
               }
           '''+marker
@@ -78,10 +78,12 @@ jobs:
           bun --tsconfig-override head/tsconfig.json native-fixture/scripts/worker.tsx "$GITHUB_WORKSPACE/head" butterstick "$GITHUB_WORKSPACE/captured" full > capture.private.log 2>&1
           python3 - <<'PY'
           import pathlib,gzip,json,hashlib
-          source=pathlib.Path("captured/butterstick-remaining.srj.json").read_bytes()
-          srj=json.loads(source)
+          source=pathlib.Path("captured/butterstick-solver-args.json").read_bytes()
+          args=json.loads(source)
+          srj=args["input"]
+          print("SOLVER_OPTIONS="+json.dumps(args["options"]))
           print(json.dumps({"connections":len(srj["connections"]),"obstacles":len(srj["obstacles"]),"traces":len(srj.get("traces",[])),"sha256":hashlib.sha256(source).hexdigest()}))
-          dest=pathlib.Path("repros/butterstick-fixed-via/butterstick-remaining.srj.json.gz")
+          dest=pathlib.Path("repros/butterstick-fixed-via/butterstick-solver-args.json.gz")
           dest.parent.mkdir(parents=True,exist_ok=True)
           dest.write_bytes(gzip.compress(source,mtime=0))
           PY
@@ -89,6 +91,6 @@ jobs:
         run: |
           git config user.name "tscircuit bot"
           git config user.email "githubbot@tscircuit.com"
-          git add repros/butterstick-fixed-via/butterstick-remaining.srj.json.gz
-          git commit -m "Capture latest unchanged ButterStick Core routing input"
+          git add repros/butterstick-fixed-via/butterstick-solver-args.json.gz
+          git commit -m "Capture exact ButterStick solver arguments from published Core"
           git push origin HEAD:analysis/butterstick-input-3237
