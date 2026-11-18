@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("routing callbacks do not render pours early", async () => {
+test("routing callbacks do not render pours early", async () => {
   const { circuit } = getTestFixture()
   let viasSeenByPour = 0
   circuit.on("autorouting:start", () => {

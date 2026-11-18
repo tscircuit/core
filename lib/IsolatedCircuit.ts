@@ -78,6 +78,7 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  private _isRendering = false
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -202,15 +203,21 @@ export class IsolatedCircuit {
   }
 
   render() {
-    if (!this.firstChild) {
-      this._guessRootComponent()
+    if (this._isRendering) return
+    this._isRendering = true
+    try {
+      if (!this.firstChild) {
+        this._guessRootComponent()
+      }
+      const { firstChild, db } = this
+      if (!firstChild) throw new Error("IsolatedCircuit has no root component")
+      firstChild.parent = this as any
+      firstChild.runRenderCycle()
+      this._hasUnrenderedUpdatesFromAsyncEffects = false
+      this._hasRenderedAtleastOnce = true
+    } finally {
+      this._isRendering = false
     }
-    const { firstChild, db } = this
-    if (!firstChild) throw new Error("IsolatedCircuit has no root component")
-    firstChild.parent = this as any
-    firstChild.runRenderCycle()
-    this._hasUnrenderedUpdatesFromAsyncEffects = false
-    this._hasRenderedAtleastOnce = true
   }
 
   async renderUntilSettled(): Promise<void> {
@@ -250,7 +257,11 @@ export class IsolatedCircuit {
   }
 
   isDoneRendering(): boolean {
-    return this._hasRenderedAtleastOnce && !this._hasIncompleteAsyncEffects()
+    return (
+      !this._isRendering &&
+      this._hasRenderedAtleastOnce &&
+      !this._hasIncompleteAsyncEffects()
+    )
   }
 
   _hasIncompleteAsyncEffects(): boolean {
