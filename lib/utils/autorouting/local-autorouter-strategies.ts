@@ -66,11 +66,7 @@ const createTscircuitAutorouterStrategy = (
     new TscircuitAutorouter(simpleRouteJson, {
       ...commonAutorouterOptions,
       ...strategyOptions,
-      onSolverStarted: (details) =>
-        onSolverStarted?.({
-          ...details,
-          solverConstructorArgs: [details.solverParams],
-        }),
+      onSolverStarted,
     }),
 })
 
