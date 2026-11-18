@@ -54,14 +54,13 @@ test.failing(
       )
       .map((netClass: { name: string }) => netClass.name)
       .sort()
-    restored
-      .selectOne<Board>("board")!
-      .add(
-        <pcbnotetext
-          pcbY={4}
-          text={classNames.join(", ") || "No class definitions restored"}
-        />,
-      )
+    const restoredBoard = restored.firstChild as Board
+    restoredBoard.add(
+      <pcbnotetext
+        pcbY={4}
+        text={classNames.join(", ") || "No class definitions restored"}
+      />,
+    )
     await restored.renderUntilSettled()
     await expect(restored).toMatchPcbSnapshot(import.meta.path)
     expect(classNames).toEqual(["Power", "Unused"])
