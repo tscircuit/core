@@ -2,12 +2,13 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
-test("autorouter clearance preserves board and phase minimums and reaches subcircuits", async () => {
+test("autorouter clearance respects phase overrides and reaches subcircuits", async () => {
   for (const scenario of [
     { clearance: undefined, minimum: 0.1, expected: 0.1 },
     { clearance: 0, minimum: 0.1, expected: 0.1 },
     { clearance: 0.35, minimum: 0.1, expected: 0.35 },
     { clearance: 0.35, minimum: 0.6, expected: 0.6 },
+    { clearance: 0.35, minimum: 0.6, phaseMinimum: 0.2, expected: 0.35 },
     { clearance: 0.35, minimum: 0.1, phaseMinimum: 0.7, expected: 0.7 },
     { clearance: 0.45, minimum: 0.1, subcircuit: true, expected: 0.45 },
   ]) {
