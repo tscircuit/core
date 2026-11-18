@@ -1,0 +1,21 @@
+name: Stop the superseded incomplete DDR comparison
+on:
+  push:
+    branches: [analysis/stop-incomplete-ddr-comparison]
+    paths: [.github/workflows/stop-incomplete-ddr-comparison.yml]
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cancel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Cancel only this task's superseded benchmark run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_status=$(gh api repos/tscircuit/core/actions/runs/44410245768 --jq .status)
+          if [ "$run_status" != completed ]; then
+            gh api --method POST repos/tscircuit/core/actions/runs/44410245768/cancel --silent
+          fi
