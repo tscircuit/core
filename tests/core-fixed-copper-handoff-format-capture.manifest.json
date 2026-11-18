@@ -1,0 +1,106 @@
+{
+  "schema": "pending-consumer-canonical-format/v1",
+  "repository": "tscircuit/core",
+  "stackBaseCommit": "a7c3465811c8ae5ab4d11b8a906ed1ff99e6abf4",
+  "sourceCheckpointCommit": "ce1d31cd9c089cf45034c2b156d1b9306c98bd44",
+  "publishManifestSha256": "65768d49d429cb2e76811de4e87b02cd432e9149ea66a1679ee73a62cea87149",
+  "publishManifestBase64": "ewogICJyZXBvc2l0b3J5IjogInRzY2lyY3VpdC9jb3JlIiwKICAiYmFzZSI6ICJhN2MzNDY1ODExYzhhZTVhYjRkMTFiOGE5MDZlZDFmZjk5ZTZhYmY0IiwKICAiYmFzZVRyZWUiOiAiOTZkMDU2NThhODUyZTM0ODNlY2EwY2FiZmQ0YmFlYjY4NjA2NTllMiIsCiAgInNvdXJjZUNoZWNrcG9pbnRDb21taXQiOiAiY2UxZDMxY2Q5YzA4OWNmNDUwMzRjMmIxNTZkMWI5MzA2Yzk4YmQ0NCIsCiAgInNvdXJjZUNoZWNrcG9pbnRUcmVlIjogImYxMTlkZjE3OWFlOGI0ZTUxY2Q3YzQ0MjY2OGUzZGU2M2M1MDZkYjciLAogICJraW5kIjogImZpeGVkX2NvcHBlcl9oYW5kb2ZmX3JlcHJvX2Nhbm9uaWNhbF9zb3VyY2UiLAogICJvcmlnaW5hbE93bmVyTWFuaWZlc3RTaGEyNTYiOiAiNGFkMzY3N2ZmYzY0M2FhNWI4NzMxMjk2ZTI5ZTg2MDg5NDI5NTc3YWE3ODM5ZTAxMDE3M2M3NmE0MzEwNmI4ZCIsCiAgImZpbGVzIjogWwogICAgewogICAgICAicGF0aCI6ICJ0ZXN0cy9maXh0dXJlcy9maXhlZC1jb3BwZXItaGFuZG9mZi9ib2FyZC50c3giLAogICAgICAiYnl0ZXMiOiAxNDgyLAogICAgICAic2hhMjU2IjogIjFkN2QzZThjNTg5ZjFkZDVmOTdiMzVjYjFkZGIyY2YwYThiNWY1NGM4OTgyZTk0ODY0MWE0YjRlNTRlYmY2NTMiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiZWYwMWM0NGIzZDgxMWI2ZWM1NDYxMTYyNTYwMTNlNjRmMzA4ZDM1MCIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL25hdGl2ZS1oMy5wcm92ZW5hbmNlLmpzb24iLAogICAgICAiYnl0ZXMiOiAxMjQ5LAogICAgICAic2hhMjU2IjogIjg5MDIyOTBjMDQxN2VkZDdlNmYwOGJlMWFmYmRjYjE2NzY3M2Q4N2VhNmEwMjgyZmJlNDBlNjMyZTA5ZTU3MGIiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiZDMwMDc0ODBjYTQzMWRkMWI1MzZhMzViM2NlNzhhZjAwOTNmNjEyYiIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL25hdGl2ZS1oMy5zcmouanNvbi5neiIsCiAgICAgICJieXRlcyI6IDE2MDI0LAogICAgICAic2hhMjU2IjogIjI4MjA0YjU0ZTI3ZTk4ZWU0OTBiYjliOWM0OTQ5YTlmMDNmMjUzNDMyNTE1OTYzMzEyNTQ2MDMzNmM4Y2YyOGIiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiMjA1MDI3ODEwOGJiMmU0Mzc3ZDA3Yzk2ZGU1Njk3NGM0NWI3MDIwNyIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL3NuYXBzaG90LnRzIiwKICAgICAgImJ5dGVzIjogMzc1MCwKICAgICAgInNoYTI1NiI6ICIwZDU1Y2UyMzgyNGExYjAxZmQwYTQxM2QxZWQwZWJkZmFiZmJkMzk4MTcxY2QyZDRlMWU5MDJkNDA5Nzg1ZDQyIiwKICAgICAgImdpdEJsb2JTaGExIjogIjk0NzEyZWY4NjlkOGE0MzEzZGU4MGJkNzc0ZTlkN2ZjMzc4ZTIwZWYiCiAgICB9LAogICAgewogICAgICAicGF0aCI6ICJ0ZXN0cy9yZXByb3MvX19zbmFwc2hvdHNfXy9yZXByby1maXhlZC1jb3BwZXItaGFuZG9mZi5zbmFwLnN2ZyIsCiAgICAgICJieXRlcyI6IDU1OTksCiAgICAgICJzaGEyNTYiOiAiNGYzM2NlMzhjOTY1MzhmMGQ1NDIxYzI5NjhmM2IzNDEwZTgzYzcwOWY1YzA3MjA4NWJlMGZlYzgyMjFmMWUzMSIsCiAgICAgICJnaXRCbG9iU2hhMSI6ICI5NDYwNmI4ZTFiZWNjNGJjYmJlNjI5N2U1MzAyMWEyZDk3YTM2N2I4IgogICAgfSwKICAgIHsKICAgICAgInBhdGgiOiAidGVzdHMvcmVwcm9zL3JlcHJvLWZpeGVkLWNvcHBlci1oYW5kb2ZmLnRlc3QudHN4IiwKICAgICAgImJ5dGVzIjogNDIwMiwKICAgICAgInNoYTI1NiI6ICI1MjhhNzE3OTgwN2JlMmIzMDIwYzc5YzVhMjU3NGVmYTBmNzZlNmRkNDEwNTdjMTAzNGZmOTA3N2Y4MzM0Mjg2IiwKICAgICAgImdpdEJsb2JTaGExIjogIjQ5ODE1OGQ2MTkyZTQ1YmE2ODAxMzZiNTMwNGYzOWU5YTk2Zjc3NWEiCiAgICB9LAogICAgewogICAgICAicGF0aCI6ICJ0ZXN0cy91dGlscy9hdXRvcm91dGluZy9fX3NuYXBzaG90c19fL25hdGl2ZS1oMy1maXhlZC1jb3BwZXItaGFuZG9mZi5zbmFwLnN2ZyIsCiAgICAgICJieXRlcyI6IDI4MzExMywKICAgICAgInNoYTI1NiI6ICIyYmRkZjZjNjgwMWRhNDM4NDI4OWE2YTU5MjdmYzAzZjU4ZGZjZWE0Y2FjNGQyMjkyYzM3NzM3NzRjYzU0OGQxIiwKICAgICAgImdpdEJsb2JTaGExIjogIjQ5YTQzOTliNzM0NmU5MzMxYWZlNjA5YTc4OTRlODhjMWI3NGIyMzYiCiAgICB9LAogICAgewogICAgICAicGF0aCI6ICJ0ZXN0cy91dGlscy9hdXRvcm91dGluZy9uYXRpdmUtaDMtZml4ZWQtY29wcGVyLWhhbmRvZmYudGVzdC50cyIsCiAgICAgICJieXRlcyI6IDIwMzIsCiAgICAgICJzaGEyNTYiOiAiNjlmMTVkODU1Y2Y0MmI2YzkyN2I1YzZjYWZiNzIzNzlhY2MwNTc5Mzg2NmUwNWE1NjE3Y2E4MTI0MTZkYTgwMyIsCiAgICAgICJnaXRCbG9iU2hhMSI6ICIxYzE5ZGY1M2U2ZjJiYjhhYWRjY2FlZTYzNjIxNzQxZmM4YmNjNTAyIgogICAgfQogIF0sCiAgImNhbm9uaWNhbFR5cGVSZXBhaXIiOiB7CiAgICAicGFyZW50Q29tbWl0IjogImU4YTE4YTJlMGYyZDUzNjU1NDllOTM1YzViYmRiZDM2NDllZjhmM2IiLAogICAgImNoYW5nZWRQYXRoIjogInRlc3RzL3JlcHJvcy9yZXByby1maXhlZC1jb3BwZXItaGFuZG9mZi50ZXN0LnRzeCIsCiAgICAiYmVmb3JlR2l0QmxvYlNoYTEiOiAiYjM1NzdkMGUwZjcwOWY0MTY0YjI0ZDFkZjY0YmQ1ZGU2YzM0ZmIzNSIsCiAgICAiYWZ0ZXJHaXRCbG9iU2hhMSI6ICI0OTgxNThkNjE5MmU0NWJhNjgwMTM2YjUzMDRmMzllOWE5NmY3NzVhIiwKICAgICJzY29wZSI6ICJSZW1vdmUgaWdub3JlZCBjb25uZWN0aXZpdHktbWFwIG9wdGlvbnMgZnJvbSB0aGUgYWN0dWFsIGE3IGNoZWNrZXIgQVBJIGNhbGw7IGdlb21ldHJ5LCBydWxlcywgY29wcGVyLCByYXcgZml4dHVyZXMgYW5kIFNWR3MgdW5jaGFuZ2VkLiIKICB9LAogICJxdWFsaWZpY2F0aW9uIjogIkZyZXNoIGNhbm9uaWNhbCBDSSByZXF1aXJlZDsgbm8gbG9jYWwgcXVhbGlmaWNhdGlvbiBjbGFpbWVkIGR1cmluZyB3b3Jrc3BhY2Ugb3V0YWdlLiIKfQo=",
+  "biomeConfigSha256": "b91abff9efbe0e67041208ad1d86f1682f0fb83d7134a3447f63d747a3d86470",
+  "biomeVersion": "1.9.4",
+  "typescriptVersion": "5.9.3",
+  "additionalDiagnosticFiles": [
+    {
+      "path": ".github/workflows/core-fixed-copper-handoff-repro-format.yml",
+      "sha256": "1e331651b58c292482fed5c6a574e447a247cd70f8f7e4b1e44e6c00eb72813f",
+      "bytes": 3543
+    },
+    {
+      "path": "tests/core-fixed-copper-handoff-typecheck-probe.test.ts",
+      "sha256": "e14a02d8389acb795f4de6374ed5e280cc1e5a4e9dd12aec9a40ca5a2f0328e9",
+      "bytes": 14032
+    },
+    {
+      "path": ".github/workflows/core-fixed-copper-handoff-repro-typecheck.yml",
+      "sha256": "24273d35a8a7dba1c71396770381bdb27a5f21aa6ac7c142e78fb6757f1a9616",
+      "bytes": 1492
+    }
+  ],
+  "files": [
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/board.tsx",
+      "beforeSha256": "1d7d3e8c589f1dd5f97b35cb1ddb2cf0a8b5f54c8982e948641a4b4e54ebf653",
+      "beforeBytes": 1482
+    },
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/snapshot.ts",
+      "beforeSha256": "0d55ce23824a1b01fd0a413d1ed0ebdfabfbd398171cd2d4e1e902d409785d42",
+      "beforeBytes": 3750
+    },
+    {
+      "path": "tests/repros/repro-fixed-copper-handoff.test.tsx",
+      "beforeSha256": "528a7179807be2b3020c79c5a2574efa0f76e6dd41057c1034ff9077f8334286",
+      "beforeBytes": 4202
+    },
+    {
+      "path": "tests/utils/autorouting/native-h3-fixed-copper-handoff.test.ts",
+      "beforeSha256": "69f15d855cf42b6c927b5c6cafb72379acc05793866e05a5617ca812416da803",
+      "beforeBytes": 2032
+    }
+  ],
+  "immutableFiles": [
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/native-h3.provenance.json",
+      "sha256": "8902290c0417edd7e6f08be1afbdcb167673d87ea6a0282fbe40e632e09e570b",
+      "bytes": 1249,
+      "gitBlobSha1": "d3007480ca431dd1b536a35b3ce78af0093f612b"
+    },
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/native-h3.srj.json.gz",
+      "sha256": "28204b54e27e98ee490bb9b9c4949a9f03f2534325159633125460336c8cf28b",
+      "bytes": 16024,
+      "gitBlobSha1": "2050278108bb2e4377d07c96de56974c45b70207"
+    },
+    {
+      "path": "tests/repros/__snapshots__/repro-fixed-copper-handoff.snap.svg",
+      "sha256": "4f33ce38c96538f0d5421c2968f3b3410e83c709f5c072085be0fec8221f1e31",
+      "bytes": 5599,
+      "gitBlobSha1": "94606b8e1becc4bcbbe6297e53021a2d97a367b8"
+    },
+    {
+      "path": "tests/utils/autorouting/__snapshots__/native-h3-fixed-copper-handoff.snap.svg",
+      "sha256": "2bddf6c6801da4384289a6a5927fc03f58dfcea4cac4d2292c3773774cc548d1",
+      "bytes": 283113,
+      "gitBlobSha1": "49a4399b7346e9331afe609a7894e88c1b74b236"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "5590aea42cd463ed37410e4c207e01ecfa649fd59e8693d609aaa8962342aa3f",
+      "bytes": 11682,
+      "gitBlobSha1": "057996652fd9998e939ee848023e2a277d010281"
+    },
+    {
+      "path": "package.json",
+      "sha256": "0aac609ee2c4da97f4a9a63e0bcfc9744585247dde7b83be0657d64f370f87e8",
+      "bytes": 8216,
+      "gitBlobSha1": "12e45bf28c0432048be51e12ba45a175efdf8182"
+    },
+    {
+      "path": "biome.json",
+      "sha256": "b91abff9efbe0e67041208ad1d86f1682f0fb83d7134a3447f63d747a3d86470",
+      "bytes": 1222,
+      "gitBlobSha1": "4da8120921261e8bde68794bac7184c95beda6e7"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "080cea34b88a5806ba8b17d2237399b46d1b5a55a32b7bd5c93ce409e8355076",
+      "bytes": 778,
+      "gitBlobSha1": "d8ce0eeb1df0d9fd08f12af7c75576f799616ec1"
+    },
+    {
+      "path": "bunfig.toml",
+      "sha256": "6964eb4d76b1416492345cf77f3de389f2de061aad3da58ef6d751814a4e286c",
+      "bytes": 81,
+      "gitBlobSha1": "3de532a1ee702f468d25158a0d01eba59e422ec0"
+    }
+  ]
+}

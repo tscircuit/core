@@ -1,0 +1,64 @@
+name: Capture Core fixed-copper handoff repro formatting
+
+on:
+  push:
+    branches:
+      - diagnostics/core-fixed-copper-handoff-qualified
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.repository == 'tscircuit/core' && github.ref_name == 'diagnostics/core-fixed-copper-handoff-qualified'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install
+      - run: bun test --timeout 240000 tests/core-fixed-copper-handoff-format-capture.test.ts
+      - name: Transport bounded verified formatter UTF8 bytes
+        run: |
+          bun -e 'import assert from "node:assert/strict"
+          import { Buffer } from "node:buffer"
+          import { readFileSync } from "node:fs"
+          import { createHash } from "node:crypto"
+          import { execFileSync } from "node:child_process"
+          import { createRequire } from "node:module"
+          import { dirname, resolve } from "node:path"
+          const limit = 2 * 1024 * 1024
+          const hash = (bytes) => createHash("sha256").update(bytes).digest("hex")
+          const manifestBytes = readFileSync("tests/core-fixed-copper-handoff-format-capture.manifest.json")
+          const manifest = JSON.parse(manifestBytes.toString("utf8"))
+          assert.equal(manifest.sourceCheckpointCommit, "ce1d31cd9c089cf45034c2b156d1b9306c98bd44")
+          assert.equal(manifest.files.length, 4)
+          const require = createRequire(resolve("package.json"))
+          const packagePath = require.resolve("@biomejs/biome/package.json")
+          const biome = JSON.parse(readFileSync(packagePath, "utf8"))
+          assert.equal(biome.version, "1.9.4")
+          const bin = resolve(dirname(packagePath), typeof biome.bin === "string" ? biome.bin : biome.bin.biome)
+          const paths = manifest.files.map((entry) => entry.path)
+          assert(paths.every((path) => path.startsWith("tests/") && /\.(ts|tsx)$/.test(path)))
+          execFileSync(process.execPath, [bin, "format", ...paths], { maxBuffer: limit, stdio: ["ignore", "pipe", "pipe"] })
+          const marker = "CORE_CANONICAL_UTF8_V1"
+          const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", maxBuffer: 4096 }).trim()
+          const lines = [marker + "_BEGIN " + JSON.stringify({ sourceCheckpointCommit: manifest.sourceCheckpointCommit, diagnosticHead: head, inputManifestSha256: hash(manifestBytes), fileCount: paths.length, biomeVersion: biome.version, followsSuccessfulSemanticProof: true })]
+          let rawBytes = 0
+          for (const path of paths) {
+            const bytes = readFileSync(path)
+            const content = bytes.toString("utf8")
+            assert(Buffer.from(content, "utf8").equals(bytes))
+            rawBytes += bytes.length
+            const gitBlobSha1 = createHash("sha1").update(Buffer.concat([Buffer.from("blob " + bytes.length + "\0"), bytes])).digest("hex")
+            lines.push(marker + "_FILE " + JSON.stringify({ path, bytes: bytes.length, sha256: hash(bytes), gitBlobSha1, content }))
+          }
+          const body = lines.join("\n") + "\n"
+          const output = body + marker + "_END " + JSON.stringify({ files: paths.length, rawBytes, bodySha256: hash(body) }) + "\n"
+          assert(Buffer.byteLength(output) <= limit)
+          assert.equal(await Bun.write(Bun.stdout, output), Buffer.byteLength(output))'

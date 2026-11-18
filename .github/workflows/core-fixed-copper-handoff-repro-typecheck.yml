@@ -1,0 +1,42 @@
+name: Verify exact fixed-copper handoff repro types
+
+on:
+  push:
+    branches: [diagnostics/core-fixed-copper-handoff-qualified]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    if: github.repository == 'tscircuit/core'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: capture
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: source
+          ref: ce1d31cd9c089cf45034c2b156d1b9306c98bd44
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - name: Install exact source checkout dependencies
+        working-directory: source
+        run: bun install
+      - name: Check the actual source project without TEMP compiler inputs
+        working-directory: ${{ github.workspace }}
+        env:
+          CORE_TYPECHECK_SOURCE_DIRECTORY: ${{ github.workspace }}/source
+        run: bun test --timeout 1080000 capture/tests/core-fixed-copper-handoff-typecheck-probe.test.ts
+      - name: Run the exact source reproduction tests with unchanged snapshots
+        working-directory: source
+        run: bun test --timeout 20000 tests/repros/repro-fixed-copper-handoff.test.tsx tests/utils/autorouting/native-h3-fixed-copper-handoff.test.ts
+      - name: Verify the source checkout stayed unchanged
+        if: always()
+        working-directory: source
+        run: git diff --exit-code HEAD -- .
