@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
+import { checkViaPadClearance } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4).
-// Preserve the declared in-pad via while allowing a top-layer lead-in to
-// another via before the route leaves the top layer.
+// Reuse the declared in-pad via to leave the top layer before moving off the ball.
 const PAD_CENTER = { x: -0.4, y: -0.4 }
 const VIA_PAD_DIAMETER = 0.45
 
-test("routes a BGA ball while preserving its declared via-in-pad", async () => {
+test("routes a BGA ball through its declared via-in-pad", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -46,17 +46,31 @@ test("routes a BGA ball while preserving its declared via-in-pad", async () => {
   const [trace] = circuit.db.pcb_trace.list()
   expect(trace).toBeDefined()
 
-  const firstLayerChange = trace.route.find(
-    (point) => point.route_type === "via",
+  const firstWireOffPad = trace.route
+    .filter((point) => point.route_type === "wire")
+    .find(
+      (point) =>
+        Math.hypot(point.x - PAD_CENTER.x, point.y - PAD_CENTER.y) > 1e-6,
+    )
+  expect(firstWireOffPad?.layer).not.toBe("top")
+  expect(trace.route).toContainEqual(
+    expect.objectContaining({
+      route_type: "through_pad",
+      start: PAD_CENTER,
+      end: PAD_CENTER,
+      start_layer: "top",
+    }),
   )
-  expect(firstLayerChange).toMatchObject({ from_layer: "top" })
-  expect(firstLayerChange?.to_layer).not.toBe("top")
   const viasAtPad = circuit.db.pcb_via
     .list()
     .filter(
       (via) => Math.hypot(via.x - PAD_CENTER.x, via.y - PAD_CENTER.y) < 1e-6,
     )
   expect(viasAtPad).toHaveLength(1)
+  expect(circuit.db.pcb_via.list()).toHaveLength(2)
+  expect(
+    checkViaPadClearance(circuit.getCircuitJson(), { minClearance: 0.2 }),
+  ).toEqual([])
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
