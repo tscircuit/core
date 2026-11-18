@@ -86,58 +86,55 @@ beforeAll(async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 30_000)
 
-test.failing(
-  "fanout drops top and bottom ground pads onto the nearest GND plane",
-  () => {
-    for (const result of [explicit, inferred, override]) {
-      const { circuit, failures, input } = result
-      const bottomTarget = result === override ? "inner1" : "inner4"
-      expect(failures).toEqual([])
-      expect(input?.buses).toHaveLength(2)
-      expect(input?.buses).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            busId: "GND_TOP",
-            termination: { type: "plane", layer: "inner1" },
-          }),
-          expect.objectContaining({
-            busId: "GND_BOTTOM",
-            termination: { type: "plane", layer: bottomTarget },
-          }),
-        ]),
-      )
-      const vias = circuit.db.pcb_via.list()
-      expect(vias).toHaveLength(2)
-      expect(vias).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ from_layer: "top", to_layer: "inner1" }),
-          expect.objectContaining({
-            from_layer: "bottom",
-            to_layer: bottomTarget,
-          }),
-        ]),
-      )
-      for (const via of vias) {
-        expect(via.layers).toEqual([
-          "top",
-          "inner1",
-          "inner2",
-          "inner3",
-          "inner4",
-          "bottom",
-        ])
-      }
-      expect(
-        circuit.db.pcb_copper_pour
-          .list()
-          .map((pour) => pour.layer)
-          .sort(),
-      ).toEqual(["inner1", "inner4"])
-      expect(
-        circuit
-          .getCircuitJson()
-          .filter((element) => element.type.endsWith("_error")),
-      ).toEqual([])
+test("fanout drops top and bottom ground pads onto the nearest GND plane", () => {
+  for (const result of [explicit, inferred, override]) {
+    const { circuit, failures, input } = result
+    const bottomTarget = result === override ? "inner1" : "inner4"
+    expect(failures).toEqual([])
+    expect(input?.buses).toHaveLength(2)
+    expect(input?.buses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          busId: "GND_TOP",
+          termination: { type: "plane", layer: "inner1" },
+        }),
+        expect.objectContaining({
+          busId: "GND_BOTTOM",
+          termination: { type: "plane", layer: bottomTarget },
+        }),
+      ]),
+    )
+    const vias = circuit.db.pcb_via.list()
+    expect(vias).toHaveLength(2)
+    expect(vias).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from_layer: "top", to_layer: "inner1" }),
+        expect.objectContaining({
+          from_layer: "bottom",
+          to_layer: bottomTarget,
+        }),
+      ]),
+    )
+    for (const via of vias) {
+      expect(via.layers).toEqual([
+        "top",
+        "inner1",
+        "inner2",
+        "inner3",
+        "inner4",
+        "bottom",
+      ])
     }
-  },
-)
+    expect(
+      circuit.db.pcb_copper_pour
+        .list()
+        .map((pour) => pour.layer)
+        .sort(),
+    ).toEqual(["inner1", "inner4"])
+    expect(
+      circuit
+        .getCircuitJson()
+        .filter((element) => element.type.endsWith("_error")),
+    ).toEqual([])
+  }
+})
