@@ -16,12 +16,14 @@ type ConnectivityMapId = Parameters<ConnectivityMap["getNetConnectedToId"]>[0]
  */
 export function applyNetTraceClearancesToSrj({
   circuitJson,
-  connections,
-  obstacles,
-  traces,
+  connections = [],
+  obstacles = [],
+  traces = [],
 }: {
   circuitJson: CircuitJson
-} & Pick<SimpleRouteJson, "connections" | "obstacles" | "traces">): void {
+} & Partial<
+  Pick<SimpleRouteJson, "connections" | "obstacles" | "traces">
+>): void {
   const sourceNets = circuitJson.filter(
     (element) => element.type === "source_net",
   )
@@ -78,7 +80,7 @@ export function applyNetTraceClearancesToSrj({
       obstacle.minTraceClearance = minTraceClearance
     }
   }
-  for (const trace of traces ?? []) {
+  for (const trace of traces) {
     const minTraceClearance = getMinTraceClearance([
       trace.pcb_trace_id,
       trace.connection_name,

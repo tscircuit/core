@@ -66,10 +66,11 @@ test("SRJ resolves clearance aliases without changing copper geometry or board m
   expect(simpleRouteJson.minTraceToPadEdgeClearance).toBe(0.1)
   expect(simpleRouteJson.minTraceWidth).toBe(0.2)
 
-  const jsonWithoutRules = structuredClone(circuitJson)
-  for (const sourceNet of jsonWithoutRules) {
-    if (sourceNet.type === "source_net") delete sourceNet.min_trace_clearance
-  }
+  const jsonWithoutRules = circuitJson.map((element) => {
+    if (element.type !== "source_net") return element
+    const { min_trace_clearance, ...sourceNet } = element
+    return sourceNet
+  })
   const { simpleRouteJson: withoutRules } = getSimpleRouteJsonFromCircuitJson({
     circuitJson: jsonWithoutRules,
     subcircuitComponent: circuit.firstChild!,

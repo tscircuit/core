@@ -29,8 +29,8 @@ import type {
   SimpleRouteJson,
   SingleLayerConnectionPoint,
 } from "./SimpleRouteJson"
-import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { applyNetTraceClearancesToSrj } from "./apply-net-trace-clearances-to-srj"
+import { expandSrjBoundsToIncludeConnectionPoints } from "./expand-srj-bounds-to-include-connection-points"
 import { getSrjOutlineForRoutingBounds } from "./get-srj-outline-for-routing-bounds"
 import { getDescendantSubcircuitIds } from "./getAncestorSubcircuitIds"
 import {

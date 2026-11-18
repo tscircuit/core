@@ -24,10 +24,17 @@ export function withFixedTraces(
   if (fixedTraces.length === 0) return input
   const obstacles: Obstacle[] = []
   for (const trace of fixedTraces) {
-    const connectedTo = [
-      trace.connection_name ?? trace.pcb_trace_id,
-      ...(trace.connectsTo ?? []),
-    ]
+    // Every obstacle generated from this trace carries the trace's net
+    // identity and clearance requirement.
+    const netProperties: Pick<Obstacle, "connectedTo" | "minTraceClearance"> = {
+      connectedTo: [
+        trace.connection_name ?? trace.pcb_trace_id,
+        ...(trace.connectsTo ?? []),
+      ],
+      ...(trace.minTraceClearance !== undefined && {
+        minTraceClearance: trace.minTraceClearance,
+      }),
+    }
     for (const [index, point] of trace.route.entries()) {
       if (point.route_type === "via") {
         const diameter =
@@ -48,7 +55,7 @@ export function withFixedTraces(
             allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
             physicalLayers: point.layers as LayerRef[] | undefined,
           }),
-          connectedTo,
+          ...netProperties,
         })
       }
       const next = trace.route[index + 1]
@@ -87,7 +94,7 @@ export function withFixedTraces(
           width: Math.abs(dx) + width,
           height: Math.abs(dy) + width,
           layers: [layer],
-          connectedTo,
+          ...netProperties,
         })
         continue
       }
@@ -107,7 +114,7 @@ export function withFixedTraces(
           width: Math.abs(dx) / steps + projectedWidthX,
           height: Math.abs(dy) / steps + projectedWidthY,
           layers: [layer],
-          connectedTo,
+          ...netProperties,
         })
       }
       // The union of these rectangles conservatively covers a round end cap.
@@ -119,7 +126,7 @@ export function withFixedTraces(
             width,
             height: width * Math.SQRT1_2,
             layers: [layer],
-            connectedTo,
+            ...netProperties,
           },
           {
             type: "rect",
@@ -127,7 +134,7 @@ export function withFixedTraces(
             width: width * Math.SQRT1_2,
             height: width,
             layers: [layer],
-            connectedTo,
+            ...netProperties,
           },
         )
       }

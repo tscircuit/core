@@ -414,6 +414,9 @@ function makeSavedTrace(
       connection.source_trace_id,
       ...connection.pointsToConnect.map((point) => point.pointId),
     ].filter((id): id is string => Boolean(id)),
+    ...(connection.minTraceClearance !== undefined && {
+      minTraceClearance: connection.minTraceClearance,
+    }),
     // Explicit wire contacts preserve the saved copper on both sides of a via.
     route: route.flatMap((point, index): SavedPcbTracePath["route"] => {
       if (point.route_type !== "via") return [point]
