@@ -1,18 +1,74 @@
 import { resolvePassiveFootprintDefinition } from "@tscircuit/footprinter"
 import { capacitorProps, resolveManufacturerPartNumber } from "@tscircuit/props"
 import type { SourceSimpleCapacitorInput } from "circuit-json"
-import { formatSiUnit } from "format-si-unit"
+import { formatSiUnit, parseAndConvertSiUnit } from "format-si-unit"
 import {
   type BaseSymbolName,
   FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { symbols } from "schematic-symbols"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
+import { symbols } from "schematic-symbols"
+import { z } from "zod"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
+
+const NUMERIC_LITERAL_PATTERN =
+  /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/
+const CAPACITANCE_WITH_UNIT_PATTERN =
+  /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([^\d\s]+)$/
+
+const validatedCapacitanceProp = z
+  .union([z.string(), z.number()])
+  .transform((v, ctx) => {
+    if (typeof v === "number") {
+      if (Number.isFinite(v) && v > 0) {
+        return Number.parseFloat(v.toPrecision(12))
+      }
+    } else {
+      const trimmed = v.trim()
+      if (NUMERIC_LITERAL_PATTERN.test(trimmed)) {
+        const numericValue = Number(trimmed)
+        if (Number.isFinite(numericValue) && numericValue > 0) {
+          return Number.parseFloat(numericValue.toPrecision(12))
+        }
+      } else {
+        const normalized = trimmed.replace(
+          /([pnu\u00B5\u03BCmkKMGTf])f$/,
+          "$1F",
+        )
+        const match = normalized.match(CAPACITANCE_WITH_UNIT_PATTERN)
+        if (match) {
+          try {
+            const { value, unitOfValue } = parseAndConvertSiUnit(
+              `${match[1]}${match[2]}`,
+              "F",
+            )
+            if (
+              unitOfValue === "F" &&
+              typeof value === "number" &&
+              Number.isFinite(value) &&
+              value > 0
+            ) {
+              return Number.parseFloat(value.toPrecision(12))
+            }
+          } catch {}
+        }
+      }
+    }
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Invalid capacitance "${v}". Expected a positive number or Farad unit string (e.g. "10uF", "100nF")`,
+    })
+    return z.NEVER
+  })
+
+const validatedCapacitorProps = capacitorProps.extend({
+  capacitance: validatedCapacitanceProp,
+})
 
 export class Capacitor extends NormalComponent<
   typeof capacitorProps,
@@ -90,7 +146,7 @@ export class Capacitor extends NormalComponent<
       schematicSymbolName: this.props.polarized
         ? "capacitor_polarized"
         : schematicSymbolName,
-      zodProps: capacitorProps,
+      zodProps: validatedCapacitorProps,
       sourceFtype: FTYPE.simple_capacitor,
     }
   }
@@ -129,19 +185,21 @@ export class Capacitor extends NormalComponent<
 
   _getSchematicSymbolDisplayValue(): string | undefined {
     const inputCapacitance = this.props.capacitance
-    let capacitanceDisplay: string | undefined
+    const parsedCapacitance = this._parsedProps.capacitance
 
     if (
-      this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      parsedCapacitance === undefined ||
+      parsedCapacitance === null ||
+      typeof parsedCapacitance !== "number" ||
+      !Number.isFinite(parsedCapacitance)
     ) {
-      capacitanceDisplay =
-        typeof inputCapacitance === "string"
-          ? inputCapacitance
-          : `${formatSiUnit(this._parsedProps.capacitance)}F`
-    } else {
-      capacitanceDisplay = `${formatSiUnit(this._parsedProps.capacitance)}F`
+      return undefined
     }
+
+    const capacitanceDisplay =
+      typeof inputCapacitance === "string"
+        ? inputCapacitance
+        : `${formatSiUnit(parsedCapacitance)}F`
 
     if (
       this._parsedProps.schShowRatings &&
