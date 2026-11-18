@@ -49,7 +49,9 @@ export class Diode extends NormalComponent<
     const baseSymbolName =
       (variantSymbol && symbolMap[variantSymbol]) ||
       this.props.symbolName ||
-      "diode"
+      (this.props.tvs || variant === "tvs"
+        ? "bidirectional_tvs_diode"
+        : "diode")
     const compactSize =
       this.props.schSize === "sm" || this.props.schSize === "xs"
         ? this.props.schSize
