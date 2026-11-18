@@ -49,6 +49,9 @@ export class Net extends PrimitiveComponent<typeof netProps> {
       is_ground: isGround,
       is_power: isPositiveVoltageSource,
       trace_width: props.nominalTraceWidth,
+      ...(props.minTraceClearance !== undefined && {
+        min_trace_clearance: props.minTraceClearance,
+      }),
       // @ts-ignore
       is_positive_voltage_source: isPositiveVoltageSource,
     })

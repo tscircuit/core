@@ -18,6 +18,7 @@ import { inflateSourceGroup } from "../../components/primitive-components/Group/
 import { inflateSourceInductor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceInductor"
 import { inflateSourceLed } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceLed"
 import { inflateSourceMosfet } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceMosfet"
+import { inflateSourceNet } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceNet"
 import { inflateSourcePort } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePort"
 import { inflateSourcePushButton } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourcePushButton"
 import { inflateSourceResistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceResistor"
@@ -136,6 +137,10 @@ export const inflateCircuitJson = (
   const sourcePorts = injectionDb.source_port.list()
   for (const sourcePort of sourcePorts) {
     inflateSourcePort(sourcePort, inflationCtx)
+  }
+
+  for (const sourceNet of injectionDb.source_net.list()) {
+    inflateSourceNet(sourceNet, inflationCtx)
   }
 
   const sourceTraces = injectionDb.source_trace.list()
