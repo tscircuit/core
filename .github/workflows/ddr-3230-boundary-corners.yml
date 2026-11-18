@@ -17,8 +17,14 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - { circuit: a13, order: "base head" }
-          - { circuit: butterstick, order: "head base" }
+          - { circuit: h3, order: "base head" }
+          - { circuit: a64, order: "head base" }
+          - { circuit: stmp157, order: "base head" }
+          - { circuit: orangecrab, order: "head base" }
+          - { circuit: h616, order: "head base" }
+          - { circuit: glider, order: "head base" }
+          - { circuit: imx6, order: "base head" }
+          - { circuit: icepi, order: "head base" }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -154,7 +160,6 @@ jobs:
           retention-days: 14
 
   dataset18:
-    if: false
     name: Paired dataset18
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 75
