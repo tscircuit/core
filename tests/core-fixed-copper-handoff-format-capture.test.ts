@@ -847,8 +847,8 @@ test("TEMP diagnostic: transport exact canonical consumer formatting", async () 
         `Ignored/native/provenance source changed: ${path}`)
     }
     if (rejections.length) {
-      // Evaluate every source first. Only compact failure descriptions and
-      // hashes are emitted; no source packet is accepted or printed on failure.
+      // Evaluate every source first. Failure output includes explicit rejected
+      // inspection bytes for semantic review; no accepted source packet is emitted.
       const diagnostics = rejections.map((rejection) =>
         marker + "_REJECTED " + JSON.stringify(rejection)).join("\n") + "\n" +
         marker + "_REJECTED_SUMMARY " + JSON.stringify({ status: "rejected",
@@ -857,10 +857,50 @@ test("TEMP diagnostic: transport exact canonical consumer formatting", async () 
           checkedUnchangedStructure: checked.length,
           diagnosticHead: git(repositoryRoot, ["rev-parse", "HEAD"]).toString("utf8").trim(),
           inputManifestSha256: sha256(manifestBytes),
-          noFormattedSourcePacketsEmitted: true }) + "\n"
+          noAcceptedSourcePacketsEmitted: true, untrustedRejectedByteInspection: true }) + "\n"
       assert(Buffer.byteLength(diagnostics) <= 128 * 1024,
         "Compact rejection diagnostics exceed their bound")
-      assert.equal(await Bun.write(Bun.stdout, diagnostics), Buffer.byteLength(diagnostics))
+      const reviewMarker = "PENDING_CONSUMER_REJECTED_FORMAT_INSPECTION_V1"
+      const reviewLines = [reviewMarker + "_BEGIN " + JSON.stringify({
+        status: "rejected-for-semantic-review", acceptedForApplication: false,
+        sourceCheckpointCommit: manifest.sourceCheckpointCommit,
+        diagnosticHead: git(repositoryRoot, ["rev-parse", "HEAD"]).toString("utf8").trim(),
+        inputManifestSha256: sha256(manifestBytes),
+        rejectedFiles: rejections.length,
+      })]
+      let inspectedFiles = 0
+      for (const rejection of rejections) {
+        if (!rejection.afterSha256) continue
+        const source = saved.find((entry) => entry.path === rejection.path)
+        assert(source, "Rejected review path is not a selected source")
+        const after = readFileSync(source.absolutePath)
+        assert.equal(sha256(after), rejection.afterSha256)
+        const compressed = gzipSync(after, { level: 9 })
+        assert(gunzipSync(compressed).equals(after))
+        const encoded = compressed.toString("base64")
+        const parts = Math.ceil(encoded.length / chunkCharacters)
+        reviewLines.push(reviewMarker + "_FILE " + JSON.stringify({
+          status: "rejected-for-semantic-review", acceptedForApplication: false,
+          path: source.path, beforeSha256: source.beforeSha256,
+          afterSha256: sha256(after), afterBytes: after.length,
+          gzipSha256: sha256(compressed), gzipBytes: compressed.length,
+          base64Characters: encoded.length, parts,
+        }))
+        for (let part = 0; part < parts; part++) {
+          const payload = encoded.slice(part * chunkCharacters, (part + 1) * chunkCharacters)
+          reviewLines.push(reviewMarker + "_CHUNK " + JSON.stringify({ path: source.path,
+            part, parts, payloadSha256: sha256(payload), payload }))
+        }
+        inspectedFiles++
+      }
+      const reviewBody = reviewLines.join("\n") + "\n"
+      const review = reviewBody + reviewMarker + "_END " + JSON.stringify({
+        status: "rejected-for-semantic-review", acceptedForApplication: false,
+        inspectedFiles, bodySha256: sha256(reviewBody) }) + "\n"
+      const rejectedOutput = diagnostics + review
+      assert(Buffer.byteLength(rejectedOutput) <= maximumOutputBytes,
+        "Untrusted rejected-source inspection exceeds bound; no output emitted")
+      assert.equal(await Bun.write(Bun.stdout, rejectedOutput), Buffer.byteLength(rejectedOutput))
       assert.fail(`Canonical formatting rejected ${rejections.length}/${saved.length} sources; see compact rejection records`)
     }
     assert.equal(checked.length, saved.length)
