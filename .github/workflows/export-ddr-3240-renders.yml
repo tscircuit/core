@@ -1,0 +1,38 @@
+name: Export verified native DDR board renders
+on:
+  push:
+    branches: [analysis/export-ddr-3240-renders]
+    paths: [.github/workflows/export-ddr-3240-renders.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: latest-fixed-via-*
+          merge-multiple: true
+          path: captured
+          run-id: 44411075633
+          github-token: ${{ github.token }}
+      - name: Preserve the generated SVGs and measured results
+        run: |
+          python3 - <<'PY'
+          import shutil
+          from pathlib import Path
+          source=Path("captured")
+          assert len(list((source/"svgs").glob("*.svg")))==30
+          assert len(list((source/"metrics").glob("*.json")))==30
+          target=Path("analysis-artifacts/ddr-3240")
+          shutil.copytree(source/"svgs",target/"svgs",dirs_exist_ok=True)
+          shutil.copytree(source/"metrics",target/"metrics",dirs_exist_ok=True)
+          PY
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add analysis-artifacts/ddr-3240
+          git commit -m "Preserve all ten verified native DDR before and after renders"
+          git push origin HEAD:analysis/ddr-3240-board-renders
