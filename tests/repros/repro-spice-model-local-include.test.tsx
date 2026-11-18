@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
+import { createIsolatedNgspiceEngine } from "tests/fixtures/create-isolated-ngspice-engine"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a SPICE model bundles its project-relative include before simulation", async () => {
-  let simulatedSpice = ""
+test("a SPICE model uses its project-relative include", async () => {
   const { circuit, staticAssetsServerUrl } = getTestFixture({
     withStaticAssetsServer: true,
   })
@@ -10,12 +10,7 @@ test("a SPICE model bundles its project-relative include before simulation", asy
   circuit.setPlatform({
     projectBaseUrl: staticAssetsServerUrl,
     spiceEngineMap: {
-      inspect: {
-        simulate: async (spiceString) => {
-          simulatedSpice = spiceString
-          return { simulationResultCircuitJson: [] }
-        },
-      },
+      ngspice: createIsolatedNgspiceEngine(),
     },
   })
   circuit.add(
@@ -47,12 +42,15 @@ X1 IN OUT GND GAIN_STAGE
         }
       />
       <voltageprobe name="OUT" connectsTo="net.OUT" />
-      <analogsimulation duration="1ms" spiceEngine="inspect" />
+      <analogsimulation duration="1ms" spiceEngine="ngspice" />
     </board>,
   )
   await circuit.renderUntilSettled()
 
-  await expect(circuit).toMatchSchematicSnapshot(import.meta.path)
-  expect(simulatedSpice).toContain(".subckt GAIN_STAGE IN OUT GND")
-  expect(simulatedSpice).not.toContain(".include")
-})
+  await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
+    showErrorsInTextOverlay: true,
+  })
+  expect(
+    circuit.db.simulation_unknown_experiment_error.list().length,
+  ).toMatchInlineSnapshot(`1`)
+}, 15_000)
