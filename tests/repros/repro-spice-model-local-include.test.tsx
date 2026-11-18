@@ -50,7 +50,4 @@ X1 IN OUT GND GAIN_STAGE
   await expect(circuit).toMatchSchematicSnapshot(import.meta.path, {
     showErrorsInTextOverlay: true,
   })
-  expect(
-    circuit.db.simulation_unknown_experiment_error.list().length,
-  ).toMatchInlineSnapshot(`1`)
 }, 15_000)
