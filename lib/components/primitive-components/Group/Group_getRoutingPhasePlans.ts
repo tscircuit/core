@@ -4,14 +4,11 @@ import type {
   AutoroutingPhaseProps,
   BreakoutProps,
 } from "@tscircuit/props"
-import type { z } from "zod"
-import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
-import { getTracesCoveredBySavedPhase } from "./get-traces-covered-by-saved-phase"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
+import type { z } from "zod"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
-import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import type { Breakout } from "../Breakout/Breakout"
+import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
 import { BreakoutPoint } from "../BreakoutPoint"
 import type { Bus } from "../Bus"
 import type { Net } from "../Net"
@@ -22,6 +19,9 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
+import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
+import { getTracesCoveredBySavedPhase } from "./get-traces-covered-by-saved-phase"
 
 type ConnectionSelector = string
 
@@ -489,12 +489,25 @@ export function Group_getRoutingPhasePlans(
     ).traces.push(trace)
   }
 
+  const isFanoutPhaseIndex = (phaseIndex: number | null): boolean => {
+    if (!phasePropsByPhaseIndex.has(phaseIndex)) return false
+    const autorouter = autoroutersByPhaseIndex.get(phaseIndex)
+    const config =
+      autorouter !== undefined
+        ? getPresetAutoroutingConfig(autorouter, group.root?.platform)
+        : group._getAutorouterConfig()
+    return ["fanout", "single_layer_fanout", "dogbone"].includes(
+      config.preset ?? "",
+    )
+  }
+
   for (const [phaseIndex, phaseProps] of phasePropsByPhaseIndex) {
     const connectionSelectors =
       getConnectionSelectorsFromAutoroutingPhaseProps(phaseProps)
     if (connectionSelectors.length > 0) {
       const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
       plan.connectionSelectors = connectionSelectors
+      const isCurrentPhaseFanout = isFanoutPhaseIndex(phaseIndex)
 
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue
@@ -519,6 +532,22 @@ export function Group_getRoutingPhasePlans(
             for (const existingPlan of plansByPhaseIndex.values()) {
               if (existingPlan === plan) continue
               if (
+                isCurrentPhaseFanout &&
+                existingPlan.routingPhaseIndex !== null &&
+                getPhaseSortValue(existingPlan.routingPhaseIndex) >
+                  getPhaseSortValue(phaseIndex)
+              ) {
+                continue
+              }
+              if (
+                !isCurrentPhaseFanout &&
+                isFanoutPhaseIndex(existingPlan.routingPhaseIndex) &&
+                getPhaseSortValue(existingPlan.routingPhaseIndex) <
+                  getPhaseSortValue(phaseIndex)
+              ) {
+                continue
+              }
+              if (
                 !phasePropsByPhaseIndex.get(existingPlan.routingPhaseIndex)
                   ?.reroute &&
                 connectedNets.length > 0
@@ -538,7 +567,11 @@ export function Group_getRoutingPhasePlans(
       }
     }
 
-    if (phaseProps.reroute || phaseProps.pcbTracePaths !== undefined) {
+    if (
+      phaseProps.reroute ||
+      phaseProps.pcbTracePaths !== undefined ||
+      isFanoutPhaseIndex(phaseIndex)
+    ) {
       getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
     }
   }
@@ -573,6 +606,38 @@ export function Group_getRoutingPhasePlans(
     plan.drcTolerances = phaseProps
       ? getDrcTolerancesFromAutoroutingPhaseProps(phaseProps)
       : undefined
+  }
+
+  for (const plan of plans) {
+    if (
+      !isFanoutPhaseIndex(plan.routingPhaseIndex) ||
+      plan.reroute ||
+      (plan.connectionSelectors?.length ?? 0) > 0 ||
+      plan.traces.length > 0 ||
+      plan.nets.length > 0
+    ) {
+      continue
+    }
+    for (const laterPlan of plans) {
+      if (
+        laterPlan === plan ||
+        laterPlan.reroute ||
+        getPhaseSortValue(laterPlan.routingPhaseIndex) <=
+          getPhaseSortValue(plan.routingPhaseIndex)
+      ) {
+        continue
+      }
+      for (const trace of laterPlan.traces) {
+        if (!plan.traces.includes(trace)) {
+          plan.traces.push(trace)
+        }
+      }
+      for (const net of laterPlan.nets) {
+        if (!plan.nets.includes(net)) {
+          plan.nets.push(net)
+        }
+      }
+    }
   }
 
   for (const phase of group.selectAll(
