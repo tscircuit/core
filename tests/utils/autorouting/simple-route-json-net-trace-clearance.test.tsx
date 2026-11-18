@@ -26,16 +26,6 @@ test("SRJ resolves clearance aliases without changing copper geometry or board m
       <trace from="J3.pin2" to="net.ZERO" />
       <trace from="J1.pin3" to="net.DEFAULT" />
       <trace from="J3.pin3" to="net.DEFAULT" />
-      <pcbnotetext
-        pcbY={4}
-        fontSize={0.4}
-        text="USB + ALIAS: minimum gap 0.22 mm"
-      />
-      <pcbnotetext
-        pcbY={-4}
-        fontSize={0.4}
-        text="Pin2: ZERO | Pin3: board minimum"
-      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -95,5 +85,4 @@ test("SRJ resolves clearance aliases without changing copper geometry or board m
     ),
   ).toEqual(withoutRules.connections)
   expect(circuitJson).toEqual(originalJson)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

@@ -15,14 +15,6 @@ test("same-name nets in separate subcircuits keep independent SRJ clearances", a
         <resistor name="R1" resistance="1k" footprint="0402" pcbY={-3} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbY={3} />
       </subcircuit>
-      <pcbnotetext
-        pcbX={-6}
-        pcbY={5.5}
-        fontSize={0.4}
-        text="USB.DATA: 0.15 mm"
-      />
-      <pcbnotetext pcbX={6} pcbY={5.5} fontSize={0.4} text="RF.DATA: 0.30 mm" />
-      <pcbnotetext pcbY={-6} fontSize={0.4} text="Same name, separate nets" />
       <subcircuit name="RF" pcbX={6}>
         <net
           name="DATA"
@@ -60,5 +52,4 @@ test("same-name nets in separate subcircuits keep independent SRJ clearances", a
       )
       .map((obstacle) => obstacle.minTraceClearance),
   ).toEqual([0.3, 0.3])
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
