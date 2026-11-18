@@ -4,6 +4,7 @@ import type {
   SourceInvalidComponentPropertyErrorInput,
 } from "circuit-json"
 import { parseSpiceNetlist } from "spicets"
+import { resolveSpiceIncludes } from "lib/utils/simulation/resolve-spice-includes"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
 
@@ -18,6 +19,30 @@ export class SpiceModel extends PrimitiveComponent<typeof spicemodelProps> {
   doInitialSimulationRender() {
     if (this.getInheritedProperty("analogSimulationDisabled")) return
 
+    const { source } = this._parsedProps
+    if (/^\s*\.inc(?:lude)?\s/im.test(source)) {
+      this._queueAsyncEffect("resolve-spice-includes", async () => {
+        try {
+          this._insertSpiceSubcircuit(
+            await resolveSpiceIncludes({
+              source,
+              platform: this.root?.platform,
+            }),
+          )
+        } catch (error) {
+          this._insertSpiceModelError(
+            error instanceof Error
+              ? error.message
+              : "Could not load SPICE includes.",
+          )
+        }
+      })
+      return
+    }
+    this._insertSpiceSubcircuit(source)
+  }
+
+  private _insertSpiceSubcircuit(source: string) {
     const parent = this.parent
     if (!parent) return
 
@@ -30,7 +55,7 @@ export class SpiceModel extends PrimitiveComponent<typeof spicemodelProps> {
       return
     }
 
-    const { source, spicePinMapping } = this._parsedProps
+    const { spicePinMapping } = this._parsedProps
     const subckt = parseSpiceNetlist(source).subckts[0] ?? null
     const spicePinNames = subckt?.pins.map((pin) => pin.name)
     if (!subckt || !spicePinNames || spicePinNames.length === 0) {

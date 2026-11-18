@@ -111,6 +111,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   ResolveFootprintPinLabels: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SimulationRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   SimulationSpiceEngineRender: [
+    "SimulationRender",
     "PcbFootprintStringRender",
     "FetchPartFootprint",
   ],
