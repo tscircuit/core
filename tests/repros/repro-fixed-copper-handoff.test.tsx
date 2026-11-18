@@ -59,7 +59,7 @@ test("later native routing loses structured manual copper at the Core boundary",
     via_spacing: checkDifferentNetViaSpacing(final),
     contiguous: checkTracesAreContiguous(final),
     via_in_pad: checkViasInPads(final),
-    hole_trace: checkHoleTraceClearance(final, options),
+    hole_trace: checkHoleTraceClearance(final),
     width: checkSourceTracesMatchPcbTraceThickness(final),
   }
   expect(Object.fromEntries(Object.entries(findings).map(([name, errors]) => [name, errors.length]))).toEqual({
