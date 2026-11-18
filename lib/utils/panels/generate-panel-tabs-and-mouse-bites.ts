@@ -1,4 +1,5 @@
 import * as Flatten from "@flatten-js/core"
+import { jlcPanelRules } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { Polygon, point } from "@flatten-js/core"
 import type {
   PcbBoard,
@@ -31,10 +32,13 @@ const MOUSE_BITE_DIAMETER_TO_TAB_WIDTH = 0.45
  * drill diameter. The former 10% web was only 0.063 mm on a 14 mm board.
  */
 const MOUSE_BITE_SPACING_TO_DIAMETER = 0.5
-/** Smallest mouse-bite drill (mm) fabs reliably drill. */
-const MIN_MOUSE_BITE_DIAMETER = 0.5
-/** Smallest web (mm) left between adjacent mouse-bite holes. */
-const MIN_MOUSE_BITE_SPACING = 0.3
+/** Smallest mouse-bite drill (mm): JLCPCB's minimum non-plated hole. */
+const MIN_MOUSE_BITE_DIAMETER = jlcPanelRules.min_non_plated_hole_diameter
+/**
+ * Smallest web (mm) left between adjacent mouse-bite holes: the stronger end
+ * of JLCPCB's recommended mouse-bite spacing.
+ */
+const MIN_MOUSE_BITE_SPACING = jlcPanelRules.recommended_mouse_bite_spacing.max
 
 /** Shrink the requested tab width and length (mm) to suit small boards. */
 export function getScaledPanelTabSize({
