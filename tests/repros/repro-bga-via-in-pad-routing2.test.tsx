@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4). Its
-// 0.6mm pads block top-layer channels. A 0.45mm via also cannot fit in the
-// diagonal gaps, forcing the existing in-pad via to be used.
+// U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4).
+// Preserve the declared in-pad via while allowing a top-layer lead-in to
+// another via before the route leaves the top layer.
 const PAD_CENTER = { x: -0.4, y: -0.4 }
 const VIA_PAD_DIAMETER = 0.45
 
-test("a BGA ball escapes through the via drilled into its pad", async () => {
+test("routes a BGA ball while preserving its declared via-in-pad", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -46,16 +46,11 @@ test("a BGA ball escapes through the via drilled into its pad", async () => {
   const [trace] = circuit.db.pcb_trace.list()
   expect(trace).toBeDefined()
 
-  // The route leaves the pad on an inner layer without adding a second via
-  // on top of the one already drilled into the pad
-  const firstWireOffPad = trace.route.find(
-    (point) =>
-      point.route_type === "wire" &&
-      Math.hypot(point.x - PAD_CENTER.x, point.y - PAD_CENTER.y) > 1e-6,
+  const firstLayerChange = trace.route.find(
+    (point) => point.route_type === "via",
   )
-  expect(
-    firstWireOffPad?.route_type === "wire" && firstWireOffPad.layer,
-  ).not.toBe("top")
+  expect(firstLayerChange).toMatchObject({ from_layer: "top" })
+  expect(firstLayerChange?.to_layer).not.toBe("top")
   const viasAtPad = circuit.db.pcb_via
     .list()
     .filter(
