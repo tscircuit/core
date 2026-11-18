@@ -4,6 +4,7 @@ import { gunzipSync } from "node:zlib"
 import type { AnyCircuitElement } from "circuit-json"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import "tests/fixtures/extend-expect-any-svg"
+import { getSchematicDiagnostics } from "./get-schematic-diagnostics"
 
 test("renders all ten NEMA 17 motor controller schematic sheets", async () => {
   const fixturePath = new URL(
@@ -13,6 +14,8 @@ test("renders all ten NEMA 17 motor controller schematic sheets", async () => {
   const circuitJson: AnyCircuitElement[] = JSON.parse(
     gunzipSync(readFileSync(fixturePath)).toString("utf8"),
   )
+  expect(getSchematicDiagnostics(circuitJson)).toMatchSnapshot("diagnostics")
+
   const sheets = circuitJson
     .filter((element) => element.type === "schematic_sheet")
     .map(({ name, sheet_index: sheetIndex, schematic_sheet_id: sheetId }) => {
