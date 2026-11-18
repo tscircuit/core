@@ -4,6 +4,7 @@ import type { z } from "zod"
 import type { Group } from "./Group"
 
 const debug = Debug("Group_doInitialSchematicLayoutSections")
+import { getSchematicSheetContentSize } from "lib/utils/schematic/warn-if-schematic-elements-outside-sheet"
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
@@ -115,6 +116,45 @@ export function Group_doInitialSchematicLayoutSections<
     }
   }
 
+  // Wrap rows within the sheet's drawable width when all unanchored sections share one sheet.
+  const unanchoredSheetIds = new Set<string>()
+  let hasSheetlessUnanchoredSection = false
+  for (const [sectionName, bounds] of sectionNameToBoundsWithChildren) {
+    if (anchoredSections.has(sectionName)) continue
+    for (const sourceComponentId of bounds.sourceCompIds) {
+      const schComp = db.schematic_component.getWhere({
+        source_component_id: sourceComponentId,
+      })
+      if (!schComp) continue
+      if (schComp.schematic_sheet_id) {
+        unanchoredSheetIds.add(schComp.schematic_sheet_id)
+      } else {
+        hasSheetlessUnanchoredSection = true
+      }
+    }
+  }
+
+  let maxRowWidth: number | undefined
+  if (!hasSheetlessUnanchoredSection && unanchoredSheetIds.size === 1) {
+    const [sheetId] = Array.from(unanchoredSheetIds)
+    const sheet = sheetId ? db.schematic_sheet.get(sheetId) : undefined
+    if (
+      sheet &&
+      typeof sheet.sheet_width === "number" &&
+      typeof sheet.sheet_height === "number" &&
+      Number.isFinite(sheet.sheet_width) &&
+      Number.isFinite(sheet.sheet_height)
+    ) {
+      const contentWidth = getSchematicSheetContentSize({
+        sheetWidth: sheet.sheet_width,
+        sheetHeight: sheet.sheet_height,
+      }).width
+      if (Number.isFinite(contentWidth) && contentWidth > 0) {
+        maxRowWidth = contentWidth
+      }
+    }
+  }
+
   // Phase 3: pack sections into rows
   const groupSchPositionBeforeLayout =
     group._getGlobalSchematicPositionBeforeLayout()
@@ -126,6 +166,7 @@ export function Group_doInitialSchematicLayoutSections<
       }),
     ),
     groupSchPositionBeforeLayout,
+    maxRowWidth,
   })
 
   for (const [sectionName, placement] of sectionPlacements) {
