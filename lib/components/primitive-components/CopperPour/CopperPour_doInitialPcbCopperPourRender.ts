@@ -112,7 +112,12 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     { copperPour, sourceNetId },
   ] of resolvedCopperPours.entries()) {
     const { _parsedProps: props } = copperPour
-    const coveredWithSolderMask = props.coveredWithSolderMask ?? false
+    // Soldermask only exists on the top and bottom layers, so an inner-layer
+    // pour is never covered with soldermask.
+    const isOuterLayer = props.layer === "top" || props.layer === "bottom"
+    const coveredWithSolderMask = isOuterLayer
+      ? (props.coveredWithSolderMask ?? false)
+      : false
 
     for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
       const insertedPour = db.pcb_copper_pour.insert({
