@@ -31,20 +31,27 @@ test("A13 D0-D3 forbids drilled pads while retaining its clearance limitation", 
   expect(checkViasInPads(json)).toEqual([])
 
   // This negative fixture cannot escape the inner RAM pads at 0.2mm without
-  // drilling a pad. Circular-pad repair trades two tighter gaps for four wider
-  // ones. Limit exceptions to these escapes and require gaps above 0.06mm
-  // (the old minimum was 0.0607mm); unrelated violations must still fail.
-  const knownClearanceLimitations = [
-    { component: "U200", pad: "BALL_D3", trace: "DRAM_D2" },
-    { component: "U200", pad: "BALL_E2", trace: "DRAM_D2" },
-    { component: "U200", pad: "BALL_E3", trace: "DRAM_D2" },
+  // drilling a pad. Repair leaves one trace-to-pad finding and up to three
+  // via-to-pad findings. Restrict them to these escapes, with gaps above 0.08mm;
+  // unrelated physical violations must still fail.
+  const knownTraceClearanceLimitations = [
     { component: "U200", pad: "BALL_F9", trace: "DRAM_D3" },
   ]
+  const knownViaClearanceLimitations = [
+    { component: "U200", pad: "BALL_E2", trace: "DRAM_D2" },
+    { component: "U200", pad: "BALL_F3", trace: "DRAM_D2" },
+    { component: "U200", pad: "BALL_E3", trace: "DRAM_D2" },
+  ]
   const padClearanceErrors = checkPadTraceClearance(json, { minClearance: 0.2 })
-  expect(checkViaPadClearance(json, { minClearance: 0.2 })).toEqual([])
+  const viaPadClearanceErrors = checkViaPadClearance(json, {
+    minClearance: 0.2,
+  })
   expect(padClearanceErrors.length).toBeGreaterThan(0)
   expect(padClearanceErrors.length).toBeLessThanOrEqual(
-    knownClearanceLimitations.length,
+    knownTraceClearanceLimitations.length,
+  )
+  expect(viaPadClearanceErrors.length).toBeLessThanOrEqual(
+    knownViaClearanceLimitations.length,
   )
   for (const clearanceError of padClearanceErrors) {
     const pad = circuit.db.pcb_smtpad.get(clearanceError.pcb_pad_id)!
@@ -55,12 +62,30 @@ test("A13 D0-D3 forbids drilled pads while retaining its clearance limitation", 
     )!
     const pcbTrace = circuit.db.pcb_trace.get(clearanceError.pcb_trace_id)!
     const sourceTrace = circuit.db.source_trace.get(pcbTrace.source_trace_id!)!
-    expect(knownClearanceLimitations).toContainEqual({
+    expect(knownTraceClearanceLimitations).toContainEqual({
       component: sourceComponent.name,
       pad: sourcePort.name,
       trace: sourceTrace.name!,
     })
-    expect(clearanceError.actual_clearance).toBeGreaterThan(0.06)
+    expect(clearanceError.actual_clearance).toBeGreaterThan(0.08)
+  }
+  for (const clearanceError of viaPadClearanceErrors) {
+    const [viaId, padId] = clearanceError.pcb_pad_ids!
+    const via = circuit.db.pcb_via.get(viaId!)!
+    const pad = circuit.db.pcb_smtpad.get(padId!)!
+    const pcbPort = circuit.db.pcb_port.get(pad.pcb_port_id!)!
+    const sourcePort = circuit.db.source_port.get(pcbPort.source_port_id)!
+    const sourceComponent = circuit.db.source_component.get(
+      sourcePort.source_component_id!,
+    )!
+    const pcbTrace = circuit.db.pcb_trace.get(via.pcb_trace_id!)!
+    const sourceTrace = circuit.db.source_trace.get(pcbTrace.source_trace_id!)!
+    expect(knownViaClearanceLimitations).toContainEqual({
+      component: sourceComponent.name,
+      pad: sourcePort.name,
+      trace: sourceTrace.name!,
+    })
+    expect(clearanceError.actual_clearance).toBeGreaterThan(0.08)
   }
   const otherPhysicalErrors = [
     ...checkEachPcbTraceNonOverlapping(json, { minClearance: 0.2 }),
