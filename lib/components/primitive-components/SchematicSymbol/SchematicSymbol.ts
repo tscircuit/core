@@ -1,10 +1,11 @@
 import { schematicSymbolProps } from "@tscircuit/props"
-import { type SchSymbol, symbols } from "schematic-symbols"
+import type { SchSymbol } from "schematic-symbols"
 import { getPinNumberFromLabels } from "../../../utils/getPortFromHints"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { Port } from "../Port"
-import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
 import { SchematicSymbol_doInitialPortMatching } from "./SchematicSymbol_doInitialPortMatching"
+import { SchematicSymbol_doInitialSchematicComponentRender } from "./SchematicSymbol_doInitialSchematicComponentRender"
+import { getSchematicSymbolWithRotation } from "./getSchematicSymbolWithRotation"
 
 export class SchematicSymbol extends PrimitiveComponent<
   typeof schematicSymbolProps
@@ -21,7 +22,7 @@ export class SchematicSymbol extends PrimitiveComponent<
   }
 
   initPorts(): void {
-    const symbol = symbols[this._getSchematicSymbolNameOrThrow()]!
+    const { symbol } = getSchematicSymbolWithRotation(this)
     const shouldCreateSourcePort = !(
       this._parsedProps.chipRef && this._parsedProps.connections
     )
@@ -69,8 +70,15 @@ export class SchematicSymbol extends PrimitiveComponent<
   }
 
   getPortForSymbolPort(symbolPort: SchSymbol["ports"][number]): Port | null {
+    const directMatch = this.ports.find(
+      (port) => port.schematicSymbolPortDef === symbolPort,
+    )
+    if (directMatch) return directMatch
+
+    const pinNumber = getPinNumberFromLabels(symbolPort.labels)
+    if (!pinNumber) return null
     return (
-      this.ports.find((port) => port.schematicSymbolPortDef === symbolPort) ??
+      this.ports.find((port) => port._parsedProps.pinNumber === pinNumber) ??
       null
     )
   }
