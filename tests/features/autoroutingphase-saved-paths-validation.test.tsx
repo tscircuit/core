@@ -17,7 +17,10 @@ test("saved phase paths reject invalid ports, layers, anchors, and coverage", as
   for (const [paths, error] of [
     [[], "must cover every connection"],
     [[{ ...path, connection: "MISSING.1" }], "must select a PCB port"],
-    [[{ ...path, connection: "U3.1" }], "must select exactly one connection"],
+    [
+      [{ ...path, connection: "U3.1" }],
+      "must select a connection in this phase",
+    ],
     [[path, path], "Duplicate saved phase path"],
     [
       [

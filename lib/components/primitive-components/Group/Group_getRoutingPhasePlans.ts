@@ -5,7 +5,9 @@ import type {
   BreakoutProps,
 } from "@tscircuit/props"
 import type { z } from "zod"
+import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedAutoroutingPhaseTraces } from "./get-saved-autorouting-phase-traces"
+import { getTracesCoveredBySavedPhase } from "./get-traces-covered-by-saved-phase"
 import { getPresetAutoroutingConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type { AutoroutingPhase } from "../AutoroutingPhase"
 import { getSavedFanoutTraces } from "../Breakout/get-saved-fanout-traces"
@@ -20,6 +22,16 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+
+type ConnectionSelector = string
+
+type PhaseConnectionSelectionContext = {
+  portsByTrace: Map<Trace, Port[]>
+  portsBySelectorBySubcircuit: Map<
+    ISubcircuit,
+    Map<ConnectionSelector, Port | null>
+  >
+}
 
 type GroupFanoutProps = Pick<
   BreakoutProps,
@@ -62,8 +74,8 @@ function getNetRoutingPhaseIndex(net: Net): number | null {
 }
 
 function getTraceRoutingPhaseIndex(
-  trace: Trace,
-  buses: Bus[] = [],
+  { trace, buses }: { trace: Trace; buses: Bus[] },
+  selectionContext: PhaseConnectionSelectionContext,
 ): number | null {
   const busRoutingPhaseIndexes = new Set<number | null>()
   for (const bus of buses) {
@@ -72,8 +84,11 @@ function getTraceRoutingPhaseIndex(
       (connection) =>
         connection === trace.name ||
         traceHasEndpointMatchingConnectionSelector(
-          trace,
-          convertPortSelectorToEndpointKey(connection),
+          {
+            trace,
+            connectionSelector: convertPortSelectorToEndpointKey(connection),
+          },
+          selectionContext,
         ),
     )
     if (traceIsInBus) {
@@ -135,8 +150,14 @@ function getConnectionSelectorsFromAutoroutingPhaseProps(
 }
 
 function traceHasEndpointMatchingConnectionSelector(
-  trace: Trace,
-  connectionSelector: string,
+  {
+    trace,
+    connectionSelector,
+  }: {
+    trace: Trace
+    connectionSelector: ConnectionSelector
+  },
+  selectionContext: PhaseConnectionSelectionContext,
 ): boolean {
   const connectionSelectorEndpointKey =
     convertPortSelectorToEndpointKey(connectionSelector)
@@ -152,20 +173,43 @@ function traceHasEndpointMatchingConnectionSelector(
     return true
   // A saved path may use a pin label while the trace uses its pin number.
   // Resolve both to the port identity before deciding phase membership.
-  const port = trace
-    .getSubcircuit()
-    .selectOne(connectionSelector, { type: "port" }) as Port | null
-  return (
-    port !== null &&
-    (trace._findConnectedPorts().ports?.includes(port) ?? false)
-  )
+  const subcircuit = trace.getSubcircuit()
+  let portsBySelector =
+    selectionContext.portsBySelectorBySubcircuit.get(subcircuit)
+  if (!portsBySelector) {
+    portsBySelector = new Map<ConnectionSelector, Port | null>()
+    selectionContext.portsBySelectorBySubcircuit.set(
+      subcircuit,
+      portsBySelector,
+    )
+  }
+  let port = portsBySelector.get(connectionSelector)
+  if (port === undefined) {
+    port = subcircuit.selectOne<Port>(connectionSelector, { type: "port" })
+    portsBySelector.set(connectionSelector, port)
+  }
+  if (port === null) return false
+
+  let ports = selectionContext.portsByTrace.get(trace)
+  if (!ports) {
+    ports = trace._findConnectedPorts().ports ?? []
+    selectionContext.portsByTrace.set(trace, ports)
+  }
+  return ports.includes(port)
 }
 
 /** Resolve targets before assigning any phase ownership, including breakout traces. */
 function resolvePhaseConnectionTraces(
-  group: Group<z.ZodType>,
-  traces: Trace[],
-  phaseProps: AutoroutingPhaseProps,
+  {
+    group,
+    traces,
+    phaseProps,
+  }: {
+    group: Group<z.ZodType>
+    traces: Trace[]
+    phaseProps: AutoroutingPhaseProps
+  },
+  selectionContext: PhaseConnectionSelectionContext,
 ): Set<Trace> {
   const resolvedTraces = new Set<Trace>()
   const phaseName = phaseProps.name ?? "unnamed phase"
@@ -182,7 +226,10 @@ function resolvePhaseConnectionTraces(
     const endpointTraces = explicitlySelectsTrace
       ? []
       : traces.filter((trace) =>
-          traceHasEndpointMatchingConnectionSelector(trace, selector),
+          traceHasEndpointMatchingConnectionSelector(
+            { trace, connectionSelector: selector },
+            selectionContext,
+          ),
         )
     if (
       namedTraces.length > 1 ||
@@ -330,12 +377,66 @@ export function Group_getRoutingPhasePlans(
   const plansByPhaseIndex = new Map<number | null, RoutingPhasePlan>()
   const autoroutersByPhaseIndex = getAutoroutersByPhaseIndex(group)
   const phasePropsByPhaseIndex = getAutoroutingPhasePropsByPhaseIndex(group)
+  // Cache only within this planning pass: subcircuits keep independent selectors,
+  // and subsequent renders resolve against the current component tree.
+  const selectionContext: PhaseConnectionSelectionContext = {
+    portsByTrace: new Map(),
+    portsBySelectorBySubcircuit: new Map(),
+  }
   const selectedTracesByPhaseIndex = new Map(
     Array.from(phasePropsByPhaseIndex, ([phaseIndex, phaseProps]) => [
       phaseIndex,
-      resolvePhaseConnectionTraces(group, traces, phaseProps),
+      resolvePhaseConnectionTraces(
+        { group, traces, phaseProps },
+        selectionContext,
+      ),
     ]),
   )
+  // A saved path's selector supplies a port frame. Its copper can also
+  // satisfy a source trace that was never named by a saved path selector.
+  const selectedTraces = new Set(
+    [...selectedTracesByPhaseIndex.values()].flatMap((traces) => [...traces]),
+  )
+  for (const phase of group.selectAll<AutoroutingPhase>("autoroutingphase")) {
+    const props = phase._parsedProps
+    const phaseIndex = props.phaseIndex ?? null
+    if (
+      phasePropsByPhaseIndex.get(phaseIndex) !== props ||
+      !props.pcbTracePaths?.length ||
+      props.connection !== undefined ||
+      props.connections !== undefined ||
+      props.reroute
+    )
+      continue
+    const autorouter = autoroutersByPhaseIndex.get(phaseIndex)
+    const config =
+      autorouter === undefined
+        ? group._getAutorouterConfig()
+        : getPresetAutoroutingConfig(autorouter, group.root?.platform)
+    if (config.preset === "fanout" || config.preset === "single_layer_fanout")
+      continue
+
+    const selected = selectedTracesByPhaseIndex.get(phaseIndex)!
+    const selectedNets = new Set(
+      [...selected].map((trace) => trace.subcircuit_connectivity_map_key),
+    )
+    const candidates = traces.filter(
+      (trace) =>
+        !breakoutByTrace.has(trace) &&
+        !selectedTraces.has(trace) &&
+        trace.subcircuit_connectivity_map_key !== null &&
+        selectedNets.has(trace.subcircuit_connectivity_map_key) &&
+        getTraceRoutingPhaseIndex({ trace, buses }, selectionContext) === null,
+    )
+    if (!candidates.length) continue
+    for (const trace of getTracesCoveredBySavedPhase(phase, [
+      ...selected,
+      ...candidates,
+    ])) {
+      selected.add(trace)
+      selectedTraces.add(trace)
+    }
+  }
   const groupFanoutProps = group._parsedProps as GroupFanoutProps
   const routeRemaining = group.getInheritedProperty("routeRemaining") !== false
   const defaultPhaseProps = phasePropsByPhaseIndex.get(null)
@@ -377,7 +478,10 @@ export function Group_getRoutingPhasePlans(
 
   for (const trace of traces) {
     if (breakoutByTrace.has(trace)) continue
-    const routingPhaseIndex = getTraceRoutingPhaseIndex(trace, buses)
+    const routingPhaseIndex = getTraceRoutingPhaseIndex(
+      { trace, buses },
+      selectionContext,
+    )
     if (routingPhaseIndex === null && !includeUnassignedConnections) continue
     getOrCreateRoutingPhasePlan(
       plansByPhaseIndex,
@@ -610,8 +714,12 @@ export function Group_getRoutingPhasePlans(
                 (connection) =>
                   connection === trace.name ||
                   traceHasEndpointMatchingConnectionSelector(
-                    trace,
-                    convertPortSelectorToEndpointKey(connection),
+                    {
+                      trace,
+                      connectionSelector:
+                        convertPortSelectorToEndpointKey(connection),
+                    },
+                    selectionContext,
                   ),
               ),
             ),
