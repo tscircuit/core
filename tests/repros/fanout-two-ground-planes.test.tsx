@@ -103,7 +103,7 @@ beforeAll(async () => {
     font: "tscircuit2024",
     font_size: 0.45,
   })
-  // Snapshot and placement failures must not be swallowed by test.failing.
+  // Keep placement and snapshot verification separate from routing assertions.
   expect(circuit.db.pcb_pad_pad_clearance_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderMask: false,
@@ -111,51 +111,58 @@ beforeAll(async () => {
   })
 })
 
-test.failing(
-  "fanout connects a controller and double-sided decouplers to their nearest GND planes",
-  () => {
-    const vias = circuit.db.pcb_via.list()
-    const topVias = vias.filter((via) => via.from_layer === "top")
-    const bottomVias = vias.filter((via) => via.from_layer === "bottom")
-    expect(routingFailures).toEqual([])
-    expect(phases[0]?.startSimpleRouteJson?.buses).toEqual([
-      expect.objectContaining({
-        busId: "U1_GND4",
-        termination: { type: "plane", layer: "inner1" },
-      }),
-      expect.objectContaining({
-        busId: "U1_GND12",
-        termination: { type: "plane", layer: "inner1" },
-      }),
-      expect.objectContaining({
-        busId: "C1_GND",
-        termination: { type: "plane", layer: "inner1" },
-      }),
-      expect.objectContaining({
-        busId: "C2_GND",
-        termination: { type: "plane", layer: "inner4" },
-      }),
-      expect.objectContaining({
-        busId: "C3_GND",
-        termination: { type: "plane", layer: "inner4" },
-      }),
+test("fanout connects a controller and double-sided decouplers to their nearest GND planes", () => {
+  const vias = circuit.db.pcb_via.list()
+  const topVias = vias.filter((via) => via.from_layer === "top")
+  const bottomVias = vias.filter((via) => via.from_layer === "bottom")
+  expect(routingFailures).toEqual([])
+  expect(phases[0]?.startSimpleRouteJson?.buses).toEqual([
+    expect.objectContaining({
+      busId: "U1_GND4",
+      termination: { type: "plane", layer: "inner1" },
+    }),
+    expect.objectContaining({
+      busId: "U1_GND12",
+      termination: { type: "plane", layer: "inner1" },
+    }),
+    expect.objectContaining({
+      busId: "C1_GND",
+      termination: { type: "plane", layer: "inner1" },
+    }),
+    expect.objectContaining({
+      busId: "C2_GND",
+      termination: { type: "plane", layer: "inner4" },
+    }),
+    expect.objectContaining({
+      busId: "C3_GND",
+      termination: { type: "plane", layer: "inner4" },
+    }),
+  ])
+  expect(topVias.map((via) => via.to_layer)).toEqual([
+    "inner1",
+    "inner1",
+    "inner1",
+  ])
+  expect(bottomVias.map((via) => via.to_layer)).toEqual(["inner4", "inner4"])
+  for (const via of vias) {
+    expect(via.layers).toEqual([
+      "top",
+      "inner1",
+      "inner2",
+      "inner3",
+      "inner4",
+      "bottom",
     ])
-    expect(topVias.map((via) => via.to_layer)).toEqual([
-      "inner1",
-      "inner1",
-      "inner1",
-    ])
-    expect(bottomVias.map((via) => via.to_layer)).toEqual(["inner4", "inner4"])
-    expect(
-      circuit.db.pcb_copper_pour
-        .list()
-        .map((pour) => pour.layer)
-        .sort(),
-    ).toEqual(["inner1", "inner4"])
-    expect(
-      circuit
-        .getCircuitJson()
-        .filter((element) => element.type.endsWith("_error")),
-    ).toEqual([])
-  },
-)
+  }
+  expect(
+    circuit.db.pcb_copper_pour
+      .list()
+      .map((pour) => pour.layer)
+      .sort(),
+  ).toEqual(["inner1", "inner4"])
+  expect(
+    circuit
+      .getCircuitJson()
+      .filter((element) => element.type.endsWith("_error")),
+  ).toEqual([])
+})
