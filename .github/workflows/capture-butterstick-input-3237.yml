@@ -83,11 +83,22 @@ jobs:
           marker='    const { solverParams, solverConstructorArgs, ...metadata } = event'
           replacement='''    if (eventName === "solver:started" && event.solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph") {
                 writeFileSync(join(output, "butterstick-native-arm-repro.json"), JSON.stringify({...event.solverParams, circuitJson: circuit.getCircuitJson()}))
-                process.exit(0)
               }
           '''+marker
           assert marker in s
-          p.write_text(s.replace(marker,replacement))
+          s=s.replace(marker,replacement)
+          intercept='''const arFile=Bun.resolveSync("@tscircuit/capacity-autorouter", corePath)
+          const ar=await import(arFile)
+          const proto=ar.AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype
+          const originalOutput=proto.getOutputSimplifiedPcbTraces
+          proto.getOutputSimplifiedPcbTraces=function(...args) {
+            const traces=originalOutput.apply(this,args)
+            writeFileSync(join(output,"actual-autorouter-traces.json"),JSON.stringify(traces))
+            return traces
+          }
+          '''
+          s=s.replace('const circuit = new RootCircuit()',intercept+'\\nconst circuit = new RootCircuit()')
+          p.write_text(s)
           PY
           mkdir -p captured
           bun --tsconfig-override head/tsconfig.json native-fixture/scripts/worker.tsx "$GITHUB_WORKSPACE/head" butterstick "$GITHUB_WORKSPACE/captured" full > capture.private.log 2>&1
@@ -95,10 +106,13 @@ jobs:
           import pathlib,gzip,json,hashlib
           source=pathlib.Path("captured/butterstick-native-arm-repro.json").read_bytes()
           args=json.loads(source)
+          args["routedTraces"]=json.loads(pathlib.Path("captured/actual-autorouter-traces.json").read_text())
+          args["routedCircuitJson"]=json.loads(pathlib.Path("captured/circuit.json").read_text())
+          source=json.dumps(args,separators=(",",":")).encode()
           srj=args["input"]
           print("SOLVER_OPTIONS="+json.dumps(args["options"]))
           print(json.dumps({"connections":len(srj["connections"]),"obstacles":len(srj["obstacles"]),"traces":len(srj.get("traces",[])),"sha256":hashlib.sha256(source).hexdigest()}))
-          dest=pathlib.Path("repros/butterstick-fixed-via/butterstick-native-arm-repro.json.gz")
+          dest=pathlib.Path("repros/butterstick-fixed-via/butterstick-complete-arm-repro.json.gz")
           dest.parent.mkdir(parents=True,exist_ok=True)
           dest.write_bytes(gzip.compress(source,mtime=0))
           PY
@@ -106,6 +120,6 @@ jobs:
         run: |
           git config user.name "tscircuit bot"
           git config user.email "githubbot@tscircuit.com"
-          git add repros/butterstick-fixed-via/butterstick-native-arm-repro.json.gz
+          git add repros/butterstick-fixed-via/butterstick-complete-arm-repro.json.gz
           git commit -m "Capture exact ButterStick solver arguments from published Core"
           git push origin HEAD:analysis/butterstick-input-3237
