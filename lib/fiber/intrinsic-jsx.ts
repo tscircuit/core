@@ -53,6 +53,7 @@ export interface TscircuitElements {
   cadmodel: Exclude<Props.CadModelPropsInput, null | string>
   cadassembly: Props.CadAssemblyProps
   net: Props.NetProps
+  netclass: Props.NetClassProps
   trace: Props.TraceProps
   bus: Props.BusProps
   differentialpair: Props.DifferentialPairProps

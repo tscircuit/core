@@ -46,6 +46,7 @@ export { BreakoutPoint as FanoutPoint } from "./primitive-components/BreakoutPoi
 export { Hole } from "./primitive-components/Hole"
 export { Keepout } from "./primitive-components/Keepout"
 export { Net } from "./primitive-components/Net"
+export { NetClass } from "./primitive-components/NetClass"
 export { NetLabel } from "./primitive-components/NetLabel"
 export { CadModel } from "./primitive-components/CadModel"
 export { CadAssembly } from "./primitive-components/CadAssembly"

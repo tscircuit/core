@@ -9,6 +9,7 @@ import {
 } from "lib/utils/gnd-power-net-regex"
 import type { AnyCircuitElement, SourceTrace } from "circuit-json"
 import { autoroute } from "@tscircuit/infgrid-ijump-astar"
+import { resolveNetClasses } from "lib/utils/components/resolveNetClasses"
 
 export class Net extends PrimitiveComponent<typeof netProps> {
   source_net_id?: string
@@ -60,8 +61,21 @@ export class Net extends PrimitiveComponent<typeof netProps> {
     const subcircuit = this.getSubcircuit()
     if (!subcircuit) return
     const { db } = this.root!
+    // Classes finish SourceRender before any net's parent attachment.
+    const netClasses = resolveNetClasses(this)
     db.source_net.update(this.source_net_id!, {
       subcircuit_id: subcircuit.subcircuit_id!,
+    })
+    if (netClasses.length === 0) return
+    db.source_net.update(this.source_net_id!, {
+      source_net_class_ids: netClasses.map(
+        (netClass) => netClass.source_net_class_id!,
+      ),
+      trace_width:
+        this._parsedProps.nominalTraceWidth ??
+        netClasses.find(
+          (netClass) => netClass._parsedProps.traceWidth !== undefined,
+        )?._parsedProps.traceWidth,
     })
   }
 
