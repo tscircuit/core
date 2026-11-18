@@ -23,8 +23,14 @@ export class AnalogSimulation extends PrimitiveComponent<
 
   doInitialSimulationRender(): void {
     const { db } = this.root!
-    const { duration, name, startTime, timePerStep, spiceOptions } =
-      this._parsedProps
+    const {
+      duration,
+      name,
+      startTime,
+      timePerStep,
+      spiceOptions,
+      calculateInitialOperatingPoint,
+    } = this._parsedProps
 
     const durationMs = duration || 10 // ms
     const timePerStepMs = timePerStep || 0.01 // ms
@@ -36,6 +42,7 @@ export class AnalogSimulation extends PrimitiveComponent<
       start_time_ms: startTime,
       time_per_step: timePerStepMs,
       spice_options: spiceOptions,
+      calculate_initial_operating_point: calculateInitialOperatingPoint,
     })
 
     this.simulation_experiment_id =
