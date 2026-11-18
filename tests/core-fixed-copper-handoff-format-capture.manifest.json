@@ -1,0 +1,106 @@
+{
+  "schema": "pending-consumer-canonical-format/v1",
+  "repository": "tscircuit/core",
+  "stackBaseCommit": "a7c3465811c8ae5ab4d11b8a906ed1ff99e6abf4",
+  "sourceCheckpointCommit": "e8a18a2e0f2d5365549e935c5bbdbd3649ef8f3b",
+  "publishManifestSha256": "4ad3677ffc643aa5b8731296e29e86089429577aa7839e010173c76a43106b8d",
+  "publishManifestBase64": "ewogICJyZXBvc2l0b3J5IjogInRzY2lyY3VpdC9jb3JlIiwKICAiYmFzZSI6ICJhN2MzNDY1ODExYzhhZTVhYjRkMTFiOGE5MDZlZDFmZjk5ZTZhYmY0IiwKICAiYmFzZVRyZWUiOiAiOTZkMDU2NThhODUyZTM0ODNlY2EwY2FiZmQ0YmFlYjY4NjA2NTllMiIsCiAgInNlcGFyYXRlRnJvbUNvbnN1bWVySW50ZWdyYXRpb241NjM1IjogdHJ1ZSwKICAiZGVwZW5kZW5jeUNoYW5nZSI6IGZhbHNlLAogICJzY29wZSI6ICJHZW5lcmFsIHNlbGVjdGVkLW5hdGl2ZS1QOSBzdHJ1Y3R1cmVkIGltbXV0YWJsZS1jb3BwZXIgaGFuZG9mZjsgbm8gYm9hcmQvcGhhc2UgbmFtZSBleGNlcHRpb25zOyBvcmlnaW5hbCBnZW9tZXRyeS9ydWxlcy9waHlzaWNhbCB2aWFzIHVuY2hhbmdlZC4gSDMgaXMgYSBwdXJlIHJlcHJlc2VudGF0aW9uIHJlcGxheSwgbm90IGEgc3VjY2Vzc2Z1bCBuZXcgcm91dGUuIiwKICAia2luZCI6ICJmaXhlZF9jb3BwZXJfaGFuZG9mZl9yZXByb19kcmFmdCIsCiAgInN0YWNrT25SZXBybyI6IGZhbHNlLAogICJmaWxlcyI6IFsKICAgIHsKICAgICAgInBhdGgiOiAidGVzdHMvZml4dHVyZXMvZml4ZWQtY29wcGVyLWhhbmRvZmYvYm9hcmQudHN4IiwKICAgICAgImxvY2FsUGF0aCI6ICIvVXNlcnMvYW5hc3Nhcmtpei9Eb2N1bWVudHMvQ29kZXgvMjAyNi0xMS0xNS9uZXctY2hhdC93b3JrL2NvcmUtZml4ZWQtY29wcGVyLWhhbmRvZmYtcGFpci1mcm96ZW4vcmVwcm8vdGVzdHMvZml4dHVyZXMvZml4ZWQtY29wcGVyLWhhbmRvZmYvYm9hcmQudHN4IiwKICAgICAgImJ5dGVzIjogMTQ4MiwKICAgICAgInNoYTI1NiI6ICIxZDdkM2U4YzU4OWYxZGQ1Zjk3YjM1Y2IxZGRiMmNmMGE4YjVmNTRjODk4MmU5NDg2NDFhNGI0ZTU0ZWJmNjUzIiwKICAgICAgImdpdEJsb2JTaGExIjogImVmMDFjNDRiM2Q4MTFiNmVjNTQ2MTE2MjU2MDEzZTY0ZjMwOGQzNTAiLAogICAgICAiYmFzZUJsb2JTaGExIjogbnVsbCwKICAgICAgImVuY29kaW5nIjogInV0Zi04IiwKICAgICAgInN0YXR1cyI6ICJhZGRlZCIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL25hdGl2ZS1oMy5wcm92ZW5hbmNlLmpzb24iLAogICAgICAibG9jYWxQYXRoIjogIi9Vc2Vycy9hbmFzc2Fya2l6L0RvY3VtZW50cy9Db2RleC8yMDI2LTExLTE1L25ldy1jaGF0L3dvcmsvY29yZS1maXhlZC1jb3BwZXItaGFuZG9mZi1wYWlyLWZyb3plbi9yZXByby90ZXN0cy9maXh0dXJlcy9maXhlZC1jb3BwZXItaGFuZG9mZi9uYXRpdmUtaDMucHJvdmVuYW5jZS5qc29uIiwKICAgICAgImJ5dGVzIjogMTI0OSwKICAgICAgInNoYTI1NiI6ICI4OTAyMjkwYzA0MTdlZGQ3ZTZmMDhiZTFhZmJkY2IxNjc2NzNkODdlYTZhMDI4MmZiZTQwZTYzMmUwOWU1NzBiIiwKICAgICAgImdpdEJsb2JTaGExIjogImQzMDA3NDgwY2E0MzFkZDFiNTM2YTM1YjNjZTc4YWYwMDkzZjYxMmIiLAogICAgICAiYmFzZUJsb2JTaGExIjogbnVsbCwKICAgICAgImVuY29kaW5nIjogInV0Zi04IiwKICAgICAgInN0YXR1cyI6ICJhZGRlZCIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL25hdGl2ZS1oMy5zcmouanNvbi5neiIsCiAgICAgICJsb2NhbFBhdGgiOiAiL1VzZXJzL2FuYXNzYXJraXovRG9jdW1lbnRzL0NvZGV4LzIwMjYtMTEtMTUvbmV3LWNoYXQvd29yay9jb3JlLWZpeGVkLWNvcHBlci1oYW5kb2ZmLXBhaXItZnJvemVuL3JlcHJvL3Rlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL25hdGl2ZS1oMy5zcmouanNvbi5neiIsCiAgICAgICJieXRlcyI6IDE2MDI0LAogICAgICAic2hhMjU2IjogIjI4MjA0YjU0ZTI3ZTk4ZWU0OTBiYjliOWM0OTQ5YTlmMDNmMjUzNDMyNTE1OTYzMzEyNTQ2MDMzNmM4Y2YyOGIiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiMjA1MDI3ODEwOGJiMmU0Mzc3ZDA3Yzk2ZGU1Njk3NGM0NWI3MDIwNyIsCiAgICAgICJiYXNlQmxvYlNoYTEiOiBudWxsLAogICAgICAiZW5jb2RpbmciOiAiYmFzZTY0IiwKICAgICAgInN0YXR1cyI6ICJhZGRlZCIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL2ZpeHR1cmVzL2ZpeGVkLWNvcHBlci1oYW5kb2ZmL3NuYXBzaG90LnRzIiwKICAgICAgImxvY2FsUGF0aCI6ICIvVXNlcnMvYW5hc3Nhcmtpei9Eb2N1bWVudHMvQ29kZXgvMjAyNi0xMS0xNS9uZXctY2hhdC93b3JrL2NvcmUtZml4ZWQtY29wcGVyLWhhbmRvZmYtcGFpci1mcm96ZW4vcmVwcm8vdGVzdHMvZml4dHVyZXMvZml4ZWQtY29wcGVyLWhhbmRvZmYvc25hcHNob3QudHMiLAogICAgICAiYnl0ZXMiOiAzNzUwLAogICAgICAic2hhMjU2IjogIjBkNTVjZTIzODI0YTFiMDFmZDBhNDEzZDFlZDBlYmRmYWJmYmQzOTgxNzFjZDJkNGUxZTkwMmQ0MDk3ODVkNDIiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiOTQ3MTJlZjg2OWQ4YTQzMTNkZTgwYmQ3NzRlOWQ3ZmMzNzhlMjBlZiIsCiAgICAgICJiYXNlQmxvYlNoYTEiOiBudWxsLAogICAgICAiZW5jb2RpbmciOiAidXRmLTgiLAogICAgICAic3RhdHVzIjogImFkZGVkIgogICAgfSwKICAgIHsKICAgICAgInBhdGgiOiAidGVzdHMvcmVwcm9zL19fc25hcHNob3RzX18vcmVwcm8tZml4ZWQtY29wcGVyLWhhbmRvZmYuc25hcC5zdmciLAogICAgICAibG9jYWxQYXRoIjogIi9Vc2Vycy9hbmFzc2Fya2l6L0RvY3VtZW50cy9Db2RleC8yMDI2LTExLTE1L25ldy1jaGF0L3dvcmsvY29yZS1maXhlZC1jb3BwZXItaGFuZG9mZi1wYWlyLWZyb3plbi9yZXByby90ZXN0cy9yZXByb3MvX19zbmFwc2hvdHNfXy9yZXByby1maXhlZC1jb3BwZXItaGFuZG9mZi5zbmFwLnN2ZyIsCiAgICAgICJieXRlcyI6IDU1OTksCiAgICAgICJzaGEyNTYiOiAiNGYzM2NlMzhjOTY1MzhmMGQ1NDIxYzI5NjhmM2IzNDEwZTgzYzcwOWY1YzA3MjA4NWJlMGZlYzgyMjFmMWUzMSIsCiAgICAgICJnaXRCbG9iU2hhMSI6ICI5NDYwNmI4ZTFiZWNjNGJjYmJlNjI5N2U1MzAyMWEyZDk3YTM2N2I4IiwKICAgICAgImJhc2VCbG9iU2hhMSI6IG51bGwsCiAgICAgICJlbmNvZGluZyI6ICJ1dGYtOCIsCiAgICAgICJzdGF0dXMiOiAiYWRkZWQiCiAgICB9LAogICAgewogICAgICAicGF0aCI6ICJ0ZXN0cy9yZXByb3MvcmVwcm8tZml4ZWQtY29wcGVyLWhhbmRvZmYudGVzdC50c3giLAogICAgICAibG9jYWxQYXRoIjogIi9Vc2Vycy9hbmFzc2Fya2l6L0RvY3VtZW50cy9Db2RleC8yMDI2LTExLTE1L25ldy1jaGF0L3dvcmsvY29yZS1maXhlZC1jb3BwZXItaGFuZG9mZi1wYWlyLWZyb3plbi9yZXByby90ZXN0cy9yZXByb3MvcmVwcm8tZml4ZWQtY29wcGVyLWhhbmRvZmYudGVzdC50c3giLAogICAgICAiYnl0ZXMiOiA0MjExLAogICAgICAic2hhMjU2IjogImQ5M2Q2NmViYmQ5MzhlYzExODBhODJkNTQ2ODYyZDc0ZGNjZDU4NmQwYmJkZTU5NDlmOWE3ZjQyNTFmMmY4MTUiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiYjM1NzdkMGUwZjcwOWY0MTY0YjI0ZDFkZjY0YmQ1ZGU2YzM0ZmIzNSIsCiAgICAgICJiYXNlQmxvYlNoYTEiOiBudWxsLAogICAgICAiZW5jb2RpbmciOiAidXRmLTgiLAogICAgICAic3RhdHVzIjogImFkZGVkIgogICAgfSwKICAgIHsKICAgICAgInBhdGgiOiAidGVzdHMvdXRpbHMvYXV0b3JvdXRpbmcvX19zbmFwc2hvdHNfXy9uYXRpdmUtaDMtZml4ZWQtY29wcGVyLWhhbmRvZmYuc25hcC5zdmciLAogICAgICAibG9jYWxQYXRoIjogIi9Vc2Vycy9hbmFzc2Fya2l6L0RvY3VtZW50cy9Db2RleC8yMDI2LTExLTE1L25ldy1jaGF0L3dvcmsvY29yZS1maXhlZC1jb3BwZXItaGFuZG9mZi1wYWlyLWZyb3plbi9yZXByby90ZXN0cy91dGlscy9hdXRvcm91dGluZy9fX3NuYXBzaG90c19fL25hdGl2ZS1oMy1maXhlZC1jb3BwZXItaGFuZG9mZi5zbmFwLnN2ZyIsCiAgICAgICJieXRlcyI6IDI4MzExMywKICAgICAgInNoYTI1NiI6ICIyYmRkZjZjNjgwMWRhNDM4NDI4OWE2YTU5MjdmYzAzZjU4ZGZjZWE0Y2FjNGQyMjkyYzM3NzM3NzRjYzU0OGQxIiwKICAgICAgImdpdEJsb2JTaGExIjogIjQ5YTQzOTliNzM0NmU5MzMxYWZlNjA5YTc4OTRlODhjMWI3NGIyMzYiLAogICAgICAiYmFzZUJsb2JTaGExIjogbnVsbCwKICAgICAgImVuY29kaW5nIjogInV0Zi04IiwKICAgICAgInN0YXR1cyI6ICJhZGRlZCIKICAgIH0sCiAgICB7CiAgICAgICJwYXRoIjogInRlc3RzL3V0aWxzL2F1dG9yb3V0aW5nL25hdGl2ZS1oMy1maXhlZC1jb3BwZXItaGFuZG9mZi50ZXN0LnRzIiwKICAgICAgImxvY2FsUGF0aCI6ICIvVXNlcnMvYW5hc3Nhcmtpei9Eb2N1bWVudHMvQ29kZXgvMjAyNi0xMS0xNS9uZXctY2hhdC93b3JrL2NvcmUtZml4ZWQtY29wcGVyLWhhbmRvZmYtcGFpci1mcm96ZW4vcmVwcm8vdGVzdHMvdXRpbHMvYXV0b3JvdXRpbmcvbmF0aXZlLWgzLWZpeGVkLWNvcHBlci1oYW5kb2ZmLnRlc3QudHMiLAogICAgICAiYnl0ZXMiOiAyMDMyLAogICAgICAic2hhMjU2IjogIjY5ZjE1ZDg1NWNmNDJiNmM5MjdiNWM2Y2FmYjcyMzc5YWNjMDU3OTM4NjZlMDVhNTYxN2NhODEyNDE2ZGE4MDMiLAogICAgICAiZ2l0QmxvYlNoYTEiOiAiMWMxOWRmNTNlNmYyYmI4YWFkY2NhZWU2MzYyMTc0MWZjOGJjYzUwMiIsCiAgICAgICJiYXNlQmxvYlNoYTEiOiBudWxsLAogICAgICAiZW5jb2RpbmciOiAidXRmLTgiLAogICAgICAic3RhdHVzIjogImFkZGVkIgogICAgfQogIF0sCiAgInZhbGlkYXRpb24iOiB7CiAgICAicnVudGltZSI6ICJBY3R1YWwgc291cmNlLXF1YWxpZmllZCBDb3JlMDYxNzMgKyBleGFjdCBzY29wZWQgcG9ydGFibGUgY2hhbmdlcy4gR3JvdXAvd2l0aEZpeGVkIGJhc2VsaW5lIHNvdXJjZSBlcXVhbHMgYTcuIGE3IGRlY2xhcmVzIGJ1cyAuNTggdW5hdmFpbGFibGUgbG9jYWxseTogY2Fub25pY2FsIGE3IENJIHN0aWxsIHJlcXVpcmVkLiBObyBkZXBlbmRlbmN5IHN1YnN0aXR1dGlvbnMgdW5kZXIgYW4gYTcgY2xhaW0uIiwKICAgICJsb2NhbFF1YWxpZmllZFRlc3RzIjogewogICAgICAidGVzdHMiOiAyLAogICAgICAiYXNzZXJ0aW9ucyI6IDI0LAogICAgICAicGFzcyI6IHRydWUKICAgIH0sCiAgICAib2xkQm91bmRhcnlNdXRhdGlvbkV4cGVjdGVkRmFpbHVyZSI6IHsKICAgICAgIm11dGF0aW9uIjogIlJlcGxhY2Ugb25seSBmaXhlZCBHcm91cCB3aXRoIGV4YWN0IG9sZCBhNyBHcm91cDsgZGVzaXJlZCBuYXRpdmUtY29uc3RydWN0b3IgdGVzdCBtdXN0IGZhaWwiLAogICAgICAiZXhpdENvZGUiOiAxLAogICAgICAiZXhwZWN0ZWRGYWlsdXJlIjogdHJ1ZSwKICAgICAgImRpYWdub3N0aWMiOiAiT2xkIGFjdHVhbCBjb25zdHJ1Y3RvciBwcm92aWRlcyBbXSBpbnN0ZWFkIG9mIG9uZSBleGFjdCBpc0ZpeGVkIHRyYWNlLiBUaGUgcmVuZGVyZXIgYW5kIGdlb21ldHJ5IHdlcmUgbm90IGNoYW5nZWQuIgogICAgfSwKICAgICJwaHlzaWNhbE1pbmltYWxSZXN1bHQiOiAiMiBjb25uZWN0ZWQgbmV0czsgYWxsMTEgRFJDMDsgcHJpb3IgbWFudWFsIHRyYWNlIGFuZCBwaHlzaWNhbCB2aWEgZXhhY3Q7IGZpbmFsMnRyYWNlcy8xdmlhOyBubyBkdXBsaWNhdGVkIHByZWxvYWRzIiwKICAgICJmdWxsTmF0aXZlQ2xhaW0iOiBmYWxzZSwKICAgICJjYW5vbmljYWxGb3JtYXRBbmRUeXBlcyI6ICJwZW5kaW5nOyBzZXZlbiBkaXN0aW5jdCBjaGFuZ2VkL25ldyBUUyBmaWxlcyBuZWVkIGNhbm9uaWNhbCBDb3JlIEJpb21lMS45LjQgYW5kIG9mZmljaWFsIHN0cmljdCB0eXBlY2hlY2siCiAgfQp9Cg==",
+  "biomeConfigSha256": "b91abff9efbe0e67041208ad1d86f1682f0fb83d7134a3447f63d747a3d86470",
+  "biomeVersion": "1.9.4",
+  "typescriptVersion": "5.9.3",
+  "additionalDiagnosticFiles": [
+    {
+      "path": ".github/workflows/core-fixed-copper-handoff-repro-format.yml",
+      "sha256": "592078f23f436268c29c6eaf9b3d2062dfdedee6f511cdedc49ab79ae3ba626f",
+      "bytes": 682
+    },
+    {
+      "path": "tests/core-fixed-copper-handoff-typecheck-probe.test.ts",
+      "sha256": "4ad9aa929432979ff888c33f6f6bd320456c7aeaf2340b400134cfa35014365c",
+      "bytes": 14032
+    },
+    {
+      "path": ".github/workflows/core-fixed-copper-handoff-repro-typecheck.yml",
+      "sha256": "faa0000eecbb6777289c52ae75345f08e037b98114148425eef167bbfb018ac4",
+      "bytes": 1075
+    }
+  ],
+  "files": [
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/board.tsx",
+      "beforeSha256": "1d7d3e8c589f1dd5f97b35cb1ddb2cf0a8b5f54c8982e948641a4b4e54ebf653",
+      "beforeBytes": 1482
+    },
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/snapshot.ts",
+      "beforeSha256": "0d55ce23824a1b01fd0a413d1ed0ebdfabfbd398171cd2d4e1e902d409785d42",
+      "beforeBytes": 3750
+    },
+    {
+      "path": "tests/repros/repro-fixed-copper-handoff.test.tsx",
+      "beforeSha256": "d93d66ebbd938ec1180a82d546862d74dccd586d0bbde5949f9a7f4251f2f815",
+      "beforeBytes": 4211
+    },
+    {
+      "path": "tests/utils/autorouting/native-h3-fixed-copper-handoff.test.ts",
+      "beforeSha256": "69f15d855cf42b6c927b5c6cafb72379acc05793866e05a5617ca812416da803",
+      "beforeBytes": 2032
+    }
+  ],
+  "immutableFiles": [
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/native-h3.provenance.json",
+      "sha256": "8902290c0417edd7e6f08be1afbdcb167673d87ea6a0282fbe40e632e09e570b",
+      "bytes": 1249,
+      "gitBlobSha1": "d3007480ca431dd1b536a35b3ce78af0093f612b"
+    },
+    {
+      "path": "tests/fixtures/fixed-copper-handoff/native-h3.srj.json.gz",
+      "sha256": "28204b54e27e98ee490bb9b9c4949a9f03f2534325159633125460336c8cf28b",
+      "bytes": 16024,
+      "gitBlobSha1": "2050278108bb2e4377d07c96de56974c45b70207"
+    },
+    {
+      "path": "tests/repros/__snapshots__/repro-fixed-copper-handoff.snap.svg",
+      "sha256": "4f33ce38c96538f0d5421c2968f3b3410e83c709f5c072085be0fec8221f1e31",
+      "bytes": 5599,
+      "gitBlobSha1": "94606b8e1becc4bcbbe6297e53021a2d97a367b8"
+    },
+    {
+      "path": "tests/utils/autorouting/__snapshots__/native-h3-fixed-copper-handoff.snap.svg",
+      "sha256": "2bddf6c6801da4384289a6a5927fc03f58dfcea4cac4d2292c3773774cc548d1",
+      "bytes": 283113,
+      "gitBlobSha1": "49a4399b7346e9331afe609a7894e88c1b74b236"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "5590aea42cd463ed37410e4c207e01ecfa649fd59e8693d609aaa8962342aa3f",
+      "bytes": 11682,
+      "gitBlobSha1": "057996652fd9998e939ee848023e2a277d010281"
+    },
+    {
+      "path": "package.json",
+      "sha256": "0aac609ee2c4da97f4a9a63e0bcfc9744585247dde7b83be0657d64f370f87e8",
+      "bytes": 8216,
+      "gitBlobSha1": "12e45bf28c0432048be51e12ba45a175efdf8182"
+    },
+    {
+      "path": "biome.json",
+      "sha256": "b91abff9efbe0e67041208ad1d86f1682f0fb83d7134a3447f63d747a3d86470",
+      "bytes": 1222,
+      "gitBlobSha1": "4da8120921261e8bde68794bac7184c95beda6e7"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "080cea34b88a5806ba8b17d2237399b46d1b5a55a32b7bd5c93ce409e8355076",
+      "bytes": 778,
+      "gitBlobSha1": "d8ce0eeb1df0d9fd08f12af7c75576f799616ec1"
+    },
+    {
+      "path": "bunfig.toml",
+      "sha256": "6964eb4d76b1416492345cf77f3de389f2de061aad3da58ef6d751814a4e286c",
+      "bytes": 81,
+      "gitBlobSha1": "3de532a1ee702f468d25158a0d01eba59e422ec0"
+    }
+  ]
+}

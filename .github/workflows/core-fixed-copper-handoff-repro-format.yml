@@ -1,0 +1,25 @@
+name: Capture Core fixed-copper handoff repro formatting
+
+on:
+  push:
+    branches:
+      - diagnostics/core-fixed-copper-handoff-repro-checks
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.repository == 'tscircuit/core' && github.ref_name == 'diagnostics/core-fixed-copper-handoff-repro-checks'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install
+      - run: bun test --timeout 240000 tests/core-fixed-copper-handoff-format-capture.test.ts
