@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { checkTracesAreContiguous, checkViaPadClearance } from "@tscircuit/checks"
+import {
+  checkTracesAreContiguous,
+  checkViaPadClearance,
+} from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4).
