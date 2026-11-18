@@ -17,6 +17,7 @@ import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/conv
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import type { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { getSchematicGroupPortTarget } from "../Subcircuit/getSchematicGroupPortTarget"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
@@ -1025,7 +1026,16 @@ export function createSchematicTraceSolverInputProblem(
       const hasCrossSectionConnection = boundaryTraceNetConnections.some(
         (boundaryConnection) => boundaryConnection.connKey === connKey,
       )
+      const hasExplicitSchDisplayLabel = schematicDescendants.some(
+        (component) =>
+          component.componentName === "Trace" &&
+          Boolean((component as Trace)._parsedProps?.schDisplayLabel) &&
+          Boolean((component as Trace).source_trace_id) &&
+          db.source_trace.get((component as Trace).source_trace_id!)
+            ?.subcircuit_connectivity_map_key === connKey,
+      )
       const isRoutableBranchedWire =
+        hasExplicitSchDisplayLabel &&
         !hasCrossSectionConnection &&
         directConnectionsForConnKey.length > 0 &&
         directConnectionsForConnKey.every(
