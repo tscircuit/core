@@ -65,15 +65,3 @@ circuit.getCircuitJson() // [{ type: "board", ...}, { type: "resistor", ...}, ..
 
 - [How does core work?](./docs/DEVELOPMENT.md#overview-of-how-core-works)
 - [How to do benchmarking or debug performance](./docs/DEVELOPMENT.md#debugging-performance)
-
-## Named net classes
-
-Declare named trace-width rules in a board or subcircuit:
-
-```tsx
-<netclass name="Power" traceWidth="0.8mm" nets={["net.VCC", "net.VBAT"]} />
-```
-
-Net selectors create implicit nets when necessary. Classes stay within their containing subcircuit; duplicate names there are rejected. Lower `priority` values win (default zero), then class name. A class without `traceWidth` defers to the next class. A class named `Default` applies as the final fallback to every net in its subcircuit. An explicit net `nominalTraceWidth` takes precedence; the board default applies when no class provides a width.
-
-Circuit JSON retains each class as `source_net_class` and ordered membership in `source_net.source_net_class_ids`, independently of each net's resolved width. This API covers nominal widths and class identity; it does not implement the separate clearance-matrix proposal.
