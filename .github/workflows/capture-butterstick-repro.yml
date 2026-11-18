@@ -1,0 +1,36 @@
+name: Capture the real ButterStick routing input
+on:
+  push:
+    branches: [analysis/butterstick-repro-capture]
+    paths: [.github/workflows/capture-butterstick-repro.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve the native Core benchmark input
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ready=0
+          for attempt in $(seq 1 60); do
+            if gh run download 44384483121 --repo tscircuit/core --name butterstick-repro-input --dir captured; then
+              ready=1
+              break
+            fi
+            sleep 15
+          done
+          test "$ready" = 1
+      - name: Save the public board repro on this analysis branch
+        run: |
+          mkdir -p repros/butterstick-fixed-via
+          cp captured/butterstick-remaining.srj.json.gz repros/butterstick-fixed-via/
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add repros/butterstick-fixed-via/butterstick-remaining.srj.json.gz
+          git commit -m "Capture unchanged ButterStick remaining-phase Core input"
+          git push origin HEAD:analysis/butterstick-repro-capture
