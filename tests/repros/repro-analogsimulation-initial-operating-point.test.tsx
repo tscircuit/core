@@ -7,6 +7,8 @@ test("analogsimulation can start an RC circuit at its 5-V DC operating point", a
     platform: { spiceEngineMap: { ngspice: await createNgspiceSpiceEngine() } },
   })
   circuit.pcbDisabled = true
+  // Pass the requested option through even before the props package supports it.
+  const initialOperatingPoint = { calculateInitialOperatingPoint: true }
   circuit.add(
     <board routingDisabled>
       <voltagesource
@@ -33,7 +35,7 @@ test("analogsimulation can start an RC circuit at its 5-V DC operating point", a
         duration="1ms"
         timePerStep="10us"
         spiceEngine="ngspice"
-        calculateInitialOperatingPoint
+        {...initialOperatingPoint}
       />
     </board>,
   )
