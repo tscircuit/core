@@ -23,6 +23,23 @@ test("board autorouter receives net trace clearance in its SRJ input", async () 
       />
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} />
       <resistor name="R2" resistance="1k" footprint="0402" pcbX={3} />
+      <net name="RF" minTraceClearance="0.5mm" />
+      <via
+        name="V1"
+        pcbX={0}
+        pcbY={0}
+        fromLayer="top"
+        toLayer="bottom"
+        holeDiameter={0.3}
+        outerDiameter={0.6}
+      />
+      <trace from="net.RF" to="V1.top" />
+      <pcbnotetext pcbY={3} fontSize={0.35} text="USB: minimum gap 0.15 mm" />
+      <pcbnotetext
+        pcbY={-3}
+        fontSize={0.35}
+        text="RF via: minimum gap 0.50 mm"
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -37,4 +54,11 @@ test("board autorouter receives net trace clearance in its SRJ input", async () 
       )
       .map((obstacle) => obstacle.minTraceClearance),
   ).toEqual([0.15, 0.15])
+  const viaId = circuit.db.pcb_via.list()[0].pcb_via_id
+  expect(
+    autorouterInput?.obstacles.find(
+      (obstacle) => obstacle.circuitJsonMetadata?.pcb_via_id === viaId,
+    )?.minTraceClearance,
+  ).toBe(0.5)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

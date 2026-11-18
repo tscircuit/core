@@ -21,6 +21,12 @@ test("child routing inherits the stricter clearance of an exposed parent net", a
         <resistor name="R1" resistance="1k" footprint="0402" pcbX={-4} />
         <resistor name="R2" resistance="1k" footprint="0402" pcbX={4} />
       </subcircuit>
+      <pcbnotetext
+        pcbY={4}
+        fontSize={0.4}
+        text="VCC: parent 0.40 > child 0.15 mm"
+      />
+      <pcbnotetext pcbY={-4} fontSize={0.4} text="DATA remains 0.20 mm" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -58,4 +64,5 @@ test("child routing inherits the stricter clearance of an exposed parent net", a
       )
       .map((obstacle) => obstacle.minTraceClearance),
   ).toEqual([0.2, 0.2])
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

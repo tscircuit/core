@@ -32,6 +32,17 @@ test("fixed traces and obstacle-only nets keep clearance when routing another ne
         />
         <trace from="net.RF" to="V1.top" />
       </subcircuit>
+      <pcbnotetext
+        pcbY={7}
+        fontSize={0.4}
+        text="RF fixed trace + via: 0.30 mm min"
+      />
+      <pcbnotetext pcbY={2} fontSize={0.4} text="SIGNAL: 0.15 mm min" />
+      <pcbnotetext
+        pcbY={-3}
+        fontSize={0.4}
+        text="R1 pin2: PAD_ONLY, 0.40 mm min"
+      />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -74,4 +85,5 @@ test("fixed traces and obstacle-only nets keep clearance when routing another ne
   expect(phaseInput.connections[0].minTraceClearance).toBe(0.15)
   expect(phaseInput.obstacles).toEqual(simpleRouteJson.obstacles)
   expect(phaseInput.traces).toEqual(simpleRouteJson.traces)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
