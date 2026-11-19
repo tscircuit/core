@@ -1,7 +1,7 @@
-name: Verify copper-aware graph port reservations
+name: Diagnose native copper routing failure
 on:
   push:
-    branches: [analysis/try-copper-port-reservations]
+    branches: [analysis/canonical-native-diagnostics]
     paths: [.github/workflows/try-copper-port-reservations.yml]
 permissions:
   contents: read
@@ -40,7 +40,7 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
-        circuit: [orangecrab, a64, h616, glider, h3, stmp157, a13, butterstick, imx6, icepi]
+        circuit: [h616]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,7 +56,7 @@ jobs:
       - name: Install the source-built candidate
         run: |
           python3 - <<'PY'
-          import json
+          import json, re
           from pathlib import Path
           p=Path("package.json")
           m=json.loads(p.read_text())
@@ -80,9 +80,17 @@ jobs:
             raise RuntimeError("Native worker did not produce a result summary")
           r=json.loads(source.read_text())
           rows=[]
+          def diagnostic(message):
+            text=str(message)
+            text=re.sub(r'(?:source_(?:net|trace|port)|pcb_(?:trace|port)|bus_lane)[A-Za-z0-9_:. -]*', '<connection>', text)
+            text=re.sub(r'(?<![A-Za-z_])[-+]?\d+(?:\.\d+)?', '<number>', text)
+            return text
           for case in r["cases"]:
             a=case.get("assessment") or {}
             rows.append({"board":case["circuit"],"coreCommit":r["coreCommit"],"dependencies":r["dependencies"],"status":case["status"],"connected":a.get("connectedNets"),"requested":a.get("requestedNets"),"findings":a.get("findings"),"geometryErrorCount":len(a.get("geometryErrors",[])),"seconds":case["wallMs"]/1000,"peakRssMb":case["peakRssMb"]})
+            progress=case.get("progress") or {}
+            rows[-1]["phases"]=[{key:p.get(key) for key in ["phase","stage","solver","status","connections","durationMs"]} for p in progress.get("phases",[])]
+            rows[-1]["failureDiagnostics"]=[diagnostic(message) for message in progress.get("errors",[])]
           Path("aggregate.json").write_text(json.dumps(rows,indent=2))
           print("CANONICAL_AGGREGATE="+json.dumps(rows))
           PY
