@@ -1,0 +1,112 @@
+{
+  "label": "head",
+  "circuit": "icepi",
+  "coreCommit": "7d4979ea36397d622aeebdef36880fbba29eab01",
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/capacity-autorouter": "0.0.1132",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "seconds": 21.803348232,
+  "peakRssMb": 1439.375,
+  "status": "failed",
+  "assessment": {
+    "requestedNets": 50,
+    "connectedNets": 16,
+    "unconnectedNets": [
+      "/DDR3/A0",
+      "/DDR3/A1",
+      "/DDR3/A10",
+      "/DDR3/A11",
+      "/DDR3/A12",
+      "/DDR3/A13",
+      "/DDR3/A14",
+      "/DDR3/A15",
+      "/DDR3/A2",
+      "/DDR3/A3",
+      "/DDR3/A4",
+      "/DDR3/A5",
+      "/DDR3/A6",
+      "/DDR3/A7",
+      "/DDR3/A8",
+      "/DDR3/A9",
+      "/DDR3/BA0",
+      "/DDR3/BA1",
+      "/DDR3/BA2",
+      "/DDR3/CKE",
+      "/DDR3/CLK+",
+      "/DDR3/CLK-",
+      "/DDR3/DQM0",
+      "/DDR3/DQM1",
+      "/DDR3/DQS0+",
+      "/DDR3/DQS0-",
+      "/DDR3/DQS1+",
+      "/DDR3/DQS1-",
+      "/DDR3/ODT",
+      "/DDR3/~{CAS}",
+      "/DDR3/~{CS}",
+      "/DDR3/~{RAS}",
+      "/DDR3/~{RESET}",
+      "/DDR3/~{WE}"
+    ],
+    "pcbTraces": 16,
+    "vias": 32,
+    "wireLengthMm": 194.35890959943782,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 70,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0
+    },
+    "geometryErrors": [],
+    "validationMs": 323.019677
+  },
+  "physicalFindings": 0,
+  "phases": [
+    {
+      "phase": "byte0",
+      "stage": 0,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2412.554756,
+      "durationMs": 323.3465100000003,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "byte1",
+      "stage": 1,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2830.868401,
+      "durationMs": 266.44378400000005,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "remaining",
+      "stage": 2,
+      "solver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+      "status": "failed",
+      "startedMs": 3187.3783470000003,
+      "durationMs": 17933.086873999997,
+      "connections": 34,
+      "cacheStatus": "disabled"
+    }
+  ],
+  "errors": [
+    "Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_33_fixed_5_4, source_net_33_fixed_5_5 (capacity-autorouter@0.0.1132)",
+    "AutorouterError: Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_33_fixed_5_4, source_net_33_fixed_5_5 (capacity-autorouter@0.0.1132)"
+  ],
+  "copperSha256": "b765ad146f07fa8c27811f3da84b19e8bb9ea4b718e0e37345dd3c5ca058d140"
+}

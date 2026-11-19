@@ -1,0 +1,112 @@
+{
+  "label": "head",
+  "circuit": "orangecrab",
+  "coreCommit": "7d4979ea36397d622aeebdef36880fbba29eab01",
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/capacity-autorouter": "0.0.1132",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "seconds": 26.823129997999995,
+  "peakRssMb": 1785.53515625,
+  "status": "failed",
+  "assessment": {
+    "requestedNets": 50,
+    "connectedNets": 16,
+    "unconnectedNets": [
+      "RAM_A0",
+      "RAM_A1",
+      "RAM_A10",
+      "RAM_A11",
+      "RAM_A12",
+      "RAM_A13",
+      "RAM_A14",
+      "RAM_A15",
+      "RAM_A2",
+      "RAM_A3",
+      "RAM_A4",
+      "RAM_A5",
+      "RAM_A6",
+      "RAM_A7",
+      "RAM_A8",
+      "RAM_A9",
+      "RAM_BA0",
+      "RAM_BA1",
+      "RAM_BA2",
+      "RAM_CAS#",
+      "RAM_CK+",
+      "RAM_CK-",
+      "RAM_CKE",
+      "RAM_CS#",
+      "RAM_LDM",
+      "RAM_LDQS+",
+      "RAM_LDQS-",
+      "RAM_ODT",
+      "RAM_RAS#",
+      "RAM_RESET#",
+      "RAM_UDM",
+      "RAM_UDQS+",
+      "RAM_UDQS-",
+      "RAM_WE#"
+    ],
+    "pcbTraces": 16,
+    "vias": 32,
+    "wireLengthMm": 204.40333575347836,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 70,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0
+    },
+    "geometryErrors": [],
+    "validationMs": 276.166733
+  },
+  "physicalFindings": 0,
+  "phases": [
+    {
+      "phase": "byte0",
+      "stage": 0,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2277.847371,
+      "durationMs": 451.1020090000002,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "byte1",
+      "stage": 1,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2816.505409,
+      "durationMs": 465.22738400000026,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "remaining",
+      "stage": 2,
+      "solver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+      "status": "failed",
+      "startedMs": 3358.654755,
+      "durationMs": 22777.386995999997,
+      "connections": 34,
+      "cacheStatus": "disabled"
+    }
+  ],
+  "errors": [
+    "Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_26_fixed_8_3, source_net_34_fixed_4_1, source_net_34_fixed_4_2, source_net_35_fixed_0_3, source_net_37_fixed_1_3, source_net_26_fixed_8_4, source_net_25_fixed_3_4, source_net_27_fixed_15_7, source_net_29_fixed_12_2, source_net_37_fixed_1_1, source_net_33_fixed_2_3, source_net_36_fixed_7_2 (capacity-autorouter@0.0.1132)",
+    "AutorouterError: Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_26_fixed_8_3, source_net_34_fixed_4_1, source_net_34_fixed_4_2, source_net_35_fixed_0_3, source_net_37_fixed_1_3, source_net_26_fixed_8_4, source_net_25_fixed_3_4, source_net_27_fixed_15_7, source_net_29_fixed_12_2, source_net_37_fixed_1_1, source_net_33_fixed_2_3, source_net_36_fixed_7_2 (capacity-autorouter@0.0.1132)"
+  ],
+  "copperSha256": "d50a882d7921a6530b83efb83fdf91696066dd2d63adeeee67debb3975202b5a"
+}

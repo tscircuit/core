@@ -1,0 +1,111 @@
+{
+  "label": "head",
+  "circuit": "glider",
+  "coreCommit": "7d4979ea36397d622aeebdef36880fbba29eab01",
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/capacity-autorouter": "0.0.1132",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "seconds": 8.573540217,
+  "peakRssMb": 1082.01171875,
+  "status": "failed",
+  "assessment": {
+    "requestedNets": 49,
+    "connectedNets": 16,
+    "unconnectedNets": [
+      "/fpga_ddr/DRAM_ADDR0",
+      "/fpga_ddr/DRAM_ADDR1",
+      "/fpga_ddr/DRAM_ADDR10",
+      "/fpga_ddr/DRAM_ADDR11",
+      "/fpga_ddr/DRAM_ADDR12",
+      "/fpga_ddr/DRAM_ADDR13",
+      "/fpga_ddr/DRAM_ADDR14",
+      "/fpga_ddr/DRAM_ADDR2",
+      "/fpga_ddr/DRAM_ADDR3",
+      "/fpga_ddr/DRAM_ADDR4",
+      "/fpga_ddr/DRAM_ADDR5",
+      "/fpga_ddr/DRAM_ADDR6",
+      "/fpga_ddr/DRAM_ADDR7",
+      "/fpga_ddr/DRAM_ADDR8",
+      "/fpga_ddr/DRAM_ADDR9",
+      "/fpga_ddr/DRAM_BA0",
+      "/fpga_ddr/DRAM_BA1",
+      "/fpga_ddr/DRAM_BA2",
+      "/fpga_ddr/DRAM_CASB",
+      "/fpga_ddr/DRAM_CKE",
+      "/fpga_ddr/DRAM_CKN",
+      "/fpga_ddr/DRAM_CKP",
+      "/fpga_ddr/DRAM_CSB",
+      "/fpga_ddr/DRAM_LDM",
+      "/fpga_ddr/DRAM_LDQSN",
+      "/fpga_ddr/DRAM_LDQSP",
+      "/fpga_ddr/DRAM_ODT",
+      "/fpga_ddr/DRAM_RASB",
+      "/fpga_ddr/DRAM_RST",
+      "/fpga_ddr/DRAM_UDM",
+      "/fpga_ddr/DRAM_UDQSN",
+      "/fpga_ddr/DRAM_UDQSP",
+      "/fpga_ddr/DRAM_WEB"
+    ],
+    "pcbTraces": 16,
+    "vias": 32,
+    "wireLengthMm": 283.88156018489684,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 70,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0
+    },
+    "geometryErrors": [],
+    "validationMs": 243.968142
+  },
+  "physicalFindings": 0,
+  "phases": [
+    {
+      "phase": "byte0",
+      "stage": 0,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2100.782217,
+      "durationMs": 303.1604150000003,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "byte1",
+      "stage": 1,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2488.003365,
+      "durationMs": 257.7189080000003,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "remaining",
+      "stage": 2,
+      "solver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+      "status": "failed",
+      "startedMs": 2823.4469980000003,
+      "durationMs": 5155.89567,
+      "connections": 33,
+      "cacheStatus": "disabled"
+    }
+  ],
+  "errors": [
+    "Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_31_fixed_2_2 (capacity-autorouter@0.0.1132)",
+    "AutorouterError: Pipeline9 promoted regional fallback could not resolve immutable fixed route conflict(s): source_net_31_fixed_2_2 (capacity-autorouter@0.0.1132)"
+  ],
+  "copperSha256": "f83d6c40cf103e4013504639708f8118a70e41e255df60f1750a05811f954962"
+}

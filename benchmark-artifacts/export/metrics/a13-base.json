@@ -1,0 +1,94 @@
+{
+  "label": "base",
+  "circuit": "a13",
+  "coreCommit": "fb7f456de0a867c7074a9f196597992e0d1253b9",
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/capacity-autorouter": "0.0.1132",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "seconds": 367.686834862,
+  "peakRssMb": 3555.50390625,
+  "status": "failed",
+  "assessment": {
+    "requestedNets": 96,
+    "connectedNets": 96,
+    "unconnectedNets": [],
+    "pcbTraces": 96,
+    "vias": 81,
+    "wireLengthMm": 1054.656158513831,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 0,
+      "trace_overlap": 3,
+      "pad_trace": 6,
+      "via_trace": 1,
+      "via_pad": 3,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0
+    },
+    "geometryErrors": [],
+    "validationMs": 597.752808
+  },
+  "physicalFindings": 13,
+  "phases": [
+    {
+      "phase": "byte0",
+      "stage": 0,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2580.31742,
+      "durationMs": 11759.862256999999,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "byte1",
+      "stage": 1,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 14489.996559,
+      "durationMs": 12955.780482999999,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "ram_byte0",
+      "stage": 2,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 27621.323108,
+      "durationMs": 29026.468638000002,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "ram_byte1",
+      "stage": 3,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 56830.816871,
+      "durationMs": 89757.151374,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "remaining",
+      "stage": 4,
+      "solver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+      "status": "completed",
+      "startedMs": 146758.612402,
+      "durationMs": 219469.22286800004,
+      "connections": 64,
+      "cacheStatus": "disabled"
+    }
+  ],
+  "errors": [],
+  "copperSha256": "286df6b9a6ca77054278b54262041528d98c73dab0da2d8cdf1c287bca5345d4"
+}

@@ -1,0 +1,74 @@
+{
+  "label": "base",
+  "circuit": "icepi",
+  "coreCommit": "fb7f456de0a867c7074a9f196597992e0d1253b9",
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "0.0.62",
+    "@tscircuit/capacity-autorouter": "0.0.1132",
+    "@tscircuit/fanout-solver": "0.0.88",
+    "@tscircuit/checks": "0.0.282",
+    "@tscircuit/props": "0.0.735",
+    "circuit-json": "0.0.552"
+  },
+  "seconds": 93.551456246,
+  "peakRssMb": 2321.2421875,
+  "status": "passed",
+  "assessment": {
+    "requestedNets": 50,
+    "connectedNets": 50,
+    "unconnectedNets": [],
+    "pcbTraces": 52,
+    "vias": 114,
+    "wireLengthMm": 881.6635173041179,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 0,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0
+    },
+    "geometryErrors": [],
+    "validationMs": 486.60355999999996
+  },
+  "physicalFindings": 0,
+  "phases": [
+    {
+      "phase": "byte0",
+      "stage": 0,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2151.175398,
+      "durationMs": 269.5981660000002,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "byte1",
+      "stage": 1,
+      "solver": "BusLanesPipelineSolver",
+      "status": "completed",
+      "startedMs": 2519.452934,
+      "durationMs": 220.7625640000001,
+      "connections": 8,
+      "cacheStatus": "disabled"
+    },
+    {
+      "phase": "remaining",
+      "stage": 2,
+      "solver": "AutoroutingPipelineSolver9_PreloadedTraceGraph",
+      "status": "completed",
+      "startedMs": 2821.940016,
+      "durationMs": 89757.120914,
+      "connections": 34,
+      "cacheStatus": "disabled"
+    }
+  ],
+  "errors": [],
+  "copperSha256": "42b5099ba1d0d1f6ad97f2eb0a326f8fa59fc929e7e9a8b92f08cc212c2c3445"
+}
