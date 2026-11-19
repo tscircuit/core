@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        a03: [85ee23a25403bbb79be14b6d0783e592928a85a0, 6b715be6f5f8e583c4716ecf21bc57a1523addc6]
+        a03: [a834a9e96cbb0d03c34b614ddd834dc4b5c460af]
     steps:
       - uses: actions/checkout@v4
         with:
