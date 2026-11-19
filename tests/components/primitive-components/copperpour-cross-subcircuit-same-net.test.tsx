@@ -36,10 +36,13 @@ test("connected same-net pours in different subcircuits are not pushed apart", a
 
   await circuit.renderUntilSettled()
 
-  const xs = (circuit.db.pcb_copper_pour.list() as PcbCopperPourBRep[]).map(
-    (pour) => pour.brep_shape.outer_ring.vertices.map((point) => point.x),
+  const [left, right] = (
+    circuit.db.pcb_copper_pour.list() as PcbCopperPourBRep[]
   )
-  expect(xs).toHaveLength(2)
+    .map((pour) => pour.brep_shape.outer_ring.vertices.map((point) => point.x))
+    .sort((a, b) => Math.min(...a) - Math.min(...b))
+  expect(right).toBeDefined()
   // The pours still overlap, so the copper stays connected
-  expect(Math.max(...xs[0]!)).toBeGreaterThan(Math.min(...xs[1]!))
+  expect(Math.max(...left!)).toBeGreaterThan(Math.min(...right!))
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

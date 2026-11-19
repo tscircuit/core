@@ -2,9 +2,9 @@ import { expect, test } from "bun:test"
 import type { PcbCopperPourBRep } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Pours are solved one subcircuit at a time. A GND pour on the board and a VCC
-// pour in a child subcircuit have outlines that overlap by 1mm; their copper
-// must still be kept apart by the pour clearance.
+// A GND pour on the board and a VCC pour in a child subcircuit have outlines
+// that overlap by 1mm; their copper must still be kept apart by the pour
+// clearance.
 
 test("different-net copper pours in different subcircuits keep their clearance", async () => {
   const { circuit } = getTestFixture()
