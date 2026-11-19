@@ -8,37 +8,74 @@ import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
 import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-inside-copper-pour"
 
-// Each CopperPour queues this phase, but the solver processes every pour in a
-// subcircuit together. Share that batch across the component-owned effects.
+// Each CopperPour queues this phase, but the solver processes every pour on a
+// board together, including pours in nested subcircuits, so different-net pours
+// keep their clearance from each other. Share that batch across the effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
+// Pours already inserted; a pour whose effect starts after its board's batch
+// finished is solved against them without inserting them again.
+const renderedCopperPours = new WeakSet<CopperPour>()
+
+const getCopperPourBatchOwner = (copperPour: CopperPour): ISubcircuit =>
+  (copperPour._getBoard() as ISubcircuit | undefined) ??
+  copperPour.getSubcircuit()
 const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
 
-const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
+const renderAllCopperPoursForBoard = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
 
   const { db } = subcircuit.root
   const copperPours = subcircuit
-    .selectAll<CopperPour>("copperpour")
-    .filter((copperPour) => copperPour.getSubcircuit() === subcircuit)
+    .getDescendants()
+    .filter(
+      (component): component is CopperPour =>
+        component.componentName === "CopperPour" &&
+        getCopperPourBatchOwner(component as CopperPour) === subcircuit,
+    )
+  // The solver gives later regions priority where different-net pours meet. A
+  // pour in a nested subcircuit wins over its parents' pours, and pours already
+  // rendered keep their copper when a pour arrives late.
+  const getPriority = (copperPour: CopperPour) => {
+    if (renderedCopperPours.has(copperPour)) return Number.MAX_SAFE_INTEGER
+    let depth = 0
+    for (let parent = copperPour.parent; parent; parent = parent.parent) {
+      if (parent.isSubcircuit) depth++
+    }
+    return depth
+  }
+  copperPours.sort((a, b) => getPriority(a) - getPriority(b))
+
   const resolvedCopperPours: Array<{
     copperPour: CopperPour
     sourceNetId: string
+    isNew: boolean
   }> = []
+  // A pour with a bad connectsTo must not stop the board's other pours.
+  const renderErrors: unknown[] = []
 
   for (const copperPour of copperPours) {
+    const isNew = !renderedCopperPours.has(copperPour)
+    renderedCopperPours.add(copperPour)
     const { _parsedProps: props } = copperPour
-    const net = subcircuit.selectOne<Net>(props.connectsTo)
-    const sourceNetId = net?.source_net_id
-    if (!sourceNetId) {
-      copperPour.renderError(
-        `Net "${props.connectsTo}" not found for copper pour`,
-      )
+    let sourceNetId: string | undefined
+    try {
+      sourceNetId = copperPour
+        .getSubcircuit()
+        .selectOne<Net>(props.connectsTo)?.source_net_id
+      if (!sourceNetId) {
+        throw new Error(`Net "${props.connectsTo}" not found for copper pour`)
+      }
+    } catch (error) {
+      if (isNew) renderErrors.push(error)
       continue
     }
-    resolvedCopperPours.push({ copperPour, sourceNetId })
+    resolvedCopperPours.push({ copperPour, sourceNetId, isNew })
   }
 
-  if (resolvedCopperPours.length === 0) return
+  if (!resolvedCopperPours.some(({ isNew }) => isNew)) {
+    if (renderErrors.length > 0) throw renderErrors[0]
+    return
+  }
 
   const circuitJson = db.toArray()
   const boardComponent = subcircuit._getBoard()
@@ -109,8 +146,9 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   for (const [
     regionIndex,
-    { copperPour, sourceNetId },
+    { copperPour, sourceNetId, isNew },
   ] of resolvedCopperPours.entries()) {
+    if (!isNew) continue
     const { _parsedProps: props } = copperPour
     // Soldermask only exists on the top and bottom layers, so an inner-layer
     // pour is never covered with soldermask.
@@ -125,7 +163,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         layer: props.layer,
         brep_shape: brepShape,
         source_net_id: sourceNetId,
-        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+        subcircuit_id: copperPour.getSubcircuit().subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
       })
 
@@ -135,6 +173,8 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
       })
     }
   }
+
+  if (renderErrors.length > 0) throw renderErrors[0]
 }
 
 export function CopperPour_doInitialPcbCopperPourRender(
@@ -143,14 +183,14 @@ export function CopperPour_doInitialPcbCopperPourRender(
   if (copperPour.root?.pcbDisabled) return
 
   copperPour._queueAsyncEffect("PcbCopperPourRender", async () => {
-    const subcircuit = copperPour.getSubcircuit()
+    const subcircuit = getCopperPourBatchOwner(copperPour)
     const pendingRender = pendingCopperPourRenders.get(subcircuit)
     if (pendingRender) {
       await pendingRender
       return
     }
 
-    const renderPromise = renderAllCopperPoursForSubcircuit(subcircuit)
+    const renderPromise = renderAllCopperPoursForBoard(subcircuit)
     pendingCopperPourRenders.set(subcircuit, renderPromise)
     try {
       await renderPromise

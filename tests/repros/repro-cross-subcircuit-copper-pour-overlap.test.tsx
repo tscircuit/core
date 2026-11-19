@@ -2,12 +2,11 @@ import { expect, test } from "bun:test"
 import type { PcbCopperPourBRep } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// Pours are solved one subcircuit at a time, and a subcircuit's pours are not
-// cleared against pours already placed by another subcircuit. Here a GND pour
-// on the board and a VCC pour in a child subcircuit have outlines that overlap
-// by 1mm, so their copper overlaps (a GND/VCC short) with no error.
+// A GND pour on the board and a VCC pour in a child subcircuit have outlines
+// that overlap by 1mm; their copper must still be kept apart by the pour
+// clearance.
 
-test("different-net copper pours in different subcircuits overlap", async () => {
+test("different-net copper pours in different subcircuits keep their clearance", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -52,7 +51,6 @@ test("different-net copper pours in different subcircuits overlap", async () => 
   const gndRight = Math.max(...getPourXs("GND"))
   const vccLeft = Math.min(...getPourXs("VCC"))
 
-  // BUG: the GND copper extends past the start of the VCC copper
-  expect(gndRight).toBeGreaterThan(vccLeft)
+  expect(vccLeft - gndRight).toBeCloseTo(0.2, 3)
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
