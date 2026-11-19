@@ -488,7 +488,19 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
       primitiveContainer?.props?.layer !== undefined
         ? primitiveContainer?._parsedProps.layer
         : undefined
-    return primitiveContainerLayer ?? maybeFlipLayer("top")
+    // An authored component side normally wins over the footprint's original
+    // side, but enclosing group reflections must still swap that side.
+    if (primitiveContainerLayer !== undefined) {
+      if (!this._isPcbLayerFlippedByAncestorGroup()) {
+        return primitiveContainerLayer
+      }
+      return primitiveContainerLayer === "top"
+        ? "bottom"
+        : primitiveContainerLayer === "bottom"
+          ? "top"
+          : primitiveContainerLayer
+    }
+    return maybeFlipLayer("top")
   }
 
   getAvailablePcbLayers(): LayerRef[] {
