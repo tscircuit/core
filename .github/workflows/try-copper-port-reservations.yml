@@ -40,7 +40,7 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
-        circuit: [orangecrab, a64, h616, glider, h3, stmp157, a13, butterstick, imx6, icepi]
+        circuit: [imx6, icepi, a13]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,6 +82,11 @@ jobs:
           rows=[]
           for case in r["cases"]:
             a=case.get("assessment") or {}
+            progress=case.get("progress") or {}
+            print("FAILURE_STAGES="+json.dumps([{"phase":p["phase"],"status":p["status"],"solver":p["solver"],"connections":p["connections"]} for p in progress.get("phases",[])]))
+            import re
+            errors=[re.sub(r"(source_net|source_trace|pcb_port|cmn)_?[A-Za-z0-9_-]+","<id>",e) for e in progress.get("errors",[])]
+            print("FAILURE_CAUSE="+json.dumps(errors))
             rows.append({"board":case["circuit"],"coreCommit":r["coreCommit"],"dependencies":r["dependencies"],"status":case["status"],"connected":a.get("connectedNets"),"requested":a.get("requestedNets"),"findings":a.get("findings"),"geometryErrorCount":len(a.get("geometryErrors",[])),"seconds":case["wallMs"]/1000,"peakRssMb":case["peakRssMb"]})
           Path("aggregate.json").write_text(json.dumps(rows,indent=2))
           print("CANONICAL_AGGREGATE="+json.dumps(rows))
