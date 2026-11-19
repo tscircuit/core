@@ -5,6 +5,7 @@ import type { CadModelProps } from "@tscircuit/props"
 import type { CadComponent } from "circuit-json"
 import { distance } from "circuit-json"
 import { constructAssetUrl } from "lib/utils/constructAssetUrl"
+import { shouldFlipPcbGroupMember } from "lib/utils/pcb/pcb-group-member-reflection"
 import { decomposeTSR } from "transformation-matrix"
 import { z } from "zod"
 import { getFileExtension } from "../base-components/NormalComponent/utils/getFileExtension"
@@ -79,7 +80,10 @@ export class CadModel extends PrimitiveComponent<typeof cadmodelProps> {
         ? distance.parse(props.zOffsetFromSurface)
         : 0
 
-    const layer = parent.props.layer === "bottom" ? "bottom" : "top"
+    const componentLayer = shouldFlipPcbGroupMember(parent)
+      ? pcb_component?.layer
+      : parent.props.layer
+    const layer = componentLayer === "bottom" ? "bottom" : "top"
 
     const ext = props.modelUrl ? getFileExtension(props.modelUrl) : undefined
     const modelUrlWithoutExtFragment = props.modelUrl?.replace(/#ext=\w+$/, "")

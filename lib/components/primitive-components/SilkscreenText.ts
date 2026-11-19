@@ -1,6 +1,7 @@
 import { silkscreenTextProps, type PcbStyle } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
+import { shouldFlipPcbGroupMember } from "lib/utils/pcb/pcb-group-member-reflection"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
 import {
   applyToPoint,
@@ -17,12 +18,25 @@ export class SilkscreenText extends PrimitiveComponent<
   pcb_silkscreen_text_ids: string[] = []
   isPcbPrimitive = true
   _footprinterFontSize?: number
+  _pcbRotationWhenGroupFlipped?: number
 
   get config() {
     return {
       componentName: "SilkscreenText",
       zodProps: silkscreenTextProps,
     }
+  }
+
+  private get groupFlippedTextRotation(): number | undefined {
+    if (this._pcbRotationWhenGroupFlipped === undefined) return undefined
+    const container = this.getPrimitiveContainer()
+    return container && shouldFlipPcbGroupMember(container)
+      ? this._pcbRotationWhenGroupFlipped
+      : undefined
+  }
+
+  override _getPcbRotationBeforeLayout(): number | null {
+    return this.groupFlippedTextRotation ?? super._getPcbRotationBeforeLayout()
   }
 
   doInitialPcbPrimitiveRender(): void {
@@ -37,8 +51,9 @@ export class SilkscreenText extends PrimitiveComponent<
     let rotation = 0
 
     // If the component has an explicit rotation, use that
-    if (props.pcbRotation !== undefined && props.pcbRotation !== 0) {
-      rotation = props.pcbRotation
+    const textRotation = this.groupFlippedTextRotation ?? props.pcbRotation
+    if (textRotation !== undefined && textRotation !== 0) {
+      rotation = textRotation
     } else {
       // Otherwise, check for parent group rotations
       const globalTransform = this._computePcbGlobalTransformBeforeLayout()
@@ -86,6 +101,24 @@ export class SilkscreenText extends PrimitiveComponent<
     }) as PcbStyle["silkscreenTextVisibility"]
 
     if (resolvedPcbSxVisibility === "hidden") return
+    if (
+      container?.componentName === "PinHeader" &&
+      container.source_component_id &&
+      shouldFlipPcbGroupMember(container)
+    ) {
+      const message = `Pin header ${container.name ?? "(unnamed component)"} uses its existing silkscreen text rotation rules in a bottom-side group. Flip the header explicitly to mirror its labels.`
+      const warning = {
+        source_component_id: container.source_component_id,
+        property_name: "layer",
+        message,
+      }
+      if (!db.source_property_ignored_warning.getWhere(warning)) {
+        db.source_property_ignored_warning.insert({
+          ...warning,
+          error_type: "source_property_ignored_warning",
+        })
+      }
+    }
 
     const fontSize =
       props.fontSize ??

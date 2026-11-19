@@ -18,6 +18,10 @@ import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
+import {
+  findPcbGroupMemberWithUnsupportedPlacement,
+  shouldFlipPcbGroupMember,
+} from "lib/utils/pcb/pcb-group-member-reflection"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -327,6 +331,9 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect)
     } else if (props.shape === "polygon") {
+      // SMT polygon points are emitted as right-handed board-world points
+      // in mm (+X right, +Y top, +Z above) and include translation.
+      // Plated-hole pad_outline vertices stay local to the plated pad origin.
       const localPoints = props.points.map(({ x, y }) => ({
         x: distance.parse(x),
         y: distance.parse(y),
@@ -479,11 +486,21 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   }
 
   private resolvePcbLayer(): LayerRef {
-    const { maybeFlipLayer } = this._getPcbPrimitiveFlippedHelpers()
+    const { componentLayer, maybeFlipLayer } =
+      this._getPcbPrimitiveFlippedHelpers()
     if (this._parsedProps.layer !== undefined) {
       return maybeFlipLayer(this._parsedProps.layer)
     }
     const primitiveContainer = this.getPrimitiveContainer()
+    if (primitiveContainer && shouldFlipPcbGroupMember(primitiveContainer)) {
+      return componentLayer ?? maybeFlipLayer("top")
+    }
+    if (
+      primitiveContainer &&
+      findPcbGroupMemberWithUnsupportedPlacement(primitiveContainer)
+    ) {
+      return maybeFlipLayer("top")
+    }
     const primitiveContainerLayer =
       primitiveContainer?.props?.layer !== undefined
         ? primitiveContainer?._parsedProps.layer
