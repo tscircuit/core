@@ -1,4 +1,4 @@
-name: Verify native pad guidance on iCEPi
+name: Verify iCEPi native routing with current main
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - variant: complete
-            source: 0477e6f5d46e0f43910ec285e16871ba8ad0296f
+            source: cf5e59215399130d7205af1fa5bc5a86166567a0
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
