@@ -1,4 +1,4 @@
-name: Trace native H616 cleanup by stage
+name: Trace native cleanup with immutable path and anchor context
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -15,6 +15,8 @@ jobs:
             source: 94904a42cd48f1113d4c89be57b791b45966a472
           - variant: kernel
             source: bf3a0a6e7c31c4cb30f433614c15ab752e88a761
+          - variant: anchors
+            source: 0643801a4c8be21fef6835040c979274fdb7bd89
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -52,10 +54,10 @@ jobs:
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 50
     strategy:
-      max-parallel: 5
+      max-parallel: 3
       fail-fast: false
       matrix:
-        variant: [base, kernel]
+        variant: [base, kernel, anchors]
         circuit: [h616, orangecrab]
     steps:
       - uses: actions/checkout@v4
@@ -91,6 +93,10 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
+          for log in Path("results").rglob("render.log"):
+            for line in log.read_text().splitlines():
+              if line.startswith("NATIVE_STAGE_COUNTS="):
+                print(line)
           source=Path("results/results.json")
           if not source.exists():
             raise RuntimeError("Native worker did not produce a result summary")
@@ -112,17 +118,3 @@ jobs:
         with:
           name: copper-port-aggregate-${{ matrix.variant }}-${{ matrix.circuit }}
           path: aggregate.json
-  inherited-regression:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: ${{ matrix.source }}
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - run: bun install
-      - run: bun test --timeout 9999999 tests/bugs/bugreport107-board-1726.test.ts
