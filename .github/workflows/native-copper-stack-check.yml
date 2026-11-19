@@ -69,24 +69,15 @@ jobs:
           method=method.replace(marker,extra,1)
           p.write_text(s[:a]+method+s[b:])
           PY
-      - name: Verify explicit physical drill spans in existing repair02 checks
+      - name: Retain existing anchor handling for editable preload regions
         working-directory: autorouter
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          root=Path("node_modules/high-density-repair02").resolve()
-          p=root/"lib/high-density-repair-solver/functions/FixedCopperClearanceGuard.ts"
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
           s=p.read_text()
-          assert "minZ: minZ === Infinity ? 0 : minZ," in s
-          s=s.replace("minZ: minZ === Infinity ? 0 : minZ,","minZ: via.minZ ?? (minZ === Infinity ? 0 : minZ),")
-          s=s.replace("maxZ: maxZ === -Infinity ? 1 : maxZ,","maxZ: via.maxZ ?? (maxZ === -Infinity ? 1 : maxZ),")
-          p.write_text(s)
-          p=root/"lib/high-density-repair-solver/functions/repairNodeClearance.ts"
-          s=p.read_text()
-          assert "minZ: layers.length ? Math.min(...layers) : 0," in s
-          s=s.replace("minZ: layers.length ? Math.min(...layers) : 0,","minZ: via.minZ ?? (layers.length ? Math.min(...layers) : 0),")
-          s=s.replace("maxZ: layers.length ? Math.max(...layers) : 1,","maxZ: via.maxZ ?? (layers.length ? Math.max(...layers) : 1),")
-          p.write_text(s)
+          assert "      preserveTopologyPortAnchors: true," in s
+          p.write_text(s.replace("      preserveTopologyPortAnchors: true,","      preserveTopologyPortAnchors: this.params.preservePhysicalGeometry,",1))
           PY
       - run: bun run build
         working-directory: autorouter
