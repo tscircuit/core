@@ -1,0 +1,80 @@
+name: Verify complete native trace Core integration
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-complete-ci.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 75a6381c6985cd48f91b30516a828f6a771cfce0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - run: bun install
+      - run: bun run build
+      - run: |
+          mkdir candidate
+          npm pack --pack-destination candidate
+          mv candidate/*.tgz candidate/autorouter.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-candidate
+          path: candidate/autorouter.tgz
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [1,2,3,4,5,6,7,8,9,10]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bb016342151867dcf6947ebae773476a8ae5074a
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-candidate
+          path: candidate
+      - name: Install exact source-built native candidate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          data=json.loads(p.read_text())
+          data["devDependencies"]["@tscircuit/capacity-autorouter"]="file:./candidate/autorouter.tgz"
+          p.write_text(json.dumps(data,indent=2)+"\n")
+          PY
+          bun install
+      - name: Generate original ten-node test plans
+        env:
+          TEST_PLAN_NODE_COUNT: '10'
+        run: bun run scripts/generate-test-plan.ts
+      - name: Preserve original functional assertions
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: |
+          mapfile -t test_files < .github/test-plans/node${{ matrix.node }}-testplan.txt
+          test ${#test_files[@]} -gt 0
+          bun test "${test_files[@]}" --timeout 30000
+      - name: Save generated public test SVG baselines
+        if: success()
+        run: |
+          git config user.name "tscircuit-bot"
+          git config user.email "actions@github.com"
+          git add -- '*.snap.svg'
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Update verified native trace SVGs for Core shard ${{ matrix.node }}"
+          git push origin HEAD:analysis/verified-native-core-round2-node${{ matrix.node }}
