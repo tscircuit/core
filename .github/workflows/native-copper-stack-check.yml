@@ -1,4 +1,4 @@
-name: Check native-copper A03 search guidance
+name: Inspect native routing handoff consistency
 on:
   push:
     branches: [analysis/native-copper-stack-check]
@@ -8,7 +8,7 @@ permissions:
 jobs:
   routing:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,7 +26,7 @@ jobs:
           bun-version: '1.4.3'
       - run: bun install
         working-directory: autorouter
-      - name: Isolate saved-copper constraints in the existing search
+      - name: Retain copper-only guidance and log reference counts
         working-directory: autorouter
         run: |
           python3 - <<'PY'
@@ -36,10 +36,34 @@ jobs:
           a=s.index("    for (const obstacle of obstacles)")
           b=s.rfind("    return true")
           p.write_text(s[:a]+s[b:])
+          p=Path("lib/index.ts")
+          p.write_text(p.read_text()+'\nexport { getConnectivityMapFromSimpleRouteJson as getNativeInputConnectivityForAnalysis } from "./utils/getConnectivityMapFromSimpleRouteJson"\n')
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
+          s=p.read_text()
+          a=s.index("  getOutputSimplifiedPcbTraces():")
+          b=s.index("  getOutputSimpleRouteJson():",a)
+          method=s[a:b].replace("    return [","    const output = [",1)
+          marker="    ]\n  }"
+          extra='''    ]
+              const evaluate = createPipeline9AutoroutingDrcEvaluator({
+                inputSrj: this.originalSrj,
+                srjWithPointPairs: this.srjWithPointPairs!,
+                includeBoardClearance: true,
+              })
+              const checked = evaluate(output, {includeTraceContinuity:false})
+              console.log("P9_FINAL_REFERENCE", JSON.stringify({
+                count: checked.errors.length,
+                viaTrace: checked.errors.filter(error => error.type === "pcb_via_trace_clearance_error").length,
+              }))
+              return output
+            }'''
+          assert marker in method
+          method=method.replace(marker,extra,1)
+          p.write_text(s[:a]+method+s[b:])
           PY
       - run: bun run build
         working-directory: autorouter
-      - name: Install the built autorouter in Core
+      - name: Install the built autorouter
         run: |
           python3 - <<'PY'
           import json
@@ -51,58 +75,65 @@ jobs:
           PY
       - run: bun install
         working-directory: core
-      - name: Classify the final fanout clearance finding without exporting geometry
+      - name: Compare saved-path and emitted-copper consistency without exporting identifiers or coordinates
         working-directory: core
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path("tests/repros/repro-fanout-routed-layer-impact.test.tsx")
-          s=p.read_text().replace('import { Fragment } from "react"','import { Fragment } from "react"\nimport { runAllRoutingChecks } from "@tscircuit/checks"')
-          extra=r'''  const finalFindings = await runAllRoutingChecks(json)
-            console.log("FINAL_ROUTING_COUNT", finalFindings.length)
+          s=p.read_text().replace('import { Fragment } from "react"','import { Fragment } from "react"\nimport { runAllRoutingChecks } from "@tscircuit/checks"\nimport { getNativeInputConnectivityForAnalysis } from "@tscircuit/capacity-autorouter"\nimport type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"')
+          observe=r'''  const inputs: SimpleRouteJson[] = []
+            const outputs: SimpleRouteJson[] = []
+            circuit.on("autorouting:start", ({simpleRouteJson}) => inputs.push(structuredClone(simpleRouteJson)))
+            circuit.on("autorouting:end", ({simpleRouteJson}) => {
+              if(simpleRouteJson) outputs.push(structuredClone(simpleRouteJson))
+            })
+          '''
+          s=s.replace("  circuit.add(",observe+"  circuit.add(",1)
+          extra=r'''  console.log("FINAL_ROUTING_COUNT", (await runAllRoutingChecks(json)).length)
             const clearance = json.find(element => element.type === "pcb_via_trace_clearance_error")
             if (clearance?.type === "pcb_via_trace_clearance_error") {
               const via = circuit.db.pcb_via.get(clearance.pcb_via_id)
               const viaTraceId = (via as { pcb_trace_id?: string } | undefined)?.pcb_trace_id
               const viaTrace = viaTraceId ? circuit.db.pcb_trace.get(viaTraceId) : undefined
               const target = circuit.db.pcb_trace.get(clearance.pcb_trace_id)
-              console.log("CLEARANCE_CLASSIFICATION", JSON.stringify({
-                viaHasOwner: Boolean(viaTrace),
-                viaOwnerFromFanout: Boolean(viaTraceId?.startsWith("fanout:")),
-                targetFromFanout: clearance.pcb_trace_id.startsWith("fanout:"),
-                sameSource: Boolean(viaTrace?.source_trace_id) && viaTrace?.source_trace_id === target?.source_trace_id,
-                viaPhysicalLayerCount: via?.layers.length,
-                viaInOwnerRoute: Boolean(via && viaTrace?.route.some(point => point.route_type === "via" && Math.hypot(point.x-via.x,point.y-via.y)<0.001)),
+              const input = inputs.at(-1)
+              const saved = inputs.flatMap(input => input.traces ?? []).find(trace => trace.pcb_trace_id === clearance.pcb_trace_id)
+              const output = outputs.flatMap(output => output.traces ?? []).find(trace => trace.route.some(point => point.route_type === "via" && via && Math.hypot(point.x-via.x,point.y-via.y)<1e-6))
+              const point = output?.route.find(point => point.route_type === "via" && via && Math.hypot(point.x-via.x,point.y-via.y)<1e-6)
+              let viaSizeMatches = false
+              if(point?.route_type === "via" && via) viaSizeMatches=(point.via_diameter ?? input?.minViaPadDiameter ?? input?.minViaDiameter)===via.outer_diameter
+              const map = input ? getNativeInputConnectivityForAnalysis(input) : undefined
+              const viaNet = map?.getNetConnectedToId(viaTrace?.source_trace_id ?? output?.connection_name ?? "")
+              const savedNet = map?.getNetConnectedToId(saved?.connection_name ?? target?.source_trace_id ?? "")
+              const sameSource = Boolean(viaTrace?.source_trace_id) && viaTrace?.source_trace_id===target?.source_trace_id
+              const wirePoints = saved?.route.filter(point => point.route_type==="wire") ?? []
+              let droppedLegs = 0
+              for(let i=1;i<(saved?.route.length ?? 0);i++){
+                const a=saved!.route[i-1]!,b=saved!.route[i]!
+                if(((a.route_type==="wire" && b.route_type==="via")||(a.route_type==="via" && b.route_type==="wire")) && Math.hypot(a.x-b.x,a.y-b.y)>1e-6) droppedLegs++
+              }
+              console.log("HANDOFF_CONSISTENCY",JSON.stringify({
+                inputPhaseCount:inputs.length,
+                outputPhaseCount:outputs.length,
+                targetSavedPathFound:Boolean(saved),
+                targetIsImmutable:saved?.isFixed===true,
+                savedWirePointCount:wirePoints.length,
+                nonzeroWireViaLegs:droppedLegs,
+                activeOutputPathFound:Boolean(output),
+                viaSizeMatches,
+                bothNativeNetsResolved:Boolean(viaNet && savedNet),
+                nativeNetsMatch:Boolean(viaNet && savedNet) && viaNet===savedNet,
+                coreSourcesMatch:sameSource,
+                inputClearanceMatchesBoard:input?.minTraceToPadEdgeClearance===clearance.minimum_clearance,
               }))
             }
           '''
           s=s.replace("  expect(routingErrors).toEqual([])",extra+"  expect(routingErrors).toEqual([])",1)
           p.write_text(s)
           PY
-      - name: Preserve the existing native handoff to the bus-lanes adapter
+      - name: Run original public Core regression tests
         working-directory: core
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("lib/components/primitive-components/Group/Group.ts")
-          s=p.read_text()
-          old="      if (!isTestPointPhase) {\n        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)"
-          new='      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {\n        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)'
-          assert old in s
-          p.write_text(s.replace(old,new,1))
-          PY
-      - name: Run original Core routing and DRC assertions
         env:
           BUN_UPDATE_SNAPSHOTS: '1'
         run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
-        working-directory: core
-      - name: Export the approved public test SVG for visual inspection
-        if: always()
-        working-directory: core
-        run: |
-          python3 - <<'PY'
-          import base64
-          from pathlib import Path
-          p=Path("tests/repros/__snapshots__/repro-fanout-routed-layer-impact-pcb.snap.svg")
-          print("PUBLIC_TEST_SVG "+base64.b64encode(p.read_bytes()).decode())
-          PY
