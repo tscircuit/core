@@ -1,0 +1,47 @@
+name: Investigate native A64 canonical fixed traces
+on:
+  push:
+    branches: [analysis/a64-canonical-fixed-traces]
+    paths: [.github/workflows/a64-canonical-traces.yml]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - name: Capture actual native A64 input before and after Core marks fixed copper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/utils/autorouting/with-fixed-traces.ts")
+          s=p.read_text()
+          s='import {writeFileSync} from "node:fs"\nimport {gzipSync} from "node:zlib"\n'+s
+          needle='  if (fixedTraceIds.size === 0) return input'
+          assert needle in s
+          s=s.replace(needle,'  if (input.connections.length === 43 && input.traces?.length) writeFileSync(process.env.CAPTURE_DIRECTORY + "/before-marking.srj.json.gz", gzipSync(JSON.stringify(input)))\n'+needle)
+          p.write_text(s)
+          PY
+          CAPTURE_DIRECTORY="$GITHUB_WORKSPACE/captured/base" bun capture-a64.private.tsx
+          cp lib/utils/autorouting/with-fixed-traces.ts /tmp/base-fixed-traces.ts
+          cp canonical-fixed-traces.private.ts lib/utils/autorouting/with-fixed-traces.ts
+          CAPTURE_DIRECTORY="$GITHUB_WORKSPACE/captured/head" bun capture-a64.private.tsx
+      - name: Preserve native circuit captures
+        if: always()
+        run: |
+          git checkout -- lib/utils/autorouting/with-fixed-traces.ts
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add captured
+          git commit -m "Capture native A64 exact fixed-trace handoff"
+          git push origin HEAD:analysis/a64-canonical-fixed-traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-a64-canonical-captures
+          path: captured
