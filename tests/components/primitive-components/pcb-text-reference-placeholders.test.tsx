@@ -24,6 +24,11 @@ const TwoPadWithNotes = (props: { name: string; pcbX: number }) => (
           portHints={["2"]}
         />
         <fabricationnotetext text="{REF}" pcbY={1.5} fontSize={0.8} />
+        <fabricationnotetext
+          text={"${REFERENCE} / {REF}"}
+          pcbY={2.5}
+          fontSize={0.3}
+        />
         <coppertext text="{REFERENCE}" pcbY={0} fontSize={0.6} />
         <pcbnotetext text="{NAME}" pcbY={-1.5} fontSize={0.8} />
       </footprint>
@@ -46,7 +51,7 @@ test("resolves component name placeholders in fabrication note, copper, and pcb 
 
   expect(
     circuit.db.pcb_fabrication_note_text.list().map((item) => item.text),
-  ).toEqual(["U1", "U2", "REV A"])
+  ).toEqual(["U1", "${REFERENCE} / U1", "U2", "${REFERENCE} / U2", "REV A"])
 
   expect(circuit.db.pcb_copper_text.list().map((item) => item.text)).toEqual([
     "U1",
