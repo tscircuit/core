@@ -1,0 +1,82 @@
+name: Verify exact fixed-copper regional candidates
+on:
+  push:
+    branches: [analysis/try-canonical-regional-copper]
+    paths: [.github/workflows/try-canonical-regional-copper.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: b6991ab1aacccf2446e9742cba64f62efe5bd63a
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - run: bunx tsc --noEmit
+      - run: bun run build
+      - run: |
+          mkdir -p packed
+          npm pack --ignore-scripts --pack-destination packed
+          cp packed/*.tgz candidate.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-regional-candidate
+          path: candidate.tgz
+  benchmark:
+    needs: build
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [orangecrab, a64, h616, glider]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d4979ea36397d622aeebdef36880fbba29eab01
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: canonical-regional-candidate
+          path: candidate
+      - name: Install the source-built candidate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          m=json.loads(p.read_text())
+          m["devDependencies"]["@tscircuit/capacity-autorouter"]="file:./candidate/candidate.tgz"
+          p.write_text(json.dumps(m,indent=2)+"\n")
+          PY
+          bun install --ignore-scripts
+      - name: Route the actual native TSX circuit
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200
+      - name: Report actual connected nets and findings
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("results/results.json").read_text())
+          for row in r["cases"]:
+            print("REGIONAL_COPPER="+json.dumps(row))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-regional-${{ matrix.circuit }}
+          path: results/
