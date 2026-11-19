@@ -162,7 +162,6 @@ jobs:
             }
           '''
           s=s.replace("  expect(routingErrors).toEqual([])",extra+"  expect(routingErrors).toEqual([])",1)
-          s=s.replace("expect(vias).toHaveLength(36)","expect(vias).toHaveLength(38)")
           p.write_text(s)
           PY
       - name: Run original public Core regression tests
