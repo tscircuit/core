@@ -47,12 +47,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: via
+          - variant: complete
             circuit: imx6
-          - variant: via
+          - variant: complete
             circuit: icepi
-          - variant: via
-            circuit: a64
     steps:
       - uses: actions/checkout@v4
         with:
