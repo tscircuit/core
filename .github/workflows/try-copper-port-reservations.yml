@@ -1,4 +1,4 @@
-name: Verify existing cleanup geometry with native DDR paths
+name: Verify canonical native and active net identity
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: a41d4aa99b37d56454b359b82f72856945b34c53
+          ref: 94904a42cd48f1113d4c89be57b791b45966a472
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: a41d4aa99b37d56454b359b82f72856945b34c53
+          ref: 94904a42cd48f1113d4c89be57b791b45966a472
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
