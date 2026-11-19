@@ -1,4 +1,4 @@
-name: Trace native cleanup with immutable path and anchor context
+name: Compare native context in global and regional force cleanup
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -11,12 +11,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: base
-            source: 94904a42cd48f1113d4c89be57b791b45966a472
-          - variant: kernel
-            source: bf3a0a6e7c31c4cb30f433614c15ab752e88a761
-          - variant: anchors
-            source: 0643801a4c8be21fef6835040c979274fdb7bd89
+          - variant: global
+            source: 729be3bb09f447ce15877eab95994e45048d2ce3
+          - variant: regional
+            source: f0d36cb0dad0c9e452c9cf88fef55561e7a23459
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -38,7 +36,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          p.write_text(p.read_text()+"\n// Analysis-only stage counts; no route coordinates or net identifiers are logged.\nimport { evaluateRelaxedDrc as evaluateNativeStageDrc } from \"lib/testing/evaluate-relaxed-drc\"\nconst nativeStageStep = AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step\nAutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step = function (): void {\n  const stageIndex = this.currentPipelineStepIndex\n  const stage = this.pipelineDef[stageIndex]?.solverName\n  nativeStageStep.call(this)\n  if (this.currentPipelineStepIndex === stageIndex || !stage) return\n  const measuredStages = new Set([\n    \"highDensityRouteSolver\", \"highDensityForceImproveSolver\",\n    \"highDensityRepairSolver\", \"highDensityStitchSolver\",\n    \"traceSimplificationSolver\", \"traceWidthSolver\",\n    \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\",\n    \"effortCleanupSolver\", \"lengthMatchingPostProcessingSolver\",\n    \"powerTraceExpansionSolver\",\n  ])\n  if (!measuredStages.has(stage)) return\n  const instance = (this as any)[stage]\n  let hdRoutes: HighDensityRoute[] = []\n  let routedTraces: SimplifiedPcbTraces\n  if (stage === \"powerTraceExpansionSolver\") {\n    routedTraces = instance.getOutput()\n  } else {\n    if (stage === \"highDensityRouteSolver\") hdRoutes = instance.routes\n    else if (stage === \"highDensityStitchSolver\") hdRoutes = instance.mergedHdRoutes\n    else if (stage === \"traceSimplificationSolver\") hdRoutes = instance.simplifiedHdRoutes\n    else if (stage === \"traceWidthSolver\") hdRoutes = instance.getHdRoutesWithWidths()\n    else if (stage === \"lengthMatchingPostProcessingSolver\") hdRoutes = instance.getOutput().hdRoutes\n    else hdRoutes = instance.getOutput()\n    routedTraces = convertPipeline7HdRoutesToSimplifiedPcbTraces({\n      connections: this.netToPointPairsSolver!.newConnections,\n      originalConnections: this.originalSrj.connections,\n      hdRoutes: canonicalizePipeline9HdRoutes(hdRoutes),\n      layerCount: this.srj.layerCount,\n      obstacles: this.srj.obstacles,\n      defaultViaHoleDiameter: this.viaHoleDiameter,\n      connMap: this.connMap,\n    })\n  }\n  const input = this.originalSrj\n  const { errors } = evaluateNativeStageDrc({\n    inputSrj: input,\n    srjWithPointPairs: this.srjWithPointPairs!,\n    routedTraces,\n    drcOptions: {\n      includeTraceContinuity: false,\n      traceClearance: input.minTraceToPadEdgeClearance,\n      viaClearance: input.minPadEdgeToPadEdgeClearance,\n      viaToPadClearance: input.minViaEdgeToPadEdgeClearance,\n      holeClearance: input.minTraceToHoleEdgeClearance,\n    },\n  })\n  const counts: Record<string, number> = {}\n  for (const error of errors) counts[error.type] = (counts[error.type] ?? 0) + 1\n  console.log(\"NATIVE_STAGE_COUNTS=\" + JSON.stringify({ stage, routeCount: routedTraces.length, counts }))\n}\n")
+          p.write_text(p.read_text()+"\n// Analysis-only stage counts; no route coordinates or net identifiers are logged.\nimport { evaluateRelaxedDrc as evaluateNativeStageDrc } from \"lib/testing/evaluate-relaxed-drc\"\nconst nativeStageStep = AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step\nAutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step = function (): void {\n  const stageIndex = this.currentPipelineStepIndex\n  const stage = this.pipelineDef[stageIndex]?.solverName\n  const regionalBeforeStep = this.highDensityRouteSolver?.activeFallbackSolver\n  nativeStageStep.call(this)\n  if (this.failed) {\n    console.log(\"NATIVE_FAILURE_COUNTS=\" + JSON.stringify({\n      stage,\n      regional: regionalBeforeStep?.stats,\n      highDensity: Object.fromEntries(Object.entries(this.highDensityRouteSolver?.stats ?? {}).filter(([, value]) => typeof value === \"number\")),\n    }))\n  }\n  if (this.currentPipelineStepIndex === stageIndex || !stage) return\n  const measuredStages = new Set([\n    \"highDensityRouteSolver\", \"highDensityForceImproveSolver\",\n    \"highDensityRepairSolver\", \"highDensityStitchSolver\",\n    \"traceSimplificationSolver\", \"traceWidthSolver\",\n    \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\",\n    \"effortCleanupSolver\", \"lengthMatchingPostProcessingSolver\",\n    \"powerTraceExpansionSolver\",\n  ])\n  if (!measuredStages.has(stage)) return\n  const instance = (this as any)[stage]\n  let hdRoutes: HighDensityRoute[] = []\n  let routedTraces: SimplifiedPcbTraces\n  if (stage === \"powerTraceExpansionSolver\") {\n    routedTraces = instance.getOutput()\n  } else {\n    if (stage === \"highDensityRouteSolver\") hdRoutes = instance.routes\n    else if (stage === \"highDensityStitchSolver\") hdRoutes = instance.mergedHdRoutes\n    else if (stage === \"traceSimplificationSolver\") hdRoutes = instance.simplifiedHdRoutes\n    else if (stage === \"traceWidthSolver\") hdRoutes = instance.getHdRoutesWithWidths()\n    else if (stage === \"lengthMatchingPostProcessingSolver\") hdRoutes = instance.getOutput().hdRoutes\n    else hdRoutes = instance.getOutput()\n    routedTraces = convertPipeline7HdRoutesToSimplifiedPcbTraces({\n      connections: this.netToPointPairsSolver!.newConnections,\n      originalConnections: this.originalSrj.connections,\n      hdRoutes: canonicalizePipeline9HdRoutes(hdRoutes),\n      layerCount: this.srj.layerCount,\n      obstacles: this.srj.obstacles,\n      defaultViaHoleDiameter: this.viaHoleDiameter,\n      connMap: this.connMap,\n    })\n  }\n  const input = this.originalSrj\n  const { errors } = evaluateNativeStageDrc({\n    inputSrj: input,\n    srjWithPointPairs: this.srjWithPointPairs!,\n    routedTraces,\n    drcOptions: {\n      includeTraceContinuity: false,\n      traceClearance: input.minTraceToPadEdgeClearance,\n      viaClearance: input.minPadEdgeToPadEdgeClearance,\n      viaToPadClearance: input.minViaEdgeToPadEdgeClearance,\n      holeClearance: input.minTraceToHoleEdgeClearance,\n    },\n  })\n  const counts: Record<string, number> = {}\n  for (const error of errors) counts[error.type] = (counts[error.type] ?? 0) + 1\n  console.log(\"NATIVE_STAGE_COUNTS=\" + JSON.stringify({ stage, routeCount: routedTraces.length, counts }))\n}\n")
           PY
       - run: bun run build
       - run: |
@@ -54,11 +52,11 @@ jobs:
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 50
     strategy:
-      max-parallel: 3
+      max-parallel: 5
       fail-fast: false
       matrix:
-        variant: [base, kernel, anchors]
-        circuit: [h616, orangecrab]
+        variant: [global, regional]
+        circuit: [h616, orangecrab, glider, imx6, icepi]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -95,7 +93,7 @@ jobs:
           from pathlib import Path
           for log in Path("results").rglob("render.log"):
             for line in log.read_text().splitlines():
-              if line.startswith("NATIVE_STAGE_COUNTS="):
+              if line.startswith(("NATIVE_STAGE_COUNTS=","NATIVE_FAILURE_COUNTS=")):
                 print(line)
           source=Path("results/results.json")
           if not source.exists():
@@ -118,3 +116,4 @@ jobs:
         with:
           name: copper-port-aggregate-${{ matrix.variant }}-${{ matrix.circuit }}
           path: aggregate.json
+
