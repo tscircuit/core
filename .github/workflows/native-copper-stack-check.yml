@@ -37,6 +37,18 @@ jobs:
           b=s.rfind("    return true")
           p.write_text(s[:a]+s[b:])
           PY
+      - name: Include trace segments ending at vias in clearance evaluation
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/utils/autorouting-drc/createTraceObstacleClearanceEvaluator.ts")
+          s=p.read_text()
+          old='          typedWidth:\\n            start.route_type === "wire" && end.route_type === "wire"\\n              ? (start.width ?? end.width ?? 0.1)\\n              : undefined,'
+          old=old.replace('\\n','\n')
+          assert old in s
+          p.write_text(s.replace(old,'          typedWidth: wire.width ?? 0.1,',1))
+          PY
       - run: bun run build
         working-directory: autorouter
       - name: Install the built autorouter in Core
