@@ -1,0 +1,48 @@
+name: Native DDR current-main baseline
+on:
+  push:
+    branches: [analysis/canonical-current-main-baseline]
+    paths: [.github/workflows/canonical-current-main-baseline.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        circuit: [orangecrab, a64, h616, glider, h3, stmp157, a13, butterstick, imx6, icepi]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 1799ee7e500a4de9d76a308286787307c4face1e
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --ignore-scripts
+      - name: Route native TSX through current main
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200
+      - name: Report aggregate results without exporting circuit geometry
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("results/results.json").read_text())
+          rows=[]
+          for case in r["cases"]:
+            a=case.get("assessment") or {}
+            rows.append({"board":case["circuit"],"coreCommit":r["coreCommit"],"dependencies":r["dependencies"],"status":case["status"],"connected":a.get("connectedNets"),"requested":a.get("requestedNets"),"findings":a.get("findings"),"geometryErrorCount":len(a.get("geometryErrors",[])),"seconds":case["wallMs"]/1000,"peakRssMb":case["peakRssMb"]})
+          Path("aggregate.json").write_text(json.dumps(rows,indent=2))
+          print("CURRENT_BASELINE="+json.dumps(rows))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-current-main-${{ matrix.circuit }}
+          path: aggregate.json
