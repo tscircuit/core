@@ -1,0 +1,51 @@
+name: Verify canonical fixed-trace handoff and snapshots
+on:
+  push:
+    branches: [analysis/verify-canonical-fixed-traces]
+    paths: [.github/workflows/verify-canonical-fixed-traces.yml]
+permissions:
+  contents: write
+jobs:
+  check:
+    name: Verify ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {label: base, ref: baf7e214bb120475b469e942943ef15a481240cb, branch: repro/a64-fixed-trace-handoff}
+          - {label: head, ref: 1c561494160731f905a38149721daa604342ffb7, branch: fix/preserve-fixed-traces-between-phases}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - name: Snapshot actual A64 input at the preload boundary
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-a64-fixed-trace-handoff.test.ts --timeout 9999999
+      - name: Verify immutable and editable phased routes
+        if: matrix.label == 'head'
+        run: |
+          bun test tests/utils/autorouting/fixed-traces-preserve-routes.test.ts tests/features/autorouter-bus-lanes-followed-by-global.test.tsx tests/features/autorouter-adapts-preloaded-phase-output.test.tsx tests/features/autorouter-fanout-sequential-phases.test.tsx tests/features/autorouter-bus-lanes-saved-fanouts.test.tsx tests/features/autorouter-bus-lanes-local-dogbones.test.tsx tests/features/autorouter-beta-pipeline9-multiple-phases.test.tsx tests/features/autorouter-pipeline7-dense-rp2040-phases.test.tsx tests/repros/repro-fixed-trace-missing-subcircuit-id.test.tsx tests/features/autoroutingphase-simplify.test.tsx tests/components/primitive-components/trace-manual-path-autorouter.test.tsx tests/repros/repro4526-manual-via-physical-span-visual.test.tsx tests/utils/autorouting/simple-route-json-preserves-routed-vias-as-traces.test.ts --timeout 9999999
+      - name: Check types
+        if: matrix.label == 'head' && always()
+        run: bunx tsc --noEmit
+      - name: Preserve generated repro snapshot
+        if: always()
+        run: |
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add tests/repros/__snapshots__/repro-a64-fixed-trace-handoff.snap.svg
+          git commit -m "Snapshot native A64 fixed-trace handoff"
+          git push origin HEAD:${{ matrix.branch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-fixed-trace-checks-${{ matrix.label }}
+          path: |
+            tests/**/*.diff.svg
+            tests/**/*.diff.png
+            tests/repros/__snapshots__/repro-a64-fixed-trace-handoff.snap.svg
