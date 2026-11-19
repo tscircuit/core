@@ -23,7 +23,8 @@ jobs:
         run: |
           (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
           bunx tsc --noEmit
-      - run: bun run build
+      - name: Build with readable solver names for diagnosis
+        run: bun scripts/build-solver-workers.ts && bunx tsup --external @tscircuit/core --external circuit-to-svg --format esm --sourcemap
       - run: |
           mkdir -p packed
           npm pack --ignore-scripts --pack-destination packed
