@@ -1,13 +1,11 @@
-import {
-  resolveSavedTraceRouteWidths,
-  getSavedTraceViaContactWidths,
-} from "lib/utils/autorouting/resolve-saved-trace-route-widths"
-import { applyToPoint } from "transformation-matrix"
-import { fanoutTracePath } from "@tscircuit/props"
-import type { z } from "zod"
+import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { getSavedTraceViaContactWidths } from "lib/utils/autorouting/resolve-saved-trace-route-widths"
 import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
-import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
+import {
+  getSavedPcbRouteInBoardFrame,
+  type SavedPcbTracePath,
+} from "./get-saved-pcb-trace-path-transform"
 import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
 import type {
   SimpleRouteConnection,
@@ -19,6 +17,25 @@ import type { AutoroutingPhase } from "../AutoroutingPhase"
 import type { Port } from "../Port"
 import type { PrecomputedRoutingResult } from "./GroupRoutingPhasePlan"
 import type { RootCircuit } from "lib/RootCircuit"
+import {
+  getSavedPhaseRouteContacts,
+  getSavedRoutePointLayers,
+  SAVED_ROUTE_CONTACT_TOLERANCE,
+} from "./get-saved-route-contacts"
+import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
+
+type PreparedSavedPath = {
+  selector: SavedPcbTracePath["connection"]
+  port: Port
+  route: SavedPcbTracePath["route"]
+}
+
+type SavedPhasePaths = {
+  group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
+  subcircuit: Pick<ISubcircuit, "selectOne">
+  paths: SavedPcbTracePath[]
+  input: SimpleRouteJson
+}
 
 const touchesEndpoint = (
   {
@@ -44,9 +61,9 @@ const touchesEndpoint = (
  * translation. An invalid local anchor is rejected, not snapped to the port.
  * Physical board layers do not change with placement.
  *
- * Each connection selects a port, as with fanout pcbTracePaths. Complete paths
- * join connection endpoints. In fanout phases, a free end replaces its source
- * endpoint for the follow-up router. Saved copper is fixed by the phase runner.
+ * Each connection selects the port supplying the coordinate frame. Complete
+ * phases may share pads and join other saved paths. In fanout phases, a free
+ * end replaces its source endpoint for the follow-up router.
  */
 export function getSavedAutoroutingPhaseTraces(
   phase: AutoroutingPhase,
@@ -63,23 +80,75 @@ export function getSavedAutoroutingPhaseTraces(
   })
 }
 
-/** Replay/validate paths in the group's local PCB frame; see the public wrapper above. */
-export function getSavedAutoroutingPhaseTracesFromPaths({
+function prepareSavedPaths({
   group,
   subcircuit,
   paths,
-  phaseIndex,
   input,
+}: SavedPhasePaths): PreparedSavedPath[] {
+  const boardLayers = getViaBoardLayers(input.layerCount)
+  return paths.map(({ connection: selector, route }) => {
+    const port = subcircuit.selectOne<Port>(selector, { type: "port" })
+    if (!port?.pcb_port_id)
+      throw new Error(`Saved phase path "${selector}" must select a PCB port`)
+    for (const point of route) {
+      const layers =
+        point.route_type === "wire"
+          ? [point.layer]
+          : [point.from_layer, point.to_layer]
+      if (layers.some((layer) => !boardLayers.includes(layer))) {
+        throw new Error(
+          `Saved phase path "${selector}" uses a layer unavailable on this board`,
+        )
+      }
+    }
+    return {
+      selector,
+      port,
+      route: getSavedPcbRouteInBoardFrame(group, port, route),
+    }
+  })
+}
+
+/** Replay paths in the group's local PCB frame; see the public wrapper above. */
+export function getSavedAutoroutingPhaseTracesFromPaths({
+  phaseIndex,
   isFanout,
-}: {
-  group: Pick<IGroup, "pcb_group_id" | "_computePcbGlobalTransformBeforeLayout">
-  subcircuit: Pick<ISubcircuit, "selectOne" | "selectAll">
-  paths: z.output<typeof fanoutTracePath>[]
+  ...savedPhase
+}: SavedPhasePaths & {
   phaseIndex?: number | null
-  input: SimpleRouteJson
   isFanout: boolean
 }): PrecomputedRoutingResult {
-  const boardLayers = getViaBoardLayers(input.layerCount)
+  const { group, input } = savedPhase
+  const traceIdPrefix = `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}`
+  if (!isFanout)
+    return {
+      traces: getValidatedCompleteSavedPaths(savedPhase).map(
+        ({ port, route, connection }, routeIndex) => {
+          const trace = makeSavedTrace(
+            `${traceIdPrefix}_${routeIndex}`,
+            connection,
+            route,
+            input.minTraceWidth,
+          )
+          const { db } = port.root!
+          const sourceNet = db.source_net.get(
+            connection.netConnectionName ?? connection.name,
+          )
+          // Resolve an internal trunk's source before any neighboring copper
+          // is inserted, so replay order cannot change ownership.
+          const sourceTraceId =
+            getSourceTraceIdForRoutedTrace({
+              db,
+              trace: { ...trace, source_trace_id: sourceNet?.source_net_id },
+              subcircuit_id: port.getSubcircuit().subcircuit_id,
+            }) ?? connection.source_trace_id
+          return { ...trace, source_trace_id: sourceTraceId }
+        },
+      ),
+    }
+
+  const preparedPaths = prepareSavedPaths(savedPhase)
   const remainingPointsByConnection = new Map(
     input.connections.map((connection) => [
       connection,
@@ -90,16 +159,12 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   const savedPorts = new Set<Port>()
   const traces: SimplifiedPcbTrace[] = []
 
-  for (const [pathIndex, path] of paths.entries()) {
-    const port = subcircuit.selectOne(path.connection, {
-      type: "port",
-    }) as Port | null
-    if (!port)
-      throw new Error(
-        `Saved phase path "${path.connection}" must select a PCB port`,
-      )
+  for (const [
+    pathIndex,
+    { selector, port, route },
+  ] of preparedPaths.entries()) {
     if (savedPorts.has(port))
-      throw new Error(`Duplicate saved phase path for "${path.connection}"`)
+      throw new Error(`Duplicate saved phase path for "${selector}"`)
     savedPorts.add(port)
     const connections = input.connections.filter((connection) =>
       connection.pointsToConnect.some(
@@ -108,7 +173,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     )
     if (connections.length !== 1) {
       throw new Error(
-        `Saved phase path "${path.connection}" must select exactly one connection in this phase`,
+        `Saved phase path "${selector}" must select exactly one connection in this phase`,
       )
     }
     const connection = connections[0]!
@@ -118,24 +183,8 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
     )
     if (startIndex < 0)
       throw new Error(
-        `Saved phase path "${path.connection}" starts at an endpoint already joined by another path`,
+        `Saved phase path "${selector}" starts at an endpoint already joined by another path`,
       )
-    const transform = getSavedPcbTracePathTransform(group, port)
-    const route = resolveSavedTraceRouteWidths(path.route).map((point) => ({
-      ...point,
-      ...applyToPoint(transform, point),
-    }))
-    for (const point of route) {
-      const layers =
-        point.route_type === "wire"
-          ? [point.layer]
-          : [point.from_layer, point.to_layer]
-      if (layers.some((layer) => !boardLayers.includes(layer))) {
-        throw new Error(
-          `Saved phase path "${path.connection}" uses a layer unavailable on this board`,
-        )
-      }
-    }
     const first = route[0]!
     const last = route.at(-1)!
     const firstLayer =
@@ -151,7 +200,7 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
       )
     ) {
       throw new Error(
-        `Saved phase path "${path.connection}" must start at its PCB port on an available layer`,
+        `Saved phase path "${selector}" must start at its PCB port on an available layer`,
       )
     }
     const endIndex = remainingPoints.findIndex(
@@ -168,15 +217,10 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
         (last.route_type === "via" && endIndex >= 0))
     ) {
       throw new Error(
-        `Saved phase path "${path.connection}" has a via at a pad; enable allowViaInPad`,
+        `Saved phase path "${selector}" has a via at a pad; enable allowViaInPad`,
       )
     }
-    const pcbTraceId = `saved_phase_${group.pcb_group_id}_${phaseIndex ?? "default"}_${pathIndex}`
-    if (endIndex < 0 && !isFanout) {
-      throw new Error(
-        `Saved phase path "${path.connection}" must end at another connection endpoint; use autorouter="fanout" for saved escapes`,
-      )
-    }
+    const pcbTraceId = `${traceIdPrefix}_${pathIndex}`
     if (endIndex >= 0) {
       remainingPoints.splice(startIndex, 1)
     } else {
@@ -187,68 +231,15 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
         pointId: `${pcbTraceId}_exit`,
       }
     }
-    // Explicit wire contacts expose via connectivity to Circuit JSON consumers
-    // without moving any saved copper. Interior vias need contacts too.
-    const routeWithViaContacts = route.flatMap((point, index): typeof route => {
-      if (point.route_type !== "via") return [point]
-      const { fromWidth, toWidth } = getSavedTraceViaContactWidths(
-        route,
-        index,
-        input.minTraceWidth,
-      )
-      return [
-        {
-          route_type: "wire",
-          x: point.x,
-          y: point.y,
-          layer: point.from_layer,
-          width: fromWidth,
-        },
-        point,
-        {
-          route_type: "wire",
-          x: point.x,
-          y: point.y,
-          layer: point.to_layer,
-          width: toWidth,
-        },
-      ]
-    })
-    if (last.route_type === "via") {
-      const { toWidth } = getSavedTraceViaContactWidths(
-        route,
-        route.length - 1,
-        input.minTraceWidth,
-      )
-      routeWithViaContacts.push({
-        route_type: "wire",
-        x: last.x,
-        y: last.y,
-        layer: last.to_layer,
-        width: toWidth,
-      })
-    }
     coveredConnections.add(connection)
-    traces.push({
-      type: "pcb_trace",
-      pcb_trace_id: pcbTraceId,
-      connection_name: connection.name,
-      connectsTo: [
-        connection.source_trace_id,
-        ...connection.pointsToConnect.map((point) => point.pointId),
-      ].filter((id): id is string => Boolean(id)),
-      route: routeWithViaContacts,
-    })
+    traces.push(
+      makeSavedTrace(pcbTraceId, connection, route, input.minTraceWidth),
+    )
   }
   for (const connection of input.connections) {
     if (!coveredConnections.has(connection)) {
       throw new Error(
         `pcbTracePaths must cover every connection in the phase; missing: ${connection.name}`,
-      )
-    }
-    if (!isFanout && remainingPointsByConnection.get(connection)!.length > 1) {
-      throw new Error(
-        `Saved phase paths for "${connection.name}" must connect every endpoint; use autorouter="fanout" for saved escapes`,
       )
     }
   }
@@ -263,25 +254,187 @@ export function getSavedAutoroutingPhaseTracesFromPaths({
   )
   return {
     traces,
-    outputSimpleRouteJson: isFanout
-      ? {
-          ...input,
-          connections: remainingConnections,
-          buses: input.buses
-            ?.map((bus) => ({
-              ...bus,
-              connectionNames: bus.connectionNames.filter((name) =>
-                remainingConnectionNames.has(name),
-              ),
-            }))
-            .filter((bus) => bus.connectionNames.length > 0),
-          differentialPairs: input.differentialPairs?.filter((pair) =>
-            pair.connectionNames.every((name) =>
-              remainingConnectionNames.has(name),
-            ),
+    outputSimpleRouteJson: {
+      ...input,
+      connections: remainingConnections,
+      buses: input.buses
+        ?.map((bus) => ({
+          ...bus,
+          connectionNames: bus.connectionNames.filter((name) =>
+            remainingConnectionNames.has(name),
           ),
-          traces: [...(input.traces ?? []), ...traces],
-        }
-      : undefined,
+        }))
+        .filter((bus) => bus.connectionNames.length > 0),
+      differentialPairs: input.differentialPairs?.filter((pair) =>
+        pair.connectionNames.every((name) =>
+          remainingConnectionNames.has(name),
+        ),
+      ),
+      traces: [...(input.traces ?? []), ...traces],
+    },
+  }
+}
+
+/** Validate complete phases on export and replay, before assigning source IDs. */
+export function getValidatedCompleteSavedPaths(savedPhase: SavedPhasePaths) {
+  const { input } = savedPhase
+  const paths = prepareSavedPaths(savedPhase)
+  const db = paths[0]?.port.root?.db
+  const contacts = getSavedPhaseRouteContacts(
+    paths.map(({ route }) => route),
+    input,
+    (id) => db?.pcb_port.get(id),
+  )
+
+  // Shared ports and SRJ aliases establish logical net membership. Only
+  // physical contacts in the saved copper can satisfy these connections.
+  const nets = new ConnectivityMap({})
+  nets.addConnections(
+    input.connections.map((connection) => [
+      ...[
+        connection.name,
+        connection.netConnectionName,
+        connection.rootConnectionName,
+        ...(connection.mergedConnectionNames ?? []),
+      ]
+        .filter((name): name is string => name !== undefined)
+        .map((name) => `connection:${name}`),
+      ...connection.pointsToConnect.flatMap(({ pcb_port_id, pointId }) => [
+        ...(pcb_port_id ? [`port:${pcb_port_id}`] : []),
+        ...(pointId ? [`point:${pointId}`] : []),
+      ]),
+    ]),
+  )
+  const netOf = ({ name }: SimpleRouteConnection) =>
+    nets.getNetConnectedToId(`connection:${name}`)
+  const phasePortIds = new Set(
+    input.connections.flatMap(({ pointsToConnect }) =>
+      pointsToConnect.map(({ pcb_port_id }) => pcb_port_id),
+    ),
+  )
+  const seenRoutes = new Set<string>()
+  const pcbPorts = input.allowViaInPad ? [] : (db?.pcb_port.list() ?? [])
+  const validatedPaths = paths.map(({ selector, port, route }, routeIndex) => {
+    if (!port.pcb_port_id || !phasePortIds.has(port.pcb_port_id)) {
+      throw new Error(
+        `Saved phase path "${selector}" must select a connection in this phase`,
+      )
+    }
+    const key = JSON.stringify(route)
+    if (seenRoutes.has(key))
+      throw new Error(`Duplicate saved phase path for "${selector}"`)
+    seenRoutes.add(key)
+
+    if (
+      route.some((point) => {
+        if (point.route_type !== "via") return false
+        const layers = getSavedRoutePointLayers(point, input)
+        return pcbPorts.some(
+          (pad) =>
+            Math.hypot(point.x - pad.x, point.y - pad.y) <=
+              SAVED_ROUTE_CONTACT_TOLERANCE &&
+            layers.some((layer) => pad.layers.includes(layer)),
+        )
+      })
+    ) {
+      throw new Error(
+        `Saved phase path "${selector}" has a via at a pad; enable allowViaInPad`,
+      )
+    }
+
+    const terminals = contacts.getRouteTerminals(routeIndex)
+    const anchor = terminals.find(
+      ({ point }) => point.pcb_port_id === port.pcb_port_id,
+    )
+    if (!anchor) {
+      throw new Error(
+        `Saved phase path "${selector}" must start at its PCB port or join saved copper connected to that port`,
+      )
+    }
+    const { connection } = anchor
+    const net = netOf(connection)
+    if (terminals.some((terminal) => netOf(terminal.connection) !== net)) {
+      throw new Error(`Saved phase path "${selector}" touches a different net`)
+    }
+    const first = route[0]!
+    const last = route.at(-1)!
+    const closed =
+      Math.hypot(first.x - last.x, first.y - last.y) <=
+        SAVED_ROUTE_CONTACT_TOLERANCE &&
+      getSavedRoutePointLayers(first, input).some((layer) =>
+        getSavedRoutePointLayers(last, input).includes(layer),
+      )
+    if (
+      !closed &&
+      [first, last].some(
+        (point) => !contacts.isEndpointConnected(routeIndex, point),
+      )
+    ) {
+      throw new Error(
+        `Saved phase path "${selector}" must end at another connection endpoint or join saved copper`,
+      )
+    }
+
+    return { port, route, connection }
+  })
+
+  const copperComponents = new Set(contacts.routeComponents)
+  for (const connection of input.connections) {
+    const components = contacts.componentsByConnection.get(connection)
+    const label =
+      connection.pointsToConnect[0]?.port_selector ?? "unnamed connection"
+    if (
+      !components ||
+      ![...components].some((component) => copperComponents.has(component))
+    ) {
+      throw new Error(
+        `pcbTracePaths must cover every connection in the phase; missing: ${label}`,
+      )
+    }
+    if (components.size > 1) {
+      throw new Error(
+        `Saved phase paths for "${label}" must connect every endpoint with copper`,
+      )
+    }
+  }
+  return validatedPaths
+}
+
+function makeSavedTrace(
+  pcbTraceId: string,
+  connection: SimpleRouteConnection,
+  route: SavedPcbTracePath["route"],
+  minTraceWidth: number,
+): SimplifiedPcbTrace {
+  return {
+    type: "pcb_trace",
+    pcb_trace_id: pcbTraceId,
+    connection_name: connection.name,
+    connectsTo: [
+      connection.source_trace_id,
+      ...connection.pointsToConnect.map((point) => point.pointId),
+    ].filter((id): id is string => Boolean(id)),
+    // Explicit wire contacts preserve the saved copper on both sides of a via.
+    route: route.flatMap((point, index): SavedPcbTracePath["route"] => {
+      if (point.route_type !== "via") return [point]
+      const { fromWidth, toWidth } = getSavedTraceViaContactWidths(
+        route,
+        index,
+        minTraceWidth,
+      )
+      const arrival = {
+        route_type: "wire" as const,
+        x: point.x,
+        y: point.y,
+        layer: point.to_layer,
+        width: toWidth,
+      }
+      return [
+        { ...arrival, layer: point.from_layer, width: fromWidth },
+        point,
+        arrival,
+        ...(index === route.length - 1 ? [{ ...arrival }] : []),
+      ]
+    }),
   }
 }

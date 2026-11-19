@@ -114,9 +114,8 @@ export { SymbolComponent as Symbol } from "./primitive-components/Symbol"
 export { AnalogSimulation } from "./primitive-components/AnalogSimulation"
 export { AnalogAnalysisSimulation } from "./primitive-components/AnalogAnalysisSimulation"
 export { AnalogTransientSimulation } from "./primitive-components/AnalogTransientSimulation"
-export { AnalogDigitalStimulus } from "./primitive-components/AnalogDigitalStimulus"
-export { AnalogEyeDiagram } from "./primitive-components/AnalogEyeDiagram"
-export { IbisModel } from "./primitive-components/IbisModel"
+export { SimulationEyeDiagram } from "./primitive-components/SimulationEyeDiagram"
+export { SimulationIbisModel } from "./primitive-components/SimulationIbisModel"
 export { AnalogDcOperatingPointSimulation } from "./primitive-components/AnalogDcOperatingPointSimulation"
 export { AnalogDcSweepSimulation } from "./primitive-components/AnalogDcSweepSimulation"
 export { AnalogAcSweepSimulation } from "./primitive-components/AnalogAcSweepSimulation"
@@ -140,6 +139,9 @@ export { AssemblyDrawingTitleBlock } from "./primitive-components/AssemblyDrawin
 export { AssemblyDrawingDimension } from "./primitive-components/AssemblyDrawingDimension"
 
 export { AssemblyBolt } from "./primitive-components/AssemblyBolt"
+
+export { PcbTransientChannelSimulation } from "./primitive-components/PcbTransientChannelSimulation"
+export { PcbDriverReceiverChannel } from "./primitive-components/PcbDriverReceiverChannel"
 
 export { PanelTab } from "./primitive-components/PanelTab"
 

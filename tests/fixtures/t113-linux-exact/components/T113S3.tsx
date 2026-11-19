@@ -1,4 +1,4 @@
-import type { ChipProps } from "tscircuit"
+import type { ChipProps } from "@tscircuit/props"
 // Exact JLCPCB-linked EasyEDA library footprint for C5197687 (T113-S3).
 // Imported 2026-09-11 with: tsci import C5197687 --jlcpcb --use-exact-footprint
 // This supplier land pattern is not a claim of manufacturer qualification.
