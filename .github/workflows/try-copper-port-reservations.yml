@@ -12,9 +12,9 @@ jobs:
       matrix:
         include:
           - variant: kernel
-            source: 1bd85498f55f9dcc9800d86a64e09e2605a801e6
+            source: bf3a0a6e7c31c4cb30f433614c15ab752e88a761
           - variant: owners
-            source: 15ebdabe705d3005cb93e0e6c224913db5904bc2
+            source: dfb197722029b46835957e7ec855a8be295d9a0f
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -111,9 +111,9 @@ jobs:
       matrix:
         include:
           - variant: kernel
-            source: 1bd85498f55f9dcc9800d86a64e09e2605a801e6
+            source: bf3a0a6e7c31c4cb30f433614c15ab752e88a761
           - variant: owners
-            source: 15ebdabe705d3005cb93e0e6c224913db5904bc2
+            source: dfb197722029b46835957e7ec855a8be295d9a0f
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
