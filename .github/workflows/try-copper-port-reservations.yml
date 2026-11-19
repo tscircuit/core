@@ -1,4 +1,4 @@
-name: Measure native DDR routing with smaller mesh regions
+name: Isolate A03 dependency behavior on the inherited board regression
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -6,98 +6,40 @@ on:
 permissions:
   contents: read
 jobs:
-  build:
+  regression:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: pinned-baseline
+            revision: 85ee23a25403bbb79be14b6d0783e592928a85a0
+          - variant: pinned-with-terminal-fixes
+            revision: a834a9e96cbb0d03c34b614ddd834dc4b5c460af
+          - variant: upstream-with-terminal-fixes
+            revision: 6b715be6f5f8e583c4716ecf21bc57a1523addc6
+    env:
+      A03_REVISION: ${{ matrix.revision }}
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 808501fbc07d1a916fe7893388a1e3d92ed00f7b
+          ref: ea6eff630cc92813b4817cad3da1ac0f9c820090
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
-      - run: bun install
-      - name: Check native copper reservations
-        run: |
-          (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
-          bunx tsc --noEmit
-      - name: Configure the mesh diagnostic
+      - name: Select the dependency under test
         run: |
           python3 - <<'PY'
-          from pathlib import Path
-          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          source=p.read_text()
-          old="this.maxNodeDimension = mutableOpts.maxNodeDimension ?? 15"
-          if old not in source: raise RuntimeError("Missing mesh dimension setting")
-          p.write_text(source.replace(old,"this.maxNodeDimension = mutableOpts.maxNodeDimension ?? 3",1))
-          PY
-      - run: bun run build
-      - run: |
-          mkdir -p packed
-          npm pack --ignore-scripts --pack-destination packed
-          cp packed/*.tgz candidate.tgz
-      - uses: actions/upload-artifact@v4
-        with:
-          name: copper-port-candidate
-          path: candidate.tgz
-  benchmark:
-    needs: build
-    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 50
-    strategy:
-      max-parallel: 5
-      fail-fast: false
-      matrix:
-        circuit: [h616, imx6]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: fff6c5c012e78cc75c5446348c4d352cdebc1bed
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - uses: actions/download-artifact@v4
-        with:
-          name: copper-port-candidate
-          path: candidate
-      - name: Install the source-built candidate
-        run: |
-          python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           p=Path("package.json")
-          m=json.loads(p.read_text())
-          m["devDependencies"]["@tscircuit/capacity-autorouter"]="file:./candidate/candidate.tgz"
-          p.write_text(json.dumps(m,indent=2)+"\n")
+          package=json.loads(p.read_text())
+          package["dependencies"]["@tscircuit/high-density-a01"]="https://codeload.github.com/tscircuit/high-density-a01/tar.gz/"+os.environ["A03_REVISION"]
+          p.write_text(json.dumps(package,indent=2)+"\n")
           PY
-          bun install --ignore-scripts
-      - name: Route the actual native TSX circuit
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
-        run: |
-          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200
-      - name: Report aggregate counts without exporting circuit geometry
-        if: always()
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          source=Path("results/results.json")
-          if not source.exists():
-            raise RuntimeError("Native worker did not produce a result summary")
-          r=json.loads(source.read_text())
-          rows=[]
-          for case in r["cases"]:
-            a=case.get("assessment") or {}
-            rows.append({"board":case["circuit"],"coreCommit":r["coreCommit"],"dependencies":r["dependencies"],"status":case["status"],"connected":a.get("connectedNets"),"requested":a.get("requestedNets"),"findings":a.get("findings"),"geometryErrorCount":len(a.get("geometryErrors",[])),"seconds":case["wallMs"]/1000,"peakRssMb":case["peakRssMb"]})
-          Path("aggregate.json").write_text(json.dumps(rows,indent=2))
-          print("CANONICAL_AGGREGATE="+json.dumps(rows))
-          PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: copper-port-aggregate-${{ matrix.circuit }}
-          path: aggregate.json
+          bun install
+      - name: Run the unchanged physical regression
+        run: bun test --timeout 9999999 tests/bugs/bugreport107-board-1726.test.ts
