@@ -1,4 +1,4 @@
-name: Verify scoped native copper context against existing regressions
+name: Verify ordinary routing with scoped native copper context
 on:
   push:
     branches: [analysis/native-copper-regression-check]
@@ -9,15 +9,31 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        a03: [85ee23a25403bbb79be14b6d0783e592928a85a0, 6b715be6f5f8e583c4716ecf21bc57a1523addc6]
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 2c482cda9c866cec0f98d7e52ae6fc4da9136e7b
+          ref: d6b026a87ad331595d5c990377e7d4eb906f6d78
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
+      - name: Control only the detailed routing dependency
+        env:
+          A03_SOURCE: ${{ matrix.a03 }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path("package.json")
+          s=json.loads(p.read_text())
+          s["devDependencies"]["@tscircuit/high-density-a01"]="git+https://github.com/tscircuit/high-density-a01.git#"+os.environ["A03_SOURCE"]
+          p.write_text(json.dumps(s,indent=2)+"\n")
+          PY
       - run: bun install
       - run: bunx tsc --noEmit
       - run: bun test --timeout 9999999 tests/features/pipeline9-native-copper-net-identity.test.ts tests/features/pipeline9-completed-route-copper.test.ts tests/features/pipeline9-regional-fallback-new-layer-fixed-copper.test.ts tests/features/pipeline9-srj23-sample21-regional-b01-repair.test.ts tests/bugs/bugreport107-board-1726.test.ts
