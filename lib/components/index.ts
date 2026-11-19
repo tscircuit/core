@@ -81,6 +81,7 @@ export { AssemblyExplosionStage } from "./primitive-components/AssemblyExplosion
 export { AssemblyExplosionMove } from "./primitive-components/AssemblyExplosionMove"
 export { AssemblyPart } from "./primitive-components/AssemblyPart"
 export { AssemblyReferenceSurface } from "./primitive-components/AssemblyReferenceSurface"
+export { AssemblySticker } from "./primitive-components/AssemblySticker"
 export { EnclosureCutoutAperture } from "./primitive-components/EnclosureCutoutAperture"
 export { EnclosureFdmBox } from "./primitive-components/EnclosureFdmBox"
 export { Battery } from "./normal-components/Battery"
