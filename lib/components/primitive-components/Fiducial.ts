@@ -37,9 +37,10 @@ export class Fiducial extends PrimitiveComponent<typeof fiducialProps> {
       x: position.x,
       y: position.y,
       radius: distance.parse(props.padDiameter) / 2,
-      soldermask_margin: props.soldermaskPullback
-        ? distance.parse(props.soldermaskPullback)
-        : distance.parse(props.padDiameter) / 2,
+      soldermask_margin:
+        props.soldermaskPullback !== undefined
+          ? distance.parse(props.soldermaskPullback)
+          : distance.parse(props.padDiameter) / 2,
       is_covered_with_solder_mask: true,
     } as Omit<PcbSmtPadCircle, "type" | "pcb_smtpad_id">)
 

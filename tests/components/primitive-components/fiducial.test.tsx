@@ -54,3 +54,23 @@ test("Fiducial with soldermask pullback", () => {
     { showSolderMask: true },
   )
 })
+
+test("Fiducial with zero soldermask pullback", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <chip name="C1">
+        <fiducial name="F3" padDiameter="1mm" soldermaskPullback={0} />
+      </chip>
+    </board>,
+  )
+
+  circuit.render()
+
+  const smtpads = circuit.db.pcb_smtpad.list() as PcbSmtPadCircle[]
+
+  expect(smtpads.length).toBe(1)
+  const fiducialPad = smtpads[0]
+  expect(fiducialPad.soldermask_margin).toBe(0)
+})
