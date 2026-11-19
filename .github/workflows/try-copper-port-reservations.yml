@@ -1,4 +1,4 @@
-name: Diagnose native copper routing failure
+name: Diagnose native DDR mesh capacity
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -13,18 +13,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 76175d15dcb135c5bf56d24bab9e9b13b0701673
+          ref: a96030de4c6eb4c3a7c78dcdf26ddd6b8009e9f3
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
       - run: bun install
+      - name: Set diagnostic mesh limit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
+          source = path.read_text()
+          old = "this.maxNodeDimension = mutableOpts.maxNodeDimension ?? 15"
+          new = "this.maxNodeDimension = mutableOpts.maxNodeDimension ?? Number(process.env.DIAG_NATIVE_MAX_NODE_DIM ?? 15)"
+          if source.count(old) != 1:
+              raise RuntimeError("Mesh option source changed")
+          path.write_text(source.replace(old, new))
+          PY
       - name: Check native copper reservations
         run: |
           (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
           bunx tsc --noEmit
-      - name: Build with readable solver names for diagnosis
-        run: bun scripts/build-solver-workers.ts && bunx tsup --external @tscircuit/core --external circuit-to-svg --format esm --sourcemap
+      - run: bun run build
       - run: |
           mkdir -p packed
           npm pack --ignore-scripts --pack-destination packed
@@ -37,11 +48,14 @@ jobs:
     needs: build
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 50
+    env:
+      DIAG_NATIVE_MAX_NODE_DIM: ${{ matrix.mesh }}
     strategy:
-      max-parallel: 5
+      max-parallel: 3
       fail-fast: false
       matrix:
-        circuit: [imx6, icepi]
+        circuit: [h616, imx6]
+        mesh: [0.75, 1.5, 3]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +71,7 @@ jobs:
       - name: Install the source-built candidate
         run: |
           python3 - <<'PY'
-          import json, re
+          import json
           from pathlib import Path
           p=Path("package.json")
           m=json.loads(p.read_text())
@@ -65,32 +79,6 @@ jobs:
           p.write_text(json.dumps(m,indent=2)+"\n")
           PY
           bun install --ignore-scripts
-      - name: Record solver budgets and routing counts
-        run: |
-          cat > diagnose.ts <<'TS'
-          import { AutoroutingPipelineSolver9_PreloadedTraceGraph as Pipeline } from "@tscircuit/capacity-autorouter"
-          const step = Pipeline.prototype._step
-          Pipeline.prototype._step = function () {
-            step.call(this)
-            if (!this.failed) return
-            const planner: any = this.portPointPathingSolver
-            const graph: any = planner?.tinyPipelineSolver?.getSolver("solveGraph")
-            if (!graph) return
-            const keys = ["ripCount", "neverSuccessfullyRoutedRouteCount", "greedyFinalRouteAttemptCount", "greedyFinalRouteRemainingRouteCount", "greedyFinalRouteMaxIterations", "initialAssignmentCount", "initiallyRoutedRouteCount"]
-            const stats = Object.fromEntries(keys.flatMap(key => typeof graph.stats[key] === "number" ? [[key, graph.stats[key]]] : []))
-            console.log("NATIVE_ROUTING_COUNTS=" + JSON.stringify({ solver: graph.getSolverName(), iterations: graph.iterations, limit: graph.MAX_ITERATIONS, routes: graph.problem.routeCount, fixedRoutes: Array.from(graph.problem.routeIsFixed ?? []).filter(value => value === 1).length, reservedPorts: Array.from(graph.problem.portReservationNetId ?? []).filter(value => value !== -1).length, neverRouted: graph.getNeverSuccessfullyRoutedRoutes().length, stats }))
-          }
-          TS
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts")
-          text=p.read_text()
-          old='[process.execPath,"--tsconfig-override"'
-          new='[process.execPath,"--preload",strPreload,"--tsconfig-override"'
-          if old not in text: raise RuntimeError("worker invocation changed")
-          text='const strPreload = '+repr(str(Path("diagnose.ts").resolve()))+';\n'+text
-          p.write_text(text.replace(old,new))
-          PY
       - name: Route the actual native TSX circuit
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -100,31 +88,18 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY'
-          import json, re
+          import json, os
           from pathlib import Path
           source=Path("results/results.json")
           if not source.exists():
             raise RuntimeError("Native worker did not produce a result summary")
           r=json.loads(source.read_text())
           rows=[]
-          def diagnostic(message):
-            text=str(message)
-            text=re.sub(r'(?:source_(?:net|trace|port)|pcb_(?:trace|port)|bus_lane)[A-Za-z0-9_:. -]*', '<connection>', text)
-            text=re.sub(r'(?<![A-Za-z_])[-+]?\d+(?:\.\d+)?', '<number>', text)
-            return text
           for case in r["cases"]:
             a=case.get("assessment") or {}
             rows.append({"board":case["circuit"],"coreCommit":r["coreCommit"],"dependencies":r["dependencies"],"status":case["status"],"connected":a.get("connectedNets"),"requested":a.get("requestedNets"),"findings":a.get("findings"),"geometryErrorCount":len(a.get("geometryErrors",[])),"seconds":case["wallMs"]/1000,"peakRssMb":case["peakRssMb"]})
-            progress=case.get("progress") or {}
-            rows[-1]["phases"]=[{key:p.get(key) for key in ["phase","stage","solver","status","connections","durationMs"]} for p in progress.get("phases",[])]
-            rows[-1]["failureDiagnostics"]=[diagnostic(message) for message in progress.get("errors",[])]
           Path("aggregate.json").write_text(json.dumps(rows,indent=2))
           print("CANONICAL_AGGREGATE="+json.dumps(rows))
-          for logfile in Path("results").rglob("render.log"):
-            for line in logfile.read_text().splitlines():
-              if line.startswith("NATIVE_ROUTING_COUNTS="):
-                counts=json.loads(line.split("=",1)[1])
-                print("NATIVE_ROUTING_COUNTS="+json.dumps(counts))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
