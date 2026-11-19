@@ -1,4 +1,4 @@
-name: Inspect native routing handoff consistency
+name: Verify complete saved-trace context during cleanup
 on:
   push:
     branches: [analysis/native-copper-stack-check]
@@ -78,6 +78,17 @@ jobs:
           s=p.read_text()
           assert "      preserveTopologyPortAnchors: true," in s
           p.write_text(s.replace("      preserveTopologyPortAnchors: true,","      preserveTopologyPortAnchors: this.params.preservePhysicalGeometry,",1))
+          PY
+      - name: Keep editable saved copper visible during force cleanup
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
+          s=p.read_text()
+          old="            .getUpdatedFixedHdRoutes()\n            .filter((route) => route.isFixed === true),"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,"            .getUpdatedFixedHdRoutes(),"))
           PY
       - run: bun run build
         working-directory: autorouter
