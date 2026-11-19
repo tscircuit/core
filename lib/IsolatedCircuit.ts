@@ -78,6 +78,7 @@ export class IsolatedCircuit {
   projectUrl?: string
 
   _hasRenderedAtleastOnce = false
+  private _isRendering = false
   private _asyncEffectIdsByPhase = new Map<RenderPhase, Set<string>>()
   private _asyncEffectPhaseById = new Map<string, RenderPhase>()
   private _hasUnrenderedUpdatesFromAsyncEffects = false
@@ -202,15 +203,21 @@ export class IsolatedCircuit {
   }
 
   render() {
-    if (!this.firstChild) {
-      this._guessRootComponent()
+    if (this._isRendering) return
+    this._isRendering = true
+    try {
+      if (!this.firstChild) {
+        this._guessRootComponent()
+      }
+      const { firstChild, db } = this
+      if (!firstChild) throw new Error("IsolatedCircuit has no root component")
+      firstChild.parent = this as any
+      firstChild.runRenderCycle()
+      this._hasUnrenderedUpdatesFromAsyncEffects = false
+      this._hasRenderedAtleastOnce = true
+    } finally {
+      this._isRendering = false
     }
-    const { firstChild, db } = this
-    if (!firstChild) throw new Error("IsolatedCircuit has no root component")
-    firstChild.parent = this as any
-    firstChild.runRenderCycle()
-    this._hasUnrenderedUpdatesFromAsyncEffects = false
-    this._hasRenderedAtleastOnce = true
   }
 
   async renderUntilSettled(): Promise<void> {
@@ -229,14 +236,16 @@ export class IsolatedCircuit {
         const resume = () => {
           clearTimeout(timer)
           this.removeListener("asyncEffect:end", resume)
+          this.removeListener("autorouting:end", resume)
           resolve()
         }
         const timer = setTimeout(resume, 100)
         this.on("asyncEffect:end", resume)
+        this.on("autorouting:end", resume)
         if (this._hasUnrenderedUpdatesFromAsyncEffects) resume()
       })
       // A running effect blocks its dependent phases. Revisit the tree when
-      // an effect completes, rather than traversing every component on idle polls.
+      // an effect completes or publishes an accepted routing phase.
       if (
         this._hasUnrenderedUpdatesFromAsyncEffects ||
         this._asyncEffectPhaseById.size === 0
@@ -248,7 +257,11 @@ export class IsolatedCircuit {
   }
 
   isDoneRendering(): boolean {
-    return this._hasRenderedAtleastOnce && !this._hasIncompleteAsyncEffects()
+    return (
+      !this._isRendering &&
+      this._hasRenderedAtleastOnce &&
+      !this._hasIncompleteAsyncEffects()
+    )
   }
 
   _hasIncompleteAsyncEffects(): boolean {
@@ -355,6 +368,8 @@ export class IsolatedCircuit {
       this._registerAsyncEffectStart(args[0] as { asyncEffectId?: string })
     } else if (event === "asyncEffect:end") {
       this._registerAsyncEffectEnd(args[0] as { asyncEffectId?: string })
+    } else if (event === "autorouting:end") {
+      this._hasUnrenderedUpdatesFromAsyncEffects = true
     }
     if (!this._eventListeners[event]) return
     for (const listener of this._eventListeners[event]) {

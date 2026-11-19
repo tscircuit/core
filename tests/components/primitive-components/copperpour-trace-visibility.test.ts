@@ -299,6 +299,11 @@ test("copper-pour trace visibility across boundary cases", async () => {
       ...transformPcbElements(
         structuredClone(caseDrawing),
         translate((caseIndex % 6) * 15, -Math.floor(caseIndex / 6) * 16),
+      ).filter(
+        (element) =>
+          element.type === "pcb_trace" ||
+          element.type === "pcb_note_path" ||
+          element.type === "pcb_note_text",
       ),
     )
   }

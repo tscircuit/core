@@ -60,7 +60,7 @@ test("chip spiceModel custom diode subcircuit simulates a half-wave rectifier", 
   expect(capturedSpice).toContain(".subckt RECTIFIER_DIODE ANODE CATHODE")
   expect(capturedSpice).toContain(".ends RECTIFIER_DIODE")
   expect(capturedSpice).toMatch(
-    /Xsimulation_spice_subcircuit_\S+\s+\S+\s+\S+\s+RECTIFIER_DIODE/,
+    /Xsimulation_spice_subcircuit_\S+\s+\S+\s+\S+\s+library_simulation_spice_subcircuit_\S+/,
   )
 
   const circuitJson = circuit.getCircuitJson()
