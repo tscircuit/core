@@ -1,0 +1,41 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`currentsource retains delayed load-step timing in Circuit JSON 1`] = `
+{
+  "are_pins_interchangeable": true,
+  "current": 0.5,
+  "display_name": undefined,
+  "duty_cycle": undefined,
+  "frequency": undefined,
+  "ftype": "simple_current_source",
+  "manufacturer_part_number": undefined,
+  "name": "LOAD",
+  "peak_to_peak_current": 0.5,
+  "phase": undefined,
+  "source_component_id": "source_component_0",
+  "source_group_id": "source_group_0",
+  "supplier_part_numbers": undefined,
+  "type": "source_component",
+  "wave_shape": "square",
+}
+`;
+
+exports[`currentsource retains delayed load-step timing in Circuit JSON 2`] = `
+[
+  {
+    "ac_magnitude": undefined,
+    "ac_phase": undefined,
+    "current": 0.5,
+    "duty_cycle": undefined,
+    "frequency": undefined,
+    "is_dc_source": false,
+    "peak_to_peak_current": 0.5,
+    "phase": undefined,
+    "simulation_current_source_id": "simulation_current_source_0",
+    "terminal1_source_port_id": "source_port_0",
+    "terminal2_source_port_id": "source_port_1",
+    "type": "simulation_current_source",
+    "wave_shape": "square",
+  },
+]
+`;
