@@ -1,33 +1,18 @@
-import { getElementId } from "@tscircuit/circuit-json-util"
 import type {
   AnyCircuitElementInput,
-  SimulationExperiment,
   SourceComponentBase,
-  SourceNet,
   SourcePort,
 } from "circuit-json"
 import { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { InflatorContext } from "../InflatorFn"
 
-const ibisSimulationTypes = [
-  "simulation_ibis_model",
-  "simulation_ibis_pin_state",
-  "simulation_digital_stimulus",
-  "simulation_eye_diagram",
-] as const
+const ibisSimulationTypes = ["simulation_ibis_model"] as const
 
-// Dependencies must precede records that reference them.
-const simulationTypes = [
-  "simulation_experiment",
-  "simulation_voltage_probe",
-  ...ibisSimulationTypes,
-] as const
+const simulationTypes = [...ibisSimulationTypes] as const
 
 type SimulationReferenceId =
   | SourceComponentBase["source_component_id"]
   | SourcePort["source_port_id"]
-  | SourceNet["source_net_id"]
-  | SimulationExperiment["simulation_experiment_id"]
 
 /** Restore records after inflated components have allocated their source IDs. */
 class InflatedSimulation extends PrimitiveComponent {
@@ -51,15 +36,6 @@ function restoreSimulationRecords({
   groupsMap,
 }: InflatorContext) {
   const { db } = subcircuit.root!
-  const eyes = injectionDb.simulation_eye_diagram.list()
-  const experimentIds = new Set(
-    [
-      ...injectionDb.simulation_ibis_pin_state.list(),
-      ...injectionDb.simulation_digital_stimulus.list(),
-      ...eyes,
-    ].map((record) => record.simulation_experiment_id),
-  )
-  const probeIds = new Set(eyes.map((eye) => eye.simulation_voltage_probe_id))
   const restoredIds = new Map<SimulationReferenceId, SimulationReferenceId>()
 
   const remapId = (
@@ -70,13 +46,7 @@ function restoreSimulationRecords({
     if (restoredId) return restoredId
 
     let matchedId: SimulationReferenceId | undefined
-    if (field === "subcircuit_id") {
-      const sourceGroup = injectionDb.source_group
-        .list()
-        .find((group) => group.subcircuit_id === originalId)
-      const group = sourceGroup && groupsMap?.get(sourceGroup.source_group_id)
-      matchedId = group?.getSubcircuit().subcircuit_id ?? undefined
-    } else if (field === "source_component_id") {
+    if (field === "source_component_id") {
       const original = injectionDb.source_component.get(originalId)
       const group = original?.source_group_id
         ? groupsMap?.get(original.source_group_id)
@@ -106,17 +76,6 @@ function restoreSimulationRecords({
               : port.name === original.name,
           )
         if (ports.length === 1) matchedId = ports[0].source_port_id
-      }
-    } else if (field.endsWith("source_net_id")) {
-      const original = injectionDb.source_net.get(originalId)
-      if (original) {
-        const nets = db.source_net.list({
-          name: original.name,
-          subcircuit_id: original.subcircuit_id
-            ? remapId(original.subcircuit_id, "subcircuit_id")
-            : subcircuit.subcircuit_id,
-        })
-        if (nets.length === 1) matchedId = nets[0].source_net_id
       }
     }
 
@@ -152,23 +111,12 @@ function restoreSimulationRecords({
 
   for (const type of simulationTypes) {
     for (const record of injectionDb[type].list()) {
-      // Main ignores cached simulation records. Restore only IBIS dependencies.
-      if (
-        (record.type === "simulation_experiment" &&
-          !experimentIds.has(record.simulation_experiment_id)) ||
-        (record.type === "simulation_voltage_probe" &&
-          !probeIds.has(record.simulation_voltage_probe_id))
-      )
-        continue
       const primaryIdField = `${type}_id`
       const fields = Object.fromEntries(
         Object.entries(record).filter(([key]) => key !== primaryIdField),
       )
       // Only identifiers change; all other circuit-json fields are preserved.
-      const restored = db.insert(
-        remapReferences(fields, "") as AnyCircuitElementInput,
-      )
-      restoredIds.set(getElementId(record), getElementId(restored))
+      db.insert(remapReferences(fields, "") as AnyCircuitElementInput)
     }
   }
 }

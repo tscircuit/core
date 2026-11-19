@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
+import { checkViaPadClearance } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-// U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4). Its
-// 0.6mm pads block top-layer channels. A 0.45mm via also cannot fit in the
-// diagonal gaps, forcing the existing in-pad via to be used.
+// U1.pin15 is an inner ball of a 6x6, 0.8mm-pitch BGA at (-0.4, -0.4).
+// Reuse the declared in-pad via to leave the top layer before moving off the ball.
 const PAD_CENTER = { x: -0.4, y: -0.4 }
 const VIA_PAD_DIAMETER = 0.45
 
-test("a BGA ball escapes through the via drilled into its pad", async () => {
+test("routes a BGA ball through its declared via-in-pad", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -46,22 +46,31 @@ test("a BGA ball escapes through the via drilled into its pad", async () => {
   const [trace] = circuit.db.pcb_trace.list()
   expect(trace).toBeDefined()
 
-  // The route leaves the pad on an inner layer without adding a second via
-  // on top of the one already drilled into the pad
-  const firstWireOffPad = trace.route.find(
-    (point) =>
-      point.route_type === "wire" &&
-      Math.hypot(point.x - PAD_CENTER.x, point.y - PAD_CENTER.y) > 1e-6,
+  const firstWireOffPad = trace.route
+    .filter((point) => point.route_type === "wire")
+    .find(
+      (point) =>
+        Math.hypot(point.x - PAD_CENTER.x, point.y - PAD_CENTER.y) > 1e-6,
+    )
+  expect(firstWireOffPad?.layer).not.toBe("top")
+  expect(trace.route).toContainEqual(
+    expect.objectContaining({
+      route_type: "through_pad",
+      start: PAD_CENTER,
+      end: PAD_CENTER,
+      start_layer: "top",
+    }),
   )
-  expect(
-    firstWireOffPad?.route_type === "wire" && firstWireOffPad.layer,
-  ).not.toBe("top")
   const viasAtPad = circuit.db.pcb_via
     .list()
     .filter(
       (via) => Math.hypot(via.x - PAD_CENTER.x, via.y - PAD_CENTER.y) < 1e-6,
     )
   expect(viasAtPad).toHaveLength(1)
+  expect(circuit.db.pcb_via.list()).toHaveLength(2)
+  expect(
+    checkViaPadClearance(circuit.getCircuitJson(), { minClearance: 0.2 }),
+  ).toEqual([])
 
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
