@@ -65,6 +65,32 @@ jobs:
           p.write_text(json.dumps(m,indent=2)+"\n")
           PY
           bun install --ignore-scripts
+      - name: Record solver budgets and routing counts
+        run: |
+          cat > diagnose.ts <<'TS'
+          import { AutoroutingPipelineSolver9_PreloadedTraceGraph as Pipeline } from "@tscircuit/capacity-autorouter"
+          const step = Pipeline.prototype._step
+          Pipeline.prototype._step = function () {
+            step.call(this)
+            if (!this.failed) return
+            const planner: any = this.portPointPathingSolver
+            const graph: any = planner?.tinyPipelineSolver?.getSolver("solveGraph")
+            if (!graph) return
+            const keys = ["ripCount", "neverSuccessfullyRoutedRouteCount", "greedyFinalRouteAttemptCount", "greedyFinalRouteRemainingRouteCount", "greedyFinalRouteMaxIterations", "initialAssignmentCount", "initiallyRoutedRouteCount"]
+            const stats = Object.fromEntries(keys.flatMap(key => typeof graph.stats[key] === "number" ? [[key, graph.stats[key]]] : []))
+            console.log("NATIVE_ROUTING_COUNTS=" + JSON.stringify({ solver: graph.getSolverName(), iterations: graph.iterations, limit: graph.MAX_ITERATIONS, routes: graph.problem.routeCount, fixedRoutes: Array.from(graph.problem.routeIsFixed ?? []).filter(value => value === 1).length, reservedPorts: Array.from(graph.problem.portReservationNetId ?? []).filter(value => value !== -1).length, neverRouted: graph.getNeverSuccessfullyRoutedRoutes().length, stats }))
+          }
+          TS
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts")
+          text=p.read_text()
+          old='[process.execPath,"--tsconfig-override"'
+          new='[process.execPath,"--preload",strPreload,"--tsconfig-override"'
+          if old not in text: raise RuntimeError("worker invocation changed")
+          text='const strPreload = '+repr(str(Path("diagnose.ts").resolve()))+';\\n'+text
+          p.write_text(text.replace(old,new))
+          PY
       - name: Route the actual native TSX circuit
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -94,6 +120,11 @@ jobs:
             rows[-1]["failureDiagnostics"]=[diagnostic(message) for message in progress.get("errors",[])]
           Path("aggregate.json").write_text(json.dumps(rows,indent=2))
           print("CANONICAL_AGGREGATE="+json.dumps(rows))
+          for logfile in Path("results").rglob("render.log"):
+            for line in logfile.read_text().splitlines():
+              if line.startswith("NATIVE_ROUTING_COUNTS="):
+                counts=json.loads(line.split("=",1)[1])
+                print("NATIVE_ROUTING_COUNTS="+json.dumps(counts))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
