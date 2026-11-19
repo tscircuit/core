@@ -1,4 +1,4 @@
-name: Verify STM32MP157 and measure native via space in the existing planner
+name: Verify iMX6 and iCEPi native cleanup end to end
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -11,8 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: via
-            source: 3ce89e028b350166adfc416793a702212e6fd793
+          - variant: complete
+            source: 75a6381c6985cd48f91b30516a828f6a771cfce0
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -29,13 +29,6 @@ jobs:
         run: |
           (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
           bunx tsc --noEmit
-      - name: Measure aggregate DRC counts after each routing stage
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          p.write_text(p.read_text()+"\n// Analysis-only stage counts; no route coordinates or net identifiers are logged.\nimport { evaluateRelaxedDrc as evaluateNativeStageDrc } from \"lib/testing/evaluate-relaxed-drc\"\nconst nativeStageStep = AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step\nAutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step = function (): void {\n  const stageIndex = this.currentPipelineStepIndex\n  const stage = this.pipelineDef[stageIndex]?.solverName\n  nativeStageStep.call(this)\n  if (this.currentPipelineStepIndex === stageIndex || !stage) return\n  if (stage === \"portPointPathingSolver\") {\n    const tiny = this.portPointPathingSolver![\"tinyPipelineSolver\"].getSolvedTinySolver()\n    const fractions = Array.from(tiny.topology.regionViaAreaFraction ?? [])\n    console.log(\"NATIVE_VIA_SITE_COUNTS=\" + JSON.stringify({\n      regionCount: fractions.length,\n      penalizedRegionCount: fractions.filter((value) => value < 1).length,\n      minFraction: Math.min(1, ...fractions),\n    }))\n  }\n  const measuredStages = new Set([\n    \"highDensityRouteSolver\", \"highDensityForceImproveSolver\",\n    \"highDensityRepairSolver\", \"highDensityStitchSolver\",\n    \"traceSimplificationSolver\", \"traceWidthSolver\",\n    \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\",\n    \"effortCleanupSolver\", \"lengthMatchingPostProcessingSolver\",\n    \"powerTraceExpansionSolver\",\n  ])\n  if (!measuredStages.has(stage)) return\n  const instance = (this as any)[stage]\n  let hdRoutes: HighDensityRoute[] = []\n  let routedTraces: SimplifiedPcbTraces\n  if (stage === \"powerTraceExpansionSolver\") {\n    routedTraces = instance.getOutput()\n  } else {\n    if (stage === \"highDensityRouteSolver\") hdRoutes = instance.routes\n    else if (stage === \"highDensityStitchSolver\") hdRoutes = instance.mergedHdRoutes\n    else if (stage === \"traceSimplificationSolver\") hdRoutes = instance.simplifiedHdRoutes\n    else if (stage === \"traceWidthSolver\") hdRoutes = instance.getHdRoutesWithWidths()\n    else if (stage === \"lengthMatchingPostProcessingSolver\") hdRoutes = instance.getOutput().hdRoutes\n    else hdRoutes = instance.getOutput()\n    routedTraces = convertPipeline7HdRoutesToSimplifiedPcbTraces({\n      connections: this.netToPointPairsSolver!.newConnections,\n      originalConnections: this.originalSrj.connections,\n      hdRoutes: canonicalizePipeline9HdRoutes(hdRoutes),\n      layerCount: this.srj.layerCount,\n      obstacles: this.srj.obstacles,\n      defaultViaHoleDiameter: this.viaHoleDiameter,\n      connMap: this.connMap,\n    })\n  }\n  const input = this.originalSrj\n  const { errors } = evaluateNativeStageDrc({\n    inputSrj: input,\n    srjWithPointPairs: this.srjWithPointPairs!,\n    routedTraces,\n    drcOptions: {\n      includeTraceContinuity: false,\n      traceClearance: input.minTraceToPadEdgeClearance,\n      viaClearance: input.minPadEdgeToPadEdgeClearance,\n      viaToPadClearance: input.minViaEdgeToPadEdgeClearance,\n      holeClearance: input.minTraceToHoleEdgeClearance,\n    },\n  })\n  const counts: Record<string, number> = {}\n  for (const error of errors) counts[error.type] = (counts[error.type] ?? 0) + 1\n  console.log(\"NATIVE_STAGE_COUNTS=\" + JSON.stringify({ stage, routeCount: routedTraces.length, counts }))\n}\n")
-          PY
       - run: bun run build
       - run: |
           mkdir -p packed
@@ -63,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fff6c5c012e78cc75c5446348c4d352cdebc1bed
+          ref: bb016342151867dcf6947ebae773476a8ae5074a
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
