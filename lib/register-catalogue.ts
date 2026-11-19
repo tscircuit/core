@@ -26,6 +26,7 @@ extendCatalogue({
   "assembly.referencesurface": Components.AssemblyReferenceSurface,
   "assembly.printedpart": Components.AssemblyPrintedPart,
   "assembly.screen": Components.AssemblyScreen,
+  "assembly.sticker": Components.AssemblySticker,
   "assembly.subassembly": Components.AssemblySubassembly,
   "assembly.cadassembly": Components.AssemblySubassembly,
   "simulation.pcbtransientchannelsimulation":
