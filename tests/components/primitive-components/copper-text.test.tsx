@@ -31,5 +31,11 @@ test("CopperText rendering", () => {
 
   const copperTexts = project.db.pcb_copper_text.list()
 
+  const copperTextComp = project.selectOne("coppertext") as any
+  expect(copperTextComp.getPcbSize()).toEqual({
+    width: "Test Text".length * 1.5,
+    height: 1.5,
+  })
+
   expect(project).toMatchPcbSnapshot(import.meta.path)
 })
