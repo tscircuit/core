@@ -34,6 +34,9 @@ jobs:
       - run: npm install -g pver
       - run: bun install --frozen-lockfile
       - run: bun run build
+      - name: Smoke test packed package before publishing
+        timeout-minutes: 6
+        run: bash scripts/smoke-tests/test-packed-consumer.sh
       - run: pver release
         env:
           GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
