@@ -88,7 +88,7 @@ jobs:
           old='[process.execPath,"--tsconfig-override"'
           new='[process.execPath,"--preload",strPreload,"--tsconfig-override"'
           if old not in text: raise RuntimeError("worker invocation changed")
-          text='const strPreload = '+repr(str(Path("diagnose.ts").resolve()))+';\\n'+text
+          text='const strPreload = '+repr(str(Path("diagnose.ts").resolve()))+';\n'+text
           p.write_text(text.replace(old,new))
           PY
       - name: Route the actual native TSX circuit
