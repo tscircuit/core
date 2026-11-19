@@ -37,18 +37,6 @@ jobs:
           b=s.rfind("    return true")
           p.write_text(s[:a]+s[b:])
           PY
-      - name: Include trace segments ending at vias in clearance evaluation
-        working-directory: autorouter
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("lib/utils/autorouting-drc/createTraceObstacleClearanceEvaluator.ts")
-          s=p.read_text()
-          old='          typedWidth:\\n            start.route_type === "wire" && end.route_type === "wire"\\n              ? (start.width ?? end.width ?? 0.1)\\n              : undefined,'
-          old=old.replace('\\n','\n')
-          assert old in s
-          p.write_text(s.replace(old,'          typedWidth: wire.width ?? 0.1,',1))
-          PY
       - run: bun run build
         working-directory: autorouter
       - name: Install the built autorouter in Core
@@ -89,8 +77,19 @@ jobs:
             }
           '''
           s=s.replace("  expect(routingErrors).toEqual([])",extra+"  expect(routingErrors).toEqual([])",1)
-          s=s.replace("expect(vias).toHaveLength(36)", "expect(vias).toHaveLength(38)")
           p.write_text(s)
+          PY
+      - name: Preserve the existing native handoff to the bus-lanes adapter
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/components/primitive-components/Group/Group.ts")
+          s=p.read_text()
+          old="      if (!isTestPointPhase) {\n        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)"
+          new='      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {\n        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)'
+          assert old in s
+          p.write_text(s.replace(old,new,1))
           PY
       - name: Run original Core routing and DRC assertions
         env:
