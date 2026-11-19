@@ -11,10 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: direct
-            source: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
           - variant: via
-            source: d1d1dfec929ec1cda96d47c7fe34a54de6a9a57e
+            source: 3ce89e028b350166adfc416793a702212e6fd793
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -56,8 +54,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: direct
-            circuit: stmp157
           - variant: via
             circuit: imx6
           - variant: via
