@@ -1,4 +1,4 @@
-name: Check complete native-copper integration
+name: Check native-copper A03 search guidance
 on:
   push:
     branches: [analysis/native-copper-stack-check]
@@ -9,10 +9,6 @@ jobs:
   routing:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        repair: [3dfd90b982d749c0bf286be39dd16f776692e101, eeca3801e32a6b413a5dbfe6e4b72b5858cf2738]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: de5475ccc1d749000a57a3946676d7623890d262
+          ref: fe727746ddd02a02e2cff372ba8d3e9040680956
           path: autorouter
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -30,7 +26,7 @@ jobs:
           bun-version: '1.4.3'
       - name: Install native force-repair integration
         env:
-          REPAIR_COMMIT: ${{ matrix.repair }}
+          REPAIR_COMMIT: 3dfd90b982d749c0bf286be39dd16f776692e101
         run: |
           python3 - <<'PY'
           import os,json,urllib.request
@@ -47,6 +43,47 @@ jobs:
           PY
       - run: bun install
         working-directory: autorouter
+      - name: Add optional static-copper guidance to the existing A03 search
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          patch=Path(".github/analysis/a03-native-guidance.patch").read_text().splitlines(True)
+          root=Path("node_modules/@tscircuit/high-density-a01").resolve()
+          i=0
+          while i<len(patch):
+              if not patch[i].startswith('+++ b/'):
+                  i+=1
+                  continue
+              path=patch[i][6:].strip()
+              p=root/path
+              s=p.read_text()
+              i+=1
+              while i<len(patch) and not patch[i].startswith('diff --git'):
+                  if not patch[i].startswith('@@'):
+                      i+=1
+                      continue
+                  i+=1
+                  h=[]
+                  while i<len(patch) and not patch[i].startswith(('@@','diff --git')):
+                      if patch[i][:1] in (' ','+','-'): h.append(patch[i])
+                      i+=1
+                  before=0
+                  while before<len(h) and h[before].startswith(' '): before+=1
+                  after=0
+                  while after<len(h)-before and h[len(h)-1-after].startswith(' '): after+=1
+                  candidates=[]
+                  for pre in range(before+1):
+                      for post in range(after+1):
+                          hh=h[pre:len(h)-post if post else len(h)]
+                          a=''.join(x[1:] for x in hh if not x.startswith('+'))
+                          b=''.join(x[1:] for x in hh if not x.startswith('-'))
+                          if a and s.count(a)==1: candidates.append((len(a),a,b))
+                  if not candidates: raise RuntimeError('Unmatched source patch: '+path)
+                  _,a,b=max(candidates)
+                  s=s.replace(a,b,1)
+              p.write_text(s)
+          PY
       - run: bun run build
         working-directory: autorouter
       - name: Install the built autorouter in Core
