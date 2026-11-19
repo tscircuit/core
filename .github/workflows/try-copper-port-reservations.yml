@@ -15,6 +15,18 @@ jobs:
           repository: tscircuit/tscircuit-autorouter
           ref: d55cf546deeece4a92139c6a39086e6cce7abc6e
           persist-credentials: false
+      - name: Test exact native path crossings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/PreloadedTraceGraphSolver.ts")
+          s=p.read_text()
+          s=s.replace('import { pointToSegmentDistance }', 'import { getSegmentIntersection, pointToSegmentDistance }')
+          old="          const portPoint = getClosestPortPoint(segment, primitive, z)"
+          new="          let portPoint = getClosestPortPoint(segment, primitive, z)\n          if (primitive.isFixed) {\n            const point = getSegmentIntersection(primitive.start, primitive.end, segment.start, segment.end)\n            if (point) {\n              const existing = segment.portPoints.find((candidate) =>\n                candidate.availableZ.includes(z) &&\n                Math.hypot(candidate.x - point.x, candidate.y - point.y) < GEOMETRIC_TOLERANCE,\n              )\n              portPoint = existing\n              if (!portPoint) {\n                portPoint = {\n                  segmentPortPointId: `${segment.edgeId}_fixed${segment.portPoints.length}_z${z}`,\n                  x: point.x,\n                  y: point.y,\n                  availableZ: [z],\n                  nodeIds: segment.nodeIds,\n                  edgeId: segment.edgeId,\n                  connectionName: null,\n                  distToCentermostPortOnZ: Math.hypot(point.x - (segment.start.x + segment.end.x) / 2, point.y - (segment.start.y + segment.end.y) / 2),\n                  cramped: false,\n                }\n                segment.portPoints.push(portPoint)\n              }\n            }\n          }"
+          if old not in s: raise RuntimeError("Native crossing import changed")
+          p.write_text(s.replace(old,new))
+          PY
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
