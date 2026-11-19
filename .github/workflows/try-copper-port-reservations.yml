@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 14366be10160d1f76cd9f8955ce81e8d3c13a550
+          ref: 8a49b652168b9b8606fcd6c6388886946556d88a
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
@@ -34,15 +34,16 @@ jobs:
   benchmark:
     needs: build
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
+      max-parallel: 5
       fail-fast: false
       matrix:
-        circuit: [orangecrab, a64, h616, glider]
+        circuit: [orangecrab, a64, h616, glider, h3, stmp157, a13, butterstick, imx6, icepi]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 7d4979ea36397d622aeebdef36880fbba29eab01
+          ref: fff6c5c012e78cc75c5446348c4d352cdebc1bed
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
@@ -91,3 +92,5 @@ jobs:
 # Verify canonical copper inside the regional search.
 
 # Preserve topology ports and restrict hard validation to immutable copper.
+
+# Verify all ten native circuits after reserving one-crossing copper.
