@@ -98,8 +98,29 @@ jobs:
           PY
       - run: bun install
         working-directory: core
-      - name: Run unchanged Core routing and DRC checks
+      - name: Inspect the public fanout snapshot and aggregate check counts
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("tests/repros/repro-fanout-routed-layer-impact.test.tsx")
+          s=p.read_text()
+          anchor="  expect(routingErrors).toEqual([])"
+          extra='  console.log("FANOUT_CHECK_COUNTS", JSON.stringify({overlaps:checkEachPcbTraceNonOverlapping(json).length,hole:checkHoleTraceClearance(json).length,padTrace:checkPadTraceClearance(json).length,padPad:checkPadPadClearance(json).length,continuity:checkTracesAreContiguous(json).length}))\\n  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {backgroundColor:"white",width:1000,height:1100,shouldDrawRatsNest:false})\\n'
+          p.write_text(s.replace(anchor,extra.replace('\\n','\n')+anchor,1))
+          PY
+      - name: Run original Core routing and DRC assertions
         env:
           BUN_UPDATE_SNAPSHOTS: '1'
         run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
         working-directory: core
+      - name: Export the approved public test SVG for visual inspection
+        if: always()
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          p=Path("tests/repros/__snapshots__/repro-fanout-routed-layer-impact-pcb.snap.svg")
+          print("PUBLIC_TEST_SVG "+base64.b64encode(p.read_bytes()).decode())
+          PY
