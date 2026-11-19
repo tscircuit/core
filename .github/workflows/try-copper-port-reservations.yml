@@ -1,4 +1,4 @@
-name: Verify canonical native and active net identity
+name: Compare native force context and live B01 copper owners
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -7,13 +7,21 @@ permissions:
   contents: read
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: kernel
+            source: 1bd85498f55f9dcc9800d86a64e09e2605a801e6
+          - variant: owners
+            source: 15ebdabe705d3005cb93e0e6c224913db5904bc2
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 94904a42cd48f1113d4c89be57b791b45966a472
+          ref: ${{ matrix.source }}
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -30,7 +38,7 @@ jobs:
           cp packed/*.tgz candidate.tgz
       - uses: actions/upload-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.variant }}
           path: candidate.tgz
   benchmark:
     needs: build
@@ -40,6 +48,7 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
+        variant: [kernel, owners]
         circuit: [orangecrab, h616, glider, imx6, icepi]
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +60,7 @@ jobs:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.variant }}
           path: candidate
       - name: Install the source-built candidate
         run: |
@@ -94,16 +103,24 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: copper-port-aggregate-${{ matrix.circuit }}
+          name: copper-port-aggregate-${{ matrix.variant }}-${{ matrix.circuit }}
           path: aggregate.json
   inherited-regression:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: kernel
+            source: 1bd85498f55f9dcc9800d86a64e09e2605a801e6
+          - variant: owners
+            source: 15ebdabe705d3005cb93e0e6c224913db5904bc2
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 94904a42cd48f1113d4c89be57b791b45966a472
+          ref: ${{ matrix.source }}
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
