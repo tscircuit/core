@@ -1,0 +1,49 @@
+name: Inspect real fixed-copper regional rejection
+on:
+  push:
+    branches: [analysis/inspect-canonical-region]
+    paths: [.github/workflows/inspect-canonical-region.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: canonical-regional-candidate
+          run-id: 44470338024
+          github-token: ${{ github.token }}
+          path: candidate
+      - uses: actions/download-artifact@v4
+        with:
+          name: canonical-regional-glider
+          run-id: 44470338024
+          github-token: ${{ github.token }}
+          path: native
+      - name: Install the exact source candidate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json");m=json.loads(p.read_text())
+          m["devDependencies"]["@tscircuit/capacity-autorouter"]="file:./candidate/candidate.tgz"
+          p.write_text(json.dumps(m,indent=2)+"\n")
+          PY
+          bun install --ignore-scripts
+      - run: bun inspect-region.private.ts
+      - name: Preserve exact failed region and candidate paths
+        if: always()
+        run: |
+          git checkout -- package.json
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add region-probe
+          git commit -m "Capture fixed-copper candidate rejection from real Glider DDR"
+          git push origin HEAD:analysis/inspect-canonical-region
