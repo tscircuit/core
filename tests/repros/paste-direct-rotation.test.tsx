@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import type { Chip } from "lib/components/normal-components/Chip"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("TLV75533 rotated paste aligns with copper pads", async () => {
@@ -146,7 +145,7 @@ test("TLV75533 rotated paste aligns with copper pads", async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     showSolderPaste: true,
   })
-  const regulator = circuit.selectOne<Chip>(".U1")!
+  const regulator = circuit.selectOne(".U1")!
   const apertures = circuit.db.pcb_solder_paste
     .list()
     .filter((paste) => paste.pcb_component_id === regulator.pcb_component_id)
