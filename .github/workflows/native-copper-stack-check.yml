@@ -1,0 +1,68 @@
+name: Check complete native-copper integration
+on:
+  push:
+    branches: [analysis/native-copper-stack-check]
+    paths: [.github/workflows/native-copper-stack-check.yml]
+permissions:
+  contents: read
+jobs:
+  routing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        repair: [3dfd90b982d749c0bf286be39dd16f776692e101, eeca3801e32a6b413a5dbfe6e4b72b5858cf2738]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bb016342151867dcf6947ebae773476a8ae5074a
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: de5475ccc1d749000a57a3946676d7623890d262
+          path: autorouter
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install native force-repair integration
+        env:
+          REPAIR_COMMIT: ${{ matrix.repair }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          root=Path("autorouter")
+          prefix="lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/"
+          for name in ["AutoroutingPipelineSolver9_PreloadedTraceGraph.ts","Pipeline9HighDensityForceImproveSolver.ts","Pipeline9RegionalFallbackSolver.ts"]:
+              url="https://raw.githubusercontent.com/tscircuit/tscircuit-autorouter/3db2cef321fe8821239903945e3bcc5eb1c94fd9/"+prefix+name
+              (root/prefix/name).write_bytes(urllib.request.urlopen(url).read())
+          p=root/"package.json"
+          data=json.loads(p.read_text())
+          data["devDependencies"]["high-density-repair01"]="git+https://github.com/tscircuit/high-density-repair01.git#"+os.environ["REPAIR_COMMIT"]
+          p.write_text(json.dumps(data,indent=2)+"\n")
+          PY
+      - run: bun install
+        working-directory: autorouter
+      - run: bun run build
+        working-directory: autorouter
+      - name: Install the built autorouter in Core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("core/package.json")
+          data=json.loads(p.read_text())
+          data["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../autorouter"
+          p.write_text(json.dumps(data,indent=2)+"\n")
+          PY
+      - run: bun install
+        working-directory: core
+      - name: Run unchanged Core routing and DRC checks
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+        working-directory: core
