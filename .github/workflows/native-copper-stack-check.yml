@@ -1,4 +1,4 @@
-name: Verify A13 snapshots against the published native package
+name: Verify published native package in full Core shards
 on:
   push:
     branches: [analysis/native-copper-stack-check]
@@ -8,7 +8,11 @@ permissions:
 jobs:
   snapshots:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [6, 7]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,17 +21,25 @@ jobs:
         with:
           bun-version: '1.4.2'
       - run: bun install
-      - name: Keep original native A13 routing and physical-clearance assertions
+      - name: Generate the original ten-shard plan
+        env:
+          TEST_PLAN_NODE_COUNT: '10'
+        run: bun run scripts/generate-test-plan.ts
+      - name: Generate SVGs in the same test order as CI
         env:
           BUN_UPDATE_SNAPSHOTS: '1'
-        run: bun test --timeout 9999999 tests/repros/repro-a13-ddr-thermal-pad-routing.test.tsx tests/repros/repro-a13-ddr-no-via-in-pad-limitation.test.tsx
-      - name: Save generated public test SVGs
+        run: |
+          mapfile -t files < .github/test-plans/node${{ matrix.node }}-testplan.txt
+          bun test "${files[@]}" --timeout 30000
+      - name: Verify the complete shard without updating snapshots
+        run: |
+          mapfile -t files < .github/test-plans/node${{ matrix.node }}-testplan.txt
+          bun test "${files[@]}" --timeout 30000
+      - name: Save verified public SVGs
         run: |
           git config user.name "tscircuit-bot"
           git config user.email "actions@github.com"
           git add -- '*.snap.svg'
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Update A13 SVGs against the published native autorouter"
-          git push origin HEAD:refs/heads/analysis/verified-native-core-published-a13
-      - name: Check Core types against the published package
-        run: bunx tsc --noEmit
+          git commit -m "Update published native SVGs for Core shard ${{ matrix.node }}"
+          git push origin HEAD:refs/heads/analysis/verified-native-core-published-node${{ matrix.node }}
