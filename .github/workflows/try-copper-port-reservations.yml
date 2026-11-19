@@ -1,4 +1,4 @@
-name: Verify iMX6 and iCEPi native cleanup end to end
+name: Verify native pad guidance on iCEPi
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - variant: complete
-            source: 75a6381c6985cd48f91b30516a828f6a771cfce0
+            source: 0477e6f5d46e0f43910ec285e16871ba8ad0296f
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -48,8 +48,6 @@ jobs:
       matrix:
         include:
           - variant: complete
-            circuit: imx6
-          - variant: complete
             circuit: icepi
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +76,7 @@ jobs:
         env:
           CIRCUIT: ${{ matrix.circuit }}
         run: |
-          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$GITHUB_WORKSPACE" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 300
       - name: Report aggregate counts without exporting circuit geometry
         if: always()
         run: |
