@@ -73,7 +73,7 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY'
-          import json
+          import json, re
           from pathlib import Path
           source=Path("results/results.json")
           if not source.exists():
