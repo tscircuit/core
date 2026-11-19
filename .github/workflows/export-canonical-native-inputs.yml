@@ -1,0 +1,37 @@
+name: Export canonical native DDR routing inputs
+on:
+  push:
+    branches: [analysis/export-canonical-native-inputs]
+    paths: [.github/workflows/export-canonical-native-inputs.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: copper-port-orangecrab
+          run-id: 44478180953
+          github-token: ${{ github.token }}
+          path: native
+      - name: Preserve the exact captured remaining-phase input
+        run: |
+          python3 - <<'PY'
+          import gzip,json
+          from pathlib import Path
+          target=Path("native-inputs");target.mkdir(exist_ok=True)
+          root=Path("native/orangecrab")
+          phases=list(root.glob("phase-*-start.srj.json"))
+          last=max(phases,key=lambda p:int(p.name.split("-")[1]))
+          srj=json.loads(last.read_text())
+          (target/"orangecrab.srj.json.gz").write_bytes(gzip.compress(json.dumps(srj).encode()))
+          PY
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add native-inputs
+          git commit -m "Preserve actual canonical native routing input"
+          git push origin HEAD:analysis/export-canonical-native-inputs
