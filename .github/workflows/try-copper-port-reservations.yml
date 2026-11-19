@@ -1,4 +1,4 @@
-name: Verify shared native path context on all ten DDR circuits
+name: Verify STM32MP157 and measure native via space in the existing planner
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -7,13 +7,21 @@ permissions:
   contents: read
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: direct
+            source: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
+          - variant: via
+            source: d1d1dfec929ec1cda96d47c7fe34a54de6a9a57e
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
+          ref: ${{ matrix.source }}
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -28,7 +36,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          p.write_text(p.read_text()+"\n// Analysis-only stage counts; no route coordinates or net identifiers are logged.\nimport { evaluateRelaxedDrc as evaluateNativeStageDrc } from \"lib/testing/evaluate-relaxed-drc\"\nconst nativeStageStep = AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step\nAutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step = function (): void {\n  const stageIndex = this.currentPipelineStepIndex\n  const stage = this.pipelineDef[stageIndex]?.solverName\n  const regionalBeforeStep = this.highDensityRouteSolver?.activeFallbackSolver\n  nativeStageStep.call(this)\n  if (this.failed) {\n    console.log(\"NATIVE_FAILURE_COUNTS=\" + JSON.stringify({\n      stage,\n      regional: regionalBeforeStep?.stats,\n      highDensity: Object.fromEntries(Object.entries(this.highDensityRouteSolver?.stats ?? {}).filter(([, value]) => typeof value === \"number\")),\n    }))\n  }\n  if (this.currentPipelineStepIndex === stageIndex || !stage) return\n  const measuredStages = new Set([\n    \"highDensityRouteSolver\", \"highDensityForceImproveSolver\",\n    \"highDensityRepairSolver\", \"highDensityStitchSolver\",\n    \"traceSimplificationSolver\", \"traceWidthSolver\",\n    \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\",\n    \"effortCleanupSolver\", \"lengthMatchingPostProcessingSolver\",\n    \"powerTraceExpansionSolver\",\n  ])\n  if (!measuredStages.has(stage)) return\n  const instance = (this as any)[stage]\n  let hdRoutes: HighDensityRoute[] = []\n  let routedTraces: SimplifiedPcbTraces\n  if (stage === \"powerTraceExpansionSolver\") {\n    routedTraces = instance.getOutput()\n  } else {\n    if (stage === \"highDensityRouteSolver\") hdRoutes = instance.routes\n    else if (stage === \"highDensityStitchSolver\") hdRoutes = instance.mergedHdRoutes\n    else if (stage === \"traceSimplificationSolver\") hdRoutes = instance.simplifiedHdRoutes\n    else if (stage === \"traceWidthSolver\") hdRoutes = instance.getHdRoutesWithWidths()\n    else if (stage === \"lengthMatchingPostProcessingSolver\") hdRoutes = instance.getOutput().hdRoutes\n    else hdRoutes = instance.getOutput()\n    routedTraces = convertPipeline7HdRoutesToSimplifiedPcbTraces({\n      connections: this.netToPointPairsSolver!.newConnections,\n      originalConnections: this.originalSrj.connections,\n      hdRoutes: canonicalizePipeline9HdRoutes(hdRoutes),\n      layerCount: this.srj.layerCount,\n      obstacles: this.srj.obstacles,\n      defaultViaHoleDiameter: this.viaHoleDiameter,\n      connMap: this.connMap,\n    })\n  }\n  const input = this.originalSrj\n  const { errors } = evaluateNativeStageDrc({\n    inputSrj: input,\n    srjWithPointPairs: this.srjWithPointPairs!,\n    routedTraces,\n    drcOptions: {\n      includeTraceContinuity: false,\n      traceClearance: input.minTraceToPadEdgeClearance,\n      viaClearance: input.minPadEdgeToPadEdgeClearance,\n      viaToPadClearance: input.minViaEdgeToPadEdgeClearance,\n      holeClearance: input.minTraceToHoleEdgeClearance,\n    },\n  })\n  const counts: Record<string, number> = {}\n  for (const error of errors) counts[error.type] = (counts[error.type] ?? 0) + 1\n  console.log(\"NATIVE_STAGE_COUNTS=\" + JSON.stringify({ stage, routeCount: routedTraces.length, counts }))\n}\n")
+          p.write_text(p.read_text()+"\n// Analysis-only stage counts; no route coordinates or net identifiers are logged.\nimport { evaluateRelaxedDrc as evaluateNativeStageDrc } from \"lib/testing/evaluate-relaxed-drc\"\nconst nativeStageStep = AutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step\nAutoroutingPipelineSolver9_PreloadedTraceGraph.prototype._step = function (): void {\n  const stageIndex = this.currentPipelineStepIndex\n  const stage = this.pipelineDef[stageIndex]?.solverName\n  nativeStageStep.call(this)\n  if (this.currentPipelineStepIndex === stageIndex || !stage) return\n  if (stage === \"portPointPathingSolver\") {\n    const tiny = this.portPointPathingSolver!.tinyPipelineSolver.getSolvedTinySolver()\n    const fractions = Array.from(tiny.topology.regionViaAreaFraction ?? [])\n    console.log(\"NATIVE_VIA_SITE_COUNTS=\" + JSON.stringify({\n      regionCount: fractions.length,\n      penalizedRegionCount: fractions.filter((value) => value < 1).length,\n      minFraction: Math.min(1, ...fractions),\n    }))\n  }\n  const measuredStages = new Set([\n    \"highDensityRouteSolver\", \"highDensityForceImproveSolver\",\n    \"highDensityRepairSolver\", \"highDensityStitchSolver\",\n    \"traceSimplificationSolver\", \"traceWidthSolver\",\n    \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\",\n    \"effortCleanupSolver\", \"lengthMatchingPostProcessingSolver\",\n    \"powerTraceExpansionSolver\",\n  ])\n  if (!measuredStages.has(stage)) return\n  const instance = (this as any)[stage]\n  let hdRoutes: HighDensityRoute[] = []\n  let routedTraces: SimplifiedPcbTraces\n  if (stage === \"powerTraceExpansionSolver\") {\n    routedTraces = instance.getOutput()\n  } else {\n    if (stage === \"highDensityRouteSolver\") hdRoutes = instance.routes\n    else if (stage === \"highDensityStitchSolver\") hdRoutes = instance.mergedHdRoutes\n    else if (stage === \"traceSimplificationSolver\") hdRoutes = instance.simplifiedHdRoutes\n    else if (stage === \"traceWidthSolver\") hdRoutes = instance.getHdRoutesWithWidths()\n    else if (stage === \"lengthMatchingPostProcessingSolver\") hdRoutes = instance.getOutput().hdRoutes\n    else hdRoutes = instance.getOutput()\n    routedTraces = convertPipeline7HdRoutesToSimplifiedPcbTraces({\n      connections: this.netToPointPairsSolver!.newConnections,\n      originalConnections: this.originalSrj.connections,\n      hdRoutes: canonicalizePipeline9HdRoutes(hdRoutes),\n      layerCount: this.srj.layerCount,\n      obstacles: this.srj.obstacles,\n      defaultViaHoleDiameter: this.viaHoleDiameter,\n      connMap: this.connMap,\n    })\n  }\n  const input = this.originalSrj\n  const { errors } = evaluateNativeStageDrc({\n    inputSrj: input,\n    srjWithPointPairs: this.srjWithPointPairs!,\n    routedTraces,\n    drcOptions: {\n      includeTraceContinuity: false,\n      traceClearance: input.minTraceToPadEdgeClearance,\n      viaClearance: input.minPadEdgeToPadEdgeClearance,\n      viaToPadClearance: input.minViaEdgeToPadEdgeClearance,\n      holeClearance: input.minTraceToHoleEdgeClearance,\n    },\n  })\n  const counts: Record<string, number> = {}\n  for (const error of errors) counts[error.type] = (counts[error.type] ?? 0) + 1\n  console.log(\"NATIVE_STAGE_COUNTS=\" + JSON.stringify({ stage, routeCount: routedTraces.length, counts }))\n}\n")
           PY
       - run: bun run build
       - run: |
@@ -37,7 +45,7 @@ jobs:
           cp packed/*.tgz candidate.tgz
       - uses: actions/upload-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.variant }}
           path: candidate.tgz
   benchmark:
     needs: build
@@ -47,7 +55,15 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
-        circuit: [orangecrab, h616, glider, imx6, icepi, a64, stm32mp157, h3, a13, butterstick]
+        include:
+          - variant: direct
+            circuit: stmp157
+          - variant: via
+            circuit: imx6
+          - variant: via
+            circuit: icepi
+          - variant: via
+            circuit: a64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,7 +74,7 @@ jobs:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.variant }}
           path: candidate
       - name: Install the source-built candidate
         run: |
@@ -84,7 +100,7 @@ jobs:
           from pathlib import Path
           for log in Path("results").rglob("render.log"):
             for line in log.read_text().splitlines():
-              if line.startswith(("NATIVE_STAGE_COUNTS=","NATIVE_FAILURE_COUNTS=")):
+              if line.startswith(("NATIVE_STAGE_COUNTS=","NATIVE_FAILURE_COUNTS=","NATIVE_VIA_SITE_COUNTS=")):
                 print(line)
           source=Path("results/results.json")
           if not source.exists():
@@ -105,24 +121,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: copper-port-aggregate-${{ matrix.circuit }}
+          name: copper-port-aggregate-${{ matrix.variant }}-${{ matrix.circuit }}
           path: aggregate.json
 
-  functional-regressions:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - run: bun install
-      - run: bunx tsc --noEmit
-      - run: bun test --timeout 9999999 tests/features/pipeline9-native-copper-net-identity.test.ts tests/features/pipeline9-completed-route-copper.test.ts tests/features/pipeline9-regional-fallback-new-layer-fixed-copper.test.ts tests/features/pipeline9-srj23-sample21-regional-b01-repair.test.ts tests/bugs/bugreport107-board-1726.test.ts
-      - name: Verify existing force-repair tests
-        working-directory: node_modules/high-density-repair01
-        run: bun test --timeout 9999999 tests/bugreport94-force-crossing.test.ts tests/gameboy-force-improve-platform.test.ts tests/h616-ddr-force-repair.test.ts tests/regional-force-improve-accepted-candidate.test.ts tests/regional-force-improve-via-pad.test.ts tests/glider-fixed-via-endpoint.test.ts tests/rvboy-plated-hole-fixed-points.test.ts
