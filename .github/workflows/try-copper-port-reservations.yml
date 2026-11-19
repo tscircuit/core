@@ -13,14 +13,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 2418e58bcfa9c9eaa9aa1562f0a51f9fe7db9061
+          ref: 212272bd309e5a0798eaa02dd5ff5d46ead2e8ac
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
       - run: bun install
       - name: Check native copper reservations
         run: |
-          (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/port-copper-net-reservation.test.ts)
+          (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
           bunx tsc --noEmit
       - run: bun run build
       - run: |
@@ -85,3 +85,5 @@ jobs:
           path: results/
 
 # Retry after completing the typed copper lookup.
+
+# Verify the existing reservation API with section routing and cleanup.
