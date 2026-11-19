@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 0eb95ceee77f4eea58da53d55c62f110498e165b
+          ref: 14366be10160d1f76cd9f8955ce81e8d3c13a550
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
@@ -89,3 +89,5 @@ jobs:
 # Verify the existing reservation API with section routing and cleanup.
 
 # Verify canonical copper inside the regional search.
+
+# Preserve topology ports and restrict hard validation to immutable copper.
