@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 975b75ade659c10e5b590db1c0d13be3d6a8ea83
+          ref: 2418e58bcfa9c9eaa9aa1562f0a51f9fe7db9061
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
@@ -83,3 +83,5 @@ jobs:
         with:
           name: copper-port-${{ matrix.circuit }}
           path: results/
+
+# Retry after completing the typed copper lookup.
