@@ -1,0 +1,35 @@
+name: Check native-path integration routing
+on:
+  push:
+    branches: [analysis/native-copper-ci-cleanup]
+    paths: [.github/workflows/native-copper-pin-check.yml]
+permissions:
+  contents: read
+jobs:
+  routing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bb016342151867dcf6947ebae773476a8ae5074a
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Use the verified autorouter preview
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("package.json")
+          s=p.read_text()
+          old="https://npm-releases.tscircuit.com/npm-tarballs/44569614088-1/tscircuit-capacity-autorouter-0.0.1135.tgz"
+          new="https://npm-releases.tscircuit.com/npm-tarballs/44596543326-1/tscircuit-capacity-autorouter-0.0.1135.tgz"
+          assert old in s
+          p.write_text(s.replace(old,new))
+          PY
+      - run: bun install
+      - name: Check the remaining integration failures
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
