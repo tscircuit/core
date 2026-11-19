@@ -1,0 +1,21 @@
+name: Check native copper integration types
+on:
+  push:
+    branches: [analysis/native-copper-types]
+    paths: [.github/workflows/native-copper-types.yml]
+permissions:
+  contents: read
+jobs:
+  types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9b6e4aeaa45d747b7c733b32a602e49f49631979
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bunx tsc --noEmit
