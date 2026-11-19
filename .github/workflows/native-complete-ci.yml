@@ -77,4 +77,7 @@ jobs:
           git add -- '*.snap.svg'
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Update verified native trace SVGs for Core shard ${{ matrix.node }}"
-          git push origin HEAD:analysis/verified-native-core-round2-node${{ matrix.node }}
+          git push origin HEAD:refs/heads/analysis/verified-native-core-round2-node${{ matrix.node }}
+      - name: Verify Core types against the native package
+        if: matrix.node == 1
+        run: bunx tsc --noEmit
