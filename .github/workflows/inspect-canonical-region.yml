@@ -17,14 +17,14 @@ jobs:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: canonical-regional-candidate
-          run-id: 44470338024
+          name: copper-port-candidate
+          run-id: 44473347266
           github-token: ${{ github.token }}
           path: candidate
       - uses: actions/download-artifact@v4
         with:
-          name: canonical-regional-glider
-          run-id: 44470338024
+          name: copper-port-glider
+          run-id: 44473347266
           github-token: ${{ github.token }}
           path: native
       - name: Install the exact source candidate
@@ -47,3 +47,5 @@ jobs:
           git add region-probe
           git commit -m "Capture fixed-copper candidate rejection from real Glider DDR"
           git push origin HEAD:analysis/inspect-canonical-region
+
+# Capture graph reservations and positions before uniform redistribution.
