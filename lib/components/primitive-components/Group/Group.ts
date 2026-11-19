@@ -2077,17 +2077,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
-        // Fixed input paths are routing context, not new database copper.
-        const fixedInputPcbTraceIds = new Set(
-          (simpleRouteJson.traces ?? [])
-            .filter((trace) => trace.isFixed === true)
-            .map((trace) => trace.pcb_trace_id),
-        )
-        const stageOutputTracesForDatabase = stageOutputTraces.filter(
-          (trace) =>
-            isTestPointPhase || !fixedInputPcbTraceIds.has(trace.pcb_trace_id),
-        )
-
         if (isRegionReroutePhase && rerouteOriginalSrj) {
           for (const trace of rerouteOriginalSrj.traces ?? []) {
             if (trace.type === "pcb_trace") {
@@ -2115,7 +2104,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             outputTraces.length,
             ...getAccumulatedPcbTracesWithStageOutputReplacements({
               accumulatedPcbTraces: retainedPcbTraces,
-              stageOutputPcbTraces: stageOutputTracesForDatabase,
+              stageOutputPcbTraces: stageOutputTraces,
             }),
           )
         } else {
@@ -2135,7 +2124,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             outputTraces.length,
             ...getAccumulatedPcbTracesWithStageOutputReplacements({
               accumulatedPcbTraces: outputTraces,
-              stageOutputPcbTraces: stageOutputTracesForDatabase,
+              stageOutputPcbTraces: stageOutputTraces,
             }),
           )
         }

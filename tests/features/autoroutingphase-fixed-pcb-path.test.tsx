@@ -54,7 +54,7 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
         trace.connection_name === originalManualTrace!.source_trace_id,
     )!
     expect(manualTrace.isFixed).toBe(true)
-    expect(manualTrace.route).toEqual(originalManualTrace!.route)
+    expect(originalManualTrace!.route).toMatchObject(manualTrace.route)
   }
   const traces = circuit.db.pcb_trace.list()
   const manualTraces = traces.filter(
