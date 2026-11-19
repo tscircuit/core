@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 808501fbc07d1a916fe7893388a1e3d92ed00f7b
+          ref: 3ca6c4d5bfbe0e9028aaf9482ab4ec7df4393726
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -40,7 +40,7 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
-        circuit: [imx6, icepi, a13]
+        circuit: [orangecrab, a64, h616, glider, h3, stmp157, a13, butterstick, imx6, icepi]
     steps:
       - uses: actions/checkout@v4
         with:
