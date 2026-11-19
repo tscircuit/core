@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { convertSrjToGraphicsObject } from "@tscircuit/capacity-autorouter"
+import {
+  convertSrjToGraphicsObject,
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+} from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type {
   Obstacle,
@@ -176,7 +179,7 @@ test("H616 fixed via keeps its native circular copper footprint", async () => {
   expect(foreignPad.connectedTo).not.toContain(fixedTrace.connection_name!)
 
   await expect(
-    getSvgFromGraphicsObject(convertSrjToGraphicsObject(output), {
+    getSvgFromGraphicsObject(convertSrjToGraphicsObject(output as AutorouterSimpleRouteJson), {
       backgroundColor: "white",
     }),
   ).toMatchSvgSnapshot(import.meta.path)
