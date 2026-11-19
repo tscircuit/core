@@ -1,4 +1,4 @@
-name: Compare native context in global and regional force cleanup
+name: Verify shared native path context on all ten DDR circuits
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -7,21 +7,13 @@ permissions:
   contents: read
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: global
-            source: 729be3bb09f447ce15877eab95994e45048d2ce3
-          - variant: regional
-            source: f0d36cb0dad0c9e452c9cf88fef55561e7a23459
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: ${{ matrix.source }}
+          ref: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -45,7 +37,7 @@ jobs:
           cp packed/*.tgz candidate.tgz
       - uses: actions/upload-artifact@v4
         with:
-          name: copper-port-candidate-${{ matrix.variant }}
+          name: copper-port-candidate
           path: candidate.tgz
   benchmark:
     needs: build
@@ -55,8 +47,7 @@ jobs:
       max-parallel: 5
       fail-fast: false
       matrix:
-        variant: [global, regional]
-        circuit: [h616, orangecrab, glider, imx6, icepi]
+        circuit: [orangecrab, h616, glider, imx6, icepi, a64, stm32mp157, h3, a13, butterstick]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,7 +58,7 @@ jobs:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: copper-port-candidate-${{ matrix.variant }}
+          name: copper-port-candidate
           path: candidate
       - name: Install the source-built candidate
         run: |
@@ -114,6 +105,24 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: copper-port-aggregate-${{ matrix.variant }}-${{ matrix.circuit }}
+          name: copper-port-aggregate-${{ matrix.circuit }}
           path: aggregate.json
 
+  functional-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 8ba13366170e39f5e5ba988eaa3fa8a993e225a3
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - run: bunx tsc --noEmit
+      - run: bun test --timeout 9999999 tests/features/pipeline9-native-copper-net-identity.test.ts tests/features/pipeline9-completed-route-copper.test.ts tests/features/pipeline9-regional-fallback-new-layer-fixed-copper.test.ts tests/features/pipeline9-srj23-sample21-regional-b01-repair.test.ts tests/bugs/bugreport107-board-1726.test.ts
+      - name: Verify existing force-repair tests
+        working-directory: node_modules/high-density-repair01
+        run: bun test --timeout 9999999 tests/bugreport94-force-crossing.test.ts tests/gameboy-force-improve-platform.test.ts tests/h616-ddr-force-repair.test.ts tests/regional-force-improve-accepted-candidate.test.ts tests/regional-force-improve-via-pad.test.ts tests/glider-fixed-via-endpoint.test.ts tests/rvboy-plated-hole-fixed-points.test.ts
