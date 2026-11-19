@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("TLV75533 rotated paste aligns with copper pads", async () => {
+test("TLV75533 rotated paste aligns with copper pads", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={14} height={10} routingDisabled schematicDisabled>

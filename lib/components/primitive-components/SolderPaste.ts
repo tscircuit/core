@@ -32,14 +32,11 @@ export const isStandalonePcbSolderPaste = (
 export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   pcb_solder_paste_id: PcbSolderPasteId | null = null
   isPcbPrimitive = true
-  private circuitJsonRotation = 0
 
   /**
    * Reconstruct an aperture already in its parent's local PCB frame (+X right,
    * +Y top, +Z above, right-handed, mm). Its center is a point and its rotation
    * is in CCW degrees; coordinate transforms happen before this import.
-   * Cached records may carry rotation even though the authored props expose
-   * only axis-aligned shapes. Keep that derived state separate from props.
    */
   static fromCircuitJson(aperture: StandalonePcbSolderPaste): SolderPaste {
     const placement = {
@@ -56,17 +53,11 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
         shape: "rect",
         width: aperture.width,
         height: aperture.height,
+        pcbRotation:
+          aperture.shape === "rotated_rect" ? aperture.ccw_rotation : undefined,
       }
     }
-    const paste = new SolderPaste(props)
-    if (aperture.shape === "rotated_rect") {
-      paste.circuitJsonRotation = aperture.ccw_rotation
-    }
-    return paste
-  }
-
-  _getPcbRotationBeforeLayout(): number {
-    return this.circuitJsonRotation
+    return new SolderPaste(props)
   }
 
   get config() {
