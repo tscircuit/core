@@ -20,3 +20,21 @@ test("<solderjumper /> defaults pinCount to 2", async () => {
 
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })
+
+test("<solderjumper /> infers pinCount and bridged symbol from bridgedPins without footprint", async () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="10mm" height="10mm">
+      <solderjumper name="SJ1" bridgedPins={[["2", "3"]]} />
+    </board>,
+  )
+
+  circuit.render()
+
+  expect(circuit.db.toArray().filter((x) => "error_type" in x)).toEqual([])
+
+  const sc = circuit.db.schematic_component.list()[0]
+  expect(sc.symbol_name?.startsWith("solderjumper3_bridged23")).toBe(true)
+  expect(circuit.db.source_port.list()).toHaveLength(3)
+})

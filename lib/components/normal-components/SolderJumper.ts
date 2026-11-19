@@ -23,7 +23,7 @@ export class SolderJumper<
     const numericPinMatch = pinName.match(/^(?:pin)?(\d+)$/i)
     if (numericPinMatch) return Number(numericPinMatch[1])
 
-    const pinLabels = this._parsedProps.pinLabels ?? this.props.pinLabels
+    const pinLabels = this._parsedProps?.pinLabels ?? this.props.pinLabels
     if (Array.isArray(pinLabels)) {
       const labelIndex = pinLabels.findIndex((label) => label === pinName)
       return labelIndex >= 0 ? labelIndex + 1 : null
@@ -89,7 +89,10 @@ export class SolderJumper<
     const port = this.selectOne(`port.${pinName}`, {
       type: "port",
     }) as Port | null
-    return port?._parsedProps.pinNumber ?? null
+    return (
+      port?._parsedProps.pinNumber ??
+      this._getPinNumberFromBridgedPinsProp(pinName)
+    )
   }
 
   get defaultInternallyConnectedPinNames(): string[][] {
@@ -179,13 +182,16 @@ export class SolderJumper<
     const arrangement = super._getSchematicPortArrangement()
     if (arrangement && Object.keys(arrangement).length > 0) return arrangement
 
+    const footprintPortCount = this.getPortsFromFootprint().length
     let pinCount =
       this._parsedProps.pinCount ??
       (Array.isArray(this._parsedProps.pinLabels)
         ? this._parsedProps.pinLabels.length
         : this._parsedProps.pinLabels
           ? Object.keys(this._parsedProps.pinLabels).length
-          : this.getPortsFromFootprint().length)
+          : footprintPortCount > 0
+            ? footprintPortCount
+            : undefined)
 
     if (pinCount == null && !this._parsedProps.footprint) {
       pinCount = 2
