@@ -1,4 +1,4 @@
-name: Diagnose native DDR mesh capacity
+name: Isolate native DDR graph reservations and search guidance
 on:
   push:
     branches: [analysis/canonical-native-diagnostics]
@@ -8,29 +8,38 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        tiny: [old, new]
+    env:
+      TINY_REVISION: ${{ matrix.tiny == 'old' && 'e3d90bd3edefa4c13ce4f37bfa8d188699a21877' || '19a1fa1901d828a76b833aef239a739e961ec89e' }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: a96030de4c6eb4c3a7c78dcdf26ddd6b8009e9f3
+          ref: cb37a9a402117a644d149be6d762bac65e2c2bff
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
-      - run: bun install
-      - name: Set diagnostic mesh limit
+      - name: Configure diagnostic source
         run: |
           python3 - <<'PY'
+          import json, os
           from pathlib import Path
-          path = Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          source = path.read_text()
-          old = "this.maxNodeDimension = mutableOpts.maxNodeDimension ?? 15"
-          new = "this.maxNodeDimension = mutableOpts.maxNodeDimension ?? Number(process.env.DIAG_NATIVE_MAX_NODE_DIM ?? 15)"
-          if source.count(old) != 1:
-              raise RuntimeError("Mesh option source changed")
-          path.write_text(source.replace(old, new))
+          p=Path("package.json")
+          package=json.loads(p.read_text())
+          package["dependencies"]["tiny-hypergraph"]="https://codeload.github.com/tscircuit/tiny-hypergraph/tar.gz/"+os.environ["TINY_REVISION"]
+          p.write_text(json.dumps(package,indent=2)+"\n")
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
+          source=p.read_text()
+          old="      staticSegmentValidator,"
+          new='      staticSegmentValidator: process.env.DIAG_NATIVE_GUIDANCE === "off" ? undefined : staticSegmentValidator,'
+          if old not in source: raise RuntimeError("Missing optional guidance parameter")
+          p.write_text(source.replace(old,new,1))
           PY
+      - run: bun install
       - name: Check native copper reservations
         run: |
           (cd node_modules/tiny-hypergraph && bun test tests/solver/port-endpoint-reservation.test.ts tests/solver/problem-port-reservation.test.ts tests/solver/initial-route-port-reservation.test.ts)
@@ -42,20 +51,21 @@ jobs:
           cp packed/*.tgz candidate.tgz
       - uses: actions/upload-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.tiny }}
           path: candidate.tgz
   benchmark:
     needs: build
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 50
     env:
-      DIAG_NATIVE_MAX_NODE_DIM: ${{ matrix.mesh }}
+      DIAG_NATIVE_GUIDANCE: ${{ matrix.guidance }}
+    timeout-minutes: 50
     strategy:
-      max-parallel: 3
+      max-parallel: 4
       fail-fast: false
       matrix:
-        circuit: [h616, imx6]
-        mesh: [0.75, 1.5, 3]
+        circuit: [h616]
+        tiny: [old, new]
+        guidance: [off, on]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,7 +76,7 @@ jobs:
           bun-version: '1.4.3'
       - uses: actions/download-artifact@v4
         with:
-          name: copper-port-candidate
+          name: copper-port-candidate-${{ matrix.tiny }}
           path: candidate
       - name: Install the source-built candidate
         run: |
@@ -88,7 +98,7 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY'
-          import json, os
+          import json
           from pathlib import Path
           source=Path("results/results.json")
           if not source.exists():
@@ -104,5 +114,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: copper-port-aggregate-${{ matrix.circuit }}
+          name: native-search-${{ matrix.tiny }}-${{ matrix.guidance }}
           path: aggregate.json
