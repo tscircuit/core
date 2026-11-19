@@ -1,0 +1,34 @@
+name: Compare native A64 fixed trace initial graphs
+on:
+  push:
+    branches: [analysis/a64-canonical-fixed-traces]
+    paths: [.github/workflows/a64-canonical-probe.yml]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install
+      - name: Check the exact graph supplied to Tiny Hypergraph
+        run: |
+          bun probe-a64.private.ts base
+          bun probe-a64.private.ts head
+      - name: Preserve graph comparison
+        if: always()
+        run: |
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add probe-results
+          git commit -m "Measure native A64 canonical-trace graph comparison"
+          git push origin HEAD:analysis/a64-canonical-fixed-traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-a64-canonical-probe
+          path: probe-results
