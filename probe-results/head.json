@@ -1,0 +1,70 @@
+{
+  "label": "head",
+  "obstacles": 607,
+  "traces": 32,
+  "preload": {
+    "boundaryDistanceCheckCount": 25682,
+    "preloadedTraceCount": 32,
+    "preloadedTraceShapeCount": 302,
+    "inputBoundaryCount": 39918,
+    "outputBoundaryCount": 39918,
+    "inputPortCount": 52450,
+    "outputPortCount": 52450,
+    "preloadedPortCount": 935,
+    "tracePortAssignmentCount": 935,
+    "topologyChanged": false
+  },
+  "planned": 187,
+  "routeCount": 187,
+  "initialSolved": true,
+  "initialFailed": false,
+  "error": null,
+  "seconds": 8.450484181,
+  "memory": {
+    "rss": 814710784,
+    "heapTotal": 532109312,
+    "heapUsed": 345929891,
+    "external": 96862595,
+    "arrayBuffers": 2370960
+  },
+  "solverStats": {
+    "duplicateCongestedPortSourceCount": 0,
+    "duplicateCongestedPortCount": 0,
+    "duplicateCongestedPortFallbackToOriginal": true,
+    "duplicateCongestedPortPenalty": 0,
+    "duplicateCongestedPortPenaltyCount": 0,
+    "metadataPortPenaltyCount": 39,
+    "crampedPortPenalty": 150,
+    "crampedPortPenaltyCount": 38918,
+    "preloadedPortCount": 935,
+    "preloadedFixedSegmentCount": 606,
+    "duplicateCongestedPortError": "Route 71 could not be solved independently: Static reachability precheck failed: 1 route(s) have no legal path under the current reservation and start-region rules source_net_63 (pcb_port_67->pcb_port_401)",
+    "candidatePortfolioPhase": "primary",
+    "candidatePortfolioSelectedCandidate": "primary",
+    "initialAssignmentCount": 606,
+    "initiallyRoutedRouteCount": 110,
+    "neverSuccessfullyRoutedRouteCount": 0,
+    "acceptedGreedyFinalRouteOnTimeout": true,
+    "greedyFinalRouteIter": 0,
+    "finalRoutingStrategy": "congestion-aware",
+    "greedyFinalRouteRemainingRouteCount": 33,
+    "greedyFinalRouteMaxIterations": 4000000,
+    "maxRegionCost": 83.75911312499994,
+    "totalRegionCost": 736.5240644011359,
+    "bestMaxRegionCost": 83.75911312499994,
+    "bestTotalRegionCost": 736.5240644011359,
+    "currentStage": "optimizeSection",
+    "stageStats": {
+      "solveGraph": {
+        "timeSpent": 6212.612716,
+        "iterations": 0,
+        "completed": true
+      },
+      "optimizeSection": {
+        "timeSpent": 0,
+        "iterations": 2000001,
+        "completed": false
+      }
+    }
+  }
+}

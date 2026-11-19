@@ -1,0 +1,61 @@
+{
+  "label": "base",
+  "obstacles": 3922,
+  "traces": 0,
+  "preload": {
+    "boundaryDistanceCheckCount": 0,
+    "preloadedTraceCount": 0,
+    "preloadedTraceShapeCount": 0,
+    "inputBoundaryCount": 317353,
+    "outputBoundaryCount": 317353,
+    "inputPortCount": 206634,
+    "outputPortCount": 206634,
+    "preloadedPortCount": 0,
+    "tracePortAssignmentCount": 0,
+    "topologyChanged": false
+  },
+  "planned": 15,
+  "routeCount": 77,
+  "initialSolved": false,
+  "initialFailed": true,
+  "error": "UQ ran out of iterations",
+  "seconds": 32.175693425,
+  "memory": {
+    "rss": 2788401152,
+    "heapTotal": 1988555776,
+    "heapUsed": 1416361512,
+    "external": 167211816,
+    "arrayBuffers": 17438004
+  },
+  "solverStats": {
+    "duplicateCongestedPortSourceCount": 1686,
+    "duplicateCongestedPortCount": 7088,
+    "duplicateCongestedPortFallbackToOriginal": false,
+    "duplicateCongestedPortPenalty": 150,
+    "duplicateCongestedPortPenaltyCount": 7088,
+    "metadataPortPenaltyCount": 21840,
+    "crampedPortPenalty": 150,
+    "crampedPortPenaltyCount": 171789,
+    "preloadedPortCount": 0,
+    "preloadedFixedSegmentCount": 0,
+    "candidatePortfolioPhase": "complete",
+    "candidatePortfolioSelectedCandidate": "primary",
+    "neverSuccessfullyRoutedRouteCount": 1,
+    "greedyFinalRouteAttemptCount": 5,
+    "greedyFinalRouteRemainingRouteCount": 62,
+    "greedyFinalRouteMaxIterations": 50000,
+    "currentStage": "solveGraph",
+    "stageStats": {
+      "solveGraph": {
+        "timeSpent": 0,
+        "iterations": 2000000,
+        "completed": false
+      },
+      "optimizeSection": {
+        "timeSpent": 0,
+        "iterations": 0,
+        "completed": false
+      }
+    }
+  }
+}
