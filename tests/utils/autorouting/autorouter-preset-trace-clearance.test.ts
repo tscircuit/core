@@ -6,14 +6,26 @@ test("presets retain explicit trace clearance without changing their routing mod
     "auto",
     "auto_local",
     "auto_cloud",
+    "single_layer_fanout",
+    "dogbone",
+    "simplify",
+    "laser_prefab",
+    "auto_jumper",
     "fanout",
     "bus_lanes",
   ] as const) {
     const baseline = getPresetAutoroutingConfig(preset)
     for (const traceClearance of [0, "0.35mm", 0.65]) {
-      expect(getPresetAutoroutingConfig({ preset, traceClearance })).toEqual({
+      expect(
+        getPresetAutoroutingConfig({
+          preset,
+          traceClearance,
+          allowViaInPad: true,
+        }),
+      ).toEqual({
         ...baseline,
         traceClearance,
+        allowViaInPad: true,
       })
     }
   }

@@ -1,3 +1,5 @@
+import { distance } from "circuit-json"
+import type { NormalizedAutorouterConfig } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
@@ -169,11 +171,38 @@ function applyMinTraceWidthToConnections(
   }))
 }
 
-export function Group_applyDrcTolerancesToSimpleRouteJson(
+export function Group_resolveRoutingConstraintsForSimpleRouteJson(
   simpleRouteJson: SimpleRouteJson,
-  drcTolerances: RoutingPhaseDrcTolerances | undefined,
+  {
+    drcTolerances = {},
+    autorouterConfig,
+  }: {
+    drcTolerances?: RoutingPhaseDrcTolerances
+    autorouterConfig: NormalizedAutorouterConfig
+  },
 ): SimpleRouteJson {
-  if (!hasDrcTolerances(drcTolerances)) return simpleRouteJson
+  if (
+    !hasDrcTolerances(drcTolerances) &&
+    autorouterConfig.traceClearance === undefined
+  )
+    return simpleRouteJson
+
+  let minTraceToPadEdgeClearance =
+    drcTolerances.minTraceToPadEdgeClearance ??
+    simpleRouteJson.minTraceToPadEdgeClearance
+  // Phase rules override board rules; traceClearance is a lower bound on
+  // that effective copper clearance. Pipeline9 also uses this field for
+  // trace-to-trace checks; dedicated hole, via-to-pad, via-hole and board-edge
+  // rules remain independent.
+  if (autorouterConfig.traceClearance !== undefined) {
+    minTraceToPadEdgeClearance = Math.max(
+      minTraceToPadEdgeClearance ?? 0,
+      distance.parse(autorouterConfig.traceClearance),
+    )
+  }
+  if (!hasDrcTolerances(drcTolerances)) {
+    return { ...simpleRouteJson, minTraceToPadEdgeClearance }
+  }
 
   const minTraceWidth =
     drcTolerances.minTraceWidth ?? simpleRouteJson.minTraceWidth
@@ -184,9 +213,6 @@ export function Group_applyDrcTolerancesToSimpleRouteJson(
   const minTraceToHoleEdgeClearance =
     drcTolerances.minTraceToHoleEdgeClearance ??
     simpleRouteJson.minTraceToHoleEdgeClearance
-  const minTraceToPadEdgeClearance =
-    drcTolerances.minTraceToPadEdgeClearance ??
-    simpleRouteJson.minTraceToPadEdgeClearance
   const minViaEdgeToPadEdgeClearance =
     drcTolerances.minViaEdgeToPadEdgeClearance ??
     simpleRouteJson.minViaEdgeToPadEdgeClearance

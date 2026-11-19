@@ -42,7 +42,7 @@ export function getLegacyAutorouterPreset(
     : null
 }
 
-function resolvePresetAutoroutingConfig(
+export function getPresetAutoroutingConfig(
   autorouterConfig: AutorouterProp | undefined,
   platformConfig?: PlatformConfig,
 ): NormalizedAutorouterConfig {
@@ -72,6 +72,8 @@ function resolvePresetAutoroutingConfig(
   const providedConfig =
     typeof autorouterConfig === "object" ? autorouterConfig : {}
 
+  const { preset: _preset, ...providedOptions } = providedConfig
+
   const normalizedPreset =
     typeof preset === "string" ? preset.replace(/_/g, "-") : preset
 
@@ -82,6 +84,7 @@ function resolvePresetAutoroutingConfig(
 
   if (platformAutorouter) {
     return {
+      ...providedOptions,
       local: true,
       groupMode: "subcircuit",
       algorithmFn: async (simpleRouteJson) =>
@@ -94,27 +97,32 @@ function resolvePresetAutoroutingConfig(
     case "auto":
     case "auto-local":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
       }
     case "sequential-trace":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "sequential-trace",
       }
     case "subcircuit":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
       }
     case "beta-pipeline9":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
         autorouterVersion: "beta_pipeline9",
       }
     case "single-layer-fanout":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
         preset: "single_layer_fanout",
@@ -128,7 +136,12 @@ function resolvePresetAutoroutingConfig(
         preset: "bus_lanes",
       }
     case "dogbone":
-      return { local: true, groupMode: "subcircuit", preset: "dogbone" }
+      return {
+        ...providedOptions,
+        local: true,
+        groupMode: "subcircuit",
+        preset: "dogbone",
+      }
     case "fanout":
       return {
         ...providedConfig,
@@ -138,6 +151,7 @@ function resolvePresetAutoroutingConfig(
       }
     case "simplify":
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
         preset: "simplify",
@@ -186,25 +200,9 @@ function resolvePresetAutoroutingConfig(
     }
     default:
       return {
+        ...providedOptions,
         local: true,
         groupMode: "subcircuit",
       }
   }
-}
-
-export function getPresetAutoroutingConfig(
-  autorouterConfig: AutorouterProp | undefined,
-  platformConfig?: PlatformConfig,
-): NormalizedAutorouterConfig {
-  const config = resolvePresetAutoroutingConfig(
-    autorouterConfig,
-    platformConfig,
-  )
-  if (
-    typeof autorouterConfig !== "object" ||
-    autorouterConfig.traceClearance === undefined
-  ) {
-    return config
-  }
-  return { ...config, traceClearance: autorouterConfig.traceClearance }
 }

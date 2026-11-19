@@ -1,4 +1,3 @@
-import { applyAutorouterTraceClearance } from "lib/utils/autorouting/apply-autorouter-trace-clearance"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -115,7 +114,7 @@ import {
   getLocalAutoroutingCacheKey,
 } from "./Group_localAutoroutingCache"
 import {
-  Group_applyDrcTolerancesToSimpleRouteJson,
+  Group_resolveRoutingConstraintsForSimpleRouteJson,
   Group_filterSimpleRouteJsonForPhase,
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
@@ -1231,13 +1230,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         routingPhasePlan,
       )
       if (phaseSimpleRouteJson.connections.length === 0) continue
-      phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+      phaseSimpleRouteJson = Group_resolveRoutingConstraintsForSimpleRouteJson(
         phaseSimpleRouteJson,
-        routingPhasePlan.drcTolerances,
-      )
-      phaseSimpleRouteJson = applyAutorouterTraceClearance(
-        phaseSimpleRouteJson,
-        phaseAutorouterConfig,
+        {
+          drcTolerances: routingPhasePlan.drcTolerances,
+          autorouterConfig: phaseAutorouterConfig,
+        },
       )
       const breakoutPoints = db.pcb_breakout_point
         .list()
@@ -1566,13 +1564,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             : fixedTraceIds,
         )
       }
-      simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
+      simpleRouteJson = Group_resolveRoutingConstraintsForSimpleRouteJson(
         simpleRouteJson,
-        routingPhasePlan.drcTolerances,
-      )
-      simpleRouteJson = applyAutorouterTraceClearance(
-        simpleRouteJson,
-        phaseAutorouterConfig,
+        {
+          drcTolerances: routingPhasePlan.drcTolerances,
+          autorouterConfig: phaseAutorouterConfig,
+        },
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
