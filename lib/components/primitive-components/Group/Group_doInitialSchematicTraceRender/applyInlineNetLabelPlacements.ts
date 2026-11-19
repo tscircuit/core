@@ -4,6 +4,7 @@ import type {
 } from "@tscircuit/schematic-trace-solver"
 import type { SourceTrace } from "circuit-json"
 import Debug from "debug"
+import type { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
@@ -63,6 +64,17 @@ export function applyInlineNetLabelPlacements(args: {
     createCanonicalSchematicNetLabelTextResolver(group)
   const globalConnMap = solver.mspConnectionPairSolver!.globalConnMap
 
+  const traceComponentBySourceTraceId = new Map(
+    (group._getBoard() ?? group)
+      .getDescendants()
+      .filter(
+        (component): component is Trace =>
+          component.componentName === "Trace" &&
+          Boolean((component as Trace).source_trace_id),
+      )
+      .map((trace) => [trace.source_trace_id!, trace]),
+  )
+
   for (const placement of inlineNetLabelPlacements) {
     const schematicPortIds = placement.pinIds.map(asSchematicPortId)
 
@@ -108,15 +120,44 @@ export function applyInlineNetLabelPlacements(args: {
           db.schematic_port.get(schematicPortId)?.source_port_id
         return sourcePortId ? [sourcePortId] : []
       })
-      sourceTraceId = db.source_trace
+      const candidateSourceTraces = db.source_trace
         .list()
-        .find(
+        .filter(
           (sourceTrace) =>
             sourceTrace.subcircuit_connectivity_map_key === connKey &&
             sourcePortIds.some((sourcePortId) =>
               sourceTrace.connected_source_port_ids.includes(sourcePortId),
             ),
-        )?.source_trace_id
+        )
+      const mspPairTraceId = placement.mspPairId
+        ? sourceTraceIdByPinPairKey.get(
+            placement.mspPairId.split("-").sort().join("::"),
+          )
+        : undefined
+      sourceTraceId =
+        candidateSourceTraces.find(
+          (sourceTrace) =>
+            traceComponentBySourceTraceId.get(sourceTrace.source_trace_id)
+              ?._parsedProps.schDisplayLabel === text,
+        )?.source_trace_id ??
+        candidateSourceTraces.find((sourceTrace) => {
+          const traceComponent = traceComponentBySourceTraceId.get(
+            sourceTrace.source_trace_id,
+          )
+          return (
+            traceComponent?._parsedProps.displayName === text ||
+            traceComponent?._parsedProps.name === text ||
+            sourceTrace.display_name === text ||
+            sourceTrace.name === text
+          )
+        })?.source_trace_id ??
+        (mspPairTraceId &&
+        candidateSourceTraces.some(
+          (sourceTrace) => sourceTrace.source_trace_id === mspPairTraceId,
+        )
+          ? mspPairTraceId
+          : undefined) ??
+        candidateSourceTraces[0]?.source_trace_id
     }
 
     // Inline labels belong to the same sheet as the trace they annotate.

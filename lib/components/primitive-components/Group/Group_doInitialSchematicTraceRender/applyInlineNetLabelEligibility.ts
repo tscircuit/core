@@ -24,6 +24,7 @@ type EligibleNetConnection = {
   connKey?: string
   isSameSheetCrossSectionConnection?: boolean
   isPowerOrGroundConnection?: boolean
+  isBranchedTraceConnection?: boolean
 }
 
 type InlineNetLabelEligibleConnection = {
@@ -74,6 +75,10 @@ const markConnectionEligibleForInlineNetLabel = (
  * its separated endpoints can be visually tied together. It still follows the
  * same explicit-label and power/ground rules as every other connection.
  *
+ * Multi-port trace-only connectivity with an explicit user display label
+ * (`schDisplayLabel`/`displayName`/`name`) across multiple components is also
+ * eligible via `netConnections`.
+ *
  * The solver still has the last word: it falls back to an anchored label when
  * no collision-free inline placement exists.
  */
@@ -122,7 +127,8 @@ export const applyInlineNetLabelEligibility = ({
 
   for (const netConnection of netConnections) {
     const { schematicPortIds } = netConnection
-    const { isSameSheetCrossSectionConnection } = netConnection
+    const { isSameSheetCrossSectionConnection, isBranchedTraceConnection } =
+      netConnection
     const hasInlineNetLabel = schematicPortIds.some((schematicPortId) =>
       schematicPortIdsWithInlineNetLabels.has(schematicPortId),
     )
@@ -158,6 +164,7 @@ export const applyInlineNetLabelEligibility = ({
     if (
       connKey &&
       !isSameSheetCrossSectionConnection &&
+      !isBranchedTraceConnection &&
       !connKeysWithExplicitPortNetTraces.has(connKey)
     )
       continue

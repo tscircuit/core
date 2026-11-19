@@ -11,17 +11,19 @@ import {
 } from "@tscircuit/schematic-trace-solver"
 import type { SchematicComponent, SourceNet, SourceTrace } from "circuit-json"
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { GROUND_NET_REGEX } from "lib/utils/gnd-power-net-regex"
 import { getSchematicNetLabelTextWidth } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import { convertFacingDirectionToElbowDirection } from "lib/utils/schematic/convertFacingDirectionToElbowDirection"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import type { NetLabel } from "../../NetLabel"
 import { Port } from "../../Port"
+import type { Trace } from "../../Trace/Trace"
 import { Group } from "../Group"
 import { getSchematicGroupPortTarget } from "../Subcircuit/getSchematicGroupPortTarget"
 import { applyInlineNetLabelEligibility } from "./applyInlineNetLabelEligibility"
 import { createCanonicalSchematicNetLabelTextResolver } from "./createCanonicalSchematicNetLabelTextResolver"
-import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import { createRoutedSchematicPortIdMap } from "./createRoutedSchematicPortIdMap"
+import { getNetNameFromPorts } from "./getNetNameFromPorts"
 import type { AxisDirection } from "./getSide"
 import {
   type SchematicPortId,
@@ -958,6 +960,8 @@ export function createSchematicTraceSolverInputProblem(
     isSameSheetCrossSectionConnection?: boolean
     /** Retained for inline-label eligibility; stripped at the solver boundary. */
     isPowerOrGroundConnection?: boolean
+    /** Retained for inline-label eligibility; stripped at the solver boundary. */
+    isBranchedTraceConnection?: boolean
   }> = [...boundaryTraceNetConnections]
 
   /**
@@ -1015,6 +1019,53 @@ export function createSchematicTraceSolverInputProblem(
         netLabelHeight,
         connKey,
       })
+    } else if (!sourceNet && schematicPortIds.length > 2) {
+      const directConnectionsForConnKey = directConnections.filter(
+        (directConnection) => directConnection.connKey === connKey,
+      )
+      const hasCrossSectionConnection = boundaryTraceNetConnections.some(
+        (boundaryConnection) => boundaryConnection.connKey === connKey,
+      )
+      const hasExplicitSchDisplayLabel = schematicDescendants.some(
+        (component) =>
+          component.componentName === "Trace" &&
+          Boolean((component as Trace)._parsedProps?.schDisplayLabel) &&
+          Boolean((component as Trace).source_trace_id) &&
+          db.source_trace.get((component as Trace).source_trace_id!)
+            ?.subcircuit_connectivity_map_key === connKey,
+      )
+      const isRoutableBranchedWire =
+        hasExplicitSchDisplayLabel &&
+        !hasCrossSectionConnection &&
+        directConnectionsForConnKey.length > 0 &&
+        directConnectionsForConnKey.every(
+          (directConnection) => directConnection.netLabelWidth === undefined,
+        )
+      const resolvedLabel = isRoutableBranchedWire
+        ? resolveCanonicalNetLabelText({
+            subcircuitConnectivityMapKey: connKey,
+          })
+        : undefined
+      if (
+        resolvedLabel?.name &&
+        resolvedLabel.wasAssignedDisplayLabel &&
+        !GROUND_NET_REGEX.test(resolvedLabel.name)
+      ) {
+        userNetIdToConnKey.set(connKey, connKey)
+        const netLabelTextWidth = Number(
+          getSchematicNetLabelTextWidth({ text: resolvedLabel.name }).toFixed(
+            2,
+          ),
+        )
+        netConnections.push({
+          netId: connKey,
+          netLabelText: resolvedLabel.name,
+          schematicPortIds,
+          netLabelWidth: netLabelTextWidth,
+          connKey,
+          isBranchedTraceConnection: true,
+        })
+      }
     }
   }
 
@@ -1130,6 +1181,7 @@ export function createSchematicTraceSolverInputProblem(
         connKey,
         isSameSheetCrossSectionConnection,
         isPowerOrGroundConnection,
+        isBranchedTraceConnection,
         ...connection
       }) => ({
         ...connection,
