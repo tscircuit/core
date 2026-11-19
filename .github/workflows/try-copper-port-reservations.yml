@@ -1,4 +1,4 @@
-name: Verify ordinary routing with scoped native copper context
+name: Verify required endpoint fixes on the pinned A03 base
 on:
   push:
     branches: [analysis/native-copper-regression-check]
