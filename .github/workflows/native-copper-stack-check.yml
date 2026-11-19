@@ -69,6 +69,25 @@ jobs:
           method=method.replace(marker,extra,1)
           p.write_text(s[:a]+method+s[b:])
           PY
+      - name: Verify explicit physical drill spans in existing repair02 checks
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path("node_modules/high-density-repair02").resolve()
+          p=root/"lib/high-density-repair-solver/functions/FixedCopperClearanceGuard.ts"
+          s=p.read_text()
+          assert "minZ: minZ === Infinity ? 0 : minZ," in s
+          s=s.replace("minZ: minZ === Infinity ? 0 : minZ,","minZ: via.minZ ?? (minZ === Infinity ? 0 : minZ),")
+          s=s.replace("maxZ: maxZ === -Infinity ? 1 : maxZ,","maxZ: via.maxZ ?? (maxZ === -Infinity ? 1 : maxZ),")
+          p.write_text(s)
+          p=root/"lib/high-density-repair-solver/functions/repairNodeClearance.ts"
+          s=p.read_text()
+          assert "minZ: layers.length ? Math.min(...layers) : 0," in s
+          s=s.replace("minZ: layers.length ? Math.min(...layers) : 0,","minZ: via.minZ ?? (layers.length ? Math.min(...layers) : 0),")
+          s=s.replace("maxZ: layers.length ? Math.max(...layers) : 1,","maxZ: via.maxZ ?? (layers.length ? Math.max(...layers) : 1),")
+          p.write_text(s)
+          PY
       - run: bun run build
         working-directory: autorouter
       - name: Install the built autorouter
@@ -141,6 +160,7 @@ jobs:
             }
           '''
           s=s.replace("  expect(routingErrors).toEqual([])",extra+"  expect(routingErrors).toEqual([])",1)
+          s=s.replace("expect(vias).toHaveLength(36)","expect(vias).toHaveLength(38)")
           p.write_text(s)
           PY
       - name: Run original public Core regression tests
