@@ -49,8 +49,13 @@ test("group flip puts numbered pads where an explicit component flip does", () =
   expect(actual).toHaveLength(2)
   expect(reference).toHaveLength(2)
   for (let index = 0; index < actual.length; index++) {
-    expect(actual[index].layer).toBe(reference[index].layer)
-    expect(actual[index].x + 16).toBeCloseTo(reference[index].x)
-    expect(actual[index].y).toBeCloseTo(reference[index].y)
+    const groupPad = actual[index]
+    const explicitPad = reference[index]
+    expect(groupPad.layer).toBe(explicitPad.layer)
+    if (!("x" in groupPad) || !("x" in explicitPad)) {
+      throw new Error("Expected ordinary rectangular pads")
+    }
+    expect(groupPad.x + 16).toBeCloseTo(explicitPad.x)
+    expect(groupPad.y).toBeCloseTo(explicitPad.y)
   }
 })
