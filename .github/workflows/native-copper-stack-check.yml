@@ -52,7 +52,15 @@ jobs:
               })
               const checked = evaluate(output, {includeTraceContinuity:false})
               console.log("P9_FINAL_REFERENCE", JSON.stringify({
+                initial: evaluate([], {includeTraceContinuity:false}).errors.length,
                 count: checked.errors.length,
+                immutableInputTraceCount: this.originalSrj.traces?.filter(trace => trace.isFixed).length,
+                immutableHdRouteCount: this.highDensityRouteSolver?.fixedHdRoutes.filter(route => route.isFixed).length,
+                jointInitial: this.pipeline9JointDrcRepairSolver?.stats.initialJointDrcIssueCount,
+                jointBaseline: this.pipeline9JointDrcRepairSolver?.stats.baselineJointDrcIssueCount,
+                jointReference: this.pipeline9JointDrcRepairSolver?.stats.postExactReferenceDrcIssueCount,
+                jointReferenceAccepted: this.pipeline9JointDrcRepairSolver?.stats.postExactReferenceAccepted,
+                boundedPublished: this.pipeline9JointDrcRepairSolver?.stats.boundedRegionalRepairPublishedDrcIssueCount,
                 viaTrace: checked.errors.filter(error => error.type === "pcb_via_trace_clearance_error").length,
               }))
               return output
@@ -118,6 +126,9 @@ jobs:
                 outputPhaseCount:outputs.length,
                 targetSavedPathFound:Boolean(saved),
                 targetIsImmutable:saved?.isFixed===true,
+                latestTargetIsImmutable:input?.traces?.find(trace => trace.pcb_trace_id===clearance.pcb_trace_id)?.isFixed===true,
+                viaAlreadyInLastInput:Boolean(via && input?.traces?.some(trace => trace.route.some(point => point.route_type==="via" && Math.hypot(point.x-via.x,point.y-via.y)<1e-6))),
+                outputFromLastPhase:Boolean(output && outputs.at(-1)?.traces?.some(trace => trace.pcb_trace_id===output.pcb_trace_id)),
                 savedWirePointCount:wirePoints.length,
                 nonzeroWireViaLegs:droppedLegs,
                 activeOutputPathFound:Boolean(output),
