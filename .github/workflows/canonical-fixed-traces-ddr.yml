@@ -1,0 +1,77 @@
+name: Native DDR canonical fixed-trace comparison
+on:
+  push:
+    branches: [analysis/canonical-fixed-traces-ddr]
+    paths: [.github/workflows/canonical-fixed-traces-ddr.yml]
+permissions:
+  contents: write
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        circuit: [a64, h3, stmp157, orangecrab, a13, h616, butterstick, glider, imx6, icepi]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: fb7f456de0a867c7074a9f196597992e0d1253b9
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d4979ea36397d622aeebdef36880fbba29eab01
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install identical dependency graphs
+        run: |
+          (cd base && bun install --ignore-scripts)
+          (cd head && bun install --ignore-scripts)
+      - name: Route the same native TSX boards with base and head Core
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          infrastructure_status=0
+          for label in base head; do
+            bun "$GITHUB_WORKSPACE/$label/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/$label" --out "$GITHUB_WORKSPACE/results/$label" --circuit "$CIRCUIT" --timeout 1200 > "$label-render.log" 2>&1 || infrastructure_status=$?
+          done
+          exit "$infrastructure_status"
+      - name: Assess and render actual routed copper
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          ln -s head/node_modules node_modules
+          bun inspect-native.private.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-native-${{ matrix.circuit }}
+          path: |
+            export
+            *-render.log
+          if-no-files-found: warn
+  export:
+    needs: benchmark
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: canonical-native-*
+          merge-multiple: true
+          path: benchmark-artifacts
+      - name: Preserve the actual board results
+        run: |
+          git config user.name "tscircuit bot"
+          git config user.email "githubbot@tscircuit.com"
+          git add benchmark-artifacts
+          git commit -m "Record native DDR canonical fixed-trace benchmark"
+          git push origin HEAD:analysis/canonical-fixed-traces-ddr
