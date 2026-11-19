@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 75a6381c6985cd48f91b30516a828f6a771cfce0
+          ref: 767872b7bea7e62b918d6b282d9be12e24af0e54
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -77,7 +77,7 @@ jobs:
           git add -- '*.snap.svg'
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Update verified native trace SVGs for Core shard ${{ matrix.node }}"
-          git push origin HEAD:refs/heads/analysis/verified-native-core-round2-node${{ matrix.node }}
+          git push origin HEAD:refs/heads/analysis/verified-native-core-round3-node${{ matrix.node }}
       - name: Verify Core types against the native package
         if: matrix.node == 1
         run: bunx tsc --noEmit
