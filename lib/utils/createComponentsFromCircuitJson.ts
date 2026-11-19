@@ -1,11 +1,7 @@
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
-import type {
-  PcbSoldermaskOpeningProps,
-  PinLabelsProp,
-  SolderPasteMarginRatio,
-} from "@tscircuit/props"
+import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
   type PcbSolderPastePolygon,
@@ -331,32 +327,6 @@ export const createComponentsFromCircuitJson = (
       }
     }
 
-    let solderPasteMarginRatio: SolderPasteMarginRatio | undefined
-    if (
-      preserveSolderPaste &&
-      elm.type === "pcb_smtpad" &&
-      (elm.shape === "rect" || elm.shape === "rotated_rect") &&
-      elm.width > 0 &&
-      elm.height > 0
-    ) {
-      const aperture = circuitJson.find(
-        (paste) =>
-          paste.type === "pcb_solder_paste" &&
-          paste.pcb_smtpad_id === elm.pcb_smtpad_id &&
-          (paste.shape === "rect" || paste.shape === "rotated_rect"),
-      )
-      if (
-        aperture?.type === "pcb_solder_paste" &&
-        (aperture.shape === "rect" || aperture.shape === "rotated_rect")
-      ) {
-        solderPasteMargin = 0
-        solderPasteMarginRatio = {
-          x: (aperture.width / elm.width - 1) / 2,
-          y: (aperture.height / elm.height - 1) / 2,
-        }
-      }
-    }
-
     if (isStandalonePcbSolderPaste(elm)) {
       components.push(SolderPaste.fromCircuitJson(elm))
     } else if (elm.type === "pcb_soldermask_opening") {
@@ -403,7 +373,6 @@ export const createComponentsFromCircuitJson = (
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
           solderPasteMargin,
-          solderPasteMarginRatio,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
@@ -467,7 +436,6 @@ export const createComponentsFromCircuitJson = (
         cornerRadius: elm.corner_radius,
         portHints: resolvedPortHints,
         solderPasteMargin,
-        solderPasteMarginRatio,
         coveredWithSolderMask: elm.is_covered_with_solder_mask,
         solderMaskMargin: elm.soldermask_margin,
       })
