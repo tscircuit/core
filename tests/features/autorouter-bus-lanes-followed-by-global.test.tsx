@@ -56,15 +56,15 @@ test("global routing preserves the completed selected bus phase", async () => {
       (c) => c.source_trace_id === ddrSourceTrace.source_trace_id,
     ),
   ).toBe(false)
-  expect(
-    inputs[1].traces!.some(
-      (trace) => trace.connection_name === inputs[0].connections[0].name,
-    ),
-  ).toBe(false)
   const fixedDdr = outputs[0].traces!.find(
-    (t) => t.connection_name === inputs[0].connections[0].name,
+    (trace) => trace.connection_name === inputs[0].connections[0].name,
   )!
-  expect(fixedDdr).toBeDefined()
+  const nextPhaseDdr = inputs[1].traces!.find(
+    (trace) => trace.pcb_trace_id === fixedDdr.pcb_trace_id,
+  )!
+  expect(nextPhaseDdr.isFixed).toBe(true)
+  expect(nextPhaseDdr.route).toEqual(fixedDdr.route)
+  expect(inputs[1].obstacles).toEqual(inputs[0].obstacles)
   const finalDdr = json
     .filter((e) => e.type === "pcb_trace")
     .find((e) => e.source_trace_id === ddrSourceTrace.source_trace_id)!
