@@ -181,71 +181,70 @@ export function Group_resolveRoutingConstraintsForSimpleRouteJson(
     autorouterConfig: NormalizedAutorouterConfig
   },
 ): SimpleRouteJson {
-  if (
-    !hasDrcTolerances(drcTolerances) &&
-    autorouterConfig.traceClearance === undefined
-  )
-    return simpleRouteJson
+  let resolvedSimpleRouteJson = simpleRouteJson
+  if (hasDrcTolerances(drcTolerances)) {
+    const minTraceWidth =
+      drcTolerances.minTraceWidth ?? simpleRouteJson.minTraceWidth
+    const minViaHoleDiameter =
+      drcTolerances.minViaHoleDiameter ?? simpleRouteJson.minViaHoleDiameter
+    const minViaPadDiameter =
+      drcTolerances.minViaPadDiameter ?? simpleRouteJson.minViaPadDiameter
+    const minTraceToHoleEdgeClearance =
+      drcTolerances.minTraceToHoleEdgeClearance ??
+      simpleRouteJson.minTraceToHoleEdgeClearance
+    const minTraceToPadEdgeClearance =
+      drcTolerances.minTraceToPadEdgeClearance ??
+      simpleRouteJson.minTraceToPadEdgeClearance
+    const minViaEdgeToPadEdgeClearance =
+      drcTolerances.minViaEdgeToPadEdgeClearance ??
+      simpleRouteJson.minViaEdgeToPadEdgeClearance
+    const minViaHoleEdgeToViaHoleEdgeClearance =
+      drcTolerances.minViaHoleEdgeToViaHoleEdgeClearance ??
+      simpleRouteJson.minViaHoleEdgeToViaHoleEdgeClearance
+    const minPlatedHoleDrillEdgeToDrillEdgeClearance =
+      drcTolerances.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
+      simpleRouteJson.minPlatedHoleDrillEdgeToDrillEdgeClearance
+    const minPadEdgeToPadEdgeClearance =
+      drcTolerances.minPadEdgeToPadEdgeClearance ??
+      simpleRouteJson.minPadEdgeToPadEdgeClearance
+    const minBoardEdgeClearance =
+      drcTolerances.minBoardEdgeClearance ??
+      simpleRouteJson.minBoardEdgeClearance
 
-  let minTraceToPadEdgeClearance =
-    drcTolerances.minTraceToPadEdgeClearance ??
-    simpleRouteJson.minTraceToPadEdgeClearance
+    resolvedSimpleRouteJson = {
+      ...simpleRouteJson,
+      connections: applyMinTraceWidthToConnections(
+        simpleRouteJson.connections,
+        drcTolerances.minTraceWidth,
+      ),
+      minTraceWidth,
+      minViaDiameter: minViaPadDiameter,
+      minViaHoleDiameter,
+      minViaPadDiameter,
+      min_via_hole_diameter: minViaHoleDiameter,
+      min_via_pad_diameter: minViaPadDiameter,
+      minTraceToPadEdgeClearance,
+      minTraceToHoleEdgeClearance,
+      minViaEdgeToPadEdgeClearance,
+      minViaHoleEdgeToViaHoleEdgeClearance,
+      minPlatedHoleDrillEdgeToDrillEdgeClearance,
+      minPadEdgeToPadEdgeClearance,
+      minBoardEdgeClearance,
+    }
+  }
+
   // Phase rules override board rules; traceClearance is a lower bound on
   // that effective copper clearance. Pipeline9 also uses this field for
   // trace-to-trace checks; dedicated hole, via-to-pad, via-hole and board-edge
   // rules remain independent.
   if (autorouterConfig.traceClearance !== undefined) {
-    minTraceToPadEdgeClearance = Math.max(
-      minTraceToPadEdgeClearance ?? 0,
-      distance.parse(autorouterConfig.traceClearance),
-    )
+    resolvedSimpleRouteJson = {
+      ...resolvedSimpleRouteJson,
+      minTraceToPadEdgeClearance: Math.max(
+        resolvedSimpleRouteJson.minTraceToPadEdgeClearance ?? 0,
+        distance.parse(autorouterConfig.traceClearance),
+      ),
+    }
   }
-  if (!hasDrcTolerances(drcTolerances)) {
-    return { ...simpleRouteJson, minTraceToPadEdgeClearance }
-  }
-
-  const minTraceWidth =
-    drcTolerances.minTraceWidth ?? simpleRouteJson.minTraceWidth
-  const minViaHoleDiameter =
-    drcTolerances.minViaHoleDiameter ?? simpleRouteJson.minViaHoleDiameter
-  const minViaPadDiameter =
-    drcTolerances.minViaPadDiameter ?? simpleRouteJson.minViaPadDiameter
-  const minTraceToHoleEdgeClearance =
-    drcTolerances.minTraceToHoleEdgeClearance ??
-    simpleRouteJson.minTraceToHoleEdgeClearance
-  const minViaEdgeToPadEdgeClearance =
-    drcTolerances.minViaEdgeToPadEdgeClearance ??
-    simpleRouteJson.minViaEdgeToPadEdgeClearance
-  const minViaHoleEdgeToViaHoleEdgeClearance =
-    drcTolerances.minViaHoleEdgeToViaHoleEdgeClearance ??
-    simpleRouteJson.minViaHoleEdgeToViaHoleEdgeClearance
-  const minPlatedHoleDrillEdgeToDrillEdgeClearance =
-    drcTolerances.minPlatedHoleDrillEdgeToDrillEdgeClearance ??
-    simpleRouteJson.minPlatedHoleDrillEdgeToDrillEdgeClearance
-  const minPadEdgeToPadEdgeClearance =
-    drcTolerances.minPadEdgeToPadEdgeClearance ??
-    simpleRouteJson.minPadEdgeToPadEdgeClearance
-  const minBoardEdgeClearance =
-    drcTolerances.minBoardEdgeClearance ?? simpleRouteJson.minBoardEdgeClearance
-
-  return {
-    ...simpleRouteJson,
-    connections: applyMinTraceWidthToConnections(
-      simpleRouteJson.connections,
-      drcTolerances.minTraceWidth,
-    ),
-    minTraceWidth,
-    minViaDiameter: minViaPadDiameter,
-    minViaHoleDiameter,
-    minViaPadDiameter,
-    min_via_hole_diameter: minViaHoleDiameter,
-    min_via_pad_diameter: minViaPadDiameter,
-    minTraceToPadEdgeClearance,
-    minTraceToHoleEdgeClearance,
-    minViaEdgeToPadEdgeClearance,
-    minViaHoleEdgeToViaHoleEdgeClearance,
-    minPlatedHoleDrillEdgeToDrillEdgeClearance,
-    minPadEdgeToPadEdgeClearance,
-    minBoardEdgeClearance,
-  }
+  return resolvedSimpleRouteJson
 }
