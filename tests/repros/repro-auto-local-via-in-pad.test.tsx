@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { checkViasInPads } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("auto_local drops an explicit via-in-pad prohibition", async () => {
+test("auto_local preserves an explicit via-in-pad prohibition", async () => {
   const { circuit } = getTestFixture()
   let allowViaInPad: boolean | undefined
   circuit.on("autorouting:start", ({ simpleRouteJson }) => {
@@ -40,7 +40,7 @@ test("auto_local drops an explicit via-in-pad prohibition", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
-  expect(allowViaInPad).toBe(true)
+  expect(allowViaInPad).toBe(false)
   expect(circuit.db.pcb_trace.list()).toHaveLength(1)
   expect(circuit.db.pcb_via.list()).toHaveLength(1)
 
@@ -51,7 +51,7 @@ test("auto_local drops an explicit via-in-pad prohibition", async () => {
     }
     return element
   })
-  expect(checkViasInPads(strictCircuit)).toHaveLength(2)
+  expect(checkViasInPads(strictCircuit)).toEqual([])
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
