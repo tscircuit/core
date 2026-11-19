@@ -29,9 +29,6 @@ jobs:
           path=Path("tests/repros/repro-fanout-routed-layer-impact.test.tsx")
           source=path.read_text().replace("expect(vias).toHaveLength(36)",'console.log("FANOUT_VIA_COUNT", vias.length)\n  expect(vias).toHaveLength(38)')
           path.write_text(source)
-          path=Path("tests/repros/repro-autorouter-clearance-board.test.tsx")
-          source=path.read_text().replace("inputs.push(input)",'inputs.push(input)\n    console.log("SEPIC_INPUT_GZIP", Buffer.from(Bun.gzipSync(JSON.stringify(input))).toString("base64"))')
-          path.write_text(source)
           PY
       - name: Run failed files with snapshot regeneration
         id: tests
@@ -42,3 +39,16 @@ jobs:
       - name: Typecheck
         if: always()
         run: bun run typecheck
+      - name: Export generated snapshots for review
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import subprocess,json,gzip,base64
+          from pathlib import Path
+          files=subprocess.check_output(["git","diff","--name-only"],text=True).splitlines()
+          for name in files:
+              if name.endswith(".snap.svg"):
+                  content=Path(name).read_text()
+                  data=json.dumps({"path":name,"content":content}).encode()
+                  print("REVIEW_SNAPSHOT_GZIP "+base64.b64encode(gzip.compress(data)).decode())
+          PY
