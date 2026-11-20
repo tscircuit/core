@@ -33,9 +33,7 @@ test("a nearer pass that doubles back doesn't displace the passes in route order
   // 4 mm longer after it.
   const first = segmentAtX({ segments: pair.positive.segments, x: -6 })
   const second = segmentAtX({ segments: pair.positive.segments, x: 5 })
-  expect(first.coupling).toBe("coupled")
   expect(first.local_skew).toBe(0)
-  expect(second.coupling).toBe("coupled")
   expect(second.local_skew).toBeCloseTo(-4, 5)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

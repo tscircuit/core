@@ -53,7 +53,6 @@ test("a detour where the pair widens to pad pitch shows as skew, measured at the
   for (const x of [-11, -3, 5]) {
     for (const segments of [pair.positive.segments, pair.negative.segments]) {
       const segment = segmentAtX({ segments, x })
-      expect(segment.coupling).toBe("coupled")
       expect(segment.local_skew).toBe(0)
     }
   }
@@ -62,13 +61,11 @@ test("a detour where the pair widens to pad pitch shows as skew, measured at the
     segments: pair.positive.segments,
     x: 7,
   })
-  expect(positiveOverLoop.coupling).toBe("interpolated")
   expect(positiveOverLoop.local_skew).toBeGreaterThan(0)
   expect(positiveOverLoop.local_skew).toBeLessThan(DETOUR_EXTRA_LENGTH)
 
   const positiveAfter = segmentAtX({ segments: pair.positive.segments, x: 10 })
   const negativeAfter = segmentAtX({ segments: pair.negative.segments, x: 10 })
-  expect(positiveAfter.coupling).toBe("coupled")
   expect(positiveAfter.local_skew).toBeCloseTo(DETOUR_EXTRA_LENGTH, 5)
   expect(negativeAfter.local_skew).toBeCloseTo(-DETOUR_EXTRA_LENGTH, 5)
   expect(pair.max_local_skew).toBeCloseTo(DETOUR_EXTRA_LENGTH, 5)

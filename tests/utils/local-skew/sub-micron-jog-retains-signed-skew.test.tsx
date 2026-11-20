@@ -25,7 +25,6 @@ test("a sub-micron jog retains its signed skew in Circuit JSON", async () => {
 
   const positiveAfter = segmentAtX({ segments: pair.positive.segments, x: 5 })
   const negativeAfter = segmentAtX({ segments: pair.negative.segments, x: 5 })
-  expect(positiveAfter.coupling).toBe("coupled")
   expect(positiveAfter.local_skew).toBeCloseTo(JOG_EXTRA_LENGTH, 5)
   expect(negativeAfter.local_skew).toBeCloseTo(-JOG_EXTRA_LENGTH, 5)
 

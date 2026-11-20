@@ -18,7 +18,7 @@ test("a straight route split into many points is measured as one segment", async
   const [pair] = getStoredLocalSkew(circuitJson)
 
   expect(pair.positive.segments).toHaveLength(1)
-  expect(pair.positive.segments[0].coupling).toBe("coupled")
+  expect(pair.positive.segments[0].local_skew).toBe(0)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

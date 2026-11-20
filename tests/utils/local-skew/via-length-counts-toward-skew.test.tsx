@@ -24,9 +24,7 @@ test("each via adds the same length to skew as to trace_length", async () => {
 
   const before = segmentAtX({ segments: pair.positive.segments, x: -9 })
   const after = segmentAtX({ segments: pair.positive.segments, x: 9 })
-  expect(before.coupling).toBe("coupled")
   expect(before.local_skew).toBe(0)
-  expect(after.coupling).toBe("coupled")
   expect(after.local_skew).toBeCloseTo(positiveLength - negativeLength, 5)
   expect(after.local_skew).toBeLessThan(0)
 

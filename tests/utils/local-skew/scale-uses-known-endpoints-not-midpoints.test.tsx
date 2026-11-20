@@ -22,7 +22,7 @@ test("each trace skew scale comes from known span endpoints, not piece midpoints
   const [pair] = getStoredLocalSkew(circuitJson)
   const slanted = pair.negative.segments.filter(
     (segment) =>
-      segment.coupling === "coupled" && segment.start.y !== segment.end.y,
+      segment.local_skew !== undefined && segment.start.y !== segment.end.y,
   )
   expect(slanted).toHaveLength(2)
 

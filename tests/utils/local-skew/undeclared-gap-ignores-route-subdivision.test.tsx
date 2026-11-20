@@ -28,19 +28,17 @@ function renderFarPair({ step }: { step: number }) {
 }
 
 test("without pcbTraceGap, splitting a route into more points doesn't change coupling", async () => {
-  const coupling = (step: number) =>
-    getStoredLocalSkew(renderFarPair({ step }))[0].positive.segments.map(
-      (segment) => `${segment.start.x.toFixed(3)}:${segment.coupling}`,
-    )
-
   // 2 mm apart is beyond ten trace widths, so the far stretch never couples,
   // whether DN is one 22 mm step or 22 steps of 1 mm.
-  expect(coupling(1)).toEqual(coupling(30))
+  expect(getStoredLocalSkew(renderFarPair({ step: 1 }))).toEqual(
+    getStoredLocalSkew(renderFarPair({ step: 30 })),
+  )
   const circuitJson = renderFarPair({ step: 1 })
   const [pair] = getStoredLocalSkew(circuitJson)
   const middle = pair.positive.segments.find(
     (segment) => segment.start.x <= 0 && segment.end.x >= 0,
   )
-  expect(middle?.coupling).toBe("interpolated")
+  // The 2.8 mm DN adds at its ends ramps in across the far stretch.
+  expect(middle?.local_skew).toBeCloseTo(-1.4, 1)
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

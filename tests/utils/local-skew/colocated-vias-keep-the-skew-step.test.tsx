@@ -19,9 +19,7 @@ test("colocated vias keep their full skew step between straight runs", async () 
 
   const before = segmentAtX({ segments: pair.positive.segments, x: -4 })
   const after = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  expect(before.coupling).toBe("coupled")
   expect(before.local_skew).toBe(0)
-  expect(after.coupling).toBe("coupled")
   expect(after.local_skew).toBeCloseTo(-1.6, 5)
   expect(pair.max_local_skew).toBeCloseTo(1.6, 5)
 

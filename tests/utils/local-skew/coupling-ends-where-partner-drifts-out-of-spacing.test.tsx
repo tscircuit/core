@@ -19,15 +19,14 @@ test("coupling stops partway along a step where the partner drifts out of spacin
   })
   const [pair] = getStoredLocalSkew(circuitJson)
 
-  expect(segmentAtX({ segments: pair.positive.segments, x: -9 }).coupling).toBe(
-    "coupled",
-  )
-  expect(segmentAtX({ segments: pair.positive.segments, x: 0 }).coupling).toBe(
-    "coupled",
-  )
-  expect(segmentAtX({ segments: pair.positive.segments, x: 5 }).coupling).toBe(
-    "unknown",
-  )
+  // Measured up to x = 4.3 (by x = 0 DN's slant has added 3.58 µm), and
+  // unknown after it.
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: 0 }).local_skew,
+  ).toBeCloseTo(-0.00358, 5)
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: 5 }).local_skew,
+  ).toBeUndefined()
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

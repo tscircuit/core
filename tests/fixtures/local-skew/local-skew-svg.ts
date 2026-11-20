@@ -52,12 +52,12 @@ export function localSkewSvg(circuitJson: CircuitJson): string {
   <g transform="scale(1 -1)">
     ${[...copper, ...samples, ...vias].join("\n    ")}
   </g>
-  <text x="${minX + 0.3}" y="${-maxY + 0.48}" font-family="sans-serif" font-size="0.32" fill="#fff">Max local skew (mm): ${maxima || "no measurable pairs"}. Blue: ahead. Orange: behind. Grey: unknown. Dashed: interpolated.</text>
+  <text x="${minX + 0.3}" y="${-maxY + 0.48}" font-family="sans-serif" font-size="0.32" fill="#fff">Max local skew (mm): ${maxima || "no measurable pairs"}. Blue: ahead. Orange: behind. Grey: unknown.</text>
 </svg>`
 }
 
 function skewLine(trace: LocalSkewTrace, segment: LocalSkewSegment): string {
-  const { start, end, width, coupling, local_skew: skew } = segment
+  const { start, end, width, local_skew: skew } = segment
   let color = "#878e92"
   if (skew !== undefined) {
     const scale =
@@ -66,6 +66,5 @@ function skewLine(trace: LocalSkewTrace, segment: LocalSkewSegment): string {
     const hue = skew < 0 ? 26 : 200
     color = `hsl(${hue}, 95%, ${100 - 47 * amount}%)`
   }
-  const dash = coupling === "interpolated" ? 'stroke-dasharray="0.14 0.07"' : ""
-  return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="${width * 1.35}" ${dash}/>`
+  return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="${width * 1.35}"/>`
 }

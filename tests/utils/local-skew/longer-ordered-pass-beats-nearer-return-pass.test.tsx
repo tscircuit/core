@@ -27,7 +27,6 @@ test("a long pass in route order wins over a shorter, nearer return pass", async
 
   for (const x of [-9, 0, 8]) {
     const segment = segmentAtX({ segments: pair.positive.segments, x })
-    expect(segment.coupling).toBe("coupled")
     expect(segment.local_skew).toBe(0)
   }
 

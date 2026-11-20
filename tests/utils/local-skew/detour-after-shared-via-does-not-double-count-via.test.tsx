@@ -45,7 +45,6 @@ test("a detour right after a shared via does not double-count the partner's sing
     x: -0.5,
     y: 1.3,
   })
-  expect(loopTop.coupling).toBe("interpolated")
   expect(loopTop.local_skew).toBeCloseTo(2.5, 2)
 
   expect(pair.positive).toMatchObject({

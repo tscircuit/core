@@ -57,9 +57,7 @@ test("an interpolated ramp between staggered vias starts after the entry via and
     x: -3.025,
     y: 1.3,
   })
-  expect(dpNearStart.coupling).toBe("interpolated")
   expect(dpNearStart.local_skew).toBeCloseTo(1.6 + (2 * 0.475) / 8, 4)
-  expect(dpMid.coupling).toBe("interpolated")
   expect(dpMid.local_skew).toBeCloseTo(1.6 + (2 * 3.975) / 8, 4)
 
   // DN's ramp ends before its via at x = 0 (gapTo = run.from - startVia).
@@ -75,9 +73,7 @@ test("an interpolated ramp between staggered vias starts after the entry via and
     x: -0.525,
     y: -0.3,
   })
-  expect(dnMid.coupling).toBe("interpolated")
   expect(dnMid.local_skew).toBeCloseTo(-1.6 - (2 * 2.975) / 6, 4)
-  expect(dnNearEnd.coupling).toBe("interpolated")
   expect(dnNearEnd.local_skew).toBeCloseTo(-1.6 - (2 * 5.475) / 6, 4)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

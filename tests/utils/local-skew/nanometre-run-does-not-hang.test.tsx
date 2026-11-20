@@ -21,11 +21,11 @@ test("a coupled stretch right at the 1 nm overlap threshold finishes without han
 
   const [pair] = getStoredLocalSkew(circuitJson)
 
-  const coupled = pair.positive.segments.filter(
-    (segment) => segment.coupling === "coupled",
+  const known = pair.positive.segments.filter(
+    (segment) => segment.local_skew !== undefined,
   )
-  expect(coupled).toHaveLength(1)
-  expect(coupled[0].local_skew).toBeCloseTo(-6, 5)
+  expect(known).toHaveLength(1)
+  expect(known[0].local_skew).toBeCloseTo(-6, 5)
   expect(pair.max_local_skew).toBeCloseTo(6, 5)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

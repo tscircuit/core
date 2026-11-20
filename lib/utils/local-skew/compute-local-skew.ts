@@ -40,18 +40,16 @@ const SKEW_ROUNDING = 1e5
 const MAX_COORDINATE = 1e4
 
 type SkewScale = { positive: number; negative: number }
-type SkewCoupling = LocalSkewSegment["coupling"]
 type SubcircuitId = NonNullable<SourceBus["subcircuit_id"]>
 type PcbPortId = PcbPort["pcb_port_id"]
 type SourcePortId = SourcePort["source_port_id"]
 
-/** A stretch of one trace with skew changing linearly from `startSkew` to `endSkew`. */
+/** A stretch of one trace with skew changing linearly from `startSkew` to `endSkew`; null where it is unknown. */
 type SkewSpan = {
   from: number
   to: number
   startSkew: number | null
   endSkew: number | null
-  coupling: SkewCoupling
 }
 
 /** Routed copper grouped by the source trace it belongs to. */
@@ -444,7 +442,6 @@ function skewSpans({
           to: gapTo,
           startSkew: afterPrevious,
           endSkew: beforeRun,
-          coupling: "interpolated",
         })
       }
     }
@@ -455,7 +452,6 @@ function skewSpans({
       to: run.to,
       startSkew: run.startSkew,
       endSkew: run.endSkew,
-      coupling: "coupled",
     })
   })
   const last = coupled[coupled.length - 1]
@@ -506,7 +502,7 @@ function viaAt({
 
 /** A span with no skew information. */
 function unknownSpan({ from, to }: { from: number; to: number }): SkewSpan {
-  return { from, to, startSkew: null, endSkew: null, coupling: "unknown" }
+  return { from, to, startSkew: null, endSkew: null }
 }
 
 /**
@@ -553,7 +549,6 @@ function sampleSkew({
           layer: step.layer,
           width: step.width,
           ...(localSkew !== null && { local_skew: localSkew }),
-          coupling: span.coupling,
         })
       }
     }

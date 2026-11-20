@@ -13,7 +13,6 @@ test("positive trace is longer by the detour length between the detours", async 
 
   const positive = segmentAtX({ segments: pair.positive.segments, x: 0 })
   const negative = segmentAtX({ segments: pair.negative.segments, x: 0 })
-  expect(positive.coupling).toBe("coupled")
   expect(positive.local_skew).toBeCloseTo(DETOUR_EXTRA_LENGTH, 5)
   expect(negative.local_skew).toBeCloseTo(-DETOUR_EXTRA_LENGTH, 5)
 

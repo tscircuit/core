@@ -9,7 +9,6 @@ test("without pcbTraceGap the pair is still coupled at its routed spacing", asyn
   const [pair] = getStoredLocalSkew(circuitJson)
 
   const middle = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  expect(middle.coupling).toBe("coupled")
   expect(middle.local_skew).toBe(0)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

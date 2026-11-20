@@ -32,16 +32,14 @@ test("an asymmetric via lands as a step at the via instead of smearing across th
 
   // Between the staggered vias, the via length has stepped in immediately at
   // x = -6 and stays flat across the uncoupled stretch until DN's via at x = 0.
-  const positiveInterpolated = pair.positive.segments.filter(
-    (segment) => segment.coupling === "interpolated",
-  )
-  const negativeInterpolated = pair.negative.segments.filter(
-    (segment) => segment.coupling === "interpolated",
-  )
-  expect(positiveInterpolated).toHaveLength(1)
-  expect(negativeInterpolated).toHaveLength(1)
-  expect(positiveInterpolated[0].local_skew).toBeCloseTo(1.6, 5)
-  expect(negativeInterpolated[0].local_skew).toBeCloseTo(-1.6, 5)
+  for (const x of [-5.5, -0.5]) {
+    expect(
+      segmentAtX({ segments: pair.positive.segments, x }).local_skew,
+    ).toBeCloseTo(1.6, 5)
+    expect(
+      segmentAtX({ segments: pair.negative.segments, x }).local_skew,
+    ).toBeCloseTo(-1.6, 5)
+  }
   expect(pair.positive).toMatchObject({
     positive_skew_scale: 1.6,
     negative_skew_scale: 0,
@@ -67,16 +65,14 @@ test("an asymmetric via lands as a step at the via instead of smearing across th
       negativeFromLoad: true,
     }),
   )
-  const reversedPositiveInterpolated = reversed.positive.segments.filter(
-    (segment) => segment.coupling === "interpolated",
-  )
-  const reversedNegativeInterpolated = reversed.negative.segments.filter(
-    (segment) => segment.coupling === "interpolated",
-  )
-  expect(reversedPositiveInterpolated).toHaveLength(1)
-  expect(reversedNegativeInterpolated).toHaveLength(1)
-  expect(reversedPositiveInterpolated[0].local_skew).toBeCloseTo(1.6, 5)
-  expect(reversedNegativeInterpolated[0].local_skew).toBeCloseTo(-1.6, 5)
+  for (const x of [-5.5, -0.5]) {
+    expect(
+      segmentAtX({ segments: reversed.positive.segments, x }).local_skew,
+    ).toBeCloseTo(1.6, 5)
+    expect(
+      segmentAtX({ segments: reversed.negative.segments, x }).local_skew,
+    ).toBeCloseTo(-1.6, 5)
+  }
   expect(reversed.positive).toMatchObject({
     positive_skew_scale: 1.6,
     negative_skew_scale: 0,
@@ -102,11 +98,12 @@ test("an asymmetric via lands as a step at the via instead of smearing across th
       negativeFromLoad: true,
     }),
   )
-  const negFirstInterpolated = reversedNegativeFirst.negative.segments.filter(
-    (segment) => segment.coupling === "interpolated",
-  )
-  expect(negFirstInterpolated).toHaveLength(1)
-  expect(negFirstInterpolated[0].local_skew).toBeCloseTo(1.6, 5)
+  for (const x of [-5.5, -0.5]) {
+    expect(
+      segmentAtX({ segments: reversedNegativeFirst.negative.segments, x })
+        .local_skew,
+    ).toBeCloseTo(1.6, 5)
+  }
   expect(reversedNegativeFirst.negative).toMatchObject({
     positive_skew_scale: 1.6,
     negative_skew_scale: 0,

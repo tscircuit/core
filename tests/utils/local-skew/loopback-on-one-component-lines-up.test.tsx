@@ -9,7 +9,6 @@ test("a loopback with all pads on one part lines the traces up by their ends", a
   const [pair] = getStoredLocalSkew(circuitJson)
 
   const middle = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  expect(middle.coupling).toBe("coupled")
   expect(middle.local_skew).toBe(0)
   expect(pair.max_local_skew).toBe(0)
 

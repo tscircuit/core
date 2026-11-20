@@ -21,9 +21,9 @@ test("copper running beside the partner in the opposite direction is not coupled
   })
   const [pair] = getStoredLocalSkew(circuitJson)
 
-  expect(segmentAtX({ segments: pair.positive.segments, x: 0 }).coupling).toBe(
-    "unknown",
-  )
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: 0 }).local_skew,
+  ).toBeUndefined()
   expect(pair.max_local_skew).toBeUndefined()
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

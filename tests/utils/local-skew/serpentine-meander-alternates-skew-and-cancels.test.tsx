@@ -79,9 +79,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -8,
     y: -0.3,
   })
-  expect(entryPos.coupling).toBe("coupled")
   expect(entryPos.local_skew).toBe(0)
-  expect(entryNeg.coupling).toBe("coupled")
   expect(entryNeg.local_skew).toBe(0)
 
   const firstDownPos = segmentAtY({
@@ -94,9 +92,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -4.0,
     y: -1,
   })
-  expect(firstDownPos.coupling).toBe("coupled")
   expect(firstDownPos.local_skew).toBeCloseTo(BEND_SKEW, 5)
-  expect(firstDownNeg.coupling).toBe("coupled")
   expect(firstDownNeg.local_skew).toBeCloseTo(-BEND_SKEW, 5)
 
   const bottomPos = segmentAtX({
@@ -109,9 +105,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -2.9,
     y: -2.3,
   })
-  expect(bottomPos.coupling).toBe("coupled")
   expect(bottomPos.local_skew).toBe(0)
-  expect(bottomNeg.coupling).toBe("coupled")
   expect(bottomNeg.local_skew).toBe(0)
 
   const middleUpPos = segmentAtY({
@@ -124,9 +118,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -1.8,
     y: 0,
   })
-  expect(middleUpPos.coupling).toBe("coupled")
   expect(middleUpPos.local_skew).toBeCloseTo(-BEND_SKEW, 5)
-  expect(middleUpNeg.coupling).toBe("coupled")
   expect(middleUpNeg.local_skew).toBeCloseTo(BEND_SKEW, 5)
 
   const topPos = segmentAtX({
@@ -139,9 +131,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -1.3,
     y: 1.7,
   })
-  expect(topPos.coupling).toBe("coupled")
   expect(topPos.local_skew).toBe(0)
-  expect(topNeg.coupling).toBe("coupled")
   expect(topNeg.local_skew).toBe(0)
 
   const finalDownPos = segmentAtY({
@@ -154,9 +144,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: -0.8,
     y: 1,
   })
-  expect(finalDownPos.coupling).toBe("coupled")
   expect(finalDownPos.local_skew).toBeCloseTo(BEND_SKEW, 5)
-  expect(finalDownNeg.coupling).toBe("coupled")
   expect(finalDownNeg.local_skew).toBeCloseTo(-BEND_SKEW, 5)
 
   const exitPos = segmentAtX({ segments: pair.positive.segments, x: 6, y: 0.3 })
@@ -165,9 +153,7 @@ test("coupled serpentine meander alternates local skew across legs and cancels t
     x: 6,
     y: -0.3,
   })
-  expect(exitPos.coupling).toBe("coupled")
   expect(exitPos.local_skew).toBe(0)
-  expect(exitNeg.coupling).toBe("coupled")
   expect(exitNeg.local_skew).toBe(0)
 
   expect(pair.max_local_skew).toBeCloseTo(BEND_SKEW, 5)

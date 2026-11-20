@@ -67,30 +67,22 @@ test("45° mitred bends create opposite-sign skew of 2 * d * tan(pi/8) on couple
     x: -9,
     y: -0.3,
   })
-  expect(entryPos.coupling).toBe("coupled")
   expect(entryPos.local_skew).toBe(0)
-  expect(entryNeg.coupling).toBe("coupled")
   expect(entryNeg.local_skew).toBe(0)
 
   const upPos = diagonalAtX({ segments: pair.positive.segments, x: -4 })
   const upNeg = diagonalAtX({ segments: pair.negative.segments, x: -4 })
-  expect(upPos.coupling).toBe("coupled")
   expect(upPos.local_skew).toBeCloseTo(-MITRED_BEND_SKEW, 5)
-  expect(upNeg.coupling).toBe("coupled")
   expect(upNeg.local_skew).toBeCloseTo(MITRED_BEND_SKEW, 5)
 
   const topPos = segmentAtX({ segments: pair.positive.segments, x: 0, y: 4.3 })
   const topNeg = segmentAtX({ segments: pair.negative.segments, x: 0, y: 3.7 })
-  expect(topPos.coupling).toBe("coupled")
   expect(topPos.local_skew).toBe(0)
-  expect(topNeg.coupling).toBe("coupled")
   expect(topNeg.local_skew).toBe(0)
 
   const downPos = diagonalAtX({ segments: pair.positive.segments, x: 4 })
   const downNeg = diagonalAtX({ segments: pair.negative.segments, x: 4 })
-  expect(downPos.coupling).toBe("coupled")
   expect(downPos.local_skew).toBeCloseTo(MITRED_BEND_SKEW, 5)
-  expect(downNeg.coupling).toBe("coupled")
   expect(downNeg.local_skew).toBeCloseTo(-MITRED_BEND_SKEW, 5)
 
   const exitPos = segmentAtX({ segments: pair.positive.segments, x: 9, y: 0.3 })
@@ -99,9 +91,7 @@ test("45° mitred bends create opposite-sign skew of 2 * d * tan(pi/8) on couple
     x: 9,
     y: -0.3,
   })
-  expect(exitPos.coupling).toBe("coupled")
   expect(exitPos.local_skew).toBe(0)
-  expect(exitNeg.coupling).toBe("coupled")
   expect(exitNeg.local_skew).toBe(0)
 
   expect(pair.max_local_skew).toBeCloseTo(MITRED_BEND_SKEW, 5)

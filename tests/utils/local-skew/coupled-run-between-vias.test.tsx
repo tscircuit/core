@@ -24,7 +24,6 @@ test("the run between two vias is coupled on the bottom layer", async () => {
   for (const segments of [pair.positive.segments, pair.negative.segments]) {
     const between = segmentAtX({ segments, x: 0 })
     expect(between.layer).toBe("bottom")
-    expect(between.coupling).toBe("coupled")
     expect(between.local_skew).toBe(0)
   }
   expect(pair.max_local_skew).toBe(0)

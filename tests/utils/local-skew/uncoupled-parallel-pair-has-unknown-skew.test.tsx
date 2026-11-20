@@ -43,10 +43,8 @@ test("fully uncoupled parallel pair with unequal lengths reports unknown skew ev
   for (const segments of [pair.positive.segments, pair.negative.segments]) {
     expect(segments.length).toBeGreaterThan(0)
     const middle = segmentAtX({ segments, x: 0 })
-    expect(middle.coupling).toBe("unknown")
     expect(middle.local_skew).toBeUndefined()
     for (const segment of segments) {
-      expect(segment.coupling).toBe("unknown")
       expect(segment.local_skew).toBeUndefined()
     }
   }

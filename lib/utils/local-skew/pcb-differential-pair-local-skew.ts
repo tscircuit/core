@@ -29,7 +29,6 @@ export interface LocalSkewSegment {
   end: Point
   layer: LayerRef
   width: number
-  /** This trace's length ahead of its partner at the midpoint, in mm. */
+  /** This trace's length ahead of its partner at the midpoint, in mm. Absent where the skew is unknown. */
   local_skew?: number
-  coupling: "coupled" | "interpolated" | "unknown"
 }

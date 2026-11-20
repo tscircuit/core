@@ -22,11 +22,13 @@ test("a partner angled 2° away is not coupled, even within the spacing", async 
   const [pair] = getStoredLocalSkew(circuitJson)
 
   expect(
-    segmentAtX({ segments: pair.positive.segments, x: -11.5 }).coupling,
-  ).toBe("coupled")
+    segmentAtX({ segments: pair.positive.segments, x: -11.5 }).local_skew,
+  ).toBe(0)
+  // Measured, x = -10 would be almost 0. Uncoupled, the 0.71 mm DN adds
+  // ramps in over the 20 mm slant.
   expect(
-    segmentAtX({ segments: pair.positive.segments, x: -10 }).coupling,
-  ).toBe("interpolated")
+    segmentAtX({ segments: pair.positive.segments, x: -10 }).local_skew,
+  ).toBeCloseTo(-0.035, 2)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

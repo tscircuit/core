@@ -22,11 +22,13 @@ test("the spacing allowance uses the mean of the two trace widths", async () => 
   const [pair] = getStoredLocalSkew(circuitJson)
 
   const beside = segmentAtX({ segments: pair.positive.segments, x: -9 })
-  expect(beside.coupling).toBe("coupled")
+  expect(beside.local_skew).toBe(0)
   expect(beside.width).toBe(0.45)
-  expect(segmentAtX({ segments: pair.positive.segments, x: 0 }).coupling).toBe(
-    "interpolated",
-  )
+  // Measured, DN would already be 0.1 mm ahead from its first jog at x = -6.
+  // Uncoupled, the 0.2 mm the two jogs add ramps in over DP's 12 mm.
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: -3 }).local_skew,
+  ).toBeCloseTo(-0.05, 2)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

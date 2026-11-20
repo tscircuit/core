@@ -28,9 +28,7 @@ test("a via right before the first coupled run still counts toward the maximum",
 
   const before = segmentAtX({ segments: pair.positive.segments, x: 0 })
   const after = segmentAtX({ segments: pair.positive.segments, x: 9 })
-  expect(before.coupling).toBe("unknown")
   expect(before.local_skew).toBeUndefined()
-  expect(after.coupling).toBe("coupled")
   expect(after.local_skew).toBe(0)
   expect(pair.positive).toMatchObject({
     positive_skew_scale: 1.6,

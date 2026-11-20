@@ -27,7 +27,6 @@ test("pad fan-outs include trace width in their coupling limit", async () => {
 
   const [pair] = getStoredLocalSkew(circuitJson)
   const flare = segmentAtX({ segments: pair.positive.segments, x: -10 })
-  expect(flare.coupling).toBe("coupled")
   expect(flare.local_skew).toBeCloseTo(-0.22066, 5)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)

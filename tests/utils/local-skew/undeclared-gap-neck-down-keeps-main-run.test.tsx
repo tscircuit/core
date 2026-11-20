@@ -17,11 +17,13 @@ test("without pcbTraceGap, a short closer neck-down doesn't uncouple the main ru
   })
   const [pair] = getStoredLocalSkew(circuitJson)
 
-  for (const x of [-8, 6]) {
-    expect(segmentAtX({ segments: pair.positive.segments, x }).coupling).toBe(
-      "coupled",
-    )
-  }
+  // Measured on both sides of the neck-down, which adds 0.6 mm to DN.
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: -8 }).local_skew,
+  ).toBe(0)
+  expect(
+    segmentAtX({ segments: pair.positive.segments, x: 6 }).local_skew,
+  ).toBeCloseTo(-0.6, 5)
 
   await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
 })

@@ -10,7 +10,6 @@ test("a connector at the start of one trace and the end of the other doesn't fli
 
   for (const segments of [pair.positive.segments, pair.negative.segments]) {
     const middle = segmentAtX({ segments, x: 0 })
-    expect(middle.coupling).toBe("coupled")
     expect(middle.local_skew).toBe(0)
   }
   expect(pair.max_local_skew).toBe(0)

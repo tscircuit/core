@@ -52,11 +52,8 @@ test("a straight trace running into wider pads still couples at both pad fan-out
     const middle = segmentAtX({ segments: pair.positive.segments, x: 0 })
     const endFanout = segmentAtX({ segments: pair.positive.segments, x: 10 })
 
-    expect(startFanout.coupling).toBe("coupled")
     expect(startFanout.local_skew).toBe(0)
-    expect(middle.coupling).toBe("coupled")
     expect(middle.local_skew).toBeCloseTo(-FAN_DIAGONAL_EXTRA, 5)
-    expect(endFanout.coupling).toBe("coupled")
     expect(endFanout.local_skew).toBeCloseTo(-2 * FAN_DIAGONAL_EXTRA, 5)
     expect(pair.max_local_skew).toBeCloseTo(2 * FAN_DIAGONAL_EXTRA, 5)
   }

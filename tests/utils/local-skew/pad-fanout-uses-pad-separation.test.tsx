@@ -46,12 +46,11 @@ test("parallel stretches leaving wider source and load pads couple at each end's
   const loadDetour = segmentAtX({ segments: pair.positive.segments, x: 8.75 })
   const endFanout = segmentAtX({ segments: pair.positive.segments, x: 10.5 })
 
-  expect(startFanout.coupling).toBe("coupled")
   expect(startFanout.local_skew).toBe(0)
-  expect(mainRun.coupling).toBe("coupled")
   expect(mainRun.local_skew).toBeCloseTo(FANOUT_DETOUR_EXTRA, 5)
-  expect(loadDetour.coupling).toBe("interpolated")
-  expect(endFanout.coupling).toBe("coupled")
+  // Uncoupled, DN's detour ramps in instead of being measured right away.
+  expect(loadDetour.local_skew).toBeGreaterThan(0)
+  expect(loadDetour.local_skew).toBeLessThan(FANOUT_DETOUR_EXTRA)
   expect(endFanout.local_skew).toBe(0)
   expect(pair.max_local_skew).toBeCloseTo(FANOUT_DETOUR_EXTRA, 5)
 

@@ -24,7 +24,6 @@ test("a 0.02 mm stretch beside the partner is measured, not lost between samples
   const [pair] = getStoredLocalSkew(circuitJson)
 
   const short = segmentAtX({ segments: pair.positive.segments, x: 0.01 })
-  expect(short.coupling).toBe("coupled")
   // DN has run 1 + 3 + 11 + 3 mm more than DP's 12 mm to reach x = 0.
   expect(short.local_skew).toBeCloseTo(-6, 5)
 
