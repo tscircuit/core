@@ -8,20 +8,23 @@ permissions:
   actions: read
 jobs:
   inspect:
+    strategy:
+      matrix:
+        order: [forward, reverse]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: migration-preserved-storage-reverse
-          path: reverse
-          run-id: 44743425447
+          name: migration-final-ownership-${{ matrix.order }}
+          path: measurement
+          run-id: 44747436086
           github-token: ${{ github.token }}
       - name: Report per-sample numeric deltas without circuit data
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          d=json.loads(Path('reverse/aggregate-measurements.json').read_text())
+          d=json.loads(Path('measurement/aggregate-measurements.json').read_text())
           base={r['sample']:r for r in d['base']}
           rows=[]
           for r in d['candidate']:
