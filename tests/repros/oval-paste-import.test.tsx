@@ -1,15 +1,49 @@
 import { beforeAll, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
 import { any_circuit_element } from "circuit-json"
+import { KicadFootprintToCircuitJsonConverter } from "kicad-to-circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-import usbFootprint from "./assets/usb1046/footprint.circuit.json"
 
-const input = any_circuit_element.array().parse(usbFootprint)
-const { circuit } = getTestFixture()
+const converter = new KicadFootprintToCircuitJsonConverter()
+converter.addFile(
+  "USB_A_Receptacle_GCT_USB1046.kicad_mod",
+  readFileSync(
+    new URL(
+      "./assets/usb1046/USB_A_Receptacle_GCT_USB1046.kicad_mod",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+)
+converter.runUntilFinished()
+const input = any_circuit_element.array().parse(converter.getOutput())
+const { circuit } = getTestFixture({
+  platform: {
+    footprintLibraryMap: {
+      kicad: async () => ({ footprintCircuitJson: input }),
+    },
+  },
+})
 
 beforeAll(async () => {
+  expect(
+    input.filter((element) => element.type === "pcb_solder_paste"),
+  ).toHaveLength(6)
   circuit.add(
     <board width={30} height={30} schematicDisabled>
-      <subcircuit name="USB" circuitJson={input} />
+      <connector
+        name="J1"
+        pcbX={0}
+        pcbY={0}
+        footprint="kicad:Connector_USB/USB_A_Receptacle_GCT_USB1046"
+        pinLabels={{
+          pin1: "VBUS",
+          pin2: "DM",
+          pin3: "DP",
+          pin4: "GND",
+          pin5: "SHIELD",
+        }}
+      />
       <pcbnotetext
         text="USB1046: preserve the imported top stencil; no bottom paste"
         pcbY={13}
@@ -18,6 +52,7 @@ beforeAll(async () => {
     </board>,
   )
   await circuit.renderUntilSettled()
+  expect(circuit.selectOne(".J1")?._getIsSmt()).toBe(true)
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(4)
   expect(circuit.db.pcb_plated_hole.list()).toHaveLength(2)
   expect(
