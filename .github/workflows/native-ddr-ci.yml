@@ -1,0 +1,59 @@
+name: Verify native traces across the frozen DDR circuits
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-ci.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b9b22d186faf889f6b69fe53ac11979ee9d6fd05
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 395fffa2392f08af3effcc6e0e21f54a3729302d
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: b9b22d186faf889f6b69fe53ac11979ee9d6fd05
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install the same frozen benchmark and both dependency sets
+        run: |
+          cd tooling
+          bun install --ignore-scripts
+          cd ../base
+          bun install --ignore-scripts
+          cd ../head
+          bun install --ignore-scripts
+      - name: Compare original circuits with unchanged routing assertions
+        run: |
+          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          mkdir -p results
+          base_status=0
+          head_status=0
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" --timeout 120 || base_status=$?
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" --timeout 120 || head_status=$?
+          bun "$benchmark/report.ts" results/head/results.json results/base/results.json results/comparison.md
+          cat results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
+          if (( base_status != 0 || head_status != 0 )); then exit 1; fi
+      - name: Preserve only the public SVGs and aggregate comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-ddr-comparison
+          path: |
+            results/comparison.md
+            results/**/*.svg
+          retention-days: 14
