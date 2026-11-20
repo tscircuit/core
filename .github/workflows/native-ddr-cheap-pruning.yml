@@ -28,15 +28,15 @@ jobs:
           p=Path('node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts')
           s=p.read_text()
           old="      if (\n        this.staticSegmentValidator &&\n        !this.isStaticMoveAllowed({\n          fromCellId: cellId,\n          fromZ: z,\n          toCellId: neighborCellId,\n          toZ: z,\n          firstMove: this.nodePool.parent[nodeIdx] === -1,\n        })\n      ) {\n        continue\n      }\n"
-          anchor="      this.bestGStamp[nextStateIdx] = stamp\n"
+          anchor="\n      this.bestGStamp[nextStateIdx] = stamp\n"
           assert s.count(old)==1
           assert s.count(anchor)==1
-          s=s.replace(old,'',1).replace(anchor,old+anchor,1)
+          s=s.replace(old,'',1).replace(anchor,'\n'+old+anchor[1:],1)
           old="        if (\n          this.staticSegmentValidator &&\n          !this.isStaticMoveAllowed({\n            fromCellId: cellId,\n            fromZ: z,\n            toCellId: cellId,\n            toZ: nz,\n            firstMove: this.nodePool.parent[nodeIdx] === -1,\n          })\n        ) {\n          continue\n        }\n"
-          anchor="        this.bestGStamp[nextStateIdx] = stamp\n"
+          anchor="\n        this.bestGStamp[nextStateIdx] = stamp\n"
           assert s.count(old)==1
           assert s.count(anchor)==1
-          s=s.replace(old,'',1).replace(anchor,old+anchor,1)
+          s=s.replace(old,'',1).replace(anchor,'\n'+old+anchor[1:],1)
           p.write_text(s)
           print('A03 exact copper check moved after search-state pruning; before frontier mutation')
           PY
