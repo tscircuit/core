@@ -1,8 +1,4 @@
 import { expect, test } from "bun:test"
-import {
-  convertSrjToGraphicsObject,
-  type SimpleRouteJson as AutorouterSimpleRouteJson,
-} from "@tscircuit/capacity-autorouter"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import type {
   Obstacle,
@@ -178,12 +174,65 @@ test("H616 fixed via keeps its native circular copper footprint", async () => {
   expect(nativeGap).toBeGreaterThan(input.minViaEdgeToPadEdgeClearance!)
   expect(foreignPad.connectedTo).not.toContain(fixedTrace.connection_name!)
 
-  await expect(
-    getSvgFromGraphicsObject(
-      convertSrjToGraphicsObject(output as AutorouterSimpleRouteJson),
+  // The SRJ renderer assumes rectangular obstacles; draw the emitted circles.
+  const graphics = {
+    coordinateSystem: "cartesian" as const,
+    circles: [
+      ...output.obstacles.map((pad) => ({
+        center: pad.center,
+        radius: pad.width / 2,
+        fill: "#fee2e2",
+        stroke: "#b91c1c",
+      })),
       {
-        backgroundColor: "white",
+        center: via,
+        radius: via.via_diameter! / 2,
+        fill: "#6366f1",
+        stroke: "#312e81",
       },
-    ),
+      {
+        center: via,
+        radius: via.via_hole_diameter! / 2,
+        fill: "white",
+        stroke: "#312e81",
+      },
+    ],
+    texts: [
+      ...output.obstacles.map((pad) => ({
+        x: pad.center.x,
+        y: pad.center.y,
+        text: pad.circuitJsonMetadata!.source_port_name!.replace("BALL_", ""),
+        fontSize: 0.055,
+        color: "#172554",
+      })),
+      {
+        x: via.x,
+        y: 16.42,
+        text: "H616 DDR: fixed data via beside U1",
+        fontSize: 0.065,
+        color: "#172554",
+      },
+      {
+        x: via.x,
+        y: 15.12,
+        text: `Gap to R3: ${nativeGap.toFixed(3)} mm (minimum ${input.minViaEdgeToPadEdgeClearance!.toFixed(3)} mm)`,
+        fontSize: 0.055,
+        color: "#166534",
+      },
+      {
+        x: via.x,
+        y: 14.98,
+        text: `Copper ${via.via_diameter!.toFixed(3)} mm / drill ${via.via_hole_diameter!.toFixed(3)} mm`,
+        fontSize: 0.055,
+        color: "#172554",
+      },
+    ],
+  }
+  await expect(
+    getSvgFromGraphicsObject(graphics, {
+      backgroundColor: "white",
+      svgWidth: 800,
+      svgHeight: 700,
+    }),
   ).toMatchSvgSnapshot(import.meta.path)
 })
