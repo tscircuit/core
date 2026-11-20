@@ -1,0 +1,43 @@
+<svg width="808" height="316" viewBox="0 0 808 316" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0)">
+    <rect width="400" height="62" fill="white"/>
+      <g font-family="sans-serif" text-anchor="middle" fill="#172536">
+        <text x="200" y="25" font-size="18" font-weight="bold">R1 and R2 only</text>
+        <text x="200" y="49" font-size="14">4 top-layer obstacles, 0 from fixed copper</text>
+      </g>
+  </g>
+  <g transform="translate(0, 62)">
+    <rect width="400" height="220" fill="#f2f5f8"/><g transform="translate(200 110) scale(31 -31)"><rect x="-0.27" y="-0.32" width="0.54" height="0.64"
+        transform="translate(-5.51 0) rotate(0)"
+        fill="#3a739d"/><rect x="-0.27" y="-0.32" width="0.54" height="0.64"
+        transform="translate(-4.49 0) rotate(0)"
+        fill="#3a739d"/><rect x="-0.27" y="-0.32" width="0.54" height="0.64"
+        transform="translate(4.49 0) rotate(0)"
+        fill="#3a739d"/><rect x="-0.27" y="-0.32" width="0.54" height="0.64"
+        transform="translate(5.51 0) rotate(0)"
+        fill="#3a739d"/></g>
+  </g>
+  </g>
+  <g transform="translate(408, 0) scale(1, 1) translate(0, 0)">
+    <g transform="translate(0, 0)">
+    <rect width="400" height="62" fill="white"/>
+      <g font-family="sans-serif" text-anchor="middle" fill="#172536">
+        <text x="200" y="25" font-size="18" font-weight="bold">Same board + fixed diagonal trace</text>
+        <text x="200" y="49" font-size="14">Conversion failed before the router received input</text>
+      </g>
+  </g>
+  <g transform="translate(0, 62)">
+    <rect width="400" height="220" fill="#f2f5f8"/><text x="200" y="116" text-anchor="middle" font-family="sans-serif" font-size="17" fill="#783610">No obstacle list emitted</text>
+  </g>
+  </g>
+  </g>
+  <g transform="translate(0, 282)">
+    <rect width="808" height="34" fill="white"/>
+    <g font-family="sans-serif" font-size="15" fill="#172536">
+      <rect x="161" y="10" width="14" height="14" fill="#3a739d"/><text x="183" y="22">Resistor pad obstacle</text>
+      <rect x="403" y="10" width="14" height="14" fill="#c55218"/><text x="425" y="22">Fixed trace obstacle</text>
+    </g>
+  </g>
+</svg>
