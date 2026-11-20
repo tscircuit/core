@@ -102,46 +102,58 @@ interface PanelOptions {
 }
 
 /**
- * Mouse-bite centers along a tab, as distances (mm) from the edge start. The
- * tab span is filled at the drill pitch, centered, except inside the
- * corridors, where the drills are spread to either side.
+ * Mouse-bite centers along a tab, as distances (mm) from the edge start,
+ * filling the tab span at the drill pitch and centered in it.
  */
 const getMouseBiteDistancesAlongTab = ({
   gapStartDist,
   gapEndDist,
-  corridors,
   holeDiameter,
   holeAndSpacing,
 }: {
   gapStartDist: number
   gapEndDist: number
-  corridors: Array<{ start: number; end: number }>
   holeDiameter: number
   holeAndSpacing: number
 }): number[] => {
-  const regions: Array<{ start: number; end: number }> = []
-  let regionStart = gapStartDist
-  for (const corridor of corridors.toSorted((a, b) => a.start - b.start)) {
-    regions.push({
-      start: regionStart,
-      end: Math.min(corridor.start, gapEndDist),
-    })
-    regionStart = Math.max(regionStart, corridor.end)
-  }
-  regions.push({ start: regionStart, end: gapEndDist })
-  return regions.flatMap(({ start, end }) => {
-    const length = end - start
-    if (holeDiameter <= 0 || holeAndSpacing <= 0 || length < holeDiameter)
-      return []
-    const count = Math.floor((length - holeDiameter) / holeAndSpacing) + 1
-    const totalLength =
-      count * holeDiameter + (count - 1) * (holeAndSpacing - holeDiameter)
-    const firstCenter = start + (length - totalLength) / 2 + holeDiameter / 2
-    return Array.from(
-      { length: count },
-      (_, k) => firstCenter + k * holeAndSpacing,
-    )
-  })
+  const length = gapEndDist - gapStartDist
+  if (holeDiameter <= 0 || holeAndSpacing <= 0 || length < holeDiameter)
+    return []
+  const count = Math.floor((length - holeDiameter) / holeAndSpacing) + 1
+  const totalLength =
+    count * holeDiameter + (count - 1) * (holeAndSpacing - holeDiameter)
+  const firstCenter =
+    gapStartDist + (length - totalLength) / 2 + holeDiameter / 2
+  return Array.from(
+    { length: count },
+    (_, index) => firstCenter + index * holeAndSpacing,
+  )
+}
+
+/**
+ * Keeps a tab's drills but opens a corridor for a trace crossing it. Each side
+ * of the corridor gets half the drills, rounded up so both sides match and no
+ * drill is dropped; they move outward from the corridor at the drill pitch.
+ * Distances are mm from the edge start.
+ */
+const getMouseBiteDistancesAroundCrossing = ({
+  biteCount,
+  crossingDist,
+  corridorHalfWidth,
+  holeAndSpacing,
+}: {
+  biteCount: number
+  crossingDist: number
+  corridorHalfWidth: number
+  holeAndSpacing: number
+}): number[] => {
+  const countPerSide = Math.ceil(biteCount / 2)
+  return Array.from({ length: countPerSide }, (_, index) => [
+    crossingDist - corridorHalfWidth - index * holeAndSpacing,
+    crossingDist + corridorHalfWidth + index * holeAndSpacing,
+  ])
+    .flat()
+    .toSorted((a, b) => a - b)
 }
 
 const generateCutoutsAndMousebitesForOutline = (
@@ -267,30 +279,69 @@ const generateCutoutsAndMousebitesForOutline = (
       normalVec = normalVec.multiply(-1)
     }
 
-    // A panel trace crossing this edge needs a drill-free corridor through
-    // the tab, so the tab grows by the corridor's width.
+    const baseGapLength = Math.min(gapLength, segmentLength * 0.9)
+    const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
+    const baseGapStartDist = (segmentLength - baseGapLength) / 2
+    const baseGapEndDist = baseGapStartDist + baseGapLength
+    const baseBiteDists = getMouseBiteDistancesAlongTab({
+      gapStartDist: baseGapStartDist,
+      gapEndDist: baseGapEndDist,
+      holeDiameter: mouseBiteHoleDiameter,
+      holeAndSpacing,
+    })
+
+    // A panel trace crossing the tab needs a drill-free corridor. The tab
+    // keeps its drills, spreads them to either side of the corridor and
+    // grows to cover them.
     const corridorHalfWidth =
       mouseBiteHoleDiameter / 2 +
       PANEL_TRACE_HALF_WIDTH +
       PANEL_TRACE_MOUSE_BITE_CLEARANCE
-    const traceCrossingDists = panelTraceSegments.flatMap(({ start, end }) => {
-      const crossing = getSegmentIntersection(start, end, p1_, p2_)
-      return crossing
-        ? [
-            Flatten.vector(p1, Flatten.point(crossing.x, crossing.y)).dot(
-              segmentDir,
+    const crossingDist = panelTraceSegments
+      .flatMap(({ start, end }) => {
+        const crossing = getSegmentIntersection(start, end, p1_, p2_)
+        return crossing
+          ? [
+              Flatten.vector(p1, Flatten.point(crossing.x, crossing.y)).dot(
+                segmentDir,
+              ),
+            ]
+          : []
+      })
+      .find((dist) => dist >= baseGapStartDist && dist <= baseGapEndDist)
+    const biteDists =
+      crossingDist === undefined
+        ? baseBiteDists
+        : getMouseBiteDistancesAroundCrossing({
+            biteCount: baseBiteDists.length,
+            crossingDist,
+            corridorHalfWidth,
+            holeAndSpacing,
+          })
+    // Only a crossed tab grows; others keep their original span.
+    const biteMargin = mouseBiteHoleDiameter / 2 + mouseBiteHoleSpacing / 2
+    const gapStartDist =
+      crossingDist === undefined
+        ? baseGapStartDist
+        : Math.max(
+            Math.min(
+              baseGapStartDist,
+              ...biteDists.map((dist) => dist - biteMargin),
             ),
-          ]
-        : []
-    })
-    const effectiveGapLength = Math.min(
-      gapLength + traceCrossingDists.length * 2 * corridorHalfWidth,
-      segmentLength * 0.9,
-    )
-    const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
+            segmentLength * 0.05,
+          )
+    const gapEndDist =
+      crossingDist === undefined
+        ? baseGapEndDist
+        : Math.min(
+            Math.max(
+              baseGapEndDist,
+              ...biteDists.map((dist) => dist + biteMargin),
+            ),
+            segmentLength * 0.95,
+          )
+    const effectiveGapLength = gapEndDist - gapStartDist
 
-    const gapStartDist = (segmentLength - effectiveGapLength) / 2
-    const gapEndDist = gapStartDist + effectiveGapLength
     const extrusion = normalVec.multiply(cutoutWidth)
     const tabStart = p1.translate(segmentDir.multiply(gapStartDist))
     const tabEnd = p1.translate(segmentDir.multiply(gapEndDist))
@@ -312,20 +363,9 @@ const generateCutoutsAndMousebitesForOutline = (
         { x: tabEnd.x, y: tabEnd.y },
       ])
 
-    // Add mousebites in the gap, spread to either side of trace corridors
+    // Add mousebites in the gap
     if (useMouseBites) {
-      for (const biteDist of getMouseBiteDistancesAlongTab({
-        gapStartDist,
-        gapEndDist,
-        corridors: traceCrossingDists
-          .filter((dist) => dist >= gapStartDist && dist <= gapEndDist)
-          .map((dist) => ({
-            start: dist - corridorHalfWidth,
-            end: dist + corridorHalfWidth,
-          })),
-        holeDiameter: mouseBiteHoleDiameter,
-        holeAndSpacing,
-      })) {
+      for (const biteDist of biteDists) {
         const pos = p1.translate(segmentDir.multiply(biteDist))
         mouseBites.push({
           boardEdge: { x: pos.x, y: pos.y },
