@@ -274,18 +274,19 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
-  if (trace.source_trace_id && db.source_trace.get(trace.source_trace_id)) {
-    return trace.source_trace_id
-  }
-
+  const directSourceTrace = trace.source_trace_id
+    ? db.source_trace.get(trace.source_trace_id)
+    : undefined
   const routedSourceNet = trace.source_trace_id
     ? db.source_net.get(trace.source_trace_id)
     : undefined
   const sourceTraces = db.source_trace.list()
   const connMap = buildSourceConnectivityMap(sourceTraces)
-  const routedSourceNetConnectivityId = routedSourceNet
-    ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)
-    : undefined
+  const routedSourceNetConnectivityId = directSourceTrace
+    ? connMap.getNetConnectedToId(directSourceTrace.source_trace_id)
+    : routedSourceNet
+      ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)
+      : undefined
   const routedNetSourceTraces = routedSourceNetConnectivityId
     ? sourceTraces.filter(
         (sourceTrace) =>
@@ -296,6 +297,17 @@ export function getSourceTraceIdForRoutedTrace({
   const soleRoutedNetSourceTrace =
     routedNetSourceTraces.length === 1 ? routedNetSourceTraces[0] : undefined
   const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
+  if (directSourceTrace) {
+    if (
+      routedNetSourceTraces.length <= 1 ||
+      sourcePortIds.length === 0 ||
+      sourcePortIds.every((sourcePortId) =>
+        directSourceTrace.connected_source_port_ids.includes(sourcePortId),
+      )
+    ) {
+      return directSourceTrace.source_trace_id
+    }
+  }
   if (sourcePortIds.length === 0) {
     return (
       soleRoutedNetSourceTrace?.source_trace_id ??
