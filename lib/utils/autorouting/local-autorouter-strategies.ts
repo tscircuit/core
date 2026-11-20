@@ -1,4 +1,5 @@
 import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
+import type { PcbComponentId } from "../circuit-json/circuit-json-id-types"
 import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
 import type {
@@ -28,6 +29,7 @@ export interface LocalAutorouterStrategyContext {
   commonAutorouterOptions: AutorouterOptions
   busFanoutDirections?: AutoroutingPhaseProps["busFanoutDirections"]
   fanoutBounds?: SimpleRouteBounds
+  fanoutSourceComponentId?: PcbComponentId
   fanoutRoutingLayers?: string[]
   allowBlindAndBuriedVias?: boolean
   componentNamesById?: ReadonlyMap<string, string>
@@ -94,6 +96,7 @@ const createFanoutAutorouterStrategy = (
     simpleRouteJson,
     busFanoutDirections,
     fanoutBounds,
+    fanoutSourceComponentId,
     fanoutRoutingLayers,
     allowBlindAndBuriedVias,
     componentNamesById,
@@ -103,6 +106,7 @@ const createFanoutAutorouterStrategy = (
       mode,
       busFanoutDirections,
       fanoutBounds,
+      sourceComponentId: fanoutSourceComponentId,
       fanoutRoutingLayers,
       allowBlindAndBuriedVias,
       componentNamesById,
