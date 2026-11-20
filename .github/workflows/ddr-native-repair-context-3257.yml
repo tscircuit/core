@@ -18,8 +18,16 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - {circuit: h616, order: "latest", repairContext: "0"}
+          - {circuit: h3, order: "latest", repairContext: "1"}
+          - {circuit: a64, order: "latest", repairContext: "1"}
+          - {circuit: stmp157, order: "latest", repairContext: "1"}
+          - {circuit: orangecrab, order: "latest", repairContext: "1"}
+          - {circuit: a13, order: "latest", repairContext: "1"}
           - {circuit: h616, order: "latest", repairContext: "1"}
+          - {circuit: butterstick, order: "latest", repairContext: "1"}
+          - {circuit: glider, order: "latest", repairContext: "1"}
+          - {circuit: imx6, order: "latest", repairContext: "1"}
+          - {circuit: icepi, order: "latest", repairContext: "1"}
     steps:
       - uses: actions/checkout@v4
         with:
