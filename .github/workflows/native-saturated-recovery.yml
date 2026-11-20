@@ -1,0 +1,282 @@
+name: Test recovery eligibility at saturated single-layer pressure
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-saturated-recovery.yml]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tiny-hypergraph
+          ref: 19a1fa1901d828a76b833aef239a739e961ec89e
+          path: tiny-current
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tiny-hypergraph
+          ref: 6a00f0406e131a2765179e052e45f07efd2f5ae7
+          path: tiny-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tiny-hypergraph
+          ref: 0a60bfff8a8f8ae5dfee555eecb25d174b5deda7
+          path: tiny-recovery
+          persist-credentials: false
+      - name: Merge the existing recovery without losing native reservations
+        run: |
+          mkdir tiny-code
+          for name in core.ts selective-rerip-tiny-hyper-graph-solver.ts; do
+            git merge-file -p "tiny-current/lib/$name" "tiny-base/lib/$name" "tiny-recovery/lib/$name" > "tiny-code/$name"
+            cp "tiny-code/$name" "tiny-current/lib/$name"
+          done
+          cp tiny-recovery/tests/solver/blocked-route-cycle.test.ts tiny-current/tests/solver/blocked-route-cycle.test.ts
+      - name: Install dependency test environment
+        working-directory: tiny-current
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Run every dependency source test and export only aggregate counts
+        working-directory: tiny-current
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 > "$RUNNER_TEMP/tiny-recovery-tests.log" 2>&1
+          test_status=$?
+          set -e
+          python3 - <<'PY'
+          import re,os,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'tiny-recovery-tests.log').read_text(errors='replace')
+          rows=re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)
+          print('TINY_TEST_AGGREGATE',json.dumps(rows))
+          PY
+          exit "$test_status"
+      - run: bunx tsc --noEmit
+        working-directory: tiny-current
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e55e16da20139f673c4689c26552eb131e72da5b
+          path: autorouter
+          persist-credentials: false
+      - name: Install the native autorouter source
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Install the tested dependency merge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['core.ts','selective-rerip-tiny-hyper-graph-solver.ts']:
+            p=Path('autorouter/node_modules/tiny-hypergraph/lib',name)
+            temporary=p.with_suffix('.analysis.ts')
+            temporary.write_bytes(Path('tiny-code',name).read_bytes())
+            temporary.replace(p)
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('autorouter/lib/solvers/PortPointPathingSolver/tinyhypergraph/TinyHypergraphPortPointPathingSolver.ts')
+          s=p.read_text()
+          old='summary.nodePfMax > TRACE_DENSITY_PORTFOLIO_MIN_PF_MAX'
+          assert s.count(old)==1
+          p.write_text(s.replace(old,'summary.nodePfMax >= TRACE_DENSITY_PORTFOLIO_MIN_PF_MAX'))
+          PY
+      - name: Build and package the exact analysis candidate
+        working-directory: autorouter
+        run: |
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: saturated-native-recovery-code
+          path: candidate/autorouter.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: saturated-native-recovery-tiny-source
+          path: tiny-code
+  original-assertions:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e55e16da20139f673c4689c26552eb131e72da5b
+          path: autorouter
+          persist-credentials: false
+      - name: Install the same autorouter test environment
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - uses: actions/download-artifact@v4
+        with:
+          name: saturated-native-recovery-tiny-source
+          path: tiny-code
+      - name: Install the tested dependency merge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['core.ts','selective-rerip-tiny-hyper-graph-solver.ts']:
+            p=Path('autorouter/node_modules/tiny-hypergraph/lib',name)
+            temporary=p.with_suffix('.analysis.ts')
+            temporary.write_bytes(Path('tiny-code',name).read_bytes())
+            temporary.replace(p)
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('autorouter/lib/solvers/PortPointPathingSolver/tinyhypergraph/TinyHypergraphPortPointPathingSolver.ts')
+          s=p.read_text()
+          old='summary.nodePfMax > TRACE_DENSITY_PORTFOLIO_MIN_PF_MAX'
+          assert s.count(old)==1
+          p.write_text(s.replace(old,'summary.nodePfMax >= TRACE_DENSITY_PORTFOLIO_MIN_PF_MAX'))
+          PY
+      - name: Preserve all original autorouter physical assertions
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/download-artifact@v4
+        with:
+          name: saturated-native-recovery-code
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the exact native routing candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve all original Core physical assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    needs: build
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: saturated-native-recovery-code
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the exact native routing candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Observe recovery selection without changing the circuit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('core/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx')
+          s=p.read_text()
+          anchor='const { RootCircuit } = await import(join(corePath, "index.ts"))'
+          assert s.count(anchor)==1
+          temporary=p.with_suffix('.analysis.tsx')
+          temporary.write_text(s.replace(anchor,"\nconst routerRoot = join(corePath, \"node_modules/@tscircuit/capacity-autorouter\")\nconst routerPackage = JSON.parse(readFileSync(join(routerRoot, \"package.json\"), \"utf8\"))\nconst routerModule = await import(join(routerRoot, routerPackage.main))\nconst Pipeline = routerModule.AutoroutingPipelineSolver9_PreloadedTraceGraph\nif (!Pipeline) throw new Error(\"Diagnostic pipeline export is missing\")\nconst originalPipelineStep = Pipeline.prototype._step\nconst loggedPipelines = new WeakSet<object>()\nPipeline.prototype._step = function () {\n  const phase = this.getCurrentPhase()\n  const result = originalPipelineStep.call(this)\n  if (\n    phase === \"portPointPathingSolver\" &&\n    this.portPointPathingSolver?.solved &&\n    !loggedPipelines.has(this)\n  ) {\n    loggedPipelines.add(this)\n    const metrics = this.portPointPathingSolver.getSolveGraphBenchmarkMetrics()\n    if (!metrics) throw new Error(\"Solved pathing metrics are missing\")\n    const pathing = this.portPointPathingSolver\n    const tiny = pathing.tinyPipelineSolver.getSolvedTinySolver()\n    const solveGraph = pathing.tinyPipelineSolver.getSolver(\"solveGraph\")\n    const fixedRoutes = tiny.problem.routeIsFixed\n      ? Array.from(tiny.problem.routeIsFixed).filter((value) => value === 1).length\n      : 0\n    console.log(\"NATIVE_PATHING_AGGREGATE\", JSON.stringify({\n      inputConnections: pathing.params.connections.length,\n      problemRoutes: tiny.problem.routeCount,\n      fixedRoutes,\n      movableRoutes: tiny.problem.routeCount - fixedRoutes,\n      actualMaxIterations: solveGraph.MAX_ITERATIONS,\n      densityAlternativeEvaluated: pathing.alternativeCandidateEvaluated,\n      squaredPorts: metrics.downstreamSquaredNodePortPointCount,\n      recoveryEvaluated: metrics.blockerRecoveryCandidateEvaluated,\n      recoverySelected: metrics.blockerRecoveryCandidateSelected,\n      iterations: metrics.iterations,\n      nodePfSum: metrics.downstreamNodePfSum,\n      nodePfMax: metrics.downstreamNodePfMax,\n      changedPreloadedSections: metrics.changedPreloadedTraceSectionCount,\n    }))\n  }\n  return result\n}\n"+'\n'+anchor))
+          temporary.replace(p)
+          PY
+      - name: Measure the exact H616 circuit within its unchanged deadline
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/recovery" --timeout 120 --circuit h616
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('results/recovery').rglob('render.log'):
+            for line in p.read_text(errors='replace').splitlines():
+              if line.startswith('NATIVE_PATHING_AGGREGATE '):
+                print(line)
+          d=json.loads(Path('results/recovery/results.json').read_text())
+          for row in d['cases']:
+            a=row.get('assessment') or {}
+            print('CORE_DDR_AGGREGATE',json.dumps({'circuit':row['circuit'],'status':row['status'],'wallMs':row['wallMs'],'peakRssMb':row['peakRssMb'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          print('CORE_DDR_ACCEPTANCE',json.dumps({'passed':sum(r['status']=='passed' for r in d['cases']),'total':len(d['cases'])}))
+          PY
