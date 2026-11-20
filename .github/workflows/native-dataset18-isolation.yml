@@ -1,0 +1,98 @@
+name: Isolate dataset18 timing without changing accepted routes
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-dataset18-isolation.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
+          path: native
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
+          path: pruned
+          persist-credentials: false
+      - run: bun install
+        working-directory: base
+      - run: bun install
+        working-directory: native
+      - run: bun install
+        working-directory: pruned
+      - name: Apply bounded vector query and defer exact checks until after cheap pruning
+        working-directory: pruned
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts')
+          s=p.read_text()
+          old="      if (\n        this.staticSegmentValidator &&\n        !this.isStaticMoveAllowed({\n          fromCellId: cellId,\n          fromZ: z,\n          toCellId: neighborCellId,\n          toZ: z,\n          firstMove: this.nodePool.parent[nodeIdx] === -1,\n        })\n      ) {\n        continue\n      }\n"
+          anchor="\n      this.bestGStamp[nextStateIdx] = stamp\n"
+          assert s.count(old)==1
+          assert s.count(anchor)==1
+          s=s.replace(old,'',1).replace(anchor,'\n'+old+anchor[1:],1)
+          old="        if (\n          this.staticSegmentValidator &&\n          !this.isStaticMoveAllowed({\n            fromCellId: cellId,\n            fromZ: z,\n            toCellId: cellId,\n            toZ: nz,\n            firstMove: this.nodePool.parent[nodeIdx] === -1,\n          })\n        ) {\n          continue\n        }\n"
+          anchor="\n        this.bestGStamp[nextStateIdx] = stamp\n"
+          assert s.count(old)==1
+          assert s.count(anchor)==1
+          s=s.replace(old,'',1).replace(anchor,'\n'+old+anchor[1:],1)
+          replacement=p.with_suffix('.experiment.ts')
+          replacement.write_text(s)
+          replacement.replace(p)
+          print('A03 exact copper check moved after search-state pruning; before frontier mutation')
+          p=Path('lib/solvers/HyperHighDensitySolver/createIntraNodeSegmentValidator.ts')
+          p.write_text("import type { StaticSegmentValidator } from \"@tscircuit/high-density-a01\"\nimport type { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport {\n  arePipeline9RoutesOnSameNet,\n  doPipeline9RoutesHaveCopperConflict,\n} from \"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/pipeline9FixedRouteCopper\"\nimport type { HighDensityRoute } from \"lib/types/high-density-types\"\n\n/** Reuse native copper validation while A03 searches in physical coordinates. */\nexport const createIntraNodeSegmentValidator = ({\n  fixedHdRoutes,\n  connMap,\n  layerCount,\n  clearance,\n  allowBlindAndBuriedVias,\n}: {\n  fixedHdRoutes: HighDensityRoute[]\n  connMap: ConnectivityMap\n  layerCount: number\n  clearance: number\n  allowBlindAndBuriedVias?: boolean\n}): StaticSegmentValidator => {\n  return (segment): boolean => {\n    const route: HighDensityRoute = {\n      ...segment,\n      route: [segment.start, segment.end],\n      vias: [],\n    }\n    if (segment.start.z !== segment.end.z) route.vias.push(segment.start)\n    const radius =\n      Math.max(segment.traceThickness, segment.viaDiameter) / 2 + clearance\n    const bounds = {\n      minX: Math.min(segment.start.x, segment.end.x) - radius,\n      maxX: Math.max(segment.start.x, segment.end.x) + radius,\n      minY: Math.min(segment.start.y, segment.end.y) - radius,\n      maxY: Math.max(segment.start.y, segment.end.y) + radius,\n    }\n    for (const fixed of fixedHdRoutes) {\n      if (arePipeline9RoutesOnSameNet(route, fixed, connMap)) continue\n      if (\n        doPipeline9RoutesHaveCopperConflict({\n          left: fixed,\n          right: route,\n          leftBounds: bounds,\n          clearance,\n          layerCount,\n          allowBlindAndBuriedVias,\n        })\n      ) {\n        return false\n      }\n    }\n    return true\n  }\n}\n")
+          PY
+      - name: Confirm the unmodified control does not share mutated dependency files
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          hashes={}
+          for name in ['base','native','pruned']:
+            p=Path(name)/'node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts'
+            hashes[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert hashes['native'] != hashes['pruned']
+          print('EXACT_DEPENDENCY_DIGESTS',hashes)
+          PY
+      - name: Run all sixteen original cases sequentially on each revision
+        run: |
+          for variant in base native pruned; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18)
+          done
+      - name: Compare complete results using the existing benchmark reporter
+        working-directory: native
+        run: |
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha 1296308adcd8ab2852d0f95b81d1ef21d929b2ab --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report ../pruned/benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha 432cb8d9dd8ff4a3753c0f67677aa63016313b4a --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-pruned.md
+          cat ../comparison-native.md
+          cat ../comparison-pruned.md
+          cat ../comparison-pruned.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dataset18-timing-isolation
+          path: |
+            comparison-*.md
+            */benchmark-result.json
