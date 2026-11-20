@@ -75,9 +75,7 @@ test("saved via traces retain the physical barrel on later routing phases", asyn
     const before = structuredClone(input)
     const output = withFixedTraces(input, new Set(["saved_usb"]))
     const fixedTrace = output.traces![0]!
-    const via = fixedTrace.route.find(
-      (point) => point.route_type === "via",
-    )!
+    const via = fixedTrace.route.find((point) => point.route_type === "via")!
     const physicalLayers = getAutoroutedViaLayers({
       fromLayer: via.from_layer as LayerRef,
       toLayer: via.to_layer as LayerRef,

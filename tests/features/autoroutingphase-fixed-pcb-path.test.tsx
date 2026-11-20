@@ -50,8 +50,7 @@ test("autorouting phases detour around a fixed hand-authored pcbPath", async () 
   expect(originalManualTrace).toBeDefined()
   for (const input of phaseInputs) {
     const manualTrace = input.traces!.find(
-      (trace) =>
-        trace.connection_name === originalManualTrace!.source_trace_id,
+      (trace) => trace.connection_name === originalManualTrace!.source_trace_id,
     )!
     expect(manualTrace.isFixed).toBe(true)
     expect(originalManualTrace!.route).toMatchObject(manualTrace.route)

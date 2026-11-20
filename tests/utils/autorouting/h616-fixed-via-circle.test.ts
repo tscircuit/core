@@ -179,8 +179,11 @@ test("H616 fixed via keeps its native circular copper footprint", async () => {
   expect(foreignPad.connectedTo).not.toContain(fixedTrace.connection_name!)
 
   await expect(
-    getSvgFromGraphicsObject(convertSrjToGraphicsObject(output as AutorouterSimpleRouteJson), {
-      backgroundColor: "white",
-    }),
+    getSvgFromGraphicsObject(
+      convertSrjToGraphicsObject(output as AutorouterSimpleRouteJson),
+      {
+        backgroundColor: "white",
+      },
+    ),
   ).toMatchSvgSnapshot(import.meta.path)
 })
