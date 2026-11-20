@@ -1,4 +1,4 @@
-name: Verify original Core fanout and clearance with native repair context
+name: Verify canonical pad ownership through Core
 on:
   push:
     branches: [analysis/core-native-complete-ci]
@@ -8,17 +8,11 @@ permissions:
 jobs:
   routing:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - variant: parent
-            source: 1a2e757a0230bae0e8f915023485978587d7fe14
-          - variant: native
-            source: 0f98be6237dfa0a852360b07d38f0e2fbee5f92d
-          - variant: guard
-            source: 0f98be6237dfa0a852360b07d38f0e2fbee5f92d
+        source: [a3011ea856de9661404a115ed2050d9e0a1bff77, 93f449589c8748916c2105a5efab437c0908269a]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,68 +23,50 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.2'
-      - name: Reuse native repair candidate acceptance
+      - name: Correct canonical ownership in the existing helper
         working-directory: autorouter
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
-          s=p.read_text()
-          old='          fixedHdRoutes: cms.highDensityRouteSolver!.getUpdatedFixedHdRoutes(),'
-          assert s.count(old)==1
-          s=s.replace(old,'',1)
-          if '${{ matrix.variant }}' != 'parent':
-              old='''          fixedHdRoutes: cms.highDensityRouteSolver!
-                      .getUpdatedFixedHdRoutes(),'''
-              assert s.count(old)==1
-              s=s.replace(old,'''          fixedHdRoutes: cms.highDensityRouteSolver!
-                      .getUpdatedFixedHdRoutes()
-                      .filter((route) => route.isFixed),''',1)
-          p.write_text(s)
-          if '${{ matrix.variant }}' != 'parent':
-              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
-              # Regional force gets read-only copper only in the physical native frame.
-              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
-              s=p.read_text()
-              old='      fixedHdRoutes: this.fixedHdRoutes,'
-              # The forwarding is in the physical pipeline regional implementation.
-              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
-              # Inspect the published orchestration rather than changing search behavior.
-              if '${{ matrix.variant }}' == 'guard':
-                  p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensityForceImproveSolver.ts")
-                  s=p.read_text()
-                  s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
-                  s=s.replace('    if (this.fixedViaObstacleIndexes.size === 0) return','    if (this.fixedViaObstacleIndexes.size === 0 && this.fixedHdRoutes.length === 0) return',1)
-                  old='    if (!worsensViaClearance) return'
-                  assert s.count(old)==1
-                  new="""    let allowsNativeCopper = true
-                      if (this.fixedHdRoutes.length > 0) {
-                        const ownedIndexes = new Set(routeIndexes)
-                        const readOnlyRoutes = [
-                          ...this.fixedHdRoutes,
-                          ...this.getOutput().filter((_, index) => !ownedIndexes.has(index)),
-                        ]
-                        const guard = new FixedCopperClearanceGuard(
-                          readOnlyRoutes,
-                          this.inputSrj.minTraceToPadEdgeClearance ??
-                            this.inputSrj.defaultObstacleMargin ??
-                            RELAXED_DRC_OPTIONS.traceClearance,
-                          [],
-                          this.inputSrj.minPadEdgeToPadEdgeClearance,
-                        )
-                        allowsNativeCopper = guard.allows(
-                          originalRoutes,
-                          candidateRoutes,
-                          candidateRoutes.keys(),
-                        )
-                      }
-                      if (!worsensViaClearance && allowsNativeCopper) return"""
-                  p.write_text(s.replace(old,new,1))
-          PY
+          cat > lib/solvers/TraceWidthSolver/isObstacleConnectedToRoute.ts <<'TS'
+          import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
+          import type { Obstacle } from "lib/types/srj-types"
+          
+          type RouteConnection = {
+            connectionName: string
+            rootConnectionName?: string
+          }
+          
+          export const isObstacleConnectedToRoute = (
+            obstacle: Obstacle,
+            route: RouteConnection,
+            connMap?: ConnectivityMap,
+          ): boolean => {
+            if (!connMap) {
+              return obstacle.connectedTo.some(
+                (connectedId) =>
+                  connectedId === route.connectionName ||
+                  connectedId === route.rootConnectionName,
+              )
+            }
+          
+            let routeNetId = connMap.getNetConnectedToId(route.connectionName)
+            if (routeNetId === undefined && route.rootConnectionName !== undefined) {
+              if (Object.hasOwn(connMap.netMap, route.rootConnectionName)) {
+                routeNetId = route.rootConnectionName
+              } else {
+                routeNetId = connMap.getNetConnectedToId(route.rootConnectionName)
+              }
+            }
+            routeNetId ??= route.rootConnectionName ?? route.connectionName
+          
+            return obstacle.connectedTo.some(
+              (connectedId) =>
+                (connMap.getNetConnectedToId(connectedId) ?? connectedId) === routeNetId,
+            )
+          }
+          TS
       - run: bun install && bun run build
         working-directory: autorouter
-      - name: Pack the verified source candidate
+      - name: Pack the exact source candidate
         working-directory: autorouter
         run: |
           mkdir ../candidate
@@ -101,7 +77,7 @@ jobs:
           ref: f2dc346dfa3a4c065b69c698c9377391e919fa67
           path: core
           persist-credentials: false
-      - name: Install the exact source-built candidate
+      - name: Install exact source-built autorouter
         working-directory: core
         run: |
           python3 - <<'PY'
@@ -113,7 +89,7 @@ jobs:
           p.write_text(json.dumps(data,indent=2)+"\n")
           PY
           bun install
-      - name: Preserve original 36-via fanout and both SEPIC clearance assertions
+      - name: Keep original 36-via fanout and both SEPIC clearance assertions
         working-directory: core
         env:
           BUN_UPDATE_SNAPSHOTS: '1'
