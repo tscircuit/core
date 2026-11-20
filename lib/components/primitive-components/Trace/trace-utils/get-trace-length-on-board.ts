@@ -3,7 +3,7 @@ import type { Trace } from "../Trace"
 import { getTraceLength } from "./compute-trace-length"
 
 /** Board thickness in mm assumed for a trace that is routed without a board. */
-const STANDARD_BOARD_THICKNESS = 1.6
+export const STANDARD_BOARD_THICKNESS = 1.6
 
 /**
  * Copper length in mm of a route drawn by `trace`. Layer changes are

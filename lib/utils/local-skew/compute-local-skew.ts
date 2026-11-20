@@ -9,6 +9,7 @@ import type {
   SourcePort,
   SourceTrace,
 } from "circuit-json"
+import { STANDARD_BOARD_THICKNESS } from "lib/components/primitive-components/Trace/trace-utils/get-trace-length-on-board"
 import { findCoupledRuns } from "./find-coupled-runs"
 import { isNegativeRouteReversed } from "./is-negative-route-reversed"
 import { type CoupledRun, MIN_OVERLAP } from "./select-coupled-runs"
@@ -59,8 +60,8 @@ type TracesBySource = Map<SourceTrace["source_trace_id"], PcbTrace[]>
  * Computes local skew along every routed differential pair: at each point,
  * how much farther one trace has run than the other, not only at the ends.
  *
- * Distances are copper length (planar length plus each via's Z-distance
- * between layers). Each trace with exactly one end port marked `is_output`
+ * Distances are copper length, as `pcb_trace.trace_length` measures it:
+ * planar length plus each layer change's Z-distance. Each trace with exactly one end port marked `is_output`
  * is walked from that end; if only one trace has such a port, the other is
  * oriented to match it by end distance; if neither does, distances are
  * measured from the positive trace's first route point and the negative
@@ -188,18 +189,18 @@ function computePairSkew({
     negativeTrace.subcircuit_id ??
     bus.subcircuit_id
   const board = findBoard(subcircuitId)
-  const stackup = board ? stackupsByBoard.get(board.pcb_board_id) : undefined
-  const boardThickness = board?.thickness
+  const pcbStackup = board ? stackupsByBoard.get(board.pcb_board_id) : undefined
+  const boardThickness = board?.thickness ?? STANDARD_BOARD_THICKNESS
 
   let positive = walkTrace({
     trace: positiveTrace,
-    stackup,
+    pcbStackup,
     boardThickness,
   })
   if (!isMeasurable(positive)) return null
   let negative = walkTrace({
     trace: negativeTrace,
-    stackup,
+    pcbStackup,
     boardThickness,
   })
   if (!isMeasurable(negative)) return null
