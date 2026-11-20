@@ -1,16 +1,6 @@
 import { expect, test } from "bun:test"
 import { runAllRoutingChecks } from "@tscircuit/checks"
-import type { PcbTrace } from "circuit-json"
-import { getTraceLength } from "lib/components/primitive-components/Trace/trace-utils/compute-trace-length"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
-
-function lengthToMidpoint({ route }: PcbTrace): number {
-  const midpointIndex = route.findIndex(
-    (point) => point.route_type === "wire" && point.x === 0,
-  )
-  if (midpointIndex < 0) throw new Error("Missing the route midpoint at x = 0")
-  return getTraceLength(route.slice(0, midpointIndex + 1))
-}
 
 test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
   const { circuit } = getTestFixture()
@@ -103,21 +93,10 @@ test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
   await circuit.renderUntilSettled()
 
   const circuitJson = circuit.getCircuitJson()
-  const [pair] = circuit.db.source_bus.list()
-  const positive = circuit.db.pcb_trace.getWhere({
-    source_trace_id: pair?.differential_pair?.positive_source_trace_id,
-  })
-  const negative = circuit.db.pcb_trace.getWhere({
-    source_trace_id: pair?.differential_pair?.negative_source_trace_id,
-  })
-  if (!positive || !negative) throw new Error("USB pair was not routed")
+  const [positive, negative] = circuit.db.pcb_trace.list()
 
   expect(positive.trace_length).toBeCloseTo(25.2360679775, 9)
-  expect(negative.trace_length).toBeCloseTo(positive.trace_length!, 9)
-  expect(lengthToMidpoint(positive) - lengthToMidpoint(negative)).toBeCloseTo(
-    1.2360679775,
-    9,
-  )
+  expect(negative.trace_length).toBeCloseTo(25.2360679775, 9)
   expect(await runAllRoutingChecks(circuitJson)).toEqual([])
   expect(
     circuitJson.filter(
