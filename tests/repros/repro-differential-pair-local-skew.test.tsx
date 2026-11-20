@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { runAllRoutingChecks } from "@tscircuit/checks"
 import type { PcbTrace } from "circuit-json"
 import { getTraceLength } from "lib/components/primitive-components/Trace/trace-utils/compute-trace-length"
+import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 function lengthToMidpoint({ route }: PcbTrace): number {
@@ -119,10 +120,18 @@ test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
     9,
   )
   expect(await runAllRoutingChecks(circuitJson)).toEqual([])
-  expect(
-    circuitJson.filter(
-      ({ type }) => String(type) === "pcb_differential_pair_local_skew",
-    ),
-  ).toEqual([])
+  expect(getStoredLocalSkew(circuitJson)).toEqual([
+    expect.objectContaining({
+      source_bus_id: pair.source_bus_id,
+      max_local_skew: 1.23607,
+      max_length_skew: 0.1,
+      positive: expect.objectContaining({
+        pcb_trace_id: positive.pcb_trace_id,
+      }),
+      negative: expect.objectContaining({
+        pcb_trace_id: negative.pcb_trace_id,
+      }),
+    }),
+  ])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

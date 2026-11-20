@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="280" viewBox="-13 -4 28 7">
+  <rect x="-13" y="-4" width="28" height="7" fill="#182124"/>
+  <g transform="scale(1 -1)">
+    <line x1="-12" y1="0.3" x2="12" y2="0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-12" y1="-0.3" x2="10" y2="-0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="10" y1="-0.3" x2="10" y2="-2" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="10" y1="-2" x2="14" y2="-2" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="14" y1="-2" x2="14" y2="3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="14" y1="3" x2="-6" y2="3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-6" y1="3" x2="-6" y2="0.8" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-6" y1="0.8" x2="6" y2="0.8" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="6" y1="0.8" x2="6" y2="1.9999999999999998" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="6" y1="1.9999999999999998" x2="13" y2="1.9999999999999998" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="13" y1="1.9999999999999998" x2="13" y2="-0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="13" y1="-0.3" x2="12" y2="-0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-12" y1="0.3" x2="10" y2="0.3" stroke="hsl(200, 95%, 100%)" stroke-width="0.2025" />
+    <line x1="10" y1="0.3" x2="12" y2="0.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-12" y1="-0.3" x2="10" y2="-0.3" stroke="hsl(200, 95%, 100%)" stroke-width="0.2025" />
+    <line x1="10" y1="-0.3" x2="10" y2="-1.9999999999999993" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="10" y1="-2" x2="14" y2="-2" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="14" y1="-2" x2="14" y2="3.0000000000000036" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="14" y1="3" x2="-6" y2="3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-6" y1="3" x2="-6" y2="0.7999999999999972" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-6" y1="0.8" x2="6" y2="0.8" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="6" y1="0.8" x2="6" y2="2.0000000000000027" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="6" y1="1.9999999999999998" x2="13" y2="1.9999999999999998" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="13" y1="1.9999999999999998" x2="13" y2="-0.2999999999999974" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="13" y1="-0.3" x2="12" y2="-0.3" stroke="#878e92" stroke-width="0.2025" />
+  </g>
+  <text x="-12.7" y="-3.52" font-family="sans-serif" font-size="0.32" fill="#fff">Max local skew (mm): 0.00000. Blue: ahead. Orange: behind. Grey: unknown. Dashed: interpolated.</text>
+</svg>

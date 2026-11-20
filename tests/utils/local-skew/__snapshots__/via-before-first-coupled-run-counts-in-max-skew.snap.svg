@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="328" viewBox="-13 -4.9 26 8.2">
+  <rect x="-13" y="-4.9" width="26" height="8.2" fill="#182124"/>
+  <g transform="scale(1 -1)">
+    <line x1="-12" y1="0.3" x2="-8" y2="0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-8" y1="0.3" x2="-8" y2="3.9" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-8" y1="3.9" x2="-6" y2="3.9" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-6" y1="3.9" x2="-6" y2="0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-6" y1="0.3" x2="12" y2="0.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-12" y1="-0.3" x2="-12" y2="-2.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-12" y1="-2.3" x2="-10" y2="-2.3" stroke="#8d6448" stroke-width="0.15"/>
+    <line x1="-12" y1="0.3" x2="-8" y2="0.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-8" y1="0.3" x2="-8" y2="3.8999999999999995" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-8" y1="3.9" x2="-6" y2="3.9" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-6" y1="3.9" x2="-6" y2="0.30000000000000027" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-6" y1="0.3" x2="6" y2="0.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="6" y1="0.3" x2="12" y2="0.3" stroke="hsl(200, 95%, 100%)" stroke-width="0.2025" />
+    <line x1="-12" y1="-0.3" x2="-12" y2="-2.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-12" y1="-2.3" x2="-10" y2="-2.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-10" y1="-2.3" x2="-10" y2="-0.2999999999999998" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="-10" y1="-0.3" x2="6" y2="-0.3" stroke="#878e92" stroke-width="0.2025" />
+    <line x1="6" y1="-0.3" x2="12" y2="-0.3" stroke="hsl(200, 95%, 100%)" stroke-width="0.2025" />
+    <circle cx="-10" cy="-0.3" r="0.15" fill="none" stroke="#ead9bd" stroke-width="0.07"/>
+    <circle cx="6" cy="-0.3" r="0.15" fill="none" stroke="#ead9bd" stroke-width="0.07"/>
+  </g>
+  <text x="-12.7" y="-4.42" font-family="sans-serif" font-size="0.32" fill="#fff">Max local skew (mm): 1.60000. Blue: ahead. Orange: behind. Grey: unknown. Dashed: interpolated.</text>
+</svg>
