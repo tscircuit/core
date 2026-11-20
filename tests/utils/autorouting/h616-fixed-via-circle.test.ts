@@ -1,4 +1,9 @@
 import { expect, test } from "bun:test"
+import {
+  convertSrjToGraphicsObject,
+  type SimpleRouteJson as AutorouterSimpleRouteJson,
+} from "@tscircuit/capacity-autorouter"
+import { getSvgFromGraphicsObject } from "graphics-debug"
 import type {
   Obstacle,
   SimpleRouteJson,
@@ -155,76 +160,30 @@ test("H616 fixed via keeps its native circular copper footprint", async () => {
   }
   const before = structuredClone(input)
   const output = withFixedTraces(input, new Set([fixedTrace.pcb_trace_id]))
-  const barrel = output.obstacles.at(-1)!
-  expect(barrel).toMatchObject({
-    type: "rect",
-    center: { x: capturedVia.x, y: capturedVia.y },
-    width: capturedVia.via_diameter,
-    height: capturedVia.via_diameter,
-    layers: capturedVia.layers,
-    connectedTo: [fixedTrace.connection_name],
-  })
-  expect(output.obstacles.slice(0, pads.length)).toEqual(pads)
-  expect(output.obstacles).toHaveLength(pads.length + 1)
-  expect(output.traces).toEqual([])
+  expect(output.obstacles).toEqual(pads)
+  expect(output.traces).toEqual([{ ...fixedTrace, isFixed: true }])
+  const via = output.traces![0]!.route.find(
+    (point) => point.route_type === "via",
+  )!
+  expect(via).toEqual(capturedVia)
   expect(input).toEqual(before)
 
   const foreignPad = pads[3]!
   const centerDistance = Math.hypot(
-    capturedVia.x - foreignPad.center.x,
-    capturedVia.y - foreignPad.center.y,
+    via.x - foreignPad.center.x,
+    via.y - foreignPad.center.y,
   )
   const nativeGap =
-    centerDistance - capturedVia.via_diameter / 2 - foreignPad.width / 2
+    centerDistance - via.via_diameter! / 2 - foreignPad.width / 2
   expect(nativeGap).toBeGreaterThan(input.minViaEdgeToPadEdgeClearance!)
   expect(foreignPad.connectedTo).not.toContain(fixedTrace.connection_name!)
 
-  // The SRJ visualizer draws every obstacle as a rectangle. Render this emitted
-  // geometry directly so the snapshot can distinguish its optional circle shape.
-  const nativeBarrel: Obstacle = {
-    type: "rect",
-    shape: "circle",
-    center: { x: capturedVia.x, y: capturedVia.y },
-    width: capturedVia.via_diameter,
-    height: capturedVia.via_diameter,
-    layers: capturedVia.layers,
-    connectedTo: [fixedTrace.connection_name],
-  }
-  const panels = [
-    { title: "Native completed data copper", x: 45, via: nativeBarrel },
-    { title: "Core fixed-trace routing obstacle", x: 585, via: barrel },
-  ]
-    .map(({ title, x, via }) => {
-      const scale = 300
-      const px = (worldX: number): number =>
-        x + (worldX - input.bounds.minX) * scale
-      const py = (worldY: number): number =>
-        105 + (input.bounds.maxY - worldY) * scale
-      const circular = via.shape === "circle"
-      const dx = Math.abs(via.center.x - foreignPad.center.x)
-      const dy = Math.abs(via.center.y - foreignPad.center.y)
-      const gap = circular
-        ? Math.hypot(dx, dy) - via.width / 2 - foreignPad.width / 2
-        : Math.hypot(
-            Math.max(0, dx - via.width / 2),
-            Math.max(0, dy - via.height / 2),
-          ) -
-          foreignPad.width / 2
-      const color =
-        gap >= input.minViaEdgeToPadEdgeClearance! ? "#166534" : "#b91c1c"
-      const padShapes = pads
-        .map(
-          (pad) =>
-            `<circle cx="${px(pad.center.x)}" cy="${py(pad.center.y)}" r="${(pad.width * scale) / 2}" fill="#fee2e2" stroke="#b91c1c"/><text x="${px(pad.center.x)}" y="${py(pad.center.y) + 6}" text-anchor="middle" font-size="18">${pad.circuitJsonMetadata!.source_port_name!.replace("BALL_", "")}</text>`,
-        )
-        .join("")
-      const viaShape = circular
-        ? `<circle cx="${px(via.center.x)}" cy="${py(via.center.y)}" r="${(via.width * scale) / 2}" fill="#6366f1" stroke="#312e81"/>`
-        : `<rect x="${px(via.center.x - via.width / 2)}" y="${py(via.center.y + via.height / 2)}" width="${via.width * scale}" height="${via.height * scale}" fill="#6366f1" stroke="#312e81"/>`
-      return `<g><text x="${x}" y="85" font-size="22" font-weight="600">${title}</text>${padShapes}<circle cx="${px(foreignPad.center.x)}" cy="${py(foreignPad.center.y)}" r="${(foreignPad.width / 2 + input.minViaEdgeToPadEdgeClearance!) * scale}" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="6 4"/>${viaShape}<circle cx="${px(capturedVia.x)}" cy="${py(capturedVia.y)}" r="${(capturedVia.via_hole_diameter * scale) / 2}" fill="white" stroke="#312e81"/><text x="${x}" y="540" font-size="22" font-weight="600" fill="${color}">Gap to U1 R3: ${gap.toFixed(3)} mm</text></g>`
-    })
-    .join("")
   await expect(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="630" viewBox="0 0 1080 630"><rect width="1080" height="630" fill="white"/><g fill="#172554" font-family="Arial, sans-serif"><text x="35" y="32" font-size="25" font-weight="600">H616 DDR: fixed data via beside the U1 BGA</text><text x="35" y="56" font-size="16">Board crop x 1.00–2.33, y 15.00–16.45 mm · +X right, +Y up · top view</text>${panels}<text x="35" y="582" font-size="18">Captured barrel: copper Ø0.350 / drill Ø0.150 mm · top → inner1 → inner2 → bottom</text><text x="35" y="610" font-size="17">Dashed ring: U1 R3 copper + declared 0.100 mm clearance. Coordinates and data copper stay fixed.</text></g></svg>`,
-  ).toMatchSvgSnapshot(import.meta.path, undefined, { diffThresholdPercent: 0 })
+    getSvgFromGraphicsObject(
+      convertSrjToGraphicsObject(output as AutorouterSimpleRouteJson),
+      {
+        backgroundColor: "white",
+      },
+    ),
+  ).toMatchSvgSnapshot(import.meta.path)
 })
