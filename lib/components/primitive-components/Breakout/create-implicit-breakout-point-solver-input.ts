@@ -782,9 +782,8 @@ export const createImplicitBreakoutPointSolverContext = (
 
   const edgeAssignmentBuses = [...buses]
   // Unbused connections traditionally exit on top. Honor explicit
-  // fanoutRoutingLayers without changing that default. Add layer candidates
-  // after edge assignment so these signals do not become one atomic bus that
-  // is forced to leave through the same edge.
+  // fanoutRoutingLayers without turning these signals into one atomic edge
+  // group: only the authored buses participate in edge grouping.
   const busConnectionIds = new Set(buses.flatMap((bus) => bus.connectionIds))
   const unbusedConnectionIds = sortedSourceTraceIds.filter(
     (sourceTraceId) => !busConnectionIds.has(sourceTraceId),
@@ -849,7 +848,6 @@ export const createImplicitBreakoutPointSolverContext = (
       layerCount: availableExitLayers.size,
     })
   }
-
 
   return {
     input: {

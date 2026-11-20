@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test"
-import { checkViasInPads } from "@tscircuit/checks"
+import {
+  checkEachPcbTraceNonOverlapping,
+  checkHoleTraceClearance,
+  checkPadTraceClearance,
+  checkTracesAreContiguous,
+  checkViasInPads,
+} from "@tscircuit/checks"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -56,8 +62,8 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
   await circuit.renderUntilSettled()
 
   const exits = circuit.db.pcb_breakout_point.list()
-  const planeExits = exits.filter((exit) =>
-    ["inner1", "inner2"].includes(exit.layer ?? "top"),
+  const planeExits = exits.filter(
+    (exit) => exit.layer === "inner1" || exit.layer === "inner2",
   )
   const routingErrors = circuit.db.pcb_autorouting_error.list()
   circuit.db.pcb_note_text.insert({
@@ -68,8 +74,21 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
     font_size: 0.3,
     layer: "top",
   })
+  circuit.db.pcb_note_text.insert({
+    text: `Trace fragments: ${circuit.db.pcb_trace.list().length} | Vias: ${circuit.db.pcb_via.list().length}`,
+    anchor_position: { x: 0, y: -9 },
+    anchor_alignment: "center",
+    font: "tscircuit2024",
+    font_size: 0.3,
+    layer: "top",
+  })
   expect(exits).toHaveLength(16)
-  expect(checkViasInPads(circuit.getCircuitJson())).toEqual([])
+  const json = circuit.getCircuitJson()
+  expect(checkEachPcbTraceNonOverlapping(json)).toEqual([])
+  expect(checkHoleTraceClearance(json)).toEqual([])
+  expect(checkPadTraceClearance(json)).toEqual([])
+  expect(checkTracesAreContiguous(json)).toEqual([])
+  expect(checkViasInPads(json)).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     backgroundColor: "white",
     width: 1000,
