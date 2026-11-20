@@ -85,7 +85,7 @@ test("subpanel manual placement with polygon boards outlines", async () => {
   ]).toMatchInlineSnapshot(`
     [
       "pcb_trace_error",
-      "Trace .R2 > .pin1 to .R1 > .pin1 is too close to non-plated hole unnamed hole (gap: 0.165746mm, required: 0.2mm)",
+      "Trace .R2 > .pin1 to .R1 > .pin1 is too close to non-plated hole unnamed hole (gap: 0.157590mm, required: 0.2mm)",
     ]
   `)
 
