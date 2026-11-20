@@ -125,6 +125,8 @@ test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
       source_bus_id: pair.source_bus_id,
       max_local_skew: 1.23607,
       max_length_skew: 0.1,
+      positive_skew_color: "rgb(0, 0, 255)",
+      negative_skew_color: "rgb(255, 0, 0)",
       positive: expect.objectContaining({
         pcb_trace_id: positive.pcb_trace_id,
       }),

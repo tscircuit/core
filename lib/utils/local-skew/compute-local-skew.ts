@@ -23,6 +23,10 @@ import {
   walkTrace,
 } from "./walk-trace"
 
+// Use KiCad's fixed fallback colours until a differential-pair prop exists.
+const POSITIVE_SKEW_COLOR = "rgb(0, 0, 255)"
+const NEGATIVE_SKEW_COLOR = "rgb(255, 0, 0)"
+
 /** Target maximum sample length along a skew ramp, in mm. */
 const SAMPLE_LENGTH = 0.05
 
@@ -265,6 +269,8 @@ function computePairSkew({
         negativeTrack.scale.negative,
       ),
     }),
+    positive_skew_color: POSITIVE_SKEW_COLOR,
+    negative_skew_color: NEGATIVE_SKEW_COLOR,
     positive: {
       pcb_trace_id: positiveTrace.pcb_trace_id,
       positive_skew_scale: positiveTrack.scale.positive,

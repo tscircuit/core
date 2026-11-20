@@ -10,6 +10,8 @@ export interface PcbDifferentialPairLocalSkew {
   /** Largest known local skew on either trace, in mm. */
   max_local_skew?: number
   max_length_skew?: number
+  positive_skew_color?: string
+  negative_skew_color?: string
   positive: LocalSkewTrace
   negative: LocalSkewTrace
 }
