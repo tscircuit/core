@@ -5,7 +5,7 @@ import {
   type PcbTraceRoutePoint,
   type PcbVia,
 } from "circuit-json"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { getTraceLengthOnBoard } from "./trace-utils/get-trace-length-on-board"
 import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import type { Port } from "../Port"
 import type { Trace } from "./Trace"
@@ -329,7 +329,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
       },
     ]
 
-    const traceLength = getTraceLength(route)
+    const traceLength = getTraceLengthOnBoard({ trace, route })
     const pcb_trace = db.pcb_trace.insert({
       route,
       source_trace_id: trace.source_trace_id!,
@@ -477,7 +477,7 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     })
   }
 
-  const traceLength = getTraceLength(route)
+  const traceLength = getTraceLengthOnBoard({ trace, route })
   const pcb_trace = db.pcb_trace.insert({
     route,
     is_antenna_trace: trace.isAntennaTrace,
