@@ -1,0 +1,77 @@
+name: Verify complete single-cell paths on dataset18
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-single-cell-memory.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 7288eae140a6362f072cc6843562c20bb11bce5a
+          path: current
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 7288eae140a6362f072cc6843562c20bb11bce5a
+          path: singleState
+          persist-credentials: false
+      - name: Compare isolated source changes without altering routing inputs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          refs={"current":"e480f10456d00c1ea57da9dccf8579fc465a5862","singleState":"e7b2d41c6befcc35d9421e52824949d149f22654"}
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          for variant,ref in refs.items():
+            root=Path(variant)
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d['devDependencies']['@tscircuit/high-density-a01']='git+https://github.com/tscircuit/high-density-a01.git#'+ref
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(s.replace(anchor,'      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'+anchor))
+          PY
+          for variant in current singleState; do
+            (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+          done
+      - name: Measure sample two without concurrent sample pressure
+        run: |
+          for variant in current singleState; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18 --sample-numbers 2 --concurrency 1) > "$variant-run.log" 2>&1
+          done
+      - name: Report numeric measurements and complete output digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result={}
+          for variant in ['current','singleState']:
+            rows=json.loads(Path(variant,'benchmark-result.json').read_text())['tests']
+            assert len(rows)==1
+            r=rows[0]
+            result[variant]={'timeMs':r['elapsedTimeMs'],'peakRssMiB':r['peakRssBytes']/1048576,'solved':r['didSolve'],'drc':r.get('drcErrorCount'),'outputHash':r.get('routedOutputSha256')}
+          print('SINGLE_CELL_MEMORY_NUMERIC',json.dumps(result))
+          Path('numeric-source-results.json').write_text(json.dumps(result,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: single-cell-memory-numeric
+          path: numeric-source-results.json
