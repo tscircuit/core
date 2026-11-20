@@ -38,10 +38,10 @@ test("a child subcircuit's GND pour does not exempt the parent's GND trace", asy
           layer="inner1"
           connectsTo="net.GND"
           outline={[
-            { x: -2, y: 2 },
-            { x: 2, y: 2 },
-            { x: 2, y: 4 },
-            { x: -2, y: 4 },
+            { x: -2, y: -1 },
+            { x: 2, y: -1 },
+            { x: 2, y: 1 },
+            { x: -2, y: 1 },
           ]}
           unbroken
         />

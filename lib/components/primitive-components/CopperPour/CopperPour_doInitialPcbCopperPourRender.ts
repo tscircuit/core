@@ -67,9 +67,12 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
+      const resolvedLayer = copperPour.resolvePcbLayer()
+      const resolvedOutline =
+        copperPour.resolveBoardWorldOutline() ?? resolvedPcbBoardOutline
       return {
         pcb_board_id: pcbBoard?.pcb_board_id,
-        layer: props.layer,
+        layer: resolvedLayer,
         crosshatch: props.crosshatch,
         crosshatchPitch: props.crosshatchPitch,
         crosshatchWidth: props.crosshatchWidth,
@@ -89,7 +92,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
               thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
             }
           : {}),
-        outline: props.outline ?? resolvedPcbBoardOutline,
+        outline: resolvedOutline,
       }
     }),
   )
@@ -112,9 +115,10 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     { copperPour, sourceNetId },
   ] of resolvedCopperPours.entries()) {
     const { _parsedProps: props } = copperPour
+    const resolvedLayer = copperPour.resolvePcbLayer()
     // Soldermask only exists on the top and bottom layers, so an inner-layer
     // pour is never covered with soldermask.
-    const isOuterLayer = props.layer === "top" || props.layer === "bottom"
+    const isOuterLayer = resolvedLayer === "top" || resolvedLayer === "bottom"
     const coveredWithSolderMask = isOuterLayer
       ? (props.coveredWithSolderMask ?? false)
       : false
@@ -122,7 +126,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
       const insertedPour = db.pcb_copper_pour.insert({
         shape: "brep",
-        layer: props.layer,
+        layer: resolvedLayer,
         brep_shape: brepShape,
         source_net_id: sourceNetId,
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,

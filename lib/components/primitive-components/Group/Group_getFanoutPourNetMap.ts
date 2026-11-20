@@ -56,7 +56,8 @@ export const Group_getFanoutPourNetMap = (
       const copperPours = subcircuit.selectAll<CopperPour>("copperpour")
       for (const copperPour of copperPours) {
         if (copperPour.getSubcircuit() !== subcircuit) continue
-        const { layer, connectsTo } = copperPour._parsedProps
+        const { connectsTo } = copperPour._parsedProps
+        const layer = copperPour.resolvePcbLayer()
         addPourNetMap(netsByLayer, {
           [layer]: connectsTo,
         })
