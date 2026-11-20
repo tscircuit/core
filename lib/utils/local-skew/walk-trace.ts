@@ -42,8 +42,9 @@ const DEFAULT_VIA_LENGTH = 1.6
  * Copper arriving at a wire point uses that wire's layer and width.
  * Copper arriving at a via uses the via's `from_layer` and the last wire's
  * width, so sparse routes still contribute planar length between vias.
- * A via between two different layers adds their Z-distance from
- * `stackup`, else `boardThickness`, else {@link DEFAULT_VIA_LENGTH}.
+ * A via, or a through pad, between two different layers adds their
+ * Z-distance from `stackup`, else `boardThickness`, else
+ * {@link DEFAULT_VIA_LENGTH}.
  *
  * Consecutive pieces that continue in a straight line on the same copper
  * are joined, so how finely a route is split into points doesn't matter.
@@ -206,7 +207,8 @@ function routeCorners({
       })
       continue
     }
-    // A through-pad point is a straight run across the pad.
+    // A through-pad point is a straight run across the pad, which then
+    // changes layers like a via when its end layer differs.
     width = routePoint.width
     corners.push({
       point: routePoint.start,
@@ -218,7 +220,12 @@ function routeCorners({
       point: routePoint.end,
       layer: routePoint.start_layer,
       width,
-      viaLength: 0,
+      viaLength: viaLayerDistance({
+        fromLayer: routePoint.start_layer,
+        toLayer: routePoint.end_layer,
+        stackup,
+        boardThickness,
+      }),
     })
   }
   return corners
