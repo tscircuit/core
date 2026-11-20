@@ -43,9 +43,136 @@ jobs:
           import re,os,json
           from pathlib import Path
           s=Path(os.environ['RUNNER_TEMP'],'a03-unit.log').read_text(errors='replace')
+          s=re.sub(r'\x1b\[[0-9;]*m','',s)
           print('A03_UNIT_AGGREGATE',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
           for line in s.splitlines():
-            if re.match(r'^tests/[^:]+:$',line) or line.startswith('(fail)'):
+            if re.match(r'^tests/[^:]+:
+              print(line)
+          PY
+          exit "$status"
+      - run: bunx tsc --noEmit
+        working-directory: solver
+      - run: bun run build
+        working-directory: solver
+  benchmark:
+    if: "!contains(github.event.head_commit.message, 'unit-only')"
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [forward, reverse]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: matrix.order == 'forward'
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
+          path: native
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: ca5f6d281692a58b97fec64198f2c26e7c8107a1
+          path: candidate
+          persist-credentials: false
+      - name: Install identical tooling and record routed output digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          addition='      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
+          type_anchor='export type WorkerResult<\n  TBenchmarkSnapshot extends BenchmarkSnapshot = BenchmarkSnapshot,\n> = {'
+          for variant in ['base','native','candidate']:
+            root=Path(variant)
+            if not root.exists(): continue
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(s.replace(anchor,addition+anchor))
+            p=root/'scripts/benchmark/benchmark-types.ts'
+            s=p.read_text()
+            assert s.count(type_anchor)==1
+            p.write_text(s.replace(type_anchor,type_anchor+'\n  routedOutputSha256?: string'))
+          PY
+          for variant in base native candidate; do
+            if [ -d "$variant" ]; then
+              (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+            fi
+          done
+      - name: Run actual migration base first
+        if: matrix.order == 'forward'
+        run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
+      - name: Reproduce the uncorrected migration
+        if: matrix.order == 'forward'
+        run: (cd native && bash ./benchmark.sh --dataset 18) > native-run.log 2>&1
+      - name: Run all sixteen cases on the cache-preserving migration
+        run: (cd candidate && bash ./benchmark.sh --dataset 18) > candidate-run.log 2>&1
+      - name: Run actual migration base after the candidate
+        if: matrix.order == 'reverse'
+        run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
+      - name: Compare the exact base and head using the existing reporter
+        working-directory: candidate
+        run: |
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha ca5f6d281692a58b97fec64198f2c26e7c8107a1 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
+          cat ../comparison-base.md
+          cat ../comparison-base.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -d ../native ]; then
+            bun scripts/benchmark/same-machine-results.ts --base-report ../native/benchmark-result.json --pr-report benchmark-result.json --base-sha 1296308adcd8ab2852d0f95b81d1ef21d929b2ab --pr-sha ca5f6d281692a58b97fec64198f2c26e7c8107a1 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
+            cat ../comparison-native.md
+          fi
+      - name: Enforce complete routing and export numeric measurements only
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          aggregate={}
+          for variant in ['base','native','candidate']:
+            p=Path(variant,'benchmark-result.json')
+            if not p.exists(): continue
+            rows=json.loads(p.read_text())['tests']
+            assert len(rows)==16,(variant,'Expected all sixteen cases')
+            assert all(r['didSolve'] and not r['didTimeout'] and r['relaxedDrcPassed'] and r.get('drcErrorCount')==0 for r in rows),(variant,'Routing regression')
+            assert all(r.get('routedOutputSha256') for r in rows),(variant,'Missing output digest')
+            aggregate[variant]=[{
+              'sample':r['sampleNumber'],
+              'timeMs':r['elapsedTimeMs'],
+              'peakRssBytes':r.get('peakRssBytes'),
+              'viaCount':r.get('viaCount'),
+              'drcErrorCount':r.get('drcErrorCount'),
+              'outputSha256':r['routedOutputSha256'],
+              'stages':[{'name':s['stageName'],'timeMs':s['elapsedTimeMs']} for s in (r.get('stageTiming') or {}).get('stages',[])]
+            } for r in rows]
+          print('DATASET18_ACCEPTANCE',json.dumps({k:{'completed':len(v),'drc':sum(r['drcErrorCount'] for r in v)} for k,v in aggregate.items()}))
+          Path('aggregate-measurements.json').write_text(json.dumps(aggregate,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: migration-cache-restoration-${{ matrix.order }}
+          path: |
+            comparison-*.md
+            aggregate-measurements.json
+,line) or '(fail)' in line or line.startswith('error:') or 'Cannot find module' in line:
               print(line)
           PY
           exit "$status"
