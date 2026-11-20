@@ -44,6 +44,10 @@ Components implement specific phase methods like `doInitialSourceRender()`, `doI
 
 ## Testing Patterns
 
+DO NOT COMMIT REPRODUCTION SLOP
+
+TESTS SHOULD BE SIMPLE SHALLOW TSX. THEY SHOULD NOT CONTAIN TERNARIES. THEY SHOULD NOT CONTAIN COMPLEX LOGIC. THEY SHOULD NOT IMPORT LARGE AMOUNTS OF TSX FROM FIXTURES UNLESS THE "FIXTURE" IS AN ENTIRE (REAL) CIRCUIT IMPORT.
+
 Uses Bun's native test runner with extensive snapshot testing:
 
 ```tsx
