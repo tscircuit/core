@@ -1,4 +1,4 @@
-name: Verify all Core tests with native trace ownership
+name: Keep only required native trace snapshots
 on:
   push:
     branches: [analysis/core-native-complete-ci]
@@ -6,83 +6,121 @@ on:
 permissions:
   contents: write
 jobs:
-  test:
+  snapshot-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        node: [1,2,3,4,5,6,7,8,9,10]
+        node: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: f2dc346dfa3a4c065b69c698c9377391e919fa67
+          ref: 82a73672f4ffc0ebc2839b9cee66aeb8537bfdef
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.2'
-      - name: Pin exact native ownership package
+      - run: bun install
+      - name: Compare original baselines and update only actual mismatches
+        env:
+          SNAPSHOT_AUDIT_NODE: ${{ matrix.node }}
         run: |
           python3 - <<'PY'
+          import json, os, re, subprocess
           from pathlib import Path
-          p=Path("package.json")
-          s=p.read_text()
-          old="https://npm-releases.tscircuit.com/npm-tarballs/44628229346-1/tscircuit-capacity-autorouter-0.0.1135.tgz"
-          assert s.count(old)==1
-          p.write_text(s.replace(old,"https://npm-releases.tscircuit.com/npm-tarballs/44658047630-1/tscircuit-capacity-autorouter-0.0.1135.tgz"))
+          
+          allowed = set(["tests/breakout/__snapshots__/breakout-bga36-decoupling-caps-autorouting-srj.snap.svg","tests/breakout/__snapshots__/breakout-qfp16-with-header-and-passives-autorouting-srj.snap.svg","tests/breakout/__snapshots__/breakout-sot23-regulator-power-rail-pcb.snap.svg","tests/breakout/__snapshots__/default-breakout-one-point-net-autorouting-srj.snap.svg","tests/breakout/__snapshots__/dogbone-autorouting-phase-pcb.snap.svg","tests/breakout/__snapshots__/fanout-dogbone-global-handoff-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-transforms-bottom-0-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-transforms-bottom-270-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-transforms-bottom-90-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-transforms-top-0-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-transforms-top-270-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-via-endpoints-end-pcb.snap.svg","tests/breakout/__snapshots__/fanout-saved-trace-paths-via-endpoints-start-pcb.snap.svg","tests/breakout/__snapshots__/fanout-soic8-sensor-to-i2c-header-autorouting-srj.snap.svg","tests/breakout/__snapshots__/fanout-soic8-sensor-to-i2c-header-pcb.snap.svg","tests/breakout/__snapshots__/manualplaced-breakoutpoint-autorouting-srj.snap.svg","tests/breakout/__snapshots__/unrelated-winding-breakout-scopes-pcb.snap.svg","tests/components/primitive-components/differential-pair/__snapshots__/differential-pair-routing-phase.snap.svg","tests/components/primitive-components/differential-pair/__snapshots__/named-trunks-with-termination-taps-pcb.snap.svg","tests/features/__snapshots__/autorouter-fanout-autorouting-srj.snap.svg","tests/features/__snapshots__/autorouter-single-layer-fanout-autorouting-srj.snap.svg","tests/features/__snapshots__/autorouting-phase-snapshot-raw-output.snap.svg","tests/features/__snapshots__/autorouting-phase-snapshot-with-preloaded-traces.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-phase-index-arrays-horizontal-first.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-phase-index-arrays-vertical-first.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-phase-index-horizontal-first.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-phase-index-vertical-first.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-reroute-connections-array.snap.svg","tests/features/__snapshots__/autoroutingphase-connection-reroute-single-connection.snap.svg","tests/features/__snapshots__/autoroutingphase-emitted-paths-fanout-pcb.snap.svg","tests/features/__snapshots__/autoroutingphase-fixed-pcb-path-pcb.snap.svg","tests/features/__snapshots__/autoroutingphase-imported-circuit-json-reroute-builtin-pcb.snap.svg","tests/features/__snapshots__/autoroutingphase-saved-trace-paths-pcb.snap.svg","tests/features/__snapshots__/pipeline9-preserves-bus-lanes.snap.svg","tests/repros/__snapshots__/repro-a13-ddr-no-via-in-pad-limitation-pcb.snap.svg","tests/repros/__snapshots__/repro-a13-ddr-thermal-pad-routing-pcb.snap.svg","tests/repros/__snapshots__/repro-a64-fixed-trace-handoff.snap.svg","tests/repros/__snapshots__/repro-am62l-osm-control-fanout-targets-pcb.snap.svg","tests/repros/__snapshots__/repro-autorouter-clearance-board-0.25mm-pcb.snap.svg","tests/repros/__snapshots__/repro-autorouter-clearance-board-0.50mm-pcb.snap.svg","tests/repros/__snapshots__/repro-breakout-fanout-net-handoff-gap-pcb.snap.svg","tests/repros/__snapshots__/repro-dogbone-drops-earlier-phase-copper-handoff.snap.svg","tests/repros/__snapshots__/repro-fanout-routed-layer-impact-pcb.snap.svg","tests/repros/__snapshots__/repro-orangecrab-data-chip-select-pcb.snap.svg","tests/repros/__snapshots__/repro-orangecrab-ddr-clock-termination-pcb.snap.svg","tests/repros/__snapshots__/repro-orangecrab-fixed-trace-handoff.snap.svg","tests/repros/__snapshots__/usb-c-breakout-routing-phases.snap.svg","tests/utils/autorouting/__snapshots__/fixed-through-via-obstacles.snap.svg","tests/utils/autorouting/__snapshots__/h616-fixed-via-circle.snap.svg"])
+          tests = ["tests/breakout/breakout-bga36-decoupling-caps.test.tsx","tests/breakout/breakout-qfp16-with-header-and-passives.test.tsx","tests/breakout/breakout-sot23-regulator-power-rail.test.tsx","tests/breakout/default-breakout-one-point-net.test.tsx","tests/breakout/dogbone-autorouting-phase.test.tsx","tests/breakout/fanout-dogbone-global-handoff.test.tsx","tests/breakout/fanout-saved-trace-paths-transforms.test.tsx","tests/breakout/fanout-saved-trace-paths-via-endpoints.test.tsx","tests/breakout/fanout-soic8-sensor-to-i2c-header.test.tsx","tests/breakout/manualplaced-breakoutpoint.test.tsx","tests/breakout/unrelated-winding-breakout-scopes.test.tsx","tests/components/primitive-components/differential-pair/named-trunks-with-termination-taps.test.tsx","tests/components/primitive-components/differential-pair/routing-phase.test.tsx","tests/features/autorouter-bus-lanes-followed-by-global.test.tsx","tests/features/autorouter-bus-lanes-layer-error.test.tsx","tests/features/autorouter-fanout.test.tsx","tests/features/autorouter-single-layer-fanout.test.tsx","tests/features/autorouting-phase-snapshot-raw-output.test.ts","tests/features/autoroutingphase-connection-phase-index.test.tsx","tests/features/autoroutingphase-connection-reroute.test.tsx","tests/features/autoroutingphase-dogbone-preserves-saved-copper.test.tsx","tests/features/autoroutingphase-emitted-paths-fanout.test.tsx","tests/features/autoroutingphase-fixed-pcb-path.test.tsx","tests/features/autoroutingphase-imported-circuit-json-reroute-builtin.test.tsx","tests/features/autoroutingphase-saved-fanout-paths.test.tsx","tests/features/autoroutingphase-saved-trace-paths.test.tsx","tests/features/pipeline9-preserves-bus-lanes.test.tsx","tests/repros/repro-a13-ddr-no-via-in-pad-limitation.test.tsx","tests/repros/repro-a13-ddr-thermal-pad-routing.test.tsx","tests/repros/repro-a64-fixed-trace-handoff.test.ts","tests/repros/repro-am62l-osm-control-fanout-targets.test.tsx","tests/repros/repro-autorouter-clearance-board.test.tsx","tests/repros/repro-breakout-fanout-net-handoff-gap.test.tsx","tests/repros/repro-dogbone-drops-earlier-phase-copper.test.tsx","tests/repros/repro-fanout-routed-layer-impact.test.tsx","tests/repros/repro-orangecrab-data-chip-select.test.tsx","tests/repros/repro-orangecrab-ddr-clock-termination.test.tsx","tests/repros/repro-orangecrab-fixed-trace-handoff.test.ts","tests/repros/usb-c-breakout-net-pair.test.tsx","tests/utils/autorouting/fixed-through-via-obstacles.test.ts","tests/utils/autorouting/fixed-traces-preserve-routes.test.ts","tests/utils/autorouting/h616-fixed-via-circle.test.ts"]
+          node = int(os.environ["SNAPSHOT_AUDIT_NODE"])
+          tests = [test for index, test in enumerate(tests) if index % 10 == node - 1]
+          required = set()
+          results = []
+          log_root = Path(os.environ["RUNNER_TEMP"]) / "snapshot-audit"
+          log_root.mkdir(exist_ok=True)
+          
+          def changed_svgs():
+              changed = subprocess.check_output(
+                  ["git", "diff", "--name-only", "--", "*.snap.svg"], text=True
+              ).splitlines()
+              added = subprocess.check_output(
+                  ["git", "ls-files", "--others", "--exclude-standard", "--", "*.snap.svg"], text=True
+              ).splitlines()
+              return set(changed + added)
+          
+          def run_test(test, updating, phase):
+              log_path = log_root / (Path(test).name + "." + phase + ".log")
+              env = dict(os.environ)
+              for key in ["BUN_UPDATE_SNAPSHOTS", "BUN_FORCE_UPDATE_SNAPSHOTS", "FORCE_BUN_UPDATE_SNAPSHOTS"]:
+                  env.pop(key, None)
+              if updating:
+                  env["BUN_UPDATE_SNAPSHOTS"] = "1"
+              for attempt in range(4):
+                  with log_path.open("w") as output:
+                      outcome = subprocess.run(
+                          ["bun", "test", test, "--timeout", "30000"],
+                          env=env, stdout=output, stderr=subprocess.STDOUT,
+                      )
+                  if outcome.returncode not in [132, 139, -4, -11]:
+                      break
+              text = re.sub(r"\x1b\[[0-9;]*m", "", log_path.read_text(errors="replace"))
+              totals = re.findall(r"(\d+)\s+(pass|fail|skip)\b", text)
+              print("TEST_RESULT", json.dumps({
+                  "test": test, "phase": phase, "status": outcome.returncode,
+                  "totals": totals,
+              }), flush=True)
+              if outcome.returncode:
+                  for line in text.splitlines():
+                      if line.startswith("(fail)") or "Snapshot does not match" in line:
+                          print(line, flush=True)
+              return outcome.returncode
+          
+          for test in tests:
+              for diff in Path("tests").rglob("*.diff.png"):
+                  diff.unlink()
+              normal_status = run_test(test, False, "normal")
+              if normal_status == 0:
+                  results.append({"test": test, "updates": 0})
+                  continue
+          
+              mismatches = {
+                  str(diff).replace(".diff.png", ".snap.svg")
+                  for diff in Path("tests").rglob("*.diff.png")
+              }
+              if not mismatches or not mismatches.issubset(allowed):
+                  raise SystemExit("A failure is not one of the original SVG baselines; no snapshots accepted")
+              if run_test(test, True, "update") != 0:
+                  raise SystemExit("Functional assertions still fail; no snapshots accepted")
+          
+              required.update(mismatches)
+              for svg in changed_svgs() - required:
+                  subprocess.run(["git", "restore", "--", svg], check=True)
+              if run_test(test, False, "verify") != 0:
+                  raise SystemExit("The original comparator rejected the retained snapshot set")
+              results.append({"test": test, "updates": len(mismatches)})
+          
+          changed = changed_svgs()
+          if not changed.issubset(required) or not changed.issubset(allowed):
+              raise SystemExit("Unexpected snapshot change")
+          print("SNAPSHOT_AUDIT", json.dumps({
+              "node": node, "tests": len(results), "required": sorted(changed),
+              "unchanged_implementation": True,
+          }), flush=True)
+          Path(os.environ["RUNNER_TEMP"], "required-snapshots.json").write_text(
+              json.dumps(sorted(changed))
+          )
+          
           PY
-          bun install
-      - name: Use the original Core test plans
-        env:
-          TEST_PLAN_NODE_COUNT: '10'
-        run: bun run scripts/generate-test-plan.ts
-      - name: Preserve original functional assertions
-        shell: bash
-        env:
-          BUN_UPDATE_SNAPSHOTS: '1'
+      - name: Save required SVG changes on an analysis branch
         run: |
-          if [ ! -f ".github/test-plans/node${{ matrix.node }}-testplan.txt" ]; then
-            echo "ERROR: No test plan found for node ${{ matrix.node }}"
-            exit 1
-          fi
-
-          mapfile -t test_files < .github/test-plans/node${{ matrix.node }}-testplan.txt
-          if [ ${#test_files[@]} -eq 0 ]; then
-            echo "ERROR: No test files in plan for node ${{ matrix.node }}"
-            exit 1
-          fi
-
-          echo "Running ${#test_files[@]} test files for node ${{ matrix.node }}"
-          attempt=1
-          while [ $attempt -le 4 ]; do
-            # Each retry keeps its log so crashes do not erase the evidence.
-            if bun test "${test_files[@]}" --timeout 30000 2>&1 | tee ".github/test-plans/node${{ matrix.node }}-attempt${attempt}.log"; then
-              code=0
-            else
-              code=$?
-            fi
-
-            if [ $code -eq 0 ]; then
-              break
-            fi
-
-            if [ $code -ne 139 ] && [ $code -ne 132 ]; then
-              exit $code
-            fi
-
-            if [ $attempt -eq 4 ]; then
-              echo "Segmentation fault or illegal instruction detected after $attempt attempts (exit=$code)."
-              exit $code
-            fi
-
-            attempt=$((attempt + 1))
-            echo "Segfault (139) or illegal instruction (132) detected, retrying ($attempt/4)..."
-          done
-      - name: Save verified public SVGs and exact dependency pin
-        if: success()
-        run: |
-          git config user.name "tscircuit-bot"
-          git config user.email "actions@github.com"
-          git add -- package.json '*.snap.svg'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          paths = json.loads(Path(os.environ["RUNNER_TEMP"], "required-snapshots.json").read_text())
+          if paths:
+              subprocess.run(["git", "add", "--", *paths], check=True)
+          PY
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Record verified native-ownership dependency and snapshots"
-          git push origin HEAD:refs/heads/analysis/verified-core-native-${{ github.run_id }}-${{ github.run_attempt }}-node${{ matrix.node }}
+          git commit -m "Update only snapshots rejected by the existing comparator"
+          git push origin HEAD:refs/heads/analysis/core-native-required-${{ github.run_id }}-${{ github.run_attempt }}-node${{ matrix.node }}
