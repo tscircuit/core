@@ -1,0 +1,85 @@
+name: Isolate the repeated dataset18 sample006 slowdown
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-dataset18-cause.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
+          path: native
+          persist-credentials: false
+      - run: bun install
+        working-directory: base
+      - run: bun install
+        working-directory: native
+      - name: Run the untouched base and current code, then isolate each changed behavior
+        run: |
+          mkdir results
+          (cd base && bash ./benchmark.sh --dataset 18 --sample 6 --concurrency 1)
+          cp base/benchmark-result.json results/base.json
+          (cd native && bash ./benchmark.sh --dataset 18 --sample 6 --concurrency 1)
+          cp native/benchmark-result.json results/native.json
+          python3 - <<'PY'
+          from pathlib import Path
+          for suffix in ['lib/solvers/HyperHighDensitySolver/repairDisconnectedSameRootPortPoints.ts','node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts']:
+            p=Path('native')/suffix
+            backup=p.with_suffix('.analysis-backup')
+            backup.write_bytes(p.read_bytes())
+          suffix='lib/solvers/HyperHighDensitySolver/repairDisconnectedSameRootPortPoints.ts'
+          p=Path('native')/suffix
+          replacement=p.with_suffix('.experiment.ts')
+          replacement.write_bytes((Path('base')/suffix).read_bytes())
+          replacement.replace(p)
+          PY
+          (cd native && bash ./benchmark.sh --dataset 18 --sample 6 --concurrency 1)
+          cp native/benchmark-result.json results/old-bridge.json
+          python3 - <<'PY'
+          from pathlib import Path
+          suffix='lib/solvers/HyperHighDensitySolver/repairDisconnectedSameRootPortPoints.ts'
+          p=Path('native')/suffix
+          p.write_bytes(p.with_suffix('.analysis-backup').read_bytes())
+          suffix='node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts'
+          p=Path('native')/suffix
+          replacement=p.with_suffix('.experiment.ts')
+          replacement.write_bytes((Path('base')/suffix).read_bytes())
+          replacement.replace(p)
+          PY
+          (cd native && bash ./benchmark.sh --dataset 18 --sample 6 --concurrency 1)
+          cp native/benchmark-result.json results/old-a03.json
+      - name: Print only timing and quality measurements for the public sample
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          def records(v):
+            if isinstance(v,dict):
+              if 'elapsedTimeMs' in v and 'didSolve' in v: yield v
+              else:
+                for c in v.values(): yield from records(c)
+            elif isinstance(v,list):
+              for c in v: yield from records(c)
+          for p in sorted(Path('results').glob('*.json')):
+            for r in records(json.loads(p.read_text())):
+              print('ISOLATED_SAMPLE006',json.dumps({'variant':p.stem,**{k:r.get(k) for k in ['elapsedTimeMs','didSolve','relaxedDrcPassed','viaCount','drcErrorCount','peakRssBytes','stageTiming']}}))
+          PY
