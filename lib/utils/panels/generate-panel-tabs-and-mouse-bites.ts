@@ -1,6 +1,7 @@
 import * as Flatten from "@flatten-js/core"
 import { jlcPanelRules } from "@tscircuit/jlcpcb-manufacturing-specs"
 import { Polygon, point } from "@flatten-js/core"
+import { getSegmentIntersection } from "@tscircuit/math-utils"
 import type {
   PcbBoard,
   PcbCutout,
@@ -78,6 +79,17 @@ export function getMouseBiteSize({ tabWidth }: { tabWidth: number }) {
   }
 }
 
+/** Copper-to-drill clearance (mm) kept around a panel trace crossing a tab. */
+const PANEL_TRACE_MOUSE_BITE_CLEARANCE = 0.2
+/** Half the width (mm) of a default panel trace. */
+const PANEL_TRACE_HALF_WIDTH = 0.075
+
+/** A panel trace's straight path between its two pads, in circuit-world mm. */
+export interface PanelTraceSegment {
+  start: Point
+  end: Point
+}
+
 interface PanelOptions {
   boardGap: number
   tabWidth: number
@@ -85,6 +97,51 @@ interface PanelOptions {
   mouseBites: boolean
   /** Score each tab along the board edge instead of drilling mouse bites. */
   vScore?: boolean
+  /** Panel traces between boards; each tab they cross keeps a drill-free corridor. */
+  panelTraceSegments?: PanelTraceSegment[]
+}
+
+/**
+ * Mouse-bite centers along a tab, as distances (mm) from the edge start. The
+ * tab span is filled at the drill pitch, centered, except inside the
+ * corridors, where the drills are spread to either side.
+ */
+const getMouseBiteDistancesAlongTab = ({
+  gapStartDist,
+  gapEndDist,
+  corridors,
+  holeDiameter,
+  holeAndSpacing,
+}: {
+  gapStartDist: number
+  gapEndDist: number
+  corridors: Array<{ start: number; end: number }>
+  holeDiameter: number
+  holeAndSpacing: number
+}): number[] => {
+  const regions: Array<{ start: number; end: number }> = []
+  let regionStart = gapStartDist
+  for (const corridor of corridors.toSorted((a, b) => a.start - b.start)) {
+    regions.push({
+      start: regionStart,
+      end: Math.min(corridor.start, gapEndDist),
+    })
+    regionStart = Math.max(regionStart, corridor.end)
+  }
+  regions.push({ start: regionStart, end: gapEndDist })
+  return regions.flatMap(({ start, end }) => {
+    const length = end - start
+    if (holeDiameter <= 0 || holeAndSpacing <= 0 || length < holeDiameter)
+      return []
+    const count = Math.floor((length - holeDiameter) / holeAndSpacing) + 1
+    const totalLength =
+      count * holeDiameter + (count - 1) * (holeAndSpacing - holeDiameter)
+    const firstCenter = start + (length - totalLength) / 2 + holeDiameter / 2
+    return Array.from(
+      { length: count },
+      (_, k) => firstCenter + k * holeAndSpacing,
+    )
+  })
 }
 
 const generateCutoutsAndMousebitesForOutline = (
@@ -96,6 +153,7 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBiteHoleDiameter: number
     mouseBiteHoleSpacing: number
     vScore: boolean
+    panelTraceSegments?: PanelTraceSegment[]
   },
 ): {
   tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[]
@@ -110,6 +168,7 @@ const generateCutoutsAndMousebitesForOutline = (
     mouseBiteHoleDiameter,
     mouseBiteHoleSpacing,
     vScore,
+    panelTraceSegments = [],
   } = options
 
   const tabCutouts: (PcbCutoutRect | PcbCutoutPolygon)[] = []
@@ -208,20 +267,27 @@ const generateCutoutsAndMousebitesForOutline = (
       normalVec = normalVec.multiply(-1)
     }
 
-    const effectiveGapLength = Math.min(gapLength, segmentLength * 0.9)
+    // A panel trace crossing this edge needs a drill-free corridor through
+    // the tab, so the tab grows by the corridor's width.
+    const corridorHalfWidth =
+      mouseBiteHoleDiameter / 2 +
+      PANEL_TRACE_HALF_WIDTH +
+      PANEL_TRACE_MOUSE_BITE_CLEARANCE
+    const traceCrossingDists = panelTraceSegments.flatMap(({ start, end }) => {
+      const crossing = getSegmentIntersection(start, end, p1_, p2_)
+      return crossing
+        ? [
+            Flatten.vector(p1, Flatten.point(crossing.x, crossing.y)).dot(
+              segmentDir,
+            ),
+          ]
+        : []
+    })
+    const effectiveGapLength = Math.min(
+      gapLength + traceCrossingDists.length * 2 * corridorHalfWidth,
+      segmentLength * 0.9,
+    )
     const holeAndSpacing = mouseBiteHoleDiameter + mouseBiteHoleSpacing
-    const numBitesInGap =
-      mouseBiteHoleDiameter > 0 && holeAndSpacing > 0
-        ? Math.max(
-            0,
-            Math.floor(
-              (effectiveGapLength - mouseBiteHoleDiameter) / holeAndSpacing,
-            ) + 1,
-          )
-        : 0
-    const totalBitesLength =
-      numBitesInGap * mouseBiteHoleDiameter +
-      (numBitesInGap - 1) * mouseBiteHoleSpacing
 
     const gapStartDist = (segmentLength - effectiveGapLength) / 2
     const gapEndDist = gapStartDist + effectiveGapLength
@@ -246,23 +312,26 @@ const generateCutoutsAndMousebitesForOutline = (
         { x: tabEnd.x, y: tabEnd.y },
       ])
 
-    // Add mousebites in the gap
+    // Add mousebites in the gap, spread to either side of trace corridors
     if (useMouseBites) {
-      if (numBitesInGap > 0 && effectiveGapLength >= totalBitesLength) {
-        const firstBiteCenterOffsetInGap =
-          (effectiveGapLength - totalBitesLength) / 2 +
-          mouseBiteHoleDiameter / 2
-        const firstBiteDistFromP1 = gapStartDist + firstBiteCenterOffsetInGap
-
-        for (let k = 0; k < numBitesInGap; k++) {
-          const biteDist = firstBiteDistFromP1 + k * holeAndSpacing
-          const pos = p1.translate(segmentDir.multiply(biteDist))
-          mouseBites.push({
-            boardEdge: { x: pos.x, y: pos.y },
-            outwardNormal: normalVec,
-            bridgeOutline,
-          })
-        }
+      for (const biteDist of getMouseBiteDistancesAlongTab({
+        gapStartDist,
+        gapEndDist,
+        corridors: traceCrossingDists
+          .filter((dist) => dist >= gapStartDist && dist <= gapEndDist)
+          .map((dist) => ({
+            start: dist - corridorHalfWidth,
+            end: dist + corridorHalfWidth,
+          })),
+        holeDiameter: mouseBiteHoleDiameter,
+        holeAndSpacing,
+      })) {
+        const pos = p1.translate(segmentDir.multiply(biteDist))
+        mouseBites.push({
+          boardEdge: { x: pos.x, y: pos.y },
+          outwardNormal: normalVec,
+          bridgeOutline,
+        })
       }
     }
 
@@ -417,6 +486,7 @@ export function generatePanelTabsAndMouseBites(
         mouseBiteHoleDiameter: mouseBiteDiameter,
         mouseBiteHoleSpacing: mouseBiteSpacing,
         vScore,
+        panelTraceSegments: options.panelTraceSegments,
       })
 
       finalTabCutouts.push(...generated.tabCutouts)
