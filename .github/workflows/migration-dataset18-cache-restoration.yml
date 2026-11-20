@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/high-density-a01
-          ref: b29fc8cad2b110fcc215d02e483ca3149a6c983f
+          ref: c4590eb264661f28d087b192411c34619afbfd1e
           path: solver
           persist-credentials: false
       - name: Install the exact rebased dependency
@@ -54,6 +54,7 @@ jobs:
       - run: bun run build
         working-directory: solver
   benchmark:
+    if: "!contains(github.event.head_commit.message, 'unit-only')"
     strategy:
       fail-fast: false
       matrix:
