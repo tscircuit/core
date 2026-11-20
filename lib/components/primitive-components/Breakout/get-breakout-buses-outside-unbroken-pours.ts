@@ -1,4 +1,7 @@
-import type { ImplicitBreakoutBounds, ImplicitBreakoutBus } from "@tscircuit/props"
+import type {
+  ImplicitBreakoutBounds,
+  ImplicitBreakoutBus,
+} from "@tscircuit/props"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getUnbrokenCopperPourObstacles } from "lib/utils/autorouting/getUnbrokenCopperPourObstacles"
 import type { Obstacle } from "lib/utils/obstacles/types"
@@ -23,7 +26,8 @@ const unbrokenPoursCoverBreakout = (
     )
     .sort(
       (first, second) =>
-        first.center.y - first.height / 2 -
+        first.center.y -
+        first.height / 2 -
         (second.center.y - second.height / 2),
     )
   let coveredThroughY = bounds.minY
