@@ -75,8 +75,8 @@ test("subpanel manual placement with polygon boards outlines", async () => {
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
 
-  // Drillable 0.5 mm mouse bites on these 2 mm boards come within 0.17 mm of
-  // R1-R2 traces, so the trace clearance check now reports each conflict.
+  // Drillable 0.5 mm mouse bites on these 2 mm boards violate the 0.2 mm
+  // clearance from R1-R2 traces.
   const errors = circuitJson.filter((elm) => elm.type.includes("error"))
   expect(errors).toHaveLength(32)
   expect([
@@ -85,7 +85,7 @@ test("subpanel manual placement with polygon boards outlines", async () => {
   ]).toMatchInlineSnapshot(`
     [
       "pcb_trace_error",
-      "Trace .R2 > .pin1 to .R1 > .pin1 is too close to non-plated hole unnamed hole (gap: 0.165746mm, required: 0.2mm)",
+      "Trace .R2 > .pin1 to .R1 > .pin1 is too close to non-plated hole unnamed hole (gap: 0.157590mm, required: 0.2mm)",
     ]
   `)
 
