@@ -1,0 +1,128 @@
+name: Verify ordered A03 owner queries with native copper
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-owner-query-verified.yml]
+permissions:
+  contents: read
+jobs:
+  a03-terminal-corrected-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 5345f64519951b26b17aab229c9b284ae729d5ab
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 3db7290cb61e37315b2d4429ce82c4cd75b9037b
+          path: candidate
+          persist-credentials: false
+      - name: Compare against the exact terminal-corrected baseline
+        working-directory: candidate
+        run: |
+          cp ../baseline/lib/HighDensitySolverA03/HighDensitySolverA03.ts lib/HighDensitySolverA03/UnoptimizedA03.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('tests/a03/search-pruning.test.ts').write_text("import { expect, test } from \"bun:test\"\nimport { createHash } from \"node:crypto\"\nimport { HighDensitySolverA03 } from \"../../lib/HighDensitySolverA03/HighDensitySolverA03\"\nimport { HighDensitySolverA03 as UnoptimizedA03 } from \"../../lib/HighDensitySolverA03/UnoptimizedA03\"\nimport { defaultA03Params } from \"../../lib/default-params\"\nimport cases from \"./search-pruning-cases.json\"\n\ntest(\"A03 pruning preserves routes and completion across ordinary and unusual costs\", () => {\n  // Compare against the frozen terminal-corrected implementation in the same process.\n  // Include negative and nonfinite costs, where a nonnegative lower bound\n  // cannot justify discarding an OPEN destination.\n  for (const entry of cases) {\n    const layers = entry.layers\n    const hyperParameters = Object.fromEntries(\n      Object.entries(entry.hyperParameters).map(([key, value]) => [\n        key,\n        Number(value),\n      ]),\n    )\n    const params = {\n      ...defaultA03Params,\n      hyperParameters,\n      nodeWithPortPoints: {\n        capacityMeshNodeId: \"numeric-domain\",\n        center: { x: 0, y: 0 },\n        width: 2,\n        height: 2,\n        availableZ: Array.from({ length: layers }, (_, i) => i),\n        portPoints: [\n          { connectionName: \"a\", x: -1, y: -0.5, z: 0 },\n          { connectionName: \"a\", x: 1, y: 0.5, z: layers - 1 },\n          { connectionName: \"b\", x: -1, y: 0.5, z: 0 },\n          { connectionName: \"b\", x: 1, y: -0.5, z: 0 },\n          { connectionName: \"c\", x: 0, y: -1, z: layers - 1 },\n          { connectionName: \"c\", x: 0, y: 1, z: 0 },\n        ],\n      },\n    }\n    const baseline = new UnoptimizedA03(params)\n    baseline.solve()\n    for (const viaOccupantQuery of [\"dense\", \"owner-runs\"] as const) {\n    const solver = new HighDensitySolverA03({...params, viaOccupantQuery})\n    solver.solve()\n    expect({\n      solved: solver.solved,\n      failed: solver.failed,\n      error: solver.error ?? null,\n      iterations: solver.iterations,\n      outputSha256: createHash(\"sha256\")\n        .update(JSON.stringify(solver.getOutput()))\n        .digest(\"hex\"),\n    }).toEqual({\n      solved: baseline.solved,\n      failed: baseline.failed,\n      error: baseline.error ?? null,\n      iterations: baseline.iterations,\n      outputSha256: createHash(\"sha256\").update(JSON.stringify(baseline.getOutput())).digest(\"hex\"),\n    })\n    }\n  }\n})\n")
+          PY
+          bun install
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999
+          bun run build
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - run: bun install
+        working-directory: base
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: aa55c35bfbb3229fe6670a658379541f18e5f6b0
+          path: native
+          persist-credentials: false
+      - run: bun install
+        working-directory: native
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 11396d1303dd7cab1849850f868ae356f35036a6
+          path: optimized
+          persist-credentials: false
+      - run: bun install
+        working-directory: optimized
+      - name: Retain only routed output digests in worker result metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          addition='      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
+          type_anchor='export type WorkerResult<\n  TBenchmarkSnapshot extends BenchmarkSnapshot = BenchmarkSnapshot,\n> = {'
+          for variant in ['base','native','optimized']:
+            p=Path(variant)/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(s.replace(anchor,addition+anchor))
+            p=Path(variant)/'scripts/benchmark/benchmark-types.ts'
+            s=p.read_text()
+            assert s.count(type_anchor)==1
+            p.write_text(s.replace(type_anchor,type_anchor+'\n  routedOutputSha256?: string'))
+          PY
+      - name: Run all sixteen original cases sequentially on each revision
+        run: |
+          set -o pipefail
+          for variant in base native optimized; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18) > "$variant-run.log" 2>&1
+          done
+      - name: Compare complete results using the existing benchmark reporter
+        working-directory: native
+        run: |
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report ../optimized/benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha 11396d1303dd7cab1849850f868ae356f35036a6 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
+          bun scripts/benchmark/same-machine-results.ts --base-report benchmark-result.json --pr-report ../optimized/benchmark-result.json --base-sha aa55c35bfbb3229fe6670a658379541f18e5f6b0 --pr-sha 11396d1303dd7cab1849850f868ae356f35036a6 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
+          cat ../comparison-base.md
+          cat ../comparison-native.md
+          cat ../comparison-base.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Compare all complete routed output digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          maps={}
+          for variant in ['base','native','optimized']:
+            d=json.loads(Path(variant,'benchmark-result.json').read_text())
+            maps[variant]={r['scenarioName']:r.get('routedOutputSha256') for r in d['tests']}
+          assert len(maps['native'])==16,'Expected sixteen aggregate route digests'
+          assert all(maps['native'].values()),'Missing native route digest'
+          assert all(maps['optimized'].values()),'Missing optimized route digest'
+          assert maps['native']==maps['optimized'],'Optimization changed complete routed output'
+          summary={'cases':len(maps['native']),'mismatches':0}
+          print('EXACT_ROUTED_OUTPUT_PARITY',json.dumps(summary))
+          Path('output-parity.json').write_text(json.dumps(summary))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ordered-owner-query-acceptance
+          path: |
+            comparison-*.md
+            output-parity.json
