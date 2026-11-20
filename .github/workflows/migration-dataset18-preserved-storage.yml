@@ -1,0 +1,269 @@
+name: Verify original search storage and native migration without route regressions
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-dataset18-preserved-storage.yml]
+permissions:
+  contents: read
+jobs:
+  dependency-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: e480f10456d00c1ea57da9dccf8579fc465a5862
+          path: solver
+          persist-credentials: false
+      - name: Install the exact rebased dependency
+        working-directory: solver
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Run every dependency test with original assertions
+        working-directory: solver
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 > "$RUNNER_TEMP/a03-unit.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import re,os,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'a03-unit.log').read_text(errors='replace')
+          print('A03_UNIT_AGGREGATE',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if re.match(r'^tests/[^:]+:$',line) or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
+      - run: bunx tsc --noEmit
+        working-directory: solver
+      - run: bun run build
+        working-directory: solver
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [forward, reverse]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: matrix.order == 'forward'
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
+          path: native
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 7288eae140a6362f072cc6843562c20bb11bce5a
+          path: candidate
+          persist-credentials: false
+      - name: Install identical tooling and record routed output digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          addition='      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
+          type_anchor='export type WorkerResult<\n  TBenchmarkSnapshot extends BenchmarkSnapshot = BenchmarkSnapshot,\n> = {'
+          for variant in ['base','native','candidate']:
+            root=Path(variant)
+            if not root.exists(): continue
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(s.replace(anchor,addition+anchor))
+            p=root/'scripts/benchmark/benchmark-types.ts'
+            s=p.read_text()
+            assert s.count(type_anchor)==1
+            p.write_text(s.replace(type_anchor,type_anchor+'\n  routedOutputSha256?: string'))
+          PY
+          for variant in base native candidate; do
+            if [ -d "$variant" ]; then
+              (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+            fi
+          done
+      - name: Run actual migration base first
+        if: matrix.order == 'forward'
+        run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
+      - name: Reproduce the uncorrected migration
+        if: matrix.order == 'forward'
+        run: (cd native && bash ./benchmark.sh --dataset 18) > native-run.log 2>&1
+      - name: Run all sixteen cases on the cache-preserving migration
+        run: (cd candidate && bash ./benchmark.sh --dataset 18) > candidate-run.log 2>&1
+      - name: Run actual migration base after the candidate
+        if: matrix.order == 'reverse'
+        run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
+      - name: Compare the exact base and head using the existing reporter
+        working-directory: candidate
+        run: |
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha 7288eae140a6362f072cc6843562c20bb11bce5a --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
+          cat ../comparison-base.md
+          cat ../comparison-base.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -d ../native ]; then
+            bun scripts/benchmark/same-machine-results.ts --base-report ../native/benchmark-result.json --pr-report benchmark-result.json --base-sha 1296308adcd8ab2852d0f95b81d1ef21d929b2ab --pr-sha 7288eae140a6362f072cc6843562c20bb11bce5a --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
+            cat ../comparison-native.md
+          fi
+      - name: Enforce complete routing and export numeric measurements only
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          aggregate={}
+          for variant in ['base','native','candidate']:
+            p=Path(variant,'benchmark-result.json')
+            if not p.exists(): continue
+            rows=json.loads(p.read_text())['tests']
+            assert len(rows)==16,(variant,'Expected all sixteen cases')
+            assert all(r['didSolve'] and not r['didTimeout'] and r['relaxedDrcPassed'] and r.get('drcErrorCount')==0 for r in rows),(variant,'Routing regression')
+            assert all(r.get('routedOutputSha256') for r in rows),(variant,'Missing output digest')
+            aggregate[variant]=[{
+              'sample':r['sampleNumber'],
+              'timeMs':r['elapsedTimeMs'],
+              'peakRssBytes':r.get('peakRssBytes'),
+              'viaCount':r.get('viaCount'),
+              'drcErrorCount':r.get('drcErrorCount'),
+              'outputSha256':r['routedOutputSha256'],
+              'stages':[{'name':s['stageName'],'timeMs':s['elapsedTimeMs']} for s in (r.get('stageTiming') or {}).get('stages',[])]
+            } for r in rows]
+          if 'native' in aggregate:
+            prior={r['sample']:r['outputSha256'] for r in aggregate['native']}
+            fixed={r['sample']:r['outputSha256'] for r in aggregate['candidate']}
+            assert prior==fixed,'Cache restoration changed complete routed outputs'
+            print('EXACT_MIGRATION_OUTPUT_PARITY',json.dumps({'cases':len(fixed),'mismatches':0}))
+          print('DATASET18_ACCEPTANCE',json.dumps({k:{'completed':len(v),'drc':sum(r['drcErrorCount'] for r in v)} for k,v in aggregate.items()}))
+          Path('aggregate-measurements.json').write_text(json.dumps(aggregate,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: migration-preserved-storage-${{ matrix.order }}
+          path: |
+            comparison-*.md
+            aggregate-measurements.json
+
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: bb725180d5c5faa6dbdf085613f731e62931118e
+          path: autorouter
+          persist-credentials: false
+      - name: Install the final routing stack
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve the four original autorouter assertions
+        working-directory: autorouter
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts > "$RUNNER_TEMP/ar-heldout.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import os,re,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'ar-heldout.log').read_text(errors='replace')
+          s=re.sub(r'\x1b\[[0-9;]*m','',s)
+          print('AR_PHYSICAL_ASSERTIONS',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if line.startswith('(pass)') or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
+      - name: Build the same routing source for Core
+        working-directory: autorouter
+        run: |
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the exact compiled routing stack
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve the two original Core assertions
+        working-directory: core
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx > "$RUNNER_TEMP/core-heldout.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import os,re,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'core-heldout.log').read_text(errors='replace')
+          s=re.sub(r'\x1b\[[0-9;]*m','',s)
+          print('CORE_PHYSICAL_ASSERTIONS',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if line.startswith('(pass)') or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
