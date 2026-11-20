@@ -21,7 +21,16 @@ jobs:
           ref: 11396d1303dd7cab1849850f868ae356f35036a6
           path: autorouter
           persist-credentials: false
-      - run: bun install
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
         working-directory: autorouter
       - name: Reproduce phantom terminal vias then check the exact emitted copper
         run: |
@@ -94,6 +103,14 @@ jobs:
           d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
           p.write_text(json.dumps(d,indent=2)+'\n')
           PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
           bun install
       - name: Preserve all original Core physical assertions
         working-directory: core
@@ -127,6 +144,14 @@ jobs:
           p=Path('package.json')
           d=json.loads(p.read_text())
           d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
           p.write_text(json.dumps(d,indent=2)+'\n')
           PY
           bun install
