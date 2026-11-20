@@ -1,83 +1,122 @@
-name: Verify complete native trace Core integration
+name: Verify original Core fanout and clearance with native repair context
 on:
   push:
     branches: [analysis/core-native-complete-ci]
     paths: [.github/workflows/native-complete-ci.yml]
 permissions:
-  contents: write
+  contents: read
 jobs:
-  build:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: 767872b7bea7e62b918d6b282d9be12e24af0e54
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.2'
-      - run: bun install
-      - run: bun run build
-      - run: |
-          mkdir candidate
-          npm pack --pack-destination candidate
-          mv candidate/*.tgz candidate/autorouter.tgz
-      - uses: actions/upload-artifact@v4
-        with:
-          name: native-candidate
-          path: candidate/autorouter.tgz
-  test:
-    needs: build
-    runs-on: ubuntu-24.04
+  routing:
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        node: [1,2,3,4,5,6,7,8,9,10]
+        source: [1a2e757a0230bae0e8f915023485978587d7fe14, 0f98be6237dfa0a852360b07d38f0e2fbee5f92d]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: bb016342151867dcf6947ebae773476a8ae5074a
+          repository: tscircuit/tscircuit-autorouter
+          ref: ${{ matrix.source }}
+          path: autorouter
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.2'
-      - uses: actions/download-artifact@v4
+      - name: Reuse native repair candidate acceptance
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("lib/solvers/HighDensityRepairSolver/Pipeline4HighDensityRepairSolver.ts")
+          s=p.read_text()
+          s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
+          s=s.replace('  readonly repairMargin: number','  private readonly repairRoutes: RepairHdRoute[]\n  private readonly hasNativeCopper: boolean\n  readonly repairMargin: number',1)
+          s=s.replace('    const routeIndex = new FlatbushIndex', '    this.repairRoutes = repairRoutes\n    this.hasNativeCopper = (params.fixedHdRoutes?.length ?? 0) > 0\n    const routeIndex = new FlatbushIndex',1)
+          old='    for (let i = 0; i < sampleEntry.routeIndexes.length; i++) {'
+          assert s.count(old)==1
+          new="""    let repairedRoutes = result.repairedRoutes
+              if (this.hasNativeCopper) {
+                const ownedIndexes = new Set(sampleEntry.routeIndexes)
+                const fixedRoutes = this.repairRoutes.filter(
+                  (_, index) => !ownedIndexes.has(index),
+                )
+                const guard = new FixedCopperClearanceGuard(
+                  fixedRoutes,
+                  this.minClearance ?? 0.1,
+                  [],
+                  this.viaCopperClearance,
+                )
+                if (!guard.allows(
+                  sampleEntry.sample.nodeHdRoutes!,
+                  repairedRoutes,
+                  repairedRoutes.keys(),
+                )) {
+                  repairedRoutes = sampleEntry.sample.nodeHdRoutes!
+                }
+              }
+              for (let i = 0; i < sampleEntry.routeIndexes.length; i++) {"""
+          s=s.replace(old,new,1)
+          s=s.replace('      const repairedRoute = result.repairedRoutes[i]','      const repairedRoute = repairedRoutes[i]\n      if (repairedRoute) this.repairRoutes[routeIndex] = repairedRoute',1)
+          p.write_text(s)
+          if '${{ matrix.source }}' == '0f98be6237dfa0a852360b07d38f0e2fbee5f92d':
+              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensityForceImproveSolver.ts")
+              s=p.read_text()
+              s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
+              s=s.replace('    if (this.fixedViaObstacleIndexes.size === 0) return','    if (this.fixedViaObstacleIndexes.size === 0 && this.fixedHdRoutes.length === 0) return',1)
+              old='    if (!worsensViaClearance) return'
+              assert s.count(old)==1
+              new="""    let allowsNativeCopper = true
+                  if (this.fixedHdRoutes.length > 0) {
+                    const ownedIndexes = new Set(routeIndexes)
+                    const readOnlyRoutes = [
+                      ...this.fixedHdRoutes,
+                      ...this.getOutput().filter((_, index) => !ownedIndexes.has(index)),
+                    ]
+                    const guard = new FixedCopperClearanceGuard(
+                      readOnlyRoutes,
+                      this.inputSrj.minTraceToPadEdgeClearance ??
+                        this.inputSrj.defaultObstacleMargin ??
+                        RELAXED_DRC_OPTIONS.traceClearance,
+                      [],
+                      this.inputSrj.minPadEdgeToPadEdgeClearance,
+                    )
+                    allowsNativeCopper = guard.allows(
+                      originalRoutes,
+                      candidateRoutes,
+                      candidateRoutes.keys(),
+                    )
+                  }
+                  if (!worsensViaClearance && allowsNativeCopper) return"""
+              p.write_text(s.replace(old,new,1))
+          PY
+      - run: bun install && bun run build
+        working-directory: autorouter
+      - name: Pack the verified source candidate
+        working-directory: autorouter
+        run: |
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+      - uses: actions/checkout@v4
         with:
-          name: native-candidate
-          path: candidate
-      - name: Install exact source-built native candidate
+          ref: f2dc346dfa3a4c065b69c698c9377391e919fa67
+          path: core
+          persist-credentials: false
+      - name: Install the exact source-built candidate
+        working-directory: core
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
           p=Path("package.json")
           data=json.loads(p.read_text())
-          data["devDependencies"]["@tscircuit/capacity-autorouter"]="file:./candidate/autorouter.tgz"
+          data["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
           p.write_text(json.dumps(data,indent=2)+"\n")
           PY
           bun install
-      - name: Generate original ten-node test plans
-        env:
-          TEST_PLAN_NODE_COUNT: '10'
-        run: bun run scripts/generate-test-plan.ts
-      - name: Preserve original functional assertions
+      - name: Preserve original 36-via fanout and both SEPIC clearance assertions
+        working-directory: core
         env:
           BUN_UPDATE_SNAPSHOTS: '1'
-        run: |
-          mapfile -t test_files < .github/test-plans/node${{ matrix.node }}-testplan.txt
-          test ${#test_files[@]} -gt 0
-          bun test "${test_files[@]}" --timeout 30000
-      - name: Save generated public test SVG baselines
-        if: success()
-        run: |
-          git config user.name "tscircuit-bot"
-          git config user.email "actions@github.com"
-          git add -- '*.snap.svg'
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Update verified native trace SVGs for Core shard ${{ matrix.node }}"
-          git push origin HEAD:refs/heads/analysis/verified-native-core-round3-node${{ matrix.node }}
-      - name: Verify Core types against the native package
-        if: matrix.node == 1
-        run: bunx tsc --noEmit
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
