@@ -60,18 +60,16 @@ test("local skew walks the route points a teardrop adds, because it runs after t
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
   const [localSkew] = circuit.db.pcb_differential_pair_local_skew.list()
-  const positiveTrace = circuit.db.pcb_trace.get(
-    localSkew.walks.positive[0].pcb_trace_id,
-  )
-  expect(positiveTrace?.route).toHaveLength(3)
+  const pcbTraceId = localSkew.walks.positive[0].pcb_trace_id
+  expect(circuit.db.pcb_trace.get(pcbTraceId)?.route).toHaveLength(3)
   expect(localSkew.walks.positive).toEqual([
     {
-      pcb_trace_id: positiveTrace?.pcb_trace_id,
+      pcb_trace_id: pcbTraceId,
       edge_index: 0,
       reverse: false,
     },
     {
-      pcb_trace_id: positiveTrace?.pcb_trace_id,
+      pcb_trace_id: pcbTraceId,
       edge_index: 1,
       reverse: false,
     },
