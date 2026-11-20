@@ -87,6 +87,7 @@ const createFanoutAutorouterStrategy = (
   mode: FanoutAutorouterMode,
 ): LocalAutorouterStrategy => ({
   name: mode,
+  preserveOutputTraces: true,
   cacheable: false,
   followUpAutorouter: "default",
   getSolverName: () => "FanoutSolver",
