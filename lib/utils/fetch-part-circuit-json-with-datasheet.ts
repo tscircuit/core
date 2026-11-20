@@ -2,6 +2,7 @@ import type { PartsEngine } from "@tscircuit/props"
 import type { IsolatedCircuit } from "lib/IsolatedCircuit"
 import type { NormalComponent } from "lib/components/base-components/NormalComponent"
 import { ZodError } from "zod"
+import { addSourceDatasheet } from "./circuit-json/add-source-datasheet"
 
 /** Optional request extension understood by parts-engine 0.0.36. */
 export type DatasheetPartCircuitJsonRequest = Parameters<
@@ -160,6 +161,14 @@ export const fetchPartCircuitJsonWithDatasheet = async (
     partFetch = fetchDatasheetPart(fetchPartCircuitJson, request)
   }
   const { circuitJson, datasheetFailureReason } = await partFetch
+  if (circuit && circuitJson) {
+    for (const element of circuitJson) {
+      if (element.type === "source_datasheet") {
+        addSourceDatasheet(circuit.db, element)
+      }
+    }
+  }
+
   // Cache the fetch outcome, not a component's diagnostics: each chip gets its
   // own warning and readable name even when it shares a fallback result.
   if (includeDatasheetInformation && datasheetFailureReason !== undefined) {
