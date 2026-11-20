@@ -1,0 +1,147 @@
+name: Verify PR 4030 through published Core
+on:
+  push:
+    branches: [analysis/ddr-pr4030-source-integration]
+    paths: [.github/workflows/ddr-pr4030-source-integration.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    name: Native ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - {circuit: h3, order: "latest"}
+          - {circuit: a64, order: "latest"}
+          - {circuit: stmp157, order: "latest"}
+          - {circuit: orangecrab, order: "latest"}
+          - {circuit: a13, order: "latest"}
+          - {circuit: h616, order: "latest"}
+          - {circuit: butterstick, order: "latest"}
+          - {circuit: glider, order: "latest"}
+          - {circuit: imx6, order: "latest"}
+          - {circuit: icepi, order: "latest"}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 8f5c3b177b0ae87dc71f8f2e272174f9c0850389
+          path: router-under-test
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact published stacks and identical native fixtures
+        run: |
+          cat > prepare-published.private.mjs <<'JS'
+          import {mkdir,writeFile,readFile,symlink} from "node:fs/promises"
+          import path from "node:path"
+          const benchmark="github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+          function exact(declared) {
+           const version=declared.replace(/^[~^]/,"")
+           if(!/^[0-9]+[.][0-9]+[.][0-9]+$/.test(version))throw Error("Expected exact release: "+declared)
+           return version
+          }
+          async function metadata(name,version) {
+           const response=await fetch("https://registry.npmjs.org/"+name+"/"+version)
+           if(!response.ok)throw Error("Registry request failed: "+name+" "+version+" "+response.status)
+           return await response.json()
+          }
+          for(const release of [
+           {label:"latest",tscircuit:"0.0.3257",core:"0.0.2436",autorouter:"0.0.1139",sourceRevision:"published-0.0.3257"}
+          ]) {
+           const published=await metadata("tscircuit",release.tscircuit)
+           const core=await metadata("@tscircuit/core",release.core)
+           const dependencies={"tscircuit":release.tscircuit,"@tscircuit/core":release.core,"@tscircuit/capacity-autorouter":release.autorouter,"@tscircuit/core-ddr-benchmark":benchmark}
+           for(const name of ["@tscircuit/checks","@tscircuit/props","circuit-json","@tscircuit/fanout-solver"])
+            dependencies[name]=exact(published.dependencies[name]??core.devDependencies[name])
+           dependencies["@tscircuit/bus-lanes-solver"]=core.devDependencies["@tscircuit/bus-lanes-solver"]
+           await mkdir(release.label,{recursive:true})
+           await writeFile(release.label+"/package.json",JSON.stringify({name:"native-ddr-"+release.label,private:true,type:"module",dependencies},null,2))
+           await writeFile(release.label+"/index.ts",'export { RootCircuit } from "tscircuit"\n')
+           await writeFile(release.label+"/tsconfig.json",await readFile("tsconfig.json"))
+           await symlink(path.resolve("lib"),release.label+"/lib","dir")
+           await writeFile(release.label+"/published-runtime.json",JSON.stringify({...release,benchmark,tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,sourceTreeExecuted:false,dependencies},null,2))
+          }
+          JS
+          node prepare-published.private.mjs
+                    (cd latest && bun install --ignore-scripts)
+      - name: Build the actual autorouter PR with its native repair dependency
+        run: |
+          cd router-under-test
+          bun install --ignore-scripts
+          bun build lib/index.ts --target bun --external @tscircuit/solver-utils --external object-hash --outfile ../latest/node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Route real TSX circuits through published Core
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+          RELEASE_ORDER: ${{ matrix.order }}
+        run: |
+          mkdir -p results
+          infrastructure_status=0
+          for release in $RELEASE_ORDER; do
+            bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" --circuit "$CIRCUIT" --timeout 1200 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
+            cp "$release/published-runtime.json" "results/$release/"
+          done
+          exit "$infrastructure_status"
+      - name: Assess both releases with one validator
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > inspect-published.private.ts <<'TS'
+          import {readFileSync,writeFileSync,existsSync,mkdirSync,realpathSync,readdirSync} from "node:fs"
+          import path from "node:path"
+          import {createHash} from "node:crypto"
+          const checks=await import(path.resolve("latest/node_modules/@tscircuit/checks/dist/index.js"))
+          const assessmentScript=path.resolve("latest/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts")
+          const circuitName=process.env.CIRCUIT
+          mkdirSync("metrics",{recursive:true})
+          for(const release of ["latest"]) {
+           const root=path.resolve("results",release)
+           if(!existsSync(root+"/results.json"))throw Error("Missing native render results "+release)
+           const report=JSON.parse(readFileSync(root+"/results.json","utf8"))
+           const published=JSON.parse(readFileSync(root+"/published-runtime.json","utf8"))
+           for(const row of report.cases) {
+            const dir=path.join(root,row.circuit)
+            const circuitFile=dir+"/circuit.json"
+            if(!existsSync(circuitFile))throw Error("Missing Circuit JSON "+release)
+            const circuit=JSON.parse(readFileSync(circuitFile,"utf8"))
+            const reassessment=Bun.spawnSync([process.execPath,assessmentScript,path.resolve("latest"),row.circuit,dir],{stdout:"pipe",stderr:"pipe",timeout:120000})
+            if(reassessment.exitCode!==0)throw Error("Shared-validator reassessment failed")
+            const assessment=JSON.parse(readFileSync(dir+"/assessment.json","utf8"))
+            const physicalFindings=Object.entries(assessment.findings).filter(([name])=>!["missing_traces","disconnected_ports"].includes(name)).reduce((sum,[,count])=>sum+Number(count),0)
+            const options={minClearance:0}
+            const zeroClearance=Object.fromEntries(Object.entries({trace_overlap:checks.checkEachPcbTraceNonOverlapping(circuit,options),pad_trace:checks.checkPadTraceClearance(circuit,options),via_trace:checks.checkViaTraceClearance(circuit,options),via_pad:checks.checkViaPadClearance(circuit,options)}).map(([kind,errors])=>[kind,errors.filter(e=>e.type.endsWith("_error")).length]))
+            const releaseRoot=path.resolve(release)
+            const coreEntry=Bun.resolveSync("@tscircuit/core",path.dirname(realpathSync(Bun.resolveSync("tscircuit",releaseRoot))))
+            const executedAr=Bun.resolveSync("@tscircuit/capacity-autorouter",path.dirname(realpathSync(coreEntry)))
+            const requestedAr=Bun.resolveSync("@tscircuit/capacity-autorouter",releaseRoot)
+            if(realpathSync(executedAr)!==realpathSync(requestedAr))throw Error("Published Core did not execute the candidate package")
+            const executedAutorouterSha256=createHash("sha256").update(readFileSync(executedAr)).digest("hex")
+            const dependencies=Object.fromEntries(["tscircuit","@tscircuit/core","@tscircuit/capacity-autorouter","@tscircuit/bus-lanes-solver","@tscircuit/fanout-solver","@tscircuit/checks","@tscircuit/props","circuit-json"].map(name=>[name,JSON.parse(readFileSync(path.resolve(release,"node_modules",name,"package.json"),"utf8")).version]))
+            if(dependencies.tscircuit!==published.tscircuit||dependencies["@tscircuit/core"]!==published.core||dependencies["@tscircuit/capacity-autorouter"]!==published.autorouter)throw Error("Unexpected installed routing versions")
+            const errors=row.progress?.errors??[]
+            const errorText=errors.join(" ")
+            const reason=/time.?out|iteration/i.test(errorText)?"search_limit":/path|region|graph/i.test(errorText)?"path_planning":/route|solv/i.test(errorText)?"routing_failure":errors.length?"render_error":row.status==="timeout"?"render_timeout":null
+            const phaseInputs=readdirSync(dir).filter(name=>/^phase-[0-9]+-start[.]srj[.]json$/.test(name)).sort().map(file=>{const srj=JSON.parse(readFileSync(path.join(dir,file),"utf8"));return {file,connections:srj.connections.length,obstacles:srj.obstacles.length,tracePaths:srj.traces?.length??0,fixedTracePaths:srj.traces?.filter(trace=>trace.isFixed===true).length??0,traceVias:srj.traces?.flatMap(trace=>trace.route.filter(point=>point.route_type==="via")).length??0,circularObstacles:srj.obstacles.filter(obstacle=>obstacle.shape==="circle").length}})
+            const metric={autorouterSourceCommit:"8f5c3b177b0ae87dc71f8f2e272174f9c0850389",phaseInputs,release,sourceRevision:published.sourceRevision,executedAutorouterSha256,comparisonValidatorVersion:dependencies["@tscircuit/checks"],circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment.connectedNets,requested:assessment.requestedNets,vias:assessment.vias,findings:assessment.findings,geometryErrorCount:assessment.geometryErrors.length,zeroClearance,physicalFindings,validationVersion:dependencies["@tscircuit/checks"],dependencies,fixtureHash:report.fixtureHashes[row.circuit],phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:errors.length,reason,copperSha256:createHash("sha256").update(JSON.stringify(circuit.filter(p=>p.type==="pcb_trace"||p.type==="pcb_via"))).digest("hex")}
+            writeFileSync("metrics/"+row.circuit+"-"+release+".json",JSON.stringify(metric,null,2))
+            console.log("PUBLISHED_DDR_METRICS="+JSON.stringify(metric))
+           }
+          }
+          TS
+          bun inspect-published.private.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-ddr-pr4030-${{ matrix.circuit }}
+          path: metrics/*.json
+          if-no-files-found: warn
