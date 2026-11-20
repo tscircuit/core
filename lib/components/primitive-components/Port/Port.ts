@@ -158,7 +158,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getPortsInternallyConnectedToThisPort(): Port[] {
-    const parent = this.parent as unknown as INormalComponent | undefined
+    const parent = (this.getParentNormalComponent() ??
+      this.parent) as unknown as INormalComponent | undefined
     if (!parent || !parent._getInternallyConnectedPins) return []
     const internallyConnectedPorts = parent._getInternallyConnectedPins()
     const connected = new Set<Port>([this])
@@ -176,6 +177,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       }
     }
     return connected.size > 1 ? [...connected] : []
+  }
+
+  _getCustomSymbolInternallyConnectedPort(): Port | null {
+    if (!this._isPrimaryPort) return null
+    if (!this.getParentNormalComponent()?._hasCustomSymbol?.()) return null
+    return (
+      this._getPortsInternallyConnectedToThisPort().find(
+        (port) => port !== this && port._getSymbolAncestor() !== null,
+      ) ?? null
+    )
   }
 
   /**
@@ -199,9 +210,25 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return false
     }
 
+    if (this._getSymbolAncestor()) {
+      return true
+    }
+
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
       return true
+    }
+
+    if (parentNormalComponent?._hasCustomSymbol?.()) {
+      if (this._getCustomSymbolInternallyConnectedPort()) {
+        return true
+      }
+      if (
+        parentNormalComponent._hasCustomSymbolPorts?.() ||
+        !parentNormalComponent.getSchematicSymbol()
+      ) {
+        return false
+      }
     }
 
     const symbol = parentNormalComponent?.getSchematicSymbol()
@@ -231,16 +258,21 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionBeforeLayout(): { x: number; y: number } {
+    if (this._getSymbolAncestor()) {
+      return applyToPoint(this.computeSchematicGlobalTransform(), {
+        x: 0,
+        y: 0,
+      })
+    }
+
     const { schX, schY } = this._parsedProps
     if (schX !== undefined && schY !== undefined) {
-      if (this._getSymbolAncestor()) {
-        return applyToPoint(this.computeSchematicGlobalTransform(), {
-          x: 0,
-          y: 0,
-        })
-      }
-
       return { x: schX, y: schY }
+    }
+
+    const customSymbolPort = this._getCustomSymbolInternallyConnectedPort()
+    if (customSymbolPort) {
+      return customSymbolPort._getGlobalSchematicPositionBeforeLayout()
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -728,11 +760,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       } as any) // TODO issue with discriminated union
     }
 
+    const symbolPort = this._getSymbolAncestor()
+      ? this
+      : this._getCustomSymbolInternallyConnectedPort()
+    const customSymbolDirection = symbolPort?._parsedProps.direction
     const isExplicitCustomSymbolPort =
-      schX !== undefined && schY !== undefined && !!this._getSymbolAncestor()
+      Boolean(symbolPort?._getSymbolAncestor()) &&
+      symbolPort?._parsedProps.schX !== undefined &&
+      symbolPort?._parsedProps.schY !== undefined
 
-    if (isExplicitCustomSymbolPort && props.direction) {
-      this.facingDirection = props.direction
+    if (isExplicitCustomSymbolPort && customSymbolDirection) {
+      this.facingDirection = customSymbolDirection
     } else if (!localPortInfo?.side) {
       this.facingDirection = getRelativeDirection(containerCenter, portCenter)
     } else {
@@ -748,16 +786,11 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const parentNormalComponent = this.getParentNormalComponent()
 
     // Derive side_of_component from direction prop for custom symbols
+    const direction = customSymbolDirection ?? props.direction
     const sideFromDirection =
-      props.direction === "up"
-        ? "top"
-        : props.direction === "down"
-          ? "bottom"
-          : props.direction
+      direction === "up" ? "top" : direction === "down" ? "bottom" : direction
     const explicitCustomSymbolSide =
-      isExplicitCustomSymbolPort && props.direction
-        ? sideFromDirection
-        : undefined
+      isExplicitCustomSymbolPort && direction ? sideFromDirection : undefined
     const sideOfComponent =
       explicitCustomSymbolSide ?? localPortInfo?.side ?? sideFromDirection
     const displayPinLabelFontSize =
@@ -773,7 +806,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       center: portCenter,
       source_port_id: this.source_port_id!,
       facing_direction: this.facingDirection,
-      distance_from_component_edge: props.schStemLength ?? 0.4,
+      distance_from_component_edge:
+        props.schStemLength ?? symbolPort?._parsedProps.schStemLength ?? 0.4,
       side_of_component: sideOfComponent,
       pin_number: props.pinNumber,
       true_ccw_index: localPortInfo?.trueIndex,
@@ -827,7 +861,9 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     if (this.root?.schematicDisabled) return
     if (!this.schematic_port_id) return
 
-    const symbol = this._getSymbolAncestor()
+    const symbol =
+      this._getSymbolAncestor() ??
+      this._getCustomSymbolInternallyConnectedPort()?._getSymbolAncestor()
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
