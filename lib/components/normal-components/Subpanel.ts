@@ -2,6 +2,7 @@ import { PanelTab } from "../primitive-components/PanelTab"
 import { PanelTabKeepout } from "../primitive-components/PanelTabKeepout"
 import { generateControlledPanelTabs } from "lib/utils/panels/generate-controlled-panel-tabs"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
+import { getMouseBitesClearOfPanelTraces } from "lib/utils/panels/get-mouse-bites-clear-of-panel-traces"
 import { subpanelProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
 import type { Matrix } from "transformation-matrix"
@@ -504,7 +505,26 @@ export class Subpanel extends Group<typeof subpanelProps> {
           })
         }
 
-        for (const mouseBiteHole of mouseBiteHoles) {
+        // A panel trace between boards must cross a tab. Leave the tab
+        // undrilled along the trace's straight path between its two pads so
+        // the router has room to cross.
+        const panelTraceSegments = db.source_trace
+          .list()
+          .filter((trace) => trace.subcircuit_id === this.subcircuit_id)
+          .map((trace) =>
+            trace.connected_source_port_ids.map((sourcePortId) =>
+              db.pcb_port.getWhere({ source_port_id: sourcePortId }),
+            ),
+          )
+          .filter((ports) => ports.length === 2 && ports.every(Boolean))
+          .map(([start, end]) => ({
+            start: { x: start!.x, y: start!.y },
+            end: { x: end!.x, y: end!.y },
+          }))
+        for (const mouseBiteHole of getMouseBitesClearOfPanelTraces({
+          mouseBiteHoles,
+          panelTraceSegments,
+        })) {
           db.pcb_hole.insert({
             ...mouseBiteHole,
             subcircuit_id: this.subcircuit_id ?? undefined,
