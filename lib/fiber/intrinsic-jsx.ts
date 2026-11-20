@@ -99,7 +99,7 @@ export interface TscircuitElements {
   subcircuit: Props.SubcircuitGroupProps
   transistor: Props.TransistorProps
   switch: Props.SwitchProps
-  mosfet: Props.MosfetProps
+  mosfet: Props.MosfetProps & { pinLabels?: Props.PinLabelsProp }
   testpoint: Props.TestpointProps
   voltagesource: Props.VoltageSourceProps
   currentsource: Props.CurrentSourceProps
