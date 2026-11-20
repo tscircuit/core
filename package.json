@@ -86,6 +86,7 @@
     "circuit-to-svg": "^0.0.460",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
+    "graphics-debug": "^0.0.99",
     "howfat": "^0.3.8",
     "kicad-to-circuit-json": "^0.0.149",
     "kicadts": "^0.0.53",
