@@ -168,7 +168,8 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     expect(fixedCopperConnectionNames.has(fanoutTrace.connection_name!)).toBe(
       true,
     )
-    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+    const finalTrace = circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)
+    expect(pcb_trace.parse(finalTrace).route).toEqual(
       pcb_trace.parse(fanoutTrace).route,
     )
     expect(

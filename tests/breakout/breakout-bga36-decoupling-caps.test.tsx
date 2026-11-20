@@ -162,7 +162,8 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
     expect(fixedCopperConnectionNames.has(fanoutTrace.connection_name!)).toBe(
       true,
     )
-    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+    const finalTrace = circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)
+    expect(pcb_trace.parse(finalTrace).route).toEqual(
       pcb_trace.parse(fanoutTrace).route,
     )
     const exitPoint = fanoutTrace.route.findLast(

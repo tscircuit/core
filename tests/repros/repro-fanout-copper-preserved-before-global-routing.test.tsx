@@ -70,7 +70,8 @@ test("global routing preserves completed fanout copper", async () => {
   const fanoutTraces = autoroutingPhaseIoStack[0]!.endSimpleRouteJson!.traces!
   expect(fanoutTraces).toHaveLength(6)
   for (const fanoutTrace of fanoutTraces) {
-    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+    const finalTrace = circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)
+    expect(pcb_trace.parse(finalTrace).route).toEqual(
       pcb_trace.parse(fanoutTrace).route,
     )
   }
