@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("failed breakout placement still starts the bus phase", async () => {
+test("failed breakout placement stops routing before the bus phase", async () => {
   const { circuit } = getTestFixture()
   let autoroutingStartCount = 0
   circuit.on("autorouting:start", () => {
@@ -67,6 +67,6 @@ test("failed breakout placement still starts the bus phase", async () => {
   expect(circuit.db.pcb_autorouting_error.list()[0]!.message).toContain(
     "need 2.10mm but expose only 2.00mm",
   )
-  expect(autoroutingStartCount).toBe(1)
-  expect(circuit.db.pcb_trace.list().length).toBeGreaterThan(0)
+  expect(autoroutingStartCount).toBe(0)
+  expect(circuit.db.pcb_trace.list()).toHaveLength(0)
 })
