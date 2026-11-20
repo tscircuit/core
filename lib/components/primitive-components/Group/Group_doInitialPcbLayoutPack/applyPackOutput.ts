@@ -180,6 +180,17 @@ export const applyPackOutput = (
           return true
         }
       }
+      if (elm.type === "pcb_keepout" && elm.pcb_group_id) {
+        const elmPcbGroup = db.pcb_group.get(elm.pcb_group_id)
+        if (elmPcbGroup?.source_group_id) {
+          if (elmPcbGroup.source_group_id === componentId) {
+            return true
+          }
+          if (isDescendantGroup(db, elmPcbGroup.source_group_id, componentId)) {
+            return true
+          }
+        }
+      }
       if ("source_component_id" in elm && elm.source_component_id) {
         const sourceComponent = db.source_component.get(elm.source_component_id)
         if (sourceComponent?.source_group_id) {

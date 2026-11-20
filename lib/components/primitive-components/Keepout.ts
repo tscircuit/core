@@ -125,4 +125,32 @@ export class Keepout extends PrimitiveComponent<typeof pcbKeepoutProps> {
     }
     return { width: 0, height: 0 }
   }
+
+  _moveCircuitJsonElements({
+    deltaX,
+    deltaY,
+  }: { deltaX: number; deltaY: number }) {
+    if (this.root?.pcbDisabled) return
+    const { db } = this.root!
+    if (!this.pcb_keepout_id) return
+
+    const keepout = db.pcb_keepout.get(this.pcb_keepout_id)
+    if (!keepout) return
+
+    if (keepout.shape === "outline") {
+      db.pcb_keepout.update(this.pcb_keepout_id, {
+        outline: keepout.outline.map((point) => ({
+          x: point.x + deltaX,
+          y: point.y + deltaY,
+        })),
+      })
+    } else {
+      db.pcb_keepout.update(this.pcb_keepout_id, {
+        center: {
+          x: keepout.center.x + deltaX,
+          y: keepout.center.y + deltaY,
+        },
+      })
+    }
+  }
 }
