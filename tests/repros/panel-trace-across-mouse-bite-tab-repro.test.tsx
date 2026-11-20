@@ -2,8 +2,9 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // An autorouted panel trace from B1's R1 to B2's R2 must cross the tab
-// between the boards. On these small boards the tab's mouse-bite drills leave
-// no legal gap, so the autorouter's best route runs into the drills.
+// between the boards. The tab's mouse-bite drills leave no legal gap for the
+// trace, so the autorouter's best route leaves the tab and crosses the
+// routing slot (cutout) instead.
 test("autorouted panel trace crosses a mouse-bite tab between two boards", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
@@ -28,15 +29,8 @@ test("autorouted panel trace crosses a mouse-bite tab between two boards", async
     ].map((error) => error.message),
   ).toMatchInlineSnapshot(`
     [
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "PCB trace .B1 .R1 .pin2 to .B2 .R2 .pin1 overlaps with pcb_hole "unnamed hole" (accidental contact)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.190000mm, required: 0.2mm)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.115103mm, required: 0.2mm)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.030932mm, required: 0.2mm)",
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 is too close to non-plated hole unnamed hole (gap: 0.190000mm, required: 0.2mm)",
-      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.074mm, required 0.200mm)",
+      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
+      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
     ]
   `)
 })
