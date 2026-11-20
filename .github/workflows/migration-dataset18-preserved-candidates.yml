@@ -1,4 +1,4 @@
-name: Verify baseline candidate storage throughout native migration
+name: Verify native-copper readability cleanup
 on:
   push:
     branches: [analysis/core-native-complete-ci]
@@ -6,58 +6,11 @@ on:
 permissions:
   contents: read
 jobs:
-  dependency-tests:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/high-density-a01
-          ref: b4a7acdc5149c00c6ef35d13149819b6c542b527
-          path: solver
-          persist-credentials: false
-      - name: Install the exact rebased dependency
-        working-directory: solver
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('package.json')
-          d=json.loads(p.read_text())
-          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
-          d['overrides']['tscircuit']='0.0.3250'
-          p.write_text(json.dumps(d,indent=2)+'\n')
-          PY
-          bun install
-      - name: Run every dependency test with original assertions
-        working-directory: solver
-        run: |
-          set +e
-          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 > "$RUNNER_TEMP/a03-unit.log" 2>&1
-          status=$?
-          set -e
-          python3 - <<'PY'
-          import re,os,json
-          from pathlib import Path
-          s=Path(os.environ['RUNNER_TEMP'],'a03-unit.log').read_text(errors='replace')
-          print('A03_UNIT_AGGREGATE',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
-          for line in s.splitlines():
-            if re.match(r'^tests/[^:]+:$',line) or line.startswith('(fail)'):
-              print(line)
-          PY
-          exit "$status"
-      - run: bunx tsc --noEmit
-        working-directory: solver
-      - run: bun run build
-        working-directory: solver
   benchmark:
     strategy:
       fail-fast: false
       matrix:
-        order: [forward, reverse]
+        order: [forward]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 45
     env:
@@ -71,20 +24,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 2b1207ad70971f326166b134ea19418137273f23
+          ref: 3f7bbba2ecd4cb96c3746e431f66f5f69fb94542
           path: base
           persist-credentials: false
       - uses: actions/checkout@v4
-        if: matrix.order == 'forward'
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 1296308adcd8ab2852d0f95b81d1ef21d929b2ab
-          path: native
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: ce2c17308085b0227c60ba956ae59c4b2e7aa764
+          ref: faa6aeb6bd7e6155dd2a380efef9c035afeafe7f
           path: candidate
           persist-credentials: false
       - name: Install identical tooling and record routed output digests
@@ -95,7 +41,7 @@ jobs:
           anchor='      traceLintIssueCounts,\n      stageTiming,'
           addition='      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
           type_anchor='export type WorkerResult<\n  TBenchmarkSnapshot extends BenchmarkSnapshot = BenchmarkSnapshot,\n> = {'
-          for variant in ['base','native','candidate']:
+          for variant in ['base','candidate']:
             root=Path(variant)
             if not root.exists(): continue
             p=root/'package.json'
@@ -112,39 +58,30 @@ jobs:
             assert s.count(type_anchor)==1
             p.write_text(s.replace(type_anchor,type_anchor+'\n  routedOutputSha256?: string'))
           PY
-          for variant in base native candidate; do
+          for variant in base candidate; do
             if [ -d "$variant" ]; then
               (cd "$variant" && bun install) > "$variant-install.log" 2>&1
             fi
           done
-      - name: Run actual migration base first
+      - name: Run all sixteen cases before cleanup
         if: matrix.order == 'forward'
         run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
-      - name: Reproduce the uncorrected migration
-        if: matrix.order == 'forward'
-        run: (cd native && bash ./benchmark.sh --dataset 18) > native-run.log 2>&1
-      - name: Run all sixteen cases on the cache-preserving migration
+      - name: Run all sixteen cases after cleanup
         run: (cd candidate && bash ./benchmark.sh --dataset 18) > candidate-run.log 2>&1
-      - name: Run actual migration base after the candidate
-        if: matrix.order == 'reverse'
-        run: (cd base && bash ./benchmark.sh --dataset 18) > base-run.log 2>&1
       - name: Compare the exact base and head using the existing reporter
         working-directory: candidate
         run: |
-          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha ce2c17308085b0227c60ba956ae59c4b2e7aa764 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report benchmark-result.json --base-sha 3f7bbba2ecd4cb96c3746e431f66f5f69fb94542 --pr-sha faa6aeb6bd7e6155dd2a380efef9c035afeafe7f --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
           cat ../comparison-base.md
           cat ../comparison-base.md >> "$GITHUB_STEP_SUMMARY"
-          if [ -d ../native ]; then
-            bun scripts/benchmark/same-machine-results.ts --base-report ../native/benchmark-result.json --pr-report benchmark-result.json --base-sha 1296308adcd8ab2852d0f95b81d1ef21d929b2ab --pr-sha ce2c17308085b0227c60ba956ae59c4b2e7aa764 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
-            cat ../comparison-native.md
-          fi
+
       - name: Enforce complete routing and export numeric measurements only
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
           aggregate={}
-          for variant in ['base','native','candidate']:
+          for variant in ['base','candidate']:
             p=Path(variant,'benchmark-result.json')
             if not p.exists(): continue
             rows=json.loads(p.read_text())['tests']
@@ -160,18 +97,18 @@ jobs:
               'outputSha256':r['routedOutputSha256'],
               'stages':[{'name':s['stageName'],'timeMs':s['elapsedTimeMs']} for s in (r.get('stageTiming') or {}).get('stages',[])]
             } for r in rows]
-          if 'native' in aggregate:
-            prior={r['sample']:r['outputSha256'] for r in aggregate['native']}
+          if 'base' in aggregate:
+            prior={r['sample']:r['outputSha256'] for r in aggregate['base']}
             fixed={r['sample']:r['outputSha256'] for r in aggregate['candidate']}
-            assert prior==fixed,'Cache restoration changed complete routed outputs'
-            print('EXACT_MIGRATION_OUTPUT_PARITY',json.dumps({'cases':len(fixed),'mismatches':0}))
+            assert prior==fixed,'Readability cleanup changed complete routed outputs'
+            print('EXACT_CLEANUP_OUTPUT_PARITY',json.dumps({'cases':len(fixed),'mismatches':0}))
           print('DATASET18_ACCEPTANCE',json.dumps({k:{'completed':len(v),'drc':sum(r['drcErrorCount'] for r in v)} for k,v in aggregate.items()}))
           Path('aggregate-measurements.json').write_text(json.dumps(aggregate,indent=2))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: migration-preserved-candidates-${{ matrix.order }}
+          name: native-copper-cleanup-${{ matrix.order }}
           path: |
             comparison-*.md
             aggregate-measurements.json
@@ -186,7 +123,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 4d6f3f1faeea00530818918cdb8bc8c17778fda9
+          ref: faa6aeb6bd7e6155dd2a380efef9c035afeafe7f
           path: autorouter
           persist-credentials: false
       - name: Install the final routing stack
@@ -202,11 +139,11 @@ jobs:
           p.write_text(json.dumps(d,indent=2)+'\n')
           PY
           bun install
-      - name: Preserve the four original autorouter assertions
+      - name: Run original physical controls and affected routing tests
         working-directory: autorouter
         run: |
           set +e
-          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts > "$RUNNER_TEMP/ar-heldout.log" 2>&1
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts tests/features/segment-capsule-interval.test.ts tests/features/pipeline9-native-copper-net-identity.test.ts tests/features/pipeline9-completed-route-copper.test.ts tests/features/pipeline9-fixed-via-drill-span.test.ts tests/features/pipeline9-regular-regional-fallback-fixed-preload.test.ts tests/features/pipeline9-regional-fallback-new-layer-fixed-copper.test.ts tests/features/never-fail-growth-high-density/shrinks-solution.test.ts tests/features/pipeline9-preserves-vias-through-force-improvement.test.ts tests/repro/pipeline9-glider-fixed-via-endpoint.test.ts tests/pipeline11-simplification-fixed-traces.test.ts tests/features/pipeline9-srj23-sample21-regional-b01-repair.test.ts > "$RUNNER_TEMP/ar-heldout.log" 2>&1
           status=$?
           set -e
           python3 - <<'PY'
@@ -268,67 +205,3 @@ jobs:
           PY
           exit "$status"
 
-  portfolio-study:
-    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    timeout-minutes: 20
-    env:
-      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
-    steps:
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.2'
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: 2b1207ad70971f326166b134ea19418137273f23
-          path: base
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: ce2c17308085b0227c60ba956ae59c4b2e7aa764
-          path: current
-          persist-credentials: false
-      - name: Count candidates without retaining solver objects or changing routing inputs
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          study=json.loads("\"import { PortfolioSingleIntraNodeSolver as StudyPortfolio } from \\\"../../lib/solvers/HyperHighDensitySolver/PortfolioSingleIntraNodeSolver\\\"\\nimport { GrowShrinkHighDensityIntraNodeSolver as StudyGrowth } from \\\"../../lib/solvers/HyperHighDensitySolver/GrowShrinkHighDensityIntraNodeSolver/GrowShrinkHighDensityIntraNodeSolver\\\"\\nimport { HighDensitySolverA01 as StudyA01, HighDensitySolverA03 as StudyA03 } from \\\"@tscircuit/high-density-a01\\\"\\nconst portfolioMemoryStudy = { portfolios: 0, a03: 0, a03Solved: 0, a03Failed: 0, a03Unfinished: 0, a03SolvedBytes: 0, a03FailedBytes: 0, a03UnfinishedBytes: 0, a03MaxBytes: 0, a01: 0, a01Labels: 0, a01MaxLabels: 0, other: 0, otherWasmBytes: 0 }\\nconst seenPortfolios = new WeakSet<object>()\\nconst typedPoolBytes = (solver: object, key: string): number => {\\n  const pool = Reflect.get(solver, key)\\n  if (!pool || typeof pool !== \\\"object\\\") return 0\\n  let bytes = 0\\n  for (const value of Object.values(pool)) if (ArrayBuffer.isView(value)) bytes += value.byteLength\\n  return bytes\\n}\\nconst wasmBytes = (object: object): number => {\\n  const buffers = new Set<ArrayBuffer>()\\n  const visit = (value: unknown, depth: number): void => {\\n    if (!value || typeof value !== \\\"object\\\") return\\n    if (value instanceof WebAssembly.Memory) { buffers.add(value.buffer); return }\\n    if (value instanceof WebAssembly.Instance) { for (const exported of Object.values(value.exports)) if (exported instanceof WebAssembly.Memory) buffers.add(exported.buffer); return }\\n    if (Array.isArray(value) || ArrayBuffer.isView(value) || value instanceof Map || value instanceof Set || depth === 0) return\\n    for (const field of Object.values(value)) visit(field, depth - 1)\\n  }\\n  visit(object, 2)\\n  let bytes = 0\\n  for (const buffer of buffers) bytes += buffer.byteLength\\n  return bytes\\n}\\nconst collectPortfolio = (portfolio: object | null | undefined): void => {\\n  if (!portfolio || seenPortfolios.has(portfolio)) return\\n  seenPortfolios.add(portfolio)\\n  portfolioMemoryStudy.portfolios += 1\\n  for (const entry of Reflect.get(portfolio, \\\"supervisedSolvers\\\") ?? []) {\\n    const solver = entry.solver\\n    if (solver instanceof StudyA03) {\\n      const bytes = typedPoolBytes(solver, \\\"nodePool\\\") + typedPoolBytes(solver, \\\"ripChain\\\") + typedPoolBytes(solver, \\\"heap\\\")\\n      portfolioMemoryStudy.a03 += 1\\n      portfolioMemoryStudy.a03MaxBytes = Math.max(portfolioMemoryStudy.a03MaxBytes, bytes)\\n      if (solver.solved) { portfolioMemoryStudy.a03Solved += 1; portfolioMemoryStudy.a03SolvedBytes += bytes }\\n      else if (solver.failed) { portfolioMemoryStudy.a03Failed += 1; portfolioMemoryStudy.a03FailedBytes += bytes }\\n      else { portfolioMemoryStudy.a03Unfinished += 1; portfolioMemoryStudy.a03UnfinishedBytes += bytes }\\n    } else if (solver instanceof StudyA01) {\\n      const labels = Reflect.get(solver, \\\"nodePool\\\")?.length ?? 0\\n      portfolioMemoryStudy.a01 += 1\\n      portfolioMemoryStudy.a01Labels += labels\\n      portfolioMemoryStudy.a01MaxLabels = Math.max(portfolioMemoryStudy.a01MaxLabels, labels)\\n    } else { portfolioMemoryStudy.other += 1; portfolioMemoryStudy.otherWasmBytes += wasmBytes(solver) }\\n  }\\n}\\nconst portfolioStudyStep = StudyPortfolio.prototype.step\\nStudyPortfolio.prototype.step = function () {\\n  const result = portfolioStudyStep.call(this)\\n  if (this.solved || this.failed) collectPortfolio(this)\\n  return result\\n}\\nconst growthStudyStep = StudyGrowth.prototype.step\\nStudyGrowth.prototype.step = function () {\\n  const result = growthStudyStep.call(this)\\n  if (this.solved || this.failed) {\\n    collectPortfolio(this.activeSubSolver)\\n    collectPortfolio(this.winningSolver)\\n    for (const portfolio of this.failedSolvers) collectPortfolio(portfolio)\\n  }\\n  return result\\n}\\n\"")
-          anchor='      traceLintIssueCounts,\n      stageTiming,'
-          for variant in ['base','current']:
-            root=Path(variant)
-            p=root/'package.json'
-            d=json.loads(p.read_text())
-            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
-            d['overrides']['tscircuit']='0.0.3250'
-            p.write_text(json.dumps(d,indent=2)+'\n')
-            p=root/'scripts/benchmark/benchmark-run-task.ts'
-            s=p.read_text()
-            assert s.count(anchor)==1
-            addition='      portfolioMemoryStudy: { ...portfolioMemoryStudy },\n      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
-            p.write_text(study+s.replace(anchor,addition+anchor))
-          PY
-          for variant in base current; do
-            (cd "$variant" && bun install) > "$variant-install.log" 2>&1
-          done
-      - name: Run the original sample without concurrent sample pressure
-        run: |
-          for variant in base current; do
-            (cd "$variant" && bash ./benchmark.sh --dataset 18 --sample-numbers 2 --concurrency 1) > "$variant-run.log" 2>&1
-          done
-      - name: Report aggregate candidate counts and buffer sizes
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          rows={}
-          for variant in ['base','current']:
-            tests=json.loads(Path(variant,'benchmark-result.json').read_text())['tests']
-            assert len(tests)==1
-            r=tests[0]
-            assert r['didSolve'] and r['drcErrorCount']==0
-            rows[variant]={'timeMs':r['elapsedTimeMs'],'peakRssMiB':r['peakRssBytes']/1048576,'outputHash':r['routedOutputSha256'],'candidates':r['portfolioMemoryStudy']}
-          assert rows['base']['outputHash']==rows['current']['outputHash']
-          print('PORTFOLIO_RETENTION_NUMERIC',json.dumps(rows))
-          PY
