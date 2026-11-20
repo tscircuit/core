@@ -80,6 +80,7 @@ jobs:
         run: |
           cd router-under-test
           bun install --ignore-scripts
+          rm ../fixed/node_modules/@tscircuit/capacity-autorouter/dist/index.js
           bun build lib/index.ts --target bun --external @tscircuit/solver-utils --external object-hash --outfile ../fixed/node_modules/@tscircuit/capacity-autorouter/dist/index.js
       - name: Route real TSX circuits through published Core
         env:
