@@ -37,7 +37,14 @@ const SKEW_STEP = 0.001
 /** Skew is rounded to 1/this mm (10 nm), to suppress floating-point noise. */
 const SKEW_ROUNDING = 1e5
 
+/** The largest skew of each sign on one trace, both nonnegative, in mm. */
 type SkewScale = { positive: number; negative: number }
+
+/** One trace's skew spans and its per-sign scale. */
+type SkewTrack = { spans: SkewSpan[]; scale: SkewScale }
+
+/** Where a coupled run starts and ends on one trace (`from`, `to`) and on its partner, in mm along each walk. */
+type RunEnds = { from: number; to: number; otherFrom: number; otherTo: number }
 type SubcircuitId = NonNullable<SourceBus["subcircuit_id"]>
 type PcbPortId = PcbPort["pcb_port_id"]
 type SourcePortId = SourcePort["source_port_id"]
@@ -222,10 +229,12 @@ function computePairSkew({
     negativeTrace.subcircuit_id ??
     bus.subcircuit_id
   const board = findBoard({ index, subcircuitId })
-  const pcbStackup = board
-    ? index.stackupsByBoard.get(board.pcb_board_id)
-    : undefined
-  const boardThickness = board?.thickness ?? STANDARD_BOARD_THICKNESS
+  let pcbStackup: PcbStackup | undefined
+  let boardThickness = STANDARD_BOARD_THICKNESS
+  if (board) {
+    pcbStackup = index.stackupsByBoard.get(board.pcb_board_id)
+    boardThickness = board.thickness
+  }
 
   let positive = walkTrace({
     trace: positiveTrace,
@@ -275,23 +284,9 @@ function computePairSkew({
     length: negative.length,
   })
 
-  return {
+  const pair: PcbDifferentialPairLocalSkewInsert = {
     type: "pcb_differential_pair_local_skew",
     source_bus_id: bus.source_bus_id,
-    ...(bus.subcircuit_id !== undefined && {
-      subcircuit_id: bus.subcircuit_id,
-    }),
-    ...(bus.max_length_skew !== undefined && {
-      max_length_skew: bus.max_length_skew,
-    }),
-    ...(runs.length > 0 && {
-      max_local_skew: Math.max(
-        positiveTrack.scale.positive,
-        positiveTrack.scale.negative,
-        negativeTrack.scale.positive,
-        negativeTrack.scale.negative,
-      ),
-    }),
     positive_skew_color: POSITIVE_SKEW_COLOR,
     negative_skew_color: NEGATIVE_SKEW_COLOR,
     positive: {
@@ -313,6 +308,19 @@ function computePairSkew({
       }),
     },
   }
+  if (bus.subcircuit_id !== undefined) pair.subcircuit_id = bus.subcircuit_id
+  if (bus.max_length_skew !== undefined) {
+    pair.max_length_skew = bus.max_length_skew
+  }
+  if (runs.length > 0) {
+    pair.max_local_skew = Math.max(
+      positiveTrack.scale.positive,
+      positiveTrack.scale.negative,
+      negativeTrack.scale.positive,
+      negativeTrack.scale.negative,
+    )
+  }
+  return pair
 }
 
 /** The message of a thrown value. */
@@ -386,14 +394,10 @@ function skewSpans({
   partnerSteps: TraceStep[]
   /** The trace's walk length, in mm. */
   length: number
-}): { spans: SkewSpan[]; scale: SkewScale } {
+}): SkewTrack {
   const coupled = runs
     .map((run) => {
-      const from = side === "positive" ? run.positiveStart : run.negativeStart
-      const to = side === "positive" ? run.positiveEnd : run.negativeEnd
-      const otherFrom =
-        side === "positive" ? run.negativeStart : run.positiveStart
-      const otherTo = side === "positive" ? run.negativeEnd : run.positiveEnd
+      const { from, to, otherFrom, otherTo } = runEnds({ run, side })
       return {
         from,
         to,
@@ -431,18 +435,14 @@ function skewSpans({
       scale: { positive: 0, negative: 0 },
     }
   }
-  let positive = 0
-  let negative = 0
-  const record = (value: number): void => {
-    const rounded = roundSkew(value)
-    if (rounded > positive) positive = rounded
-    if (-rounded > negative) negative = -rounded
-  }
-
+  const scale: SkewScale = { positive: 0, negative: 0 }
   const spans: SkewSpan[] = []
   const first = coupled[0]
   if (first.startVia > 0 || first.otherStartVia > 0) {
-    record(first.startSkew - first.startVia + first.otherStartVia)
+    recordSkew({
+      scale,
+      skew: first.startSkew - first.startVia + first.otherStartVia,
+    })
   }
   // Gaps under MIN_OVERLAP are rounding at shared corners, not stretches.
   if (first.from > MIN_OVERLAP) {
@@ -461,10 +461,11 @@ function skewSpans({
           MIN_OVERLAP
         // If the partner had only a single via between the two runs, that via
         // was already accounted for at `previous.otherEndVia`.
-        const otherStartVia = partnerHasCopperGap ? run.otherStartVia : 0
+        let otherStartVia = 0
+        if (partnerHasCopperGap) otherStartVia = run.otherStartVia
         const beforeRun = run.startSkew - run.startVia + otherStartVia
-        record(afterPrevious)
-        record(beforeRun)
+        recordSkew({ scale, skew: afterPrevious })
+        recordSkew({ scale, skew: beforeRun })
         spans.push({
           from: gapFrom,
           to: gapTo,
@@ -473,8 +474,8 @@ function skewSpans({
         })
       }
     }
-    record(run.startSkew)
-    record(run.endSkew)
+    recordSkew({ scale, skew: run.startSkew })
+    recordSkew({ scale, skew: run.endSkew })
     spans.push({
       from: run.from,
       to: run.to,
@@ -484,12 +485,46 @@ function skewSpans({
   })
   const last = coupled[coupled.length - 1]
   if (last.endVia > 0 || last.otherEndVia > 0) {
-    record(last.endSkew + last.endVia - last.otherEndVia)
+    recordSkew({
+      scale,
+      skew: last.endSkew + last.endVia - last.otherEndVia,
+    })
   }
   if (totalLength - last.to > MIN_OVERLAP) {
     spans.push(unknownSpan({ from: last.to, to: totalLength }))
   }
-  return { spans, scale: { positive, negative } }
+  return { spans, scale }
+}
+
+/** A run's ends on `side` and on the partner trace. */
+function runEnds({
+  run,
+  side,
+}: {
+  run: CoupledRun
+  side: "positive" | "negative"
+}): RunEnds {
+  if (side === "positive") {
+    return {
+      from: run.positiveStart,
+      to: run.positiveEnd,
+      otherFrom: run.negativeStart,
+      otherTo: run.negativeEnd,
+    }
+  }
+  return {
+    from: run.negativeStart,
+    to: run.negativeEnd,
+    otherFrom: run.positiveStart,
+    otherTo: run.positiveEnd,
+  }
+}
+
+/** Widens a trace's per-sign scale to include `skew`, rounded. */
+function recordSkew({ scale, skew }: { scale: SkewScale; skew: number }): void {
+  const rounded = roundSkew(skew)
+  if (rounded > scale.positive) scale.positive = rounded
+  if (-rounded > scale.negative) scale.negative = -rounded
 }
 
 /** Length of any via directly before the start or after the end of a step at `distance`, in mm. */
@@ -502,16 +537,11 @@ function viaAt({
   distance: number
   edge: "start" | "end"
 }): number {
-  const position = (step: TraceStep) =>
-    edge === "start" ? step.startDistance : step.startDistance + step.length
-  const viaLength = (step: TraceStep) =>
-    edge === "start" ? step.startViaLength : step.endViaLength
-
   let low = 0
   let high = steps.length
   while (low < high) {
     const middle = (low + high) >> 1
-    if (position(steps[middle]) < distance - MIN_OVERLAP) {
+    if (edgeDistance({ step: steps[middle], edge }) < distance - MIN_OVERLAP) {
       low = middle + 1
       continue
     }
@@ -519,13 +549,38 @@ function viaAt({
   }
   for (
     let index = low;
-    index < steps.length && position(steps[index]) <= distance + MIN_OVERLAP;
+    index < steps.length &&
+    edgeDistance({ step: steps[index], edge }) <= distance + MIN_OVERLAP;
     index++
   ) {
-    const length = viaLength(steps[index])
+    const length = edgeViaLength({ step: steps[index], edge })
     if (length > 0) return length
   }
   return 0
+}
+
+/** Distance along the walk to a step's start or end, in mm. */
+function edgeDistance({
+  step,
+  edge,
+}: {
+  step: TraceStep
+  edge: "start" | "end"
+}): number {
+  if (edge === "start") return step.startDistance
+  return step.startDistance + step.length
+}
+
+/** Length of the via directly before a step's start or after its end, in mm. */
+function edgeViaLength({
+  step,
+  edge,
+}: {
+  step: TraceStep
+  edge: "start" | "end"
+}): number {
+  if (edge === "start") return step.startViaLength
+  return step.endViaLength
 }
 
 /** A span with no skew information. */
@@ -571,13 +626,14 @@ function sampleSkew({
         const pieceFrom = from + ((to - from) * piece) / pieceCount
         const pieceTo = from + ((to - from) * (piece + 1)) / pieceCount
         const localSkew = skewAt({ span, distance: (pieceFrom + pieceTo) / 2 })
-        segments.push({
+        const segment: LocalSkewSegment = {
           start: pointAt({ step, distance: pieceFrom }),
           end: pointAt({ step, distance: pieceTo }),
           layer: step.layer,
           width: step.width,
-          ...(localSkew !== null && { local_skew: localSkew }),
-        })
+        }
+        if (localSkew !== null) segment.local_skew = localSkew
+        segments.push(segment)
       }
     }
   }

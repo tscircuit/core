@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { LayerRef, PcbTrace, SourceBus } from "circuit-json"
 
 // Use the circuit-json type when the schema is released.
+/** Local skew along both traces of a routed differential pair, as circuit-json stores it. */
 export interface PcbDifferentialPairLocalSkew {
   type: "pcb_differential_pair_local_skew"
   pcb_differential_pair_local_skew_id: string
@@ -22,6 +23,7 @@ export type PcbDifferentialPairLocalSkewInsert = Omit<
   "pcb_differential_pair_local_skew_id"
 >
 
+/** One trace of the pair, its per-sign colour scales and its segments. */
 export interface LocalSkewTrace {
   pcb_trace_id: PcbTrace["pcb_trace_id"]
   positive_skew_scale: number

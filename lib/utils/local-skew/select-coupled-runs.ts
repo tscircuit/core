@@ -122,29 +122,27 @@ function bestOrderedChain(runs: CandidateRun[]): CandidateRun[] {
   const total: number[] = new Array(runs.length)
   const weightedOffset: number[] = new Array(runs.length)
   const previous: number[] = new Array(runs.length)
-  /** True when the chain ending at `a` beats the one ending at `b` (-1 for none). */
-  const beats = (a: number, b: number) => {
-    if (a < 0) return false
-    if (b < 0) return true
-    const byLength =
-      Math.round(total[a] / MIN_OVERLAP) - Math.round(total[b] / MIN_OVERLAP)
-    if (byLength !== 0) return byLength > 0
-    return weightedOffset[a] < weightedOffset[b]
-  }
-
-  const order = (key: (run: CandidateRun) => number) =>
-    runs.map((_, index) => index).sort((a, b) => key(runs[a]) - key(runs[b]))
-  const byNegativeEnd = order((run) => run.negativeEnd)
+  const scores: ChainScores = { total, weightedOffset }
+  const byNegativeEnd = indicesSortedBy({
+    runs,
+    key: (run) => run.negativeEnd,
+  })
   const negativeEnds = byNegativeEnd.map((index) => runs[index].negativeEnd)
   const rank: number[] = new Array(runs.length)
   byNegativeEnd.forEach((index, position) => {
     rank[index] = position + 1
   })
-  const byPositiveEnd = order((run) => run.positiveEnd)
+  const byPositiveEnd = indicesSortedBy({
+    runs,
+    key: (run) => run.positiveEnd,
+  })
   const tree = new Array<number>(runs.length + 1).fill(-1)
 
   let ended = 0
-  for (const index of order((run) => run.positiveStart)) {
+  for (const index of indicesSortedBy({
+    runs,
+    key: (run) => run.positiveStart,
+  })) {
     const run = runs[index]
     // Chains that end before this run on the positive trace become available.
     while (
@@ -154,7 +152,9 @@ function bestOrderedChain(runs: CandidateRun[]): CandidateRun[] {
     ) {
       const done = byPositiveEnd[ended++]
       for (let at = rank[done]; at < tree.length; at += at & -at) {
-        if (beats(done, tree[at])) tree[at] = done
+        if (chainBeats({ scores, chain: done, other: tree[at] })) {
+          tree[at] = done
+        }
       }
     }
     // The best of them that also ends before this run on the negative trace.
@@ -167,7 +167,9 @@ function bestOrderedChain(runs: CandidateRun[]): CandidateRun[] {
       at > 0;
       at -= at & -at
     ) {
-      if (beats(tree[at], before)) before = tree[at]
+      if (chainBeats({ scores, chain: tree[at], other: before })) {
+        before = tree[at]
+      }
     }
     const length = run.positiveEnd - run.positiveStart
     total[index] = length
@@ -181,7 +183,7 @@ function bestOrderedChain(runs: CandidateRun[]): CandidateRun[] {
 
   let best = -1
   runs.forEach((_, index) => {
-    if (beats(index, best)) best = index
+    if (chainBeats({ scores, chain: index, other: best })) best = index
   })
   const chain: CandidateRun[] = []
   for (let index = best; index >= 0; index = previous[index]) {
@@ -191,6 +193,41 @@ function bestOrderedChain(runs: CandidateRun[]): CandidateRun[] {
     chain.push(runs[index])
   }
   return chain.reverse()
+}
+
+/** Each chain's total positive length and length-weighted offset, by the index of the run it ends at. */
+type ChainScores = { total: number[]; weightedOffset: number[] }
+
+/** True when the chain ending at run `chain` beats the one ending at `other` (-1 for none). */
+function chainBeats({
+  scores,
+  chain,
+  other,
+}: {
+  scores: ChainScores
+  chain: number
+  other: number
+}): boolean {
+  if (chain < 0) return false
+  if (other < 0) return true
+  const byLength =
+    Math.round(scores.total[chain] / MIN_OVERLAP) -
+    Math.round(scores.total[other] / MIN_OVERLAP)
+  if (byLength !== 0) return byLength > 0
+  return scores.weightedOffset[chain] < scores.weightedOffset[other]
+}
+
+/** Indices of `runs` in ascending order of `key`. */
+function indicesSortedBy({
+  runs,
+  key,
+}: {
+  runs: CandidateRun[]
+  key: (run: CandidateRun) => number
+}): number[] {
+  return runs
+    .map((_, index) => index)
+    .sort((a, b) => key(runs[a]) - key(runs[b]))
 }
 
 /** How many values in an ascending list are strictly below `value` (binary search). */

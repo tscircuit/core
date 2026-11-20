@@ -6,7 +6,10 @@ type CircuitJsonWithLocalSkew = (
   | PcbDifferentialPairLocalSkew
 )[]
 
-export function getStoredLocalSkew(circuitJson: CircuitJsonWithLocalSkew) {
+/** The local skew elements core stored in `circuitJson`. */
+export function getStoredLocalSkew(
+  circuitJson: CircuitJsonWithLocalSkew,
+): PcbDifferentialPairLocalSkew[] {
   return circuitJson.filter(
     (element) => element.type === "pcb_differential_pair_local_skew",
   )

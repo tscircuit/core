@@ -63,17 +63,17 @@ export function findCoupledRuns({
     from: 0,
     to: first.negativeStart,
   })
-  const beforeRuns =
-    positiveBefore.length > 0 && negativeBefore.length > 0
-      ? findRunsAtGap({
-          positive: positiveBefore,
-          negative: negativeBefore,
-          traceGap: Math.hypot(
-            positive[0].start.x - negative[0].start.x,
-            positive[0].start.y - negative[0].start.y,
-          ),
-        })
-      : []
+  let beforeRuns: CoupledRun[] = []
+  if (positiveBefore.length > 0 && negativeBefore.length > 0) {
+    beforeRuns = findRunsAtGap({
+      positive: positiveBefore,
+      negative: negativeBefore,
+      traceGap: Math.hypot(
+        positive[0].start.x - negative[0].start.x,
+        positive[0].start.y - negative[0].start.y,
+      ),
+    })
+  }
 
   const positiveAfter = sliceSteps({
     steps: positive,
@@ -85,19 +85,19 @@ export function findCoupledRuns({
     from: last.negativeEnd,
     to: Number.POSITIVE_INFINITY,
   })
-  const afterRuns =
-    positiveAfter.length > 0 && negativeAfter.length > 0
-      ? findRunsAtGap({
-          positive: positiveAfter,
-          negative: negativeAfter,
-          traceGap: Math.hypot(
-            positive[positive.length - 1].end.x -
-              negative[negative.length - 1].end.x,
-            positive[positive.length - 1].end.y -
-              negative[negative.length - 1].end.y,
-          ),
-        })
-      : []
+  let afterRuns: CoupledRun[] = []
+  if (positiveAfter.length > 0 && negativeAfter.length > 0) {
+    afterRuns = findRunsAtGap({
+      positive: positiveAfter,
+      negative: negativeAfter,
+      traceGap: Math.hypot(
+        positive[positive.length - 1].end.x -
+          negative[negative.length - 1].end.x,
+        positive[positive.length - 1].end.y -
+          negative[negative.length - 1].end.y,
+      ),
+    })
+  }
 
   return [...beforeRuns, ...mainRuns, ...afterRuns]
 }
@@ -152,10 +152,8 @@ function findRunsAtGap({
   traceGap: number | undefined
 }): CoupledRun[] {
   const widest = widestStep({ steps: positive.concat(negative) })
-  const reach =
-    traceGap === undefined
-      ? widest * UNSET_GAP_REACH_WIDTHS
-      : (traceGap + widest) * SPACING_ALLOWANCE
+  let reach = widest * UNSET_GAP_REACH_WIDTHS
+  if (traceGap !== undefined) reach = (traceGap + widest) * SPACING_ALLOWANCE
 
   const candidates: CandidateRun[] = []
   for (const pair of findParallelPairs({ positive, negative, reach })) {

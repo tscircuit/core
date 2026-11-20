@@ -123,6 +123,14 @@ export function PairBoard({
       />
     </>
   )
+  let content = pair
+  if (subcircuitName !== undefined) {
+    content = (
+      <group subcircuit name={subcircuitName}>
+        {pair}
+      </group>
+    )
+  }
   return (
     <board
       routeRemaining={false}
@@ -132,13 +140,7 @@ export function PairBoard({
       thickness={thickness}
       fabricatorPreset={fabricatorPreset}
     >
-      {subcircuitName ? (
-        <group subcircuit name={subcircuitName}>
-          {pair}
-        </group>
-      ) : (
-        pair
-      )}
+      {content}
     </board>
   )
 }

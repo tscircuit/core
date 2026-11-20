@@ -42,7 +42,7 @@ export function localSkewSvg(circuitJson: CircuitJson): string {
     )
   const tracks = pairs.flatMap(({ positive, negative }) => [positive, negative])
   const samples = tracks.flatMap((track) =>
-    track.segments.map((segment) => skewLine(track, segment)),
+    track.segments.map((segment) => skewLine({ trace: track, segment })),
   )
   const maxima = pairs
     .map(({ max_local_skew }) => max_local_skew?.toFixed(5) ?? "unknown")
@@ -56,15 +56,34 @@ export function localSkewSvg(circuitJson: CircuitJson): string {
 </svg>`
 }
 
-function skewLine(trace: LocalSkewTrace, segment: LocalSkewSegment): string {
+/** One stored segment as an SVG line, coloured by its skew relative to the trace's scale. */
+function skewLine({
+  trace,
+  segment,
+}: {
+  trace: LocalSkewTrace
+  segment: LocalSkewSegment
+}): string {
   const { start, end, width, local_skew: skew } = segment
-  let color = "#878e92"
-  if (skew !== undefined) {
-    const scale =
-      skew < 0 ? trace.negative_skew_scale : trace.positive_skew_scale
-    const amount = scale === 0 ? 0 : Math.min(1, Math.abs(skew) / scale)
-    const hue = skew < 0 ? 26 : 200
-    color = `hsl(${hue}, 95%, ${100 - 47 * amount}%)`
+  return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${skewColor({ trace, skew })}" stroke-width="${width * 1.35}"/>`
+}
+
+/** Grey for unknown skew; blue for ahead and orange for behind, darker toward the trace's scale. */
+function skewColor({
+  trace,
+  skew,
+}: {
+  trace: LocalSkewTrace
+  skew: number | undefined
+}): string {
+  if (skew === undefined) return "#878e92"
+  let scale = trace.positive_skew_scale
+  let hue = 200
+  if (skew < 0) {
+    scale = trace.negative_skew_scale
+    hue = 26
   }
-  return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="${width * 1.35}"/>`
+  let amount = 0
+  if (scale > 0) amount = Math.min(1, Math.abs(skew) / scale)
+  return `hsl(${hue}, 95%, ${100 - 47 * amount}%)`
 }

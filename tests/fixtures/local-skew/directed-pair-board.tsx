@@ -5,6 +5,9 @@ import { DETOUR_EXTRA_LENGTH } from "./differential-pair-board"
 
 export { DETOUR_EXTRA_LENGTH }
 
+/** The direction attributes a chip pin is given. */
+type PinAttributes = { isOutput?: boolean; isInput?: boolean }
+
 /** Options for {@link DirectedPairBoard}. */
 export type DirectedPairBoardProps = {
   /** Mark the receiver pins as outputs too, making direction ambiguous. */
@@ -26,9 +29,18 @@ export function DirectedPairBoard({
   negativeFromOutput = false,
   outputSide = "both",
 }: DirectedPairBoardProps): ReactElement {
-  const rxPinAttrs = bothEndsOutput ? { isOutput: true } : { isInput: true }
-  const txPin1Attrs = outputSide === "negative" ? {} : { isOutput: true }
-  const txPin2Attrs = outputSide === "positive" ? {} : { isOutput: true }
+  let rxPinAttrs: PinAttributes = { isInput: true }
+  if (bothEndsOutput) rxPinAttrs = { isOutput: true }
+  let txPin1Attrs: PinAttributes = { isOutput: true }
+  if (outputSide === "negative") txPin1Attrs = {}
+  let txPin2Attrs: PinAttributes = { isOutput: true }
+  if (outputSide === "positive") txPin2Attrs = {}
+  let negativeFrom = ".U_RX > .pin2"
+  let negativeTo = ".U_TX > .pin2"
+  if (negativeFromOutput) {
+    negativeFrom = ".U_TX > .pin2"
+    negativeTo = ".U_RX > .pin2"
+  }
   return (
     <board routeRemaining={false} width="40mm" height="20mm" layers={2}>
       <chip
@@ -102,8 +114,8 @@ export function DirectedPairBoard({
       />
       <trace
         name="DN"
-        from={negativeFromOutput ? ".U_TX > .pin2" : ".U_RX > .pin2"}
-        to={negativeFromOutput ? ".U_RX > .pin2" : ".U_TX > .pin2"}
+        from={negativeFrom}
+        to={negativeTo}
         thickness="0.15mm"
         pcbPath={[]}
       />
