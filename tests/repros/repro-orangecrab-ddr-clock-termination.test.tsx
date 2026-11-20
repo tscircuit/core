@@ -43,7 +43,14 @@ test("routes the real OrangeCrab clock trunks and termination branches", async (
   expect(inputs.map((input) => input.connections.length)).toEqual([2, 4])
   expect(outputs).toHaveLength(2)
   expect(outputs[0].traces).toHaveLength(2)
-  expect(outputs[1].traces).toHaveLength(4)
+  expect(outputs[1].traces).toHaveLength(6)
+  for (const trunk of outputs[0].traces!) {
+    const retainedTrunk = outputs[1].traces!.find(
+      (trace) => trace.pcb_trace_id === trunk.pcb_trace_id,
+    )!
+    expect(retainedTrunk.isFixed).toBe(true)
+    expect(retainedTrunk.route).toEqual(trunk.route)
+  }
   expect(circuit.db.pcb_trace.list()).toHaveLength(6)
   expect(asyncErrors).toEqual([])
   expect(circuit.db.pcb_autorouting_error.list()).toEqual([])
