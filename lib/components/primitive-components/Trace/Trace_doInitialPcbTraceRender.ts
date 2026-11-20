@@ -28,7 +28,7 @@ import type { Port } from "../Port"
 import type { TraceHint } from "../TraceHint"
 import type { Trace } from "./Trace"
 import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { getTraceLengthOnBoard } from "./trace-utils/get-trace-length-on-board"
 
 type PcbRouteObjective =
   | RouteHintPoint
@@ -518,7 +518,7 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   }
   const mergedRoute = mergeRoutes(routes)
 
-  const traceLength = getTraceLength(mergedRoute)
+  const traceLength = getTraceLengthOnBoard({ trace, route: mergedRoute })
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
   const pcb_trace = db.pcb_trace.insert({
