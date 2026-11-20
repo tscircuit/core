@@ -7,10 +7,10 @@ import {
   FTYPE,
   type PolarizedPassivePorts,
 } from "lib/utils/constants"
-import { symbols } from "schematic-symbols"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
+import { symbols } from "schematic-symbols"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Trace } from "../primitive-components/Trace/Trace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
@@ -133,7 +133,7 @@ export class Capacitor extends NormalComponent<
 
     if (
       this._parsedProps.capacitance !== undefined &&
-      !isNaN(this._parsedProps.capacitance)
+      !Number.isNaN(this._parsedProps.capacitance)
     ) {
       capacitanceDisplay =
         typeof inputCapacitance === "string"
@@ -156,6 +156,8 @@ export class Capacitor extends NormalComponent<
     this._createNetsFromProps([
       this.props.decouplingFor,
       this.props.decouplingTo,
+      this.props.bypassFor,
+      this.props.bypassTo,
       ...this._getNetsFromConnectionsProp(),
     ])
   }
@@ -172,6 +174,20 @@ export class Capacitor extends NormalComponent<
         new Trace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.decouplingTo,
+        }),
+      )
+    }
+    if (this.props.bypassFor && this.props.bypassTo) {
+      this.add(
+        new Trace({
+          from: `${this.getSubcircuitSelector()} > port.1`,
+          to: this.props.bypassFor,
+        }),
+      )
+      this.add(
+        new Trace({
+          from: `${this.getSubcircuitSelector()} > port.2`,
+          to: this.props.bypassTo,
         }),
       )
     }
