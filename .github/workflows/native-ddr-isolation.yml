@@ -31,10 +31,7 @@ jobs:
           from pathlib import Path
           p=Path("autorouter/lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
           s=p.read_text()
-          old="""          hdRoutes:
-            cms.highDensityForceImproveSolver?.getOutput() ??
-            cms.highDensityRouteSolver!.routes,
-          obstacles: cms.srj.obstacles,"""
+          old="          hdRoutes:\n            cms.highDensityForceImproveSolver?.getOutput() ??\n            cms.highDensityRouteSolver!.routes,\n          obstacles: cms.srj.obstacles,"
           assert s.count(old)==1
           predicate="route.isFixed === true"
           if "${{ matrix.variant }}" == "outside-pad":
@@ -93,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [old-published, current, immutable, outside-pad]
+        variant: [immutable, outside-pad]
     steps:
       - uses: oven-sh/setup-bun@v2
         with:
@@ -112,10 +109,7 @@ jobs:
           from pathlib import Path
           p=Path("autorouter/lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
           s=p.read_text()
-          old="""          hdRoutes:
-            cms.highDensityForceImproveSolver?.getOutput() ??
-            cms.highDensityRouteSolver!.routes,
-          obstacles: cms.srj.obstacles,"""
+          old="          hdRoutes:\n            cms.highDensityForceImproveSolver?.getOutput() ??\n            cms.highDensityRouteSolver!.routes,\n          obstacles: cms.srj.obstacles,"
           assert s.count(old)==1
           predicate="route.isFixed === true"
           if "${{ matrix.variant }}" == "outside-pad":
