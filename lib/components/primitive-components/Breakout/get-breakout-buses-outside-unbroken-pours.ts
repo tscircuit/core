@@ -1,7 +1,4 @@
-import type {
-  ImplicitBreakoutBounds,
-  ImplicitBreakoutBus,
-} from "@tscircuit/props"
+import type { ImplicitBreakoutBounds, ImplicitBreakoutBus } from "@tscircuit/props"
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import { getUnbrokenCopperPourObstacles } from "lib/utils/autorouting/getUnbrokenCopperPourObstacles"
 import type { Obstacle } from "lib/utils/obstacles/types"
@@ -64,25 +61,26 @@ export const getBreakoutBusesOutsideUnbrokenPours = ({
   })
   if (obstacles.length === 0) return [...buses]
 
-  return buses.map((bus) => ({
-    ...bus,
+  return buses.map((bus) => {
+    const requestedLayers = bus.targetLayers
     // A single requested layer is a hard constraint, not an automatic choice.
-    targetLayers:
-      bus.targetLayers && bus.targetLayers.length > 1
-        ? bus.targetLayers.filter((layer) =>
-            bus.connectionIds.every((connectionId) => {
-              const electricalNet = connMap.getNetConnectedToId(connectionId)
-              const foreignPours = obstacles.filter(
-                (obstacle) =>
-                  obstacle.layers.includes(layer) &&
-                  !obstacle.connectedTo.includes(electricalNet!),
-              )
-              return regions.every(
-                (region) =>
-                  !unbrokenPoursCoverBreakout(region.bounds, foreignPours),
-              )
-            }),
-          )
-        : bus.targetLayers,
-  }))
+    if (!requestedLayers || requestedLayers.length === 1) return bus
+    const targetLayers = requestedLayers.filter((layer) => {
+      const layerPours = obstacles.filter((obstacle) =>
+        obstacle.layers.includes(layer),
+      )
+      for (const connectionId of bus.connectionIds) {
+        const electricalNet = connMap.getNetConnectedToId(connectionId)!
+        const foreignPours = layerPours.filter(
+          (obstacle) => !obstacle.connectedTo.includes(electricalNet),
+        )
+        const hasBlockedRegion = regions.some((region) =>
+          unbrokenPoursCoverBreakout(region.bounds, foreignPours),
+        )
+        if (hasBlockedRegion) return false
+      }
+      return true
+    })
+    return { ...bus, targetLayers }
+  })
 }
