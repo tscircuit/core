@@ -1,6 +1,9 @@
 import type { SourceBus } from "circuit-json"
 import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
-import type { PcbDifferentialPairLocalSkew } from "lib/utils/local-skew/pcb-differential-pair-local-skew"
+import type {
+  PcbDifferentialPairLocalSkew,
+  PcbDifferentialPairLocalSkewInsert,
+} from "lib/utils/local-skew/pcb-differential-pair-local-skew"
 import type { Group } from "./Group"
 
 const PHASE_NAME = "PcbDifferentialPairLocalSkewRender"
@@ -16,7 +19,7 @@ export function Group_doInitialPcbDifferentialPairLocalSkewRender(
     db as typeof db & {
       pcb_differential_pair_local_skew: {
         list(): PcbDifferentialPairLocalSkew[]
-        insert(pair: PcbDifferentialPairLocalSkew): void
+        insert(pair: PcbDifferentialPairLocalSkewInsert): void
         delete(
           id: PcbDifferentialPairLocalSkew["pcb_differential_pair_local_skew_id"],
         ): void

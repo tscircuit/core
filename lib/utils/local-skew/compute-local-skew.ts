@@ -15,7 +15,7 @@ import { isNegativeRouteReversed } from "./is-negative-route-reversed"
 import { type CoupledRun, MIN_OVERLAP } from "./select-coupled-runs"
 import type {
   LocalSkewSegment,
-  PcbDifferentialPairLocalSkew,
+  PcbDifferentialPairLocalSkewInsert,
 } from "./pcb-differential-pair-local-skew"
 import {
   type TraceStep,
@@ -36,9 +36,6 @@ const SKEW_STEP = 0.001
 
 /** Skew is rounded to 1/this mm (10 nm), to suppress floating-point noise. */
 const SKEW_ROUNDING = 1e5
-
-/** Coordinates and widths beyond this many mm (10 m) are corrupt; such pairs are skipped. */
-const MAX_COORDINATE = 1e4
 
 type SkewScale = { positive: number; negative: number }
 type SubcircuitId = NonNullable<SourceBus["subcircuit_id"]>
@@ -69,7 +66,7 @@ export type FailedPair = { bus: SourceBus; reason: string }
 
 /** Local skew for every measurable pair, and the pairs that could not be measured. */
 export type LocalSkewResult = {
-  pairs: PcbDifferentialPairLocalSkew[]
+  pairs: PcbDifferentialPairLocalSkewInsert[]
   splitPairs: SplitPair[]
   failedPairs: FailedPair[]
 }
@@ -90,65 +87,8 @@ export function computeLocalSkew({
 }: {
   circuitJson: CircuitJson
 }): LocalSkewResult {
-  const tracesBySource: TracesBySource = new Map()
-  const pcbPortsById = new Map<PcbPortId, PcbPort>()
-  const sourcePortsById = new Map<SourcePortId, SourcePort>()
-  const boards: PcbBoard[] = []
-  const parentBySubcircuit = new Map<SubcircuitId, SubcircuitId>()
-  const boardsBySubcircuit = new Map<SubcircuitId, PcbBoard>()
-  const stackupsByBoard = new Map<PcbBoard["pcb_board_id"], PcbStackup>()
-  for (const element of circuitJson) {
-    if (element.type === "pcb_board") {
-      boards.push(element)
-      if (element.subcircuit_id !== undefined) {
-        boardsBySubcircuit.set(element.subcircuit_id, element)
-      }
-      continue
-    }
-    if (
-      element.type === "source_group" &&
-      element.subcircuit_id !== undefined &&
-      element.parent_subcircuit_id !== undefined
-    ) {
-      parentBySubcircuit.set(
-        element.subcircuit_id,
-        element.parent_subcircuit_id,
-      )
-      continue
-    }
-    if (element.type === "pcb_stackup") {
-      stackupsByBoard.set(element.pcb_board_id, element)
-      continue
-    }
-    if (element.type === "pcb_port") {
-      pcbPortsById.set(element.pcb_port_id, element)
-      continue
-    }
-    if (element.type === "source_port") {
-      sourcePortsById.set(element.source_port_id, element)
-      continue
-    }
-    if (element.type !== "pcb_trace") continue
-    if (element.source_trace_id === undefined) continue
-    const traces = tracesBySource.get(element.source_trace_id) ?? []
-    traces.push(element)
-    tracesBySource.set(element.source_trace_id, traces)
-  }
-
-  const findBoard = (
-    subcircuitId: SubcircuitId | undefined,
-  ): PcbBoard | undefined => {
-    if (boards.length === 1) return boards[0]
-    const visited = new Set<SubcircuitId>()
-    while (subcircuitId !== undefined && !visited.has(subcircuitId)) {
-      const board = boardsBySubcircuit.get(subcircuitId)
-      if (board) return board
-      visited.add(subcircuitId)
-      subcircuitId = parentBySubcircuit.get(subcircuitId)
-    }
-    return undefined
-  }
-
+  const index = indexCircuit({ circuitJson })
+  const { tracesBySource } = index
   const result: LocalSkewResult = { pairs: [], splitPairs: [], failedPairs: [] }
   for (const bus of circuitJson) {
     if (bus.type !== "source_bus") continue
@@ -165,17 +105,15 @@ export function computeLocalSkew({
     }
     if (positiveTraces.length === 0 || negativeTraces.length === 0) continue
     try {
-      const pair = computePairSkew({
-        bus,
-        traceGap: differentialPair.trace_gap,
-        positiveTrace: positiveTraces[0],
-        negativeTrace: negativeTraces[0],
-        pcbPortsById,
-        sourcePortsById,
-        findBoard,
-        stackupsByBoard,
-      })
-      if (pair) result.pairs.push(pair)
+      result.pairs.push(
+        computePairSkew({
+          bus,
+          traceGap: differentialPair.trace_gap,
+          positiveTrace: positiveTraces[0],
+          negativeTrace: negativeTraces[0],
+          index,
+        }),
+      )
     } catch (error) {
       // A failed pair must not hide skew on the rest of the board.
       result.failedPairs.push({ bus, reason: errorMessage(error) })
@@ -184,36 +122,109 @@ export function computeLocalSkew({
   return result
 }
 
-/**
- * Local skew for one differential pair routed as one pcb_trace per side.
- * Null when a route is empty or has non-finite or absurd geometry.
- */
+/** Lookups built once from the Circuit JSON. */
+type CircuitIndex = {
+  tracesBySource: TracesBySource
+  pcbPortsById: Map<PcbPortId, PcbPort>
+  sourcePortsById: Map<SourcePortId, SourcePort>
+  parentBySubcircuit: Map<SubcircuitId, SubcircuitId>
+  boardsBySubcircuit: Map<SubcircuitId, PcbBoard>
+  stackupsByBoard: Map<PcbBoard["pcb_board_id"], PcbStackup>
+}
+
+/** Indexes the elements local skew reads: routed traces by source trace, ports, boards, stackups and the subcircuit tree. */
+function indexCircuit({
+  circuitJson,
+}: {
+  circuitJson: CircuitJson
+}): CircuitIndex {
+  const index: CircuitIndex = {
+    tracesBySource: new Map(),
+    pcbPortsById: new Map(),
+    sourcePortsById: new Map(),
+    parentBySubcircuit: new Map(),
+    boardsBySubcircuit: new Map(),
+    stackupsByBoard: new Map(),
+  }
+  for (const element of circuitJson) {
+    if (element.type === "pcb_board") {
+      if (element.subcircuit_id !== undefined) {
+        index.boardsBySubcircuit.set(element.subcircuit_id, element)
+      }
+      continue
+    }
+    if (
+      element.type === "source_group" &&
+      element.subcircuit_id !== undefined &&
+      element.parent_subcircuit_id !== undefined
+    ) {
+      index.parentBySubcircuit.set(
+        element.subcircuit_id,
+        element.parent_subcircuit_id,
+      )
+      continue
+    }
+    if (element.type === "pcb_stackup") {
+      index.stackupsByBoard.set(element.pcb_board_id, element)
+      continue
+    }
+    if (element.type === "pcb_port") {
+      index.pcbPortsById.set(element.pcb_port_id, element)
+      continue
+    }
+    if (element.type === "source_port") {
+      index.sourcePortsById.set(element.source_port_id, element)
+      continue
+    }
+    if (element.type !== "pcb_trace") continue
+    if (element.source_trace_id === undefined) continue
+    const traces = index.tracesBySource.get(element.source_trace_id) ?? []
+    traces.push(element)
+    index.tracesBySource.set(element.source_trace_id, traces)
+  }
+  return index
+}
+
+/** The board that owns a subcircuit: its own, or the nearest ancestor's. */
+function findBoard({
+  index,
+  subcircuitId,
+}: {
+  index: CircuitIndex
+  subcircuitId: SubcircuitId | undefined
+}): PcbBoard | undefined {
+  let current = subcircuitId
+  while (current !== undefined) {
+    const board = index.boardsBySubcircuit.get(current)
+    if (board) return board
+    current = index.parentBySubcircuit.get(current)
+  }
+  return undefined
+}
+
+/** Local skew for one differential pair routed as one pcb_trace per side. */
 function computePairSkew({
   bus,
   traceGap,
   positiveTrace,
   negativeTrace,
-  pcbPortsById,
-  sourcePortsById,
-  findBoard,
-  stackupsByBoard,
+  index,
 }: {
   bus: SourceBus
   /** The pair's declared edge-to-edge gap in mm, if any. */
   traceGap: number | undefined
   positiveTrace: PcbTrace
   negativeTrace: PcbTrace
-  pcbPortsById: Map<PcbPortId, PcbPort>
-  sourcePortsById: Map<SourcePortId, SourcePort>
-  findBoard: (subcircuitId: SubcircuitId | undefined) => PcbBoard | undefined
-  stackupsByBoard: Map<PcbBoard["pcb_board_id"], PcbStackup>
-}): PcbDifferentialPairLocalSkew | null {
+  index: CircuitIndex
+}): PcbDifferentialPairLocalSkewInsert {
   const subcircuitId =
     positiveTrace.subcircuit_id ??
     negativeTrace.subcircuit_id ??
     bus.subcircuit_id
-  const board = findBoard(subcircuitId)
-  const pcbStackup = board ? stackupsByBoard.get(board.pcb_board_id) : undefined
+  const board = findBoard({ index, subcircuitId })
+  const pcbStackup = board
+    ? index.stackupsByBoard.get(board.pcb_board_id)
+    : undefined
   const boardThickness = board?.thickness ?? STANDARD_BOARD_THICKNESS
 
   let positive = walkTrace({
@@ -221,23 +232,13 @@ function computePairSkew({
     pcbStackup,
     boardThickness,
   })
-  if (!isMeasurable(positive)) return null
   let negative = walkTrace({
     trace: negativeTrace,
     pcbStackup,
     boardThickness,
   })
-  if (!isMeasurable(negative)) return null
-  const positiveOutput = outputEnd({
-    trace: positiveTrace,
-    pcbPortsById,
-    sourcePortsById,
-  })
-  const negativeOutput = outputEnd({
-    trace: negativeTrace,
-    pcbPortsById,
-    sourcePortsById,
-  })
+  const positiveOutput = outputEnd({ trace: positiveTrace, index })
+  const negativeOutput = outputEnd({ trace: negativeTrace, index })
   if (positiveOutput === "end") positive = reverseWalk(positive)
   if (negativeOutput === "end") negative = reverseWalk(negative)
   if (
@@ -276,7 +277,6 @@ function computePairSkew({
 
   return {
     type: "pcb_differential_pair_local_skew",
-    pcb_differential_pair_local_skew_id: `pcb_differential_pair_local_skew_${bus.source_bus_id}`,
     source_bus_id: bus.source_bus_id,
     ...(bus.subcircuit_id !== undefined && {
       subcircuit_id: bus.subcircuit_id,
@@ -327,12 +327,10 @@ function errorMessage(error: unknown): string {
  */
 function outputEnd({
   trace,
-  pcbPortsById,
-  sourcePortsById,
+  index,
 }: {
   trace: PcbTrace
-  pcbPortsById: Map<PcbPortId, PcbPort>
-  sourcePortsById: Map<SourcePortId, SourcePort>
+  index: CircuitIndex
 }): "start" | "end" | null {
   let startPortId: PcbPortId | undefined
   let endPortId: PcbPortId | undefined
@@ -345,26 +343,25 @@ function outputEnd({
       endPortId = point.end_pcb_port_id
     }
   }
-  const isOutput = (pcbPortId: PcbPortId | undefined): boolean => {
-    if (pcbPortId === undefined) return false
-    const pcbPort = pcbPortsById.get(pcbPortId)
-    if (!pcbPort) return false
-    return sourcePortsById.get(pcbPort.source_port_id)?.is_output === true
-  }
-  const startIsOutput = isOutput(startPortId)
-  const endIsOutput = isOutput(endPortId)
+  const startIsOutput = isOutputPort({ index, pcbPortId: startPortId })
+  const endIsOutput = isOutputPort({ index, pcbPortId: endPortId })
   if (startIsOutput === endIsOutput) return null
-  return startIsOutput ? "start" : "end"
+  if (startIsOutput) return "start"
+  return "end"
 }
 
-/** True when a walk has copper, a finite length, and every coordinate and width within {@link MAX_COORDINATE}. */
-function isMeasurable(walk: TraceWalk): boolean {
-  if (walk.steps.length === 0 || !Number.isFinite(walk.length)) return false
-  return walk.steps.every((step) =>
-    [step.start.x, step.start.y, step.end.x, step.end.y, step.width].every(
-      (value) => Math.abs(value) <= MAX_COORDINATE,
-    ),
-  )
+/** True when a PCB port's source port is marked `is_output`. */
+function isOutputPort({
+  index,
+  pcbPortId,
+}: {
+  index: CircuitIndex
+  pcbPortId: PcbPortId | undefined
+}): boolean {
+  if (pcbPortId === undefined) return false
+  const pcbPort = index.pcbPortsById.get(pcbPortId)
+  if (!pcbPort) return false
+  return index.sourcePortsById.get(pcbPort.source_port_id)?.is_output === true
 }
 
 /**

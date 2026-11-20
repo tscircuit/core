@@ -16,6 +16,12 @@ export interface PcbDifferentialPairLocalSkew {
   negative: LocalSkewTrace
 }
 
+/** The element as core inserts it; the database assigns `pcb_differential_pair_local_skew_<n>`. */
+export type PcbDifferentialPairLocalSkewInsert = Omit<
+  PcbDifferentialPairLocalSkew,
+  "pcb_differential_pair_local_skew_id"
+>
+
 export interface LocalSkewTrace {
   pcb_trace_id: PcbTrace["pcb_trace_id"]
   positive_skew_scale: number

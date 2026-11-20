@@ -190,6 +190,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbPlacementDesignRuleChecks",
     "PcbTraceRender",
     "PcbRouteNetIslands",
+    "PcbTraceTeardropRender",
   ],
   PcbDesignRuleChecks: [
     "PcbFootprintStringRender",
