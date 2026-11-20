@@ -1,0 +1,102 @@
+name: Diagnose native route conflicts by pipeline stage
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-stage-diagnosis.yml]
+permissions:
+  contents: read
+jobs:
+  a03-terminal-corrected-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 5345f64519951b26b17aab229c9b284ae729d5ab
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 3db7290cb61e37315b2d4429ce82c4cd75b9037b
+          path: candidate
+          persist-credentials: false
+      - name: Compare against the exact terminal-corrected baseline
+        working-directory: candidate
+        run: |
+          cp ../baseline/lib/HighDensitySolverA03/HighDensitySolverA03.ts lib/HighDensitySolverA03/UnoptimizedA03.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('tests/a03/search-pruning.test.ts').write_text("import { expect, test } from \"bun:test\"\nimport { createHash } from \"node:crypto\"\nimport { HighDensitySolverA03 } from \"../../lib/HighDensitySolverA03/HighDensitySolverA03\"\nimport { HighDensitySolverA03 as UnoptimizedA03 } from \"../../lib/HighDensitySolverA03/UnoptimizedA03\"\nimport { defaultA03Params } from \"../../lib/default-params\"\nimport cases from \"./search-pruning-cases.json\"\n\ntest(\"A03 pruning preserves routes and completion across ordinary and unusual costs\", () => {\n  // Compare against the frozen terminal-corrected implementation in the same process.\n  // Include negative and nonfinite costs, where a nonnegative lower bound\n  // cannot justify discarding an OPEN destination.\n  for (const entry of cases) {\n    const layers = entry.layers\n    const hyperParameters = Object.fromEntries(\n      Object.entries(entry.hyperParameters).map(([key, value]) => [\n        key,\n        Number(value),\n      ]),\n    )\n    const params = {\n      ...defaultA03Params,\n      hyperParameters,\n      nodeWithPortPoints: {\n        capacityMeshNodeId: \"numeric-domain\",\n        center: { x: 0, y: 0 },\n        width: 2,\n        height: 2,\n        availableZ: Array.from({ length: layers }, (_, i) => i),\n        portPoints: [\n          { connectionName: \"a\", x: -1, y: -0.5, z: 0 },\n          { connectionName: \"a\", x: 1, y: 0.5, z: layers - 1 },\n          { connectionName: \"b\", x: -1, y: 0.5, z: 0 },\n          { connectionName: \"b\", x: 1, y: -0.5, z: 0 },\n          { connectionName: \"c\", x: 0, y: -1, z: layers - 1 },\n          { connectionName: \"c\", x: 0, y: 1, z: 0 },\n        ],\n      },\n    }\n    const baseline = new UnoptimizedA03(params)\n    baseline.solve()\n    for (const viaOccupantQuery of [\"dense\", \"owner-runs\"] as const) {\n    const solver = new HighDensitySolverA03({...params, viaOccupantQuery})\n    solver.solve()\n    expect({\n      solved: solver.solved,\n      failed: solver.failed,\n      error: solver.error ?? null,\n      iterations: solver.iterations,\n      outputSha256: createHash(\"sha256\")\n        .update(JSON.stringify(solver.getOutput()))\n        .digest(\"hex\"),\n    }).toEqual({\n      solved: baseline.solved,\n      failed: baseline.failed,\n      error: baseline.error ?? null,\n      iterations: baseline.iterations,\n      outputSha256: createHash(\"sha256\").update(JSON.stringify(baseline.getOutput())).digest(\"hex\"),\n    })\n    }\n  }\n})\n")
+          PY
+          bun install
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999
+          bun run build
+  stage-benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2e59a56661bea20fe4c2dca944b01ea4976bce20
+          path: autorouter
+          persist-credentials: false
+      - name: Add aggregate-only stage diagnostics to the indexed experiment
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts')
+          s=p.read_text()
+          anchor='        pipelineStepDef.onSolved?.(this)'
+          assert s.count(anchor)==1
+          s=s.replace(anchor,"\n        if ([\"highDensityRouteSolver\", \"highDensityForceImproveSolver\", \"highDensityRepairSolver\", \"highDensityStitchSolver\", \"traceSimplificationSolver\", \"traceWidthSolver\", \"globalDrcForceImproveSolver\", \"pipeline9JointDrcRepairSolver\", \"effortCleanupSolver\"].includes(pipelineStepDef.solverName)) {\n          let routes = this.highDensityRouteSolver!.routes\n          if (this.highDensityForceImproveSolver?.solved) routes = this.highDensityForceImproveSolver.getOutput()\n          if (this.highDensityRepairSolver?.solved) routes = this.highDensityRepairSolver.getOutput()\n          if (this.highDensityStitchSolver?.solved) routes = this._getOutputHdRoutes()\n          const inputSrj = {...this.originalSrj, traces: this.getUpdatedPreloadedTraces()}\n          const traces = assignUniquePcbTraceIdsToNewTraces(\n            convertPipeline7HdRoutesToSimplifiedPcbTraces({\n              connections: this.netToPointPairsSolver!.newConnections,\n              originalConnections: this.originalSrj.connections,\n              hdRoutes: canonicalizePipeline9HdRoutes(routes),\n              layerCount: this.srj.layerCount,\n              obstacles: this.srj.obstacles,\n              defaultViaHoleDiameter: this.viaHoleDiameter,\n              connMap: this.connMap,\n            }), inputSrj.traces ?? [])\n          const evaluate = createPipeline9AutoroutingDrcEvaluator({\n            inputSrj,\n            srjWithPointPairs: this.srjWithPointPairs!,\n            includeBoardClearance: true,\n            drcOptions: {\n              traceClearance: inputSrj.minTraceToPadEdgeClearance ?? 0.1,\n              viaClearance: inputSrj.minViaHoleEdgeToViaHoleEdgeClearance ?? 0.1,\n            },\n          })\n          const counts: Record<string, number> = {}\n          for (const error of evaluate(traces, {includeTraceContinuity: false}).errors) {\n            const kind = String(error.error_type ?? error.type)\n            counts[kind] = (counts[kind] ?? 0) + 1\n          }\n          console.log(\"NATIVE_STAGE_AGGREGATE\", JSON.stringify({\n            phase: pipelineStepDef.solverName, routes: routes.length, traces: traces.length, findings: counts,\n          }))\n        }\n"+'\n'+anchor)
+          p.write_text(s)
+          PY
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact diagnostic candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Route the unchanged real H616 and OrangeCrab TSX circuits
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/indexed-stages" --timeout 120 --circuit h616 --circuit orangecrab
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('results').rglob('render.log'):
+            for line in p.read_text(errors='replace').splitlines():
+              if 'NATIVE_STAGE_AGGREGATE ' in line:
+                item=json.loads(line.split('NATIVE_STAGE_AGGREGATE ',1)[1])
+                print('NATIVE_STAGE_AGGREGATE',p.parent.name,json.dumps(item))
+          d=json.loads(Path('results/indexed-stages/results.json').read_text())
+          for row in d['cases']:
+            a=row.get('assessment') or {}
+            print('CORE_DDR_AGGREGATE',json.dumps({'circuit':row['circuit'],'status':row['status'],'wallMs':row['wallMs'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          PY
