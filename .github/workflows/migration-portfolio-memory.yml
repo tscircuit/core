@@ -1,0 +1,72 @@
+name: Measure completed portfolio candidate retention
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-portfolio-memory.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 20
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: f0268c4dbe6ebd2222586db60fa46b89e9d5e110
+          path: current
+          persist-credentials: false
+      - name: Count candidates without retaining solver objects or changing routing inputs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          study=json.loads("\"import { PortfolioSingleIntraNodeSolver as StudyPortfolio } from \\\"../../lib/solvers/HyperHighDensitySolver/PortfolioSingleIntraNodeSolver\\\"\\nimport { GrowShrinkHighDensityIntraNodeSolver as StudyGrowth } from \\\"../../lib/solvers/HyperHighDensitySolver/GrowShrinkHighDensityIntraNodeSolver/GrowShrinkHighDensityIntraNodeSolver\\\"\\nimport { HighDensitySolverA01 as StudyA01, HighDensitySolverA03 as StudyA03 } from \\\"@tscircuit/high-density-a01\\\"\\nconst portfolioMemoryStudy = { portfolios: 0, a03: 0, a03Solved: 0, a03Failed: 0, a03Unfinished: 0, a03SolvedBytes: 0, a03FailedBytes: 0, a03UnfinishedBytes: 0, a03MaxBytes: 0, a01: 0, a01Labels: 0, a01MaxLabels: 0, other: 0, otherWasmBytes: 0 }\\nconst seenPortfolios = new WeakSet<object>()\\nconst typedPoolBytes = (solver: object, key: string): number => {\\n  const pool = Reflect.get(solver, key)\\n  if (!pool || typeof pool !== \\\"object\\\") return 0\\n  let bytes = 0\\n  for (const value of Object.values(pool)) if (ArrayBuffer.isView(value)) bytes += value.byteLength\\n  return bytes\\n}\\nconst wasmBytes = (object: object): number => {\\n  const buffers = new Set<ArrayBuffer>()\\n  const visit = (value: unknown, depth: number): void => {\\n    if (!value || typeof value !== \\\"object\\\") return\\n    if (value instanceof WebAssembly.Memory) { buffers.add(value.buffer); return }\\n    if (value instanceof WebAssembly.Instance) { for (const exported of Object.values(value.exports)) if (exported instanceof WebAssembly.Memory) buffers.add(exported.buffer); return }\\n    if (Array.isArray(value) || ArrayBuffer.isView(value) || value instanceof Map || value instanceof Set || depth === 0) return\\n    for (const field of Object.values(value)) visit(field, depth - 1)\\n  }\\n  visit(object, 2)\\n  let bytes = 0\\n  for (const buffer of buffers) bytes += buffer.byteLength\\n  return bytes\\n}\\nconst collectPortfolio = (portfolio: object | null | undefined): void => {\\n  if (!portfolio || seenPortfolios.has(portfolio)) return\\n  seenPortfolios.add(portfolio)\\n  portfolioMemoryStudy.portfolios += 1\\n  for (const entry of Reflect.get(portfolio, \\\"supervisedSolvers\\\") ?? []) {\\n    const solver = entry.solver\\n    if (solver instanceof StudyA03) {\\n      const bytes = typedPoolBytes(solver, \\\"nodePool\\\") + typedPoolBytes(solver, \\\"ripChain\\\") + typedPoolBytes(solver, \\\"heap\\\")\\n      portfolioMemoryStudy.a03 += 1\\n      portfolioMemoryStudy.a03MaxBytes = Math.max(portfolioMemoryStudy.a03MaxBytes, bytes)\\n      if (solver.solved) { portfolioMemoryStudy.a03Solved += 1; portfolioMemoryStudy.a03SolvedBytes += bytes }\\n      else if (solver.failed) { portfolioMemoryStudy.a03Failed += 1; portfolioMemoryStudy.a03FailedBytes += bytes }\\n      else { portfolioMemoryStudy.a03Unfinished += 1; portfolioMemoryStudy.a03UnfinishedBytes += bytes }\\n    } else if (solver instanceof StudyA01) {\\n      const labels = Reflect.get(solver, \\\"nodePool\\\")?.length ?? 0\\n      portfolioMemoryStudy.a01 += 1\\n      portfolioMemoryStudy.a01Labels += labels\\n      portfolioMemoryStudy.a01MaxLabels = Math.max(portfolioMemoryStudy.a01MaxLabels, labels)\\n    } else { portfolioMemoryStudy.other += 1; portfolioMemoryStudy.otherWasmBytes += wasmBytes(solver) }\\n  }\\n}\\nconst portfolioStudyStep = StudyPortfolio.prototype.step\\nStudyPortfolio.prototype.step = function () {\\n  const result = portfolioStudyStep.call(this)\\n  if (this.solved || this.failed) collectPortfolio(this)\\n  return result\\n}\\nconst growthStudyStep = StudyGrowth.prototype.step\\nStudyGrowth.prototype.step = function () {\\n  const result = growthStudyStep.call(this)\\n  if (this.solved || this.failed) {\\n    collectPortfolio(this.activeSubSolver)\\n    collectPortfolio(this.winningSolver)\\n    for (const portfolio of this.failedSolvers) collectPortfolio(portfolio)\\n  }\\n  return result\\n}\\n\"")
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          for variant in ['base','current']:
+            root=Path(variant)
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            addition='      portfolioMemoryStudy: { ...portfolioMemoryStudy },\n      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'
+            p.write_text(study+s.replace(anchor,addition+anchor))
+          PY
+          for variant in base current; do
+            (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+          done
+      - name: Run the original sample without concurrent sample pressure
+        run: |
+          for variant in base current; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18 --sample-numbers 2 --concurrency 1) > "$variant-run.log" 2>&1
+          done
+      - name: Report aggregate candidate counts and buffer sizes
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows={}
+          for variant in ['base','current']:
+            tests=json.loads(Path(variant,'benchmark-result.json').read_text())['tests']
+            assert len(tests)==1
+            r=tests[0]
+            assert r['didSolve'] and r['drcErrorCount']==0
+            rows[variant]={'timeMs':r['elapsedTimeMs'],'peakRssMiB':r['peakRssBytes']/1048576,'outputHash':r['routedOutputSha256'],'candidates':r['portfolioMemoryStudy']}
+          assert rows['base']['outputHash']==rows['current']['outputHash']
+          print('PORTFOLIO_RETENTION_NUMERIC',json.dumps(rows))
+          PY
