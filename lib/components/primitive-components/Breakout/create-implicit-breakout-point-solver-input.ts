@@ -668,7 +668,7 @@ export const createImplicitBreakoutPointSolverContext = (
     routingScope,
     automaticBreakouts,
   })
-  const buses = getImplicitBreakoutSolverBuses({
+  let buses = getImplicitBreakoutSolverBuses({
     routingScope,
     sourceTraces,
     coordinatedSourceTraceIds: sourceTraceIds,
@@ -780,6 +780,38 @@ export const createImplicitBreakoutPointSolverContext = (
     }
   })
 
+  const edgeAssignmentBuses = [...buses]
+  // Unbused connections traditionally exit on top. Honor explicit
+  // fanoutRoutingLayers without changing that default. Add layer candidates
+  // after edge assignment so these signals do not become one atomic bus that
+  // is forced to leave through the same edge.
+  const busConnectionIds = new Set(buses.flatMap((bus) => bus.connectionIds))
+  const unbusedConnectionIds = sortedSourceTraceIds.filter(
+    (sourceTraceId) => !busConnectionIds.has(sourceTraceId),
+  )
+  const hasExplicitFanoutRoutingLayers = automaticBreakouts.some(
+    (automaticBreakout) =>
+      automaticBreakout._parsedProps.fanoutRoutingLayers !== undefined,
+  )
+  if (unbusedConnectionIds.length > 0 && hasExplicitFanoutRoutingLayers) {
+    const busIds = new Set(buses.map((bus) => bus.busId))
+    let busId = "unbused_fanout_connections"
+    while (busIds.has(busId)) busId += "_"
+    buses.push({
+      busId,
+      connectionIds: unbusedConnectionIds,
+      targetLayers: availableLayers,
+    })
+  }
+
+  buses = getBreakoutBusesOutsideUnbrokenPours({ routingScope, buses, regions })
+  const availableExitLayers = new Set(
+    buses.flatMap((bus) => bus.targetLayers ?? availableLayers),
+  )
+  if (unbusedConnectionIds.length > 0 && !hasExplicitFanoutRoutingLayers) {
+    for (const layer of availableLayers) availableExitLayers.add(layer)
+  }
+
   const boundaryPointSpacing = getBoundaryPointSpacing(breakout)
   let singleRegionEdgeGroups: SingleRegionEdgeGroup[] | undefined
   if (externalPositionsBySourceTraceId) {
@@ -810,46 +842,20 @@ export const createImplicitBreakoutPointSolverContext = (
       atomicGroups: [...new Set(differentialPairBySourceTraceId.values())].map(
         (pair) => [pair.positiveSourceTraceId, pair.negativeSourceTraceId],
       ),
-      buses,
+      buses: edgeAssignmentBuses,
       busFanoutDirections,
       fallbackEdge: solverRegions[0]!.edge,
       boundaryPointSpacing,
-      layerCount: availableLayers.length,
+      layerCount: availableExitLayers.size,
     })
   }
 
-  // Unbused connections traditionally exit on top. Honor explicit
-  // fanoutRoutingLayers without changing that default. Add layer candidates
-  // after edge assignment so these signals do not become one atomic bus that
-  // is forced to leave through the same edge.
-  const busConnectionIds = new Set(buses.flatMap((bus) => bus.connectionIds))
-  const unbusedConnectionIds = sortedSourceTraceIds.filter(
-    (sourceTraceId) => !busConnectionIds.has(sourceTraceId),
-  )
-  const hasExplicitFanoutRoutingLayers = automaticBreakouts.some(
-    (automaticBreakout) =>
-      automaticBreakout._parsedProps.fanoutRoutingLayers !== undefined,
-  )
-  if (unbusedConnectionIds.length > 0 && hasExplicitFanoutRoutingLayers) {
-    const busIds = new Set(buses.map((bus) => bus.busId))
-    let busId = "unbused_fanout_connections"
-    while (busIds.has(busId)) busId += "_"
-    buses.push({
-      busId,
-      connectionIds: unbusedConnectionIds,
-      targetLayers: availableLayers,
-    })
-  }
 
   return {
     input: {
       regions: solverRegions,
       connections,
-      buses: getBreakoutBusesOutsideUnbrokenPours({
-        routingScope,
-        buses,
-        regions: solverRegions,
-      }),
+      buses,
       boundaryPointSpacing,
     },
     sourcePortIdByConnectionIdByRegionId,

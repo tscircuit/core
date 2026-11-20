@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { checkViasInPads } from "@tscircuit/checks"
+import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("automatic BGA exits avoid unbroken power planes", async () => {
@@ -27,22 +28,23 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
       <chip name="U2" footprint="bga16_grid4x4_p0.8mm" pcbY={-5} />
       {Array.from({ length: 16 }, (_, pinIndex) => (
         <trace
-          key={pinIndex}
+          key={`signal_${pinIndex}`}
           name={`SIGNAL_${pinIndex + 1}`}
           from={`U1.pin${pinIndex + 1}`}
           to={`U2.pin${pinIndex + 1}`}
         />
       ))}
       {Array.from({ length: 4 }, (_, busIndex) => (
-        <bus
-          key={busIndex}
-          name={`BUS_${busIndex}`}
-          connections={Array.from(
-            { length: 4 },
-            (_, pinIndex) => `SIGNAL_${busIndex * 4 + pinIndex + 1}`,
-          )}
-          preferredLayers={["top", "inner1", "inner2", "bottom"]}
-        />
+        <Fragment key={`bus_${busIndex}`}>
+          <bus
+            name={`BUS_${busIndex}`}
+            connections={Array.from(
+              { length: 4 },
+              (_, pinIndex) => `SIGNAL_${busIndex * 4 + pinIndex + 1}`,
+            )}
+            preferredLayers={["top", "inner1", "inner2", "bottom"]}
+          />
+        </Fragment>
       ))}
       <pcbnotetext
         text="BGA controller link | Inner layers reserved for GND and VCC"
@@ -55,7 +57,7 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
 
   const exits = circuit.db.pcb_breakout_point.list()
   const planeExits = exits.filter((exit) =>
-    ["inner1", "inner2"].includes(exit.layer),
+    ["inner1", "inner2"].includes(exit.layer ?? "top"),
   )
   const routingErrors = circuit.db.pcb_autorouting_error.list()
   circuit.db.pcb_note_text.insert({
