@@ -1,0 +1,60 @@
+name: Classify native H616 findings after indexed search completes
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-indexed-findings.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 35
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2e59a56661bea20fe4c2dca944b01ea4976bce20
+          path: autorouter
+          persist-credentials: false
+      - name: Build exact bounded-query candidate
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - name: Render H616 and print only physical finding counts
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/indexed" --timeout 120 --circuit h616
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('results/indexed/results.json').read_text())
+          for r in data['cases']:
+            a=r['assessment']
+            print('NATIVE_H616_FINDINGS',json.dumps({'status':r['status'],'wallMs':r['wallMs'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'geometryErrorCount':len(a['geometryErrors'])}))
+          PY
