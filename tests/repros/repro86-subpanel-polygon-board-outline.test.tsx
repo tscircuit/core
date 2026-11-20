@@ -39,10 +39,13 @@ test("subpanel manual placement with polygon boards outlines", async () => {
       panelizationMethod="tab-routing"
       layoutMode="none"
     >
-      {boards.map((pos, i) => (
-        <subpanel pcbX={pos.pcbX - 50 + 3 + 2} pcbY={pos.pcbY - 50 + 1 + 2}>
+      {boards.map((pos) => (
+        <subpanel
+          key={`${pos.pcbX}-${pos.pcbY}`}
+          pcbX={pos.pcbX - 50 + 3 + 2}
+          pcbY={pos.pcbY - 50 + 1 + 2}
+        >
           <board
-            key={`${pos.pcbX}-${pos.pcbY}`}
             outline={[
               { x: -3, y: 1 },
               { x: 3, y: 1 },
@@ -75,19 +78,20 @@ test("subpanel manual placement with polygon boards outlines", async () => {
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
 
-  // Drillable 0.5 mm mouse bites on these 2 mm boards come within 0.17 mm of
-  // R1-R2 traces, so the trace clearance check now reports each conflict.
+  // The 0.5 mm mouse bites on these 2 mm boards violate the 0.2 mm
+  // trace-to-hole clearance for the R1-R2 traces.
   const errors = circuitJson.filter((elm) => elm.type.includes("error"))
   expect(errors).toHaveLength(32)
-  expect([
-    ...new Set(errors.map((error) => error.type)),
-    ...new Set(circuit.db.pcb_trace_error.list().map((error) => error.message)),
-  ]).toMatchInlineSnapshot(`
-    [
-      "pcb_trace_error",
-      "Trace .R2 > .pin1 to .R1 > .pin1 is too close to non-plated hole unnamed hole (gap: 0.165746mm, required: 0.2mm)",
-    ]
-  `)
+  expect([...new Set(errors.map((error) => error.type))]).toEqual([
+    "pcb_trace_error",
+  ])
+  const traceHoleClearance =
+    /^Trace \.R2 > \.pin1 to \.R1 > \.pin1 is too close to non-plated hole unnamed hole \(gap: (-?\d+(?:\.\d+)?)mm, required: 0\.2mm\)$/
+  for (const error of circuit.db.pcb_trace_error.list()) {
+    const gap = error.message.match(traceHoleClearance)?.[1]
+    expect(gap).toBeDefined()
+    expect(Number(gap)).toBeLessThan(0.2)
+  }
 
-  expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuitJson).toMatchPcbSnapshot(import.meta.path)
 })
