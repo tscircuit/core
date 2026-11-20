@@ -1,0 +1,136 @@
+name: Evaluate native path density before detailed DDR routing
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-native-density.yml]
+permissions:
+  contents: read
+jobs:
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 7144937af43d8a3c055b433d3ebb84feeada81fd
+          path: autorouter
+          persist-credentials: false
+      - name: Build exact native-density candidate
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - name: Compare unchanged exact predicates across layers and via spans
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          Path("lib/solvers/HyperHighDensitySolver/unculledSegmentValidator.ts").write_text("import type { StaticSegmentValidator } from \"@tscircuit/high-density-a01\"\nimport type { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport {\n  arePipeline9RoutesOnSameNet,\n  doPipeline9RoutesHaveCopperConflict,\n} from \"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/pipeline9FixedRouteCopper\"\nimport type { HighDensityRoute } from \"lib/types/high-density-types\"\n\n/** Reuse native copper validation while A03 searches in physical coordinates. */\nexport const createIntraNodeSegmentValidator = ({\n  fixedHdRoutes,\n  connMap,\n  layerCount,\n  clearance,\n  allowBlindAndBuriedVias,\n}: {\n  fixedHdRoutes: HighDensityRoute[]\n  connMap: ConnectivityMap\n  layerCount: number\n  clearance: number\n  allowBlindAndBuriedVias?: boolean\n}): StaticSegmentValidator => {\n  return (segment): boolean => {\n    const route: HighDensityRoute = {\n      ...segment,\n      route: [segment.start, segment.end],\n      vias: [],\n    }\n    if (segment.start.z !== segment.end.z) route.vias.push(segment.start)\n    for (const fixed of fixedHdRoutes) {\n      if (arePipeline9RoutesOnSameNet(route, fixed, connMap)) continue\n      if (\n        doPipeline9RoutesHaveCopperConflict({\n          left: route,\n          right: fixed,\n          clearance,\n          layerCount,\n          allowBlindAndBuriedVias,\n        })\n      ) {\n        return false\n      }\n    }\n    return true\n  }\n}\n")
+          Path("check-native-density-parity.ts").write_text("\nimport { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport { createIntraNodeSegmentValidator as before } from \"./lib/solvers/HyperHighDensitySolver/unculledSegmentValidator\"\nimport { createIntraNodeSegmentValidator as after } from \"./lib/solvers/HyperHighDensitySolver/createIntraNodeSegmentValidator\"\nlet seed = 31337\nconst random = (): number => {\n  seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0\n  return seed / 4294967296\n}\nconst connMap = new ConnectivityMap({ foreign: [\"fixed\"], own: [\"candidate\", \"shared\"] })\nlet checks = 0\nfor (const allowBlindAndBuriedVias of [false, true]) {\n  for (let board = 0; board < 100; board++) {\n    const fixedHdRoutes = Array.from({length: 12}, (_, index) => {\n      const x = random() * 12 - 6, y = random() * 12 - 6\n      const z = Math.floor(random() * 4), toZ = (z + 1 + Math.floor(random() * 3)) % 4\n      const vx = x + random() * 2 - 1, vy = y + random() * 2 - 1\n      return {\n        connectionName: index % 4 === 0 ? \"shared\" : \"fixed\",\n        traceThickness: 0.05 + random() * 0.4,\n        viaDiameter: 0.2 + random() * 0.7,\n        route: [{x,y,z}, {x:vx,y:vy,z}, {x:vx,y:vy,z:toZ},\n          {x:vx+random()*2-1,y:vy+random()*2-1,z:toZ}],\n        vias: [{x:vx,y:vy}],\n      }\n    })\n    const params = {fixedHdRoutes,connMap,layerCount:4,clearance:random()*0.25,allowBlindAndBuriedVias}\n    const old = before(params), bounded = after(params)\n    for(let index=0;index<100;index++) {\n      const x = random()*16-8, y=random()*16-8, z=Math.floor(random()*4)\n      const wire = random()<0.6\n      const segment = {\n        connectionName:\"candidate\",\n        traceThickness:0.05+random()*0.5,\n        viaDiameter:0.2+random()*0.8,\n        start:{x,y,z},\n        end:wire?{x:x+random()*4-2,y:y+random()*4-2,z}:{x,y,z:(z+1)%4},\n      }\n      if(old(segment)!==bounded(segment)) throw new Error(\"Bounded query changed a collision result\")\n      checks++\n    }\n  }\n}\nconsole.log(\"BOUNDED_QUERY_PARITY\", JSON.stringify({checks,mismatches:0}))\n")
+          PY
+          bun check-native-density-parity.ts
+      - name: Preserve the original board checks
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - name: Preserve original Core connectivity, via count and clearance assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 35
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 7144937af43d8a3c055b433d3ebb84feeada81fd
+          path: autorouter
+          persist-credentials: false
+      - name: Build exact native-density candidate
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - uses: actions/checkout@v4
+        with:
+          ref: 395fffa2392f08af3effcc6e0e21f54a3729302d
+          path: current
+          persist-credentials: false
+      - run: bun install --ignore-scripts
+        working-directory: current
+      - name: Compare both revisions sequentially on the same real DDR circuits
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/current" --out "$GITHUB_WORKSPACE/results/current" --timeout 120 --circuit h616 --circuit glider --circuit orangecrab
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/density" --timeout 120 --circuit h616 --circuit glider --circuit orangecrab
+          bun "$benchmark/report.ts" results/density/results.json results/current/results.json results/comparison.md
+          cat results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Print physical finding categories only
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for variant in ['current','density']:
+            d=json.loads((Path('results')/variant/'results.json').read_text())
+            for r in d['cases']:
+              a=r.get('assessment') or {}
+              print('NATIVE_DENSITY_RESULTS',json.dumps({'variant':variant,'circuit':r['circuit'],'status':r['status'],'connected':a.get('connectedNets'),'requested':a.get('requestedNets'),'findings':a.get('findings'),'geometryErrors':len(a.get('geometryErrors',[]))}))
+          PY
