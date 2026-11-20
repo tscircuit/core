@@ -11,7 +11,7 @@ import type { RenderPhase } from "./components/base-components/Renderable"
 import type { BoardI } from "./components/normal-components/Board/BoardI"
 import { Group } from "./components/primitive-components/Group"
 import type { RootCircuitEventName } from "./events"
-import { createInstanceFromReactElement } from "./fiber/create-instance-from-react-element"
+import { createInstancesFromReactElement } from "./fiber/create-instance-from-react-element"
 import { isAssemblyDeviceContainer } from "./components/base-components/is-assembly-device-container"
 
 export class IsolatedCircuit {
@@ -116,14 +116,14 @@ export class IsolatedCircuit {
   }
 
   add(componentOrElm: PrimitiveComponent | ReactElement) {
-    let component: PrimitiveComponent
     if (isValidElement(componentOrElm)) {
       // TODO store subtree
-      component = createInstanceFromReactElement(componentOrElm)
-    } else {
-      component = componentOrElm as PrimitiveComponent
+      for (const component of createInstancesFromReactElement(componentOrElm)) {
+        this.children.push(component)
+      }
+      return
     }
-    this.children.push(component)
+    this.children.push(componentOrElm as PrimitiveComponent)
   }
 
   setPlatform(platform: Partial<PlatformConfig>) {
