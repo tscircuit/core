@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("breakout routes sot23 regulator power rail parts without breakoutpoints", async () => {
+test("breakout power-rail routing reports contacts between different intended nets", async () => {
   const { circuit } = getTestFixture()
   const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
 
@@ -98,7 +98,15 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
   const traceErrors = circuit.db.pcb_trace_error.list()
   const clearanceErrors = circuit.db.pcb_pad_trace_clearance_error.list()
 
-  expect(traceErrors).toHaveLength(0)
+  // This existing route crosses JOUT.VOUT with GND. PCB endpoint references
+  // must not hide the contact by merging their intended nets.
+  expect(
+    traceErrors.some(
+      (error) =>
+        error.message.includes("JOUT.VOUT") &&
+        error.message.includes("accidental contact"),
+    ),
+  ).toBe(true)
   expect(clearanceErrors).toHaveLength(0)
   expect(
     clearanceErrors.filter((error) => error.message.includes("overlaps with")),

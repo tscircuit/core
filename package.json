@@ -82,7 +82,7 @@
     "circuit-json": "0.0.552",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
-    "circuit-json-to-connectivity-map": "^0.0.33",
+    "circuit-json-to-connectivity-map": "https://pkg.pr.new/circuit-json-to-connectivity-map@2800b48",
     "circuit-json-to-spice": "^0.0.50",
     "circuit-to-svg": "^0.0.460",
     "concurrently": "^9.1.2",

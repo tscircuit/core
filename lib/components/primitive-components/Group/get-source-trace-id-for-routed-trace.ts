@@ -5,9 +5,8 @@ import type {
   PcbSmtPad,
   PcbTrace,
   SourcePort,
-  SourceTrace,
 } from "circuit-json"
-import { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SimplifiedPcbTrace } from "lib/utils/autorouting/SimpleRouteJson"
 import { applyToPoint, rotateDEG } from "transformation-matrix"
 
@@ -232,7 +231,7 @@ function getSourceIdsFromConnectedPcbTraces(
   return [...sourceIds]
 }
 
-function getSourcePortIdsFromRoutedTrace(
+function getDeclaredSourcePortIdsFromRoutedTrace(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
@@ -246,23 +245,21 @@ function getSourcePortIdsFromRoutedTrace(
     }
   }
 
-  if (sourcePortIds.size > 0) return [...sourcePortIds]
-
-  return getEndpointSourcePortIdsFromGeometry(db, trace)
+  return [...sourcePortIds]
 }
 
-function buildSourceConnectivityMap(sourceTraces: SourceTrace[]) {
-  const connMap = new ConnectivityMap({})
-
-  connMap.addConnections(
-    sourceTraces.map((trace) => [
-      trace.source_trace_id,
-      ...trace.connected_source_port_ids,
-      ...trace.connected_source_net_ids,
-    ]),
+function getSourcePortIdsFromRoutedTrace(
+  db: CircuitJsonUtilObjects,
+  trace: RoutedTrace,
+) {
+  const declaredSourcePortIds = getDeclaredSourcePortIdsFromRoutedTrace(
+    db,
+    trace,
   )
 
-  return connMap
+  if (declaredSourcePortIds.length > 0) return declaredSourcePortIds
+
+  return getEndpointSourcePortIdsFromGeometry(db, trace)
 }
 
 export function getSourceTraceIdForRoutedTrace({
@@ -274,15 +271,39 @@ export function getSourceTraceIdForRoutedTrace({
   trace: RoutedTrace
   subcircuit_id?: string | null
 }) {
+  const sourceTraces = db.source_trace.list()
+  const connMap = getFullConnectivityMapFromCircuitJson(db.toArray())
+  const declaredSourcePortIds = getDeclaredSourcePortIdsFromRoutedTrace(
+    db,
+    trace,
+  )
+  const declaredEndpointNetIds = new Set(
+    [...declaredSourcePortIds, trace.source_trace_id].flatMap((sourceId) => {
+      const netId = sourceId && connMap.getNetConnectedToId(sourceId)
+      return netId ? [netId] : []
+    }),
+  )
+  if (declaredEndpointNetIds.size > 1) {
+    throw new Error(
+      `Autorouted trace declares endpoints on different intended nets: ${declaredSourcePortIds
+        .map((sourcePortId) => {
+          const sourcePort = db.source_port.get(sourcePortId)
+          const sourceComponent = sourcePort?.source_component_id
+            ? db.source_component.get(sourcePort.source_component_id)
+            : undefined
+          return `${sourceComponent?.name ?? "unnamed component"}.${sourcePort?.name ?? "unnamed pin"}`
+        })
+        .join(", ")}`,
+    )
+  }
   if (trace.source_trace_id && db.source_trace.get(trace.source_trace_id)) {
     return trace.source_trace_id
   }
+  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
 
   const routedSourceNet = trace.source_trace_id
     ? db.source_net.get(trace.source_trace_id)
     : undefined
-  const sourceTraces = db.source_trace.list()
-  const connMap = buildSourceConnectivityMap(sourceTraces)
   const routedSourceNetConnectivityId = routedSourceNet
     ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)
     : undefined
@@ -295,7 +316,6 @@ export function getSourceTraceIdForRoutedTrace({
     : []
   const soleRoutedNetSourceTrace =
     routedNetSourceTraces.length === 1 ? routedNetSourceTraces[0] : undefined
-  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return (
       soleRoutedNetSourceTrace?.source_trace_id ??
