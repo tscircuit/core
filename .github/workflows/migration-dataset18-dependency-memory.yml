@@ -1,0 +1,104 @@
+name: Isolate dataset18 peak memory by dependency
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-dataset18-dependency-memory.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e8b2b3042a46e45fa30147a68a8260d996a2b1a4
+          path: current
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e8b2b3042a46e45fa30147a68a8260d996a2b1a4
+          path: a01base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e8b2b3042a46e45fa30147a68a8260d996a2b1a4
+          path: tinybase
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e8b2b3042a46e45fa30147a68a8260d996a2b1a4
+          path: repairbase
+          persist-credentials: false
+      - name: Isolate one dependency at a time and observe stage memory
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          overrides={
+            'a01base':{'@tscircuit/high-density-a01':'git+https://github.com/tscircuit/high-density-a01.git#85ee23a25403bbb79be14b6d0783e592928a85a0'},
+            'tinybase':{'tiny-hypergraph':'git+https://github.com/tscircuit/tiny-hypergraph.git#f1fe8edcfb3dfde8fd644d09d81bad18743144b3'},
+            'repairbase':{'@tscircuit/repair04':'https://codeload.github.com/tscircuit/repair04/tar.gz/1b33fe703438890adc52abbb7a8f18eb6f88ec70'}
+          }
+          probe=json.loads("\"    const stageSamples = stageMemoryStudy.get(solver) ?? []\\n    if (stageSamples.at(-1)?.stage !== progressKey) {\\n      const memory = process.memoryUsage()\\n      stageSamples.push({stage: progressKey, rss: memory.rss, heap: memory.heapUsed, external: memory.external})\\n      stageMemoryStudy.set(solver, stageSamples)\\n    }\\n\"")
+          study=json.loads("\"const stageMemoryStudy = new WeakMap<object, Array<{stage: string; rss: number; heap: number; external: number}>>()\\n\"")
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          for variant in ["base","current","a01base","tinybase","repairbase"]:
+            root=Path(variant)
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d['devDependencies'].update(overrides.get(variant,{}))
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            target='    lastProgressAt = elapsedTimeMs'
+            assert s.count(target)==1 and s.count(anchor)==1
+            s=s.replace(target,probe+target)
+            s=s.replace(anchor,'      stageMemoryStudy: stageMemoryStudy.get(solver),\n      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n'+anchor)
+            p.write_text(study+s)
+          PY
+          for variant in base current a01base tinybase repairbase; do
+            (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+          done
+      - name: Measure sample two without concurrent sample pressure
+        run: |
+          for variant in base current a01base tinybase repairbase; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18 --sample-numbers 2 --concurrency 1) > "$variant-run.log" 2>&1
+          done
+      - name: Report only numeric aggregates and digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result={}
+          for variant in ['base','current','a01base','tinybase','repairbase']:
+            rows=json.loads(Path(variant,'benchmark-result.json').read_text())['tests']
+            assert len(rows)==1
+            r=rows[0]
+            result[variant]={'timeMs':r['elapsedTimeMs'],'peakRssMiB':r['peakRssBytes']/1048576,'drc':r['drcErrorCount'],'solved':r['didSolve'],'outputHash':r.get('routedOutputSha256'),'stages':r.get('stageMemoryStudy')}
+          print('DEPENDENCY_MEMORY_NUMERIC',json.dumps(result))
+          Path('numeric-results.json').write_text(json.dumps(result,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-memory-numbers
+          path: numeric-results.json
