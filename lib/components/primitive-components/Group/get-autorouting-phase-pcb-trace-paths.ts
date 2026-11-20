@@ -11,7 +11,11 @@ import type { Port } from "../Port"
 import type { IGroup } from "./IGroup"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 import { getSavedPcbTracePathTransform } from "./get-saved-pcb-trace-path-transform"
-import { getSavedAutoroutingPhaseTracesFromPaths } from "./get-saved-autorouting-phase-traces"
+import {
+  getSavedAutoroutingPhaseTracesFromPaths,
+  getValidatedCompleteSavedPaths,
+} from "./get-saved-autorouting-phase-traces"
+import { getSavedPhaseRouteContacts } from "./get-saved-route-contacts"
 
 export type AutoroutingPhasePcbTracePaths = {
   pcbTracePaths?: z.output<typeof fanoutTracePath>[]
@@ -62,9 +66,6 @@ export function getAutoroutingPhasePcbTracePaths({
         .filter((port) => port.pcb_port_id)
         .map((port) => [port.pcb_port_id!, port]),
     )
-    const terminals = input.connections.flatMap(
-      (connection) => connection.pointsToConnect,
-    )
     const routes = traces.map((trace) => {
       if (
         trace.route.length < 2 ||
@@ -76,6 +77,58 @@ export function getAutoroutingPhasePcbTracePaths({
       }
       return trace.route as WireOrVia[]
     })
+    const toSavedPath = (
+      route: WireOrVia[],
+      terminal: SingleLayerConnectionPoint,
+      port: Port,
+    ) => {
+      const selector = terminal.port_selector ?? port.getPortSelector()
+      if (subcircuit.selectOne(selector, { type: "port" }) !== port)
+        throw new Error(`PCB port selector is not unique: ${selector}`)
+      const transform = inverse(getSavedPcbTracePathTransform(group, port))
+      return fanoutTracePath.parse({
+        connection: selector,
+        route: route.map((point) => ({
+          ...point,
+          ...applyToPoint(transform, point),
+        })),
+      })
+    }
+    if (!isFanout) {
+      const savedRoutes = routes.map((route) =>
+        fanoutTracePath.shape.route.parse(route),
+      )
+      const contacts = getSavedPhaseRouteContacts(savedRoutes, input, (id) =>
+        portsByPcbPortId.get(id)?.root?.db.pcb_port.get(id),
+      )
+      const paths = savedRoutes.map((route, routeIndex) => {
+        const terminals = contacts
+          .getRouteTerminals(routeIndex)
+          .filter(
+            ({ point }) =>
+              point.pcb_port_id && portsByPcbPortId.has(point.pcb_port_id),
+          )
+        const anchor =
+          terminals.find(({ point }) => touches(route[0]!, point)) ??
+          terminals[0]
+        if (!anchor)
+          throw new Error(
+            "Saved routes must connect to a PCB port in this phase",
+          )
+        const { point } = anchor
+        return toSavedPath(
+          route,
+          point,
+          portsByPcbPortId.get(point.pcb_port_id!)!,
+        )
+      })
+      getValidatedCompleteSavedPaths({ group, subcircuit, paths, input })
+      return { pcbTracePaths: paths }
+    }
+
+    const terminals = input.connections.flatMap(
+      (connection) => connection.pointsToConnect,
+    )
     const endpoints = routes.map((route) => [
       terminals.filter((terminal) => touches(route[0]!, terminal)),
       terminals.filter((terminal) => touches(route.at(-1)!, terminal, true)),
@@ -109,10 +162,6 @@ export function getAutoroutingPhasePcbTracePaths({
             continue
           const port = portsByPcbPortId.get(terminal.pcb_port_id)
           if (!port || usedPorts.has(port)) continue
-          const selector = terminal.port_selector ?? port.getPortSelector()
-          if (subcircuit.selectOne(selector, { type: "port" }) !== port) {
-            throw new Error(`PCB port selector is not unique: ${selector}`)
-          }
           const route = reverse
             ? routes[routeIndex]!.toReversed().map((point) =>
                 point.route_type === "via"
@@ -124,16 +173,7 @@ export function getAutoroutingPhasePcbTracePaths({
                   : point,
               )
             : routes[routeIndex]!
-          const transform = inverse(getSavedPcbTracePathTransform(group, port))
-          paths.push(
-            fanoutTracePath.parse({
-              connection: selector,
-              route: route.map((point) => ({
-                ...point,
-                ...applyToPoint(transform, point),
-              })),
-            }),
-          )
+          paths.push(toSavedPath(route, terminal, port))
           usedPorts.add(port)
           remainingRoutes.delete(routeIndex)
           for (const endpoint of new Set(endpoints[routeIndex]!.flat())) {

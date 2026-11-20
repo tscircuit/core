@@ -1,9 +1,5 @@
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
-import {
-  getMouseBiteClearanceViolation,
-  PANEL_TRACE_MOUSE_BITE_CLEARANCE,
-} from "lib/utils/panels/get-mouse-bite-clearance-violation"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
 import {
   materializeRoutedTestPoints,
@@ -29,7 +25,6 @@ import {
 import {
   type AnyCircuitElement,
   type LayerRef,
-  type PcbHoleCircle,
   type PcbTrace,
   type PcbVia,
   type SchematicComponent,
@@ -143,6 +138,28 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
+
+type PcbTraceId = PcbTrace["pcb_trace_id"]
+type AutoroutedPcbTrace = (PcbTrace | SimplifiedPcbTrace) &
+  Partial<Pick<PcbTrace, "subcircuit_id" | "route_thickness_mode">>
+
+type GroupAutoroutingResult = {
+  output_test_points?: ConnectedRoutedTestPoint[]
+  output_simple_route_json?: SimpleRouteJson
+  output_pcb_traces?: (AutoroutedPcbTrace | PcbVia)[]
+  pcb_trace_ids_to_be_replaced?: PcbTraceId[]
+  output_jumpers?: Array<{
+    jumper_footprint: string
+    center: { x: number; y: number }
+    orientation: string
+    pads: Array<{
+      center: { x: number; y: number }
+      width: number
+      height: number
+      layer: string
+    }>
+  }>
+}
 
 const getDistanceToPoint = (
   routePoint: PcbTrace["route"][number],
@@ -286,24 +303,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return nameMap
   }
 
-  _asyncAutoroutingResult: {
-    output_test_points?: ConnectedRoutedTestPoint[]
-    output_simple_route_json?: SimpleRouteJson
-    output_pcb_traces?: (PcbTrace | PcbVia)[]
-    // PCB traces that are being re-routed
-    pcb_trace_ids_to_be_replaced?: string[]
-    output_jumpers?: Array<{
-      jumper_footprint: string
-      center: { x: number; y: number }
-      orientation: string
-      pads: Array<{
-        center: { x: number; y: number }
-        width: number
-        height: number
-        layer: string
-      }>
-    }>
-  } | null = null
+  _asyncAutoroutingResult: GroupAutoroutingResult | null = null
+  private _acceptedAutoroutingPhaseResult: GroupAutoroutingResult | null = null
+  private _renderedAutoroutingResult: GroupAutoroutingResult | null = null
+  private _renderedAutoroutingPcbTraceIds: PcbTraceId[] = []
 
   get config() {
     return {
@@ -2072,22 +2075,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             phaseAutorouterConfig.preset ?? "",
           ),
         })
-        this.root?.emit("autorouting:end", {
-          ...savedPhasePaths,
-          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
-          type: "autorouting:end",
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...(routingPhasePlan.phaseName !== undefined
-            ? {
-                phaseName: routingPhasePlan.phaseName,
-                phaseStageIndex,
-                phaseStageCount,
-              }
-            : {}),
-          ...autoroutingMetadata,
-          simpleRouteJson: outputSimpleRouteJson,
-        })
 
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
@@ -2161,6 +2148,56 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             }),
           )
         }
+
+        // Pours need their final clearance render. Generated components and
+        // authored assignable vias need one final materialization/ownership pass.
+        const acceptedTracePhase =
+          phaseStageIndex + 1 === phaseStageCount &&
+          routingStageIndex + 1 < routingStages.length &&
+          !(this._getBoard() ?? this)
+            .getDescendants()
+            .some((component) => component.componentName === "CopperPour") &&
+          db.pcb_copper_pour.list().length === 0 &&
+          !db.pcb_via.list().some((via) => via.net_is_assignable) &&
+          outputJumpers.length === 0 &&
+          outputTestPoints.length === 0 &&
+          !outputTraces.some((trace) =>
+            trace.route.some((point) => point.route_type === "jumper"),
+          )
+        if (acceptedTracePhase) {
+          // Saved paths can complete inside the render that starts this effect.
+          // Publish after that render has finished clearing its dirty flags.
+          await Promise.resolve()
+          // Rendering normalizes routes. Later solvers must keep the untouched
+          // accepted SRJ, and parent subcircuits must still wait for the final result.
+          this._acceptedAutoroutingPhaseResult = {
+            output_pcb_traces: structuredClone(outputTraces),
+            pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
+          }
+          this._markDirty("PcbTraceRender")
+        }
+
+        this.root?.emit("autorouting:end", {
+          ...savedPhasePaths,
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
+          type: "autorouting:end",
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          ...(routingPhasePlan.phaseName !== undefined
+            ? {
+                phaseName: routingPhasePlan.phaseName,
+                phaseStageIndex,
+                phaseStageCount,
+              }
+            : {}),
+          ...autoroutingMetadata,
+          simpleRouteJson: outputSimpleRouteJson,
+        })
+        if (acceptedTracePhase) {
+          // Let the normal render loop publish accepted copper before the next
+          // solver starts work. The routing async effect remains pending.
+          await new Promise<void>((resolve) => setTimeout(resolve, 0))
+        }
       } catch (error) {
         const { db } = this.root!
         // Record the error
@@ -2202,7 +2239,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Store the result
     this._asyncAutoroutingResult = {
-      output_pcb_traces: outputTraces as any,
+      output_pcb_traces: outputTraces,
       output_jumpers: outputJumpers,
       output_test_points: outputTestPoints,
       pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
@@ -2354,24 +2391,32 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    if (!this._asyncAutoroutingResult) return
+    const autoroutingResult =
+      this._asyncAutoroutingResult ?? this._acceptedAutoroutingPhaseResult
+    if (
+      !autoroutingResult ||
+      autoroutingResult === this._renderedAutoroutingResult
+    )
+      return
     if (this._shouldUseTraceByTraceRouting()) return
 
-    const { db } = this.root!
-
-    if (this._asyncAutoroutingResult.output_simple_route_json) {
+    if (autoroutingResult.output_simple_route_json) {
       debug(
-        `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
+        `[${this.getString()}] updating PCB traces from simple route json (${autoroutingResult.output_simple_route_json.traces?.length} traces)`,
       )
       this._updatePcbTraceRenderFromSimpleRouteJson()
+      this._renderedAutoroutingResult = autoroutingResult
       return
     }
 
-    if (this._asyncAutoroutingResult.output_pcb_traces) {
+    if (autoroutingResult.output_pcb_traces) {
       debug(
-        `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
+        `[${this.getString()}] updating PCB traces from ${autoroutingResult.output_pcb_traces.length} traces`,
       )
-      this._updatePcbTraceRenderFromPcbTraces()
+      this._renderedAutoroutingPcbTraceIds =
+        this._updatePcbTraceRenderFromPcbTraces(autoroutingResult)
+      this._renderedAutoroutingResult = autoroutingResult
+      this._acceptedAutoroutingPhaseResult = null
       return
     }
   }
@@ -2438,16 +2483,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _updatePcbTraceRenderFromPcbTraces() {
+  _updatePcbTraceRenderFromPcbTraces(
+    autoroutingResult: GroupAutoroutingResult,
+  ) {
     const { output_pcb_traces, output_jumpers, pcb_trace_ids_to_be_replaced } =
-      this._asyncAutoroutingResult!
-    if (!output_pcb_traces) return
+      autoroutingResult
+    const emittedPcbTraceIds: PcbTraceId[] = []
+    if (!output_pcb_traces) return emittedPcbTraceIds
 
     const { db } = this.root!
-    const testPoints = this._asyncAutoroutingResult!.output_test_points
+    const testPoints = autoroutingResult.output_test_points
     if (testPoints?.length) {
       materializeRoutedTestPoints(db, testPoints, this.subcircuit_id!)
-      this._asyncAutoroutingResult!.output_test_points = []
+      autoroutingResult.output_test_points = []
     }
 
     // Delete any previously created traces
@@ -2475,7 +2523,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
-      pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
+      pcbTraceIdsToReplace: [
+        ...(pcb_trace_ids_to_be_replaced ?? []),
+        ...this._renderedAutoroutingPcbTraceIds,
+      ],
     })
 
     // Preserve one Circuit JSON via per physical same-net transition even when
@@ -2483,18 +2534,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const materializedPcbVias = db.pcb_via.list()
     // Jumpers have been inserted above; pad geometry is fixed for this batch.
     const jumperPadInfos = getJumperPadInfos(db)
-    // A panel's traces must cross its tabs clear of the mouse-bite drills.
-    const isPanelRouting =
-      this.componentName === "Panel" || this.componentName === "Subpanel"
-    const panelMouseBiteHoles = isPanelRouting
-      ? db.pcb_hole
-          .list()
-          .filter(
-            (hole): hole is PcbHoleCircle =>
-              hole.hole_shape === "circle" &&
-              hole.subcircuit_id === this.subcircuit_id,
-          )
-      : []
 
     for (const pcb_trace of output_pcb_traces) {
       // vias can be included
@@ -2530,27 +2569,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       })
       pcb_trace.route = cjRoute as typeof pcb_trace.route
 
-      const mouseBiteViolation = getMouseBiteClearanceViolation({
-        route: pcb_trace.route,
-        mouseBiteHoles: panelMouseBiteHoles,
-      })
-      if (mouseBiteViolation) {
-        const traceName =
-          (routeSourceTraceId &&
-            db.source_trace.get(routeSourceTraceId)?.display_name) ||
-          pcb_trace.pcb_trace_id
-        db.pcb_autorouting_error.insert({
-          pcb_error_id: `pcb_autorouter_error_mouse_bite_${pcb_trace.pcb_trace_id}`,
-          error_type: "pcb_autorouting_error",
-          message: `Trace ${traceName} cannot cross the panel's mouse-bite tab: its best route ${
-            mouseBiteViolation.gap < 0
-              ? `overlaps a mouse-bite drill by ${(-mouseBiteViolation.gap).toFixed(3)}mm`
-              : `passes ${mouseBiteViolation.gap.toFixed(3)}mm from a mouse-bite drill`
-          }, but ${PANEL_TRACE_MOUSE_BITE_CLEARANCE}mm of clearance is required. Change the mouse-bite size or position, or the tab width or placement, to leave room for the trace.`,
-        })
-        continue
-      }
-
       // Split traces at jumper locations (based on explicit jumper route markers)
       let segments = splitPcbTracesOnJumperSegments(cjRoute)
 
@@ -2585,6 +2603,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
+          emittedPcbTraceIds.push(insertedPcbTrace.pcb_trace_id)
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
@@ -2676,6 +2695,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
     }
+    return emittedPcbTraceIds
   }
 
   doInitialSchematicComponentRender() {

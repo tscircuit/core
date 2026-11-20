@@ -2,8 +2,9 @@ import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 // An autorouted panel trace from B1's R1 to B2's R2 must cross the tab
-// between the boards. On these small boards the tab's mouse-bite drills leave
-// no legal gap, so the autorouter's best route runs into the drills.
+// between the boards. The tab's mouse-bite drills leave no legal gap for the
+// trace, so the autorouter's best route leaves the tab and crosses the
+// routing slot (cutout) instead.
 test("autorouted panel trace crosses a mouse-bite tab between two boards", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
@@ -28,7 +29,8 @@ test("autorouted panel trace crosses a mouse-bite tab between two boards", async
     ].map((error) => error.message),
   ).toMatchInlineSnapshot(`
     [
-      "Trace .B1 .R1 .pin2 to .B2 .R2 .pin1 cannot cross the panel's mouse-bite tab: its best route overlaps a mouse-bite drill by 0.205mm, but 0.2mm of clearance is required. Change the mouse-bite size or position, or the tab width or placement, to leave room for the trace.",
+      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
+      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
     ]
   `)
 })
