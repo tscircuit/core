@@ -1,0 +1,81 @@
+name: Evaluate cheap search pruning before exact native copper checks
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-cheap-pruning.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 35
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 432cb8d9dd8ff4a3753c0f67677aa63016313b4a
+          path: autorouter
+          persist-credentials: false
+      - name: Build exact bounded-query plus cheap-pruning candidate
+        working-directory: autorouter
+        run: |
+          bun install
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts')
+          s=p.read_text()
+          old="      if (\n        this.staticSegmentValidator &&\n        !this.isStaticMoveAllowed({\n          fromCellId: cellId,\n          fromZ: z,\n          toCellId: neighborCellId,\n          toZ: z,\n          firstMove: this.nodePool.parent[nodeIdx] === -1,\n        })\n      ) {\n        continue\n      }\n"
+          anchor="      this.bestGStamp[nextStateIdx] = stamp\n"
+          assert s.count(old)==1
+          assert s.count(anchor)==1
+          s=s.replace(old,'',1).replace(anchor,old+anchor,1)
+          old="        if (\n          this.staticSegmentValidator &&\n          !this.isStaticMoveAllowed({\n            fromCellId: cellId,\n            fromZ: z,\n            toCellId: cellId,\n            toZ: nz,\n            firstMove: this.nodePool.parent[nodeIdx] === -1,\n          })\n        ) {\n          continue\n        }\n"
+          anchor="        this.bestGStamp[nextStateIdx] = stamp\n"
+          assert s.count(old)==1
+          assert s.count(anchor)==1
+          s=s.replace(old,'',1).replace(anchor,old+anchor,1)
+          p.write_text(s)
+          print('A03 exact copper check moved after search-state pruning; before frontier mutation')
+          PY
+          bun -e 'import {loadScenarios} from "./scripts/benchmark/scenarios.ts"; const cases=await loadScenarios("srj18"); console.log("DATASET18_INPUT_COUNTS",JSON.stringify(cases.map(([sample,s])=>({sample,connections:s.connections.length,obstacles:s.obstacles.length,traces:s.traces?.length??0,fixed:s.traces?.filter(t=>t.isFixed).length??0}))));'
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: current
+          persist-credentials: false
+      - run: bun install --ignore-scripts
+        working-directory: current
+      - name: Compare both revisions sequentially on the same real DDR circuits
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/current" --out "$GITHUB_WORKSPACE/results/current" --timeout 120 --circuit h616 --circuit glider
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/pruned" --timeout 120 --circuit h616 --circuit glider
+          bun "$benchmark/report.ts" results/pruned/results.json results/current/results.json results/comparison.md
+          cat results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
