@@ -219,6 +219,20 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return false
     }
 
+    const customSymbol = parentNormalComponent?.children.find(
+      (c: PrimitiveComponent) => c.componentName === "Symbol",
+    )
+    if (customSymbol && customSymbol.selectAll("port").length > 0) {
+      const hasCustomSymbolRepresentation =
+        Boolean(this._getSymbolAncestor()) ||
+        this._getPortsInternallyConnectedToThisPort().some((p) =>
+          Boolean(p._getSymbolAncestor()),
+        )
+      if (!hasCustomSymbolRepresentation) {
+        return false
+      }
+    }
+
     const parentBoxDim = parentNormalComponent?._getSchematicBoxDimensions()
     if (parentBoxDim && this._parsedProps.pinNumber !== undefined) {
       const localPortPosition = parentBoxDim.getPortPositionByPinNumber(
