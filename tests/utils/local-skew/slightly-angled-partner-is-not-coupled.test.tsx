@@ -1,32 +1,84 @@
 import { expect, test } from "bun:test"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-/** How far DN drops over its 20 mm slant: 2°, just past the 0.8° parallel limit. */
-const SLANT_DROP = 20 * Math.tan((2 * Math.PI) / 180)
+test("a partner angled 2\u00b0 away is not coupled, even within the spacing", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 1, y: 0 },
+          { x: 21, y: -0.698415389835 },
+          { x: 21, y: 0 },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="a partner angled 2\u00b0 away is not coupled, even within the spacing"
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-test("a partner angled 2° away is not coupled, even within the spacing", async () => {
-  // DN slants away from x = -11 to 9; its first 3.4 mm stay within the
-  // 0.72 mm spacing allowance.
-  const circuitJson = renderPairBoard({
-    positivePath: [],
-    negativePath: [
-      { x: 1, y: 0 },
-      { x: 21, y: -SLANT_DROP },
-      { x: 21, y: 0 },
-    ],
-    pcbTraceGap: "0.45mm",
-  })
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: -11.5 }).coupling,
-  ).toBe("coupled")
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: -10 }).coupling,
-  ).toBe("interpolated")
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -11,0.3  N -11,-0.3  skew 0
+    P 9,0.3  N 9,-0.3  skew -0.71061
+    P 12,0.3  N 12,-0.3  skew -0.71061"
+  `)
 })

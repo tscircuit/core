@@ -3124,10 +3124,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     Group_doInitialPcbDifferentialPairLocalSkewRender(this)
   }
 
-  updatePcbDifferentialPairLocalSkewRender() {
-    this.doInitialPcbDifferentialPairLocalSkewRender()
-  }
-
   doInitialPcbDesignRuleChecks() {
     if (this.root?.pcbDisabled) return
     if (this._isLegacyAutorouterDisabled()) return

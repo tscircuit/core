@@ -1,34 +1,85 @@
 import { expect, test } from "bun:test"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import type { PcbTrace } from "circuit-json"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("each via adds the same length to skew as to trace_length", async () => {
-  // Both traces take the same path, but DN hops to the bottom layer and
-  // back between x = -6 and x = 6.
-  const circuitJson = renderPairBoard({
-    positivePath: [],
-    negativePath: [
-      { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    pcbTraceGap: "0.45mm",
-  })
-  const [positiveLength, negativeLength] = circuitJson
-    .filter((element): element is PcbTrace => element.type === "pcb_trace")
-    .map((trace) => trace.trace_length ?? Number.NaN)
+test("each via adds the same length to skew as to trace_length", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="each via adds the same length to skew as to trace_length"
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  const before = segmentAtX({ segments: pair.positive.segments, x: -9 })
-  const after = segmentAtX({ segments: pair.positive.segments, x: 9 })
-  expect(before.coupling).toBe("coupled")
-  expect(before.local_skew).toBe(0)
-  expect(after.coupling).toBe("coupled")
-  expect(after.local_skew).toBeCloseTo(positiveLength - negativeLength, 5)
-  expect(after.local_skew).toBeLessThan(0)
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -6,0.3  N -6,-0.3  skew 0
+    P -6,0.3  N -6,-0.3  skew -1.6
+    P 6,0.3  N 6,-0.3  skew -1.6
+    P 6,0.3  N 6,-0.3  skew -3.2
+    P 12,0.3  N 12,-0.3  skew -3.2"
+  `)
 })

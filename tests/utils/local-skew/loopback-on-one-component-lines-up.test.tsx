@@ -1,17 +1,85 @@
 import { expect, test } from "bun:test"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { renderLoopbackBoard } from "tests/fixtures/local-skew/loopback-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("a loopback with all pads on one part lines the traces up by their ends", async () => {
-  const circuitJson = renderLoopbackBoard()
-  const [pair] = getStoredLocalSkew(circuitJson)
+test("a loopback with all pads on one part lines the traces up by their ends", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <chip
+        name="U1"
+        footprint={
+          <footprint>
+            <smtpad
+              portHints={["pin1"]}
+              pcbX={-12}
+              pcbY={0.3}
+              width="0.3mm"
+              height="0.3mm"
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin2"]}
+              pcbX={-12}
+              pcbY={-0.3}
+              width="0.3mm"
+              height="0.3mm"
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin3"]}
+              pcbX={12}
+              pcbY={0.3}
+              width="0.3mm"
+              height="0.3mm"
+              shape="rect"
+            />
+            <smtpad
+              portHints={["pin4"]}
+              pcbX={12}
+              pcbY={-0.3}
+              width="0.3mm"
+              height="0.3mm"
+              shape="rect"
+            />
+          </footprint>
+        }
+      />
+      <trace
+        name="DP"
+        from=".U1 > .pin1"
+        to=".U1 > .pin3"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <trace
+        name="DN"
+        from=".U1 > .pin4"
+        to=".U1 > .pin2"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <differentialpair
+        name="LOOP"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={6}
+        fontSize={0.5}
+        text="a loopback with all pads on one part lines the traces up by their ends"
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  const middle = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  expect(middle.coupling).toBe("coupled")
-  expect(middle.local_skew).toBe(0)
-  expect(pair.max_local_skew).toBe(0)
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P 12,0.3  N 12,-0.3  skew 0"
+  `)
 })

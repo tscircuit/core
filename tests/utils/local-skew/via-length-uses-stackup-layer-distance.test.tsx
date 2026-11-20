@@ -1,54 +1,92 @@
 import { expect, test } from "bun:test"
-import type { PcbStackup } from "circuit-json"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("a via counts the stackup layer distance and a same-layer via adds nothing", async () => {
-  // 4-layer board with a pcb_stackup: DN hops top -> inner1 -> top while DP
-  // stays on top with a no-op top -> top via.
-  const circuitJson = renderPairBoard({
-    positivePath: [
-      { x: 12, y: 0, via: true, fromLayer: "top", toLayer: "top" },
-    ],
-    negativePath: [
-      { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "inner1" },
-      { x: 18, y: 0, via: true, fromLayer: "inner1", toLayer: "top" },
-    ],
-    pcbTraceGap: "0.45mm",
-    layers: 4,
-    thickness: "1.6mm",
-    fabricatorPreset: "jlcpcb_standard",
-  })
-
-  const stackup = circuitJson.find(
-    (element): element is PcbStackup => element.type === "pcb_stackup",
+test("a via counts the stackup layer distance and a same-layer via adds nothing", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board
+      routeRemaining={false}
+      width="40mm"
+      height="20mm"
+      layers={4}
+      thickness="1.6mm"
+      fabricatorPreset="jlcpcb_standard"
+    >
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[{ x: 12, y: 0, via: true, fromLayer: "top", toLayer: "top" }]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "inner1" },
+          { x: 18, y: 0, via: true, fromLayer: "inner1", toLayer: "top" },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="a via counts the stackup layer distance and a same-layer via adds nothing"
+      />
+    </board>,
   )
-  expect(stackup).toBeDefined()
-  const top = stackup!.layers.find(
-    (layer) => layer.layer_type === "copper" && layer.layer === "top",
-  )!
-  const prepreg = stackup!.layers[1]
-  const inner1 = stackup!.layers.find(
-    (layer) => layer.layer_type === "copper" && layer.layer === "inner1",
-  )!
-  // KiCad rule: full outer copper, all intervening dielectric, half inner copper.
-  const expectedViaLength =
-    top.thickness! + prepreg.thickness! + inner1.thickness! / 2
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: -9 }).local_skew,
-  ).toBe(0)
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: 0 }).local_skew,
-  ).toBeCloseTo(-expectedViaLength, 5)
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: 9 }).local_skew,
-  ).toBeCloseTo(-2 * expectedViaLength, 5)
-  expect(pair.max_local_skew).toBeCloseTo(2 * expectedViaLength, 5)
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -6,0.3  N -6,-0.3  skew 0
+    P -6,0.3  N -6,-0.3  skew -0.142
+    P 6,0.3  N 6,-0.3  skew -0.142
+    P 6,0.3  N 6,-0.3  skew -0.284
+    P 12,0.3  N 12,-0.3  skew -0.284"
+  `)
 })

@@ -1,58 +1,93 @@
 import { expect, test } from "bun:test"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("a detour right after a shared via does not double-count the partner's single via", async () => {
-  // Both traces run together on top to x = 0 and drop through symmetric 1.6 mm
-  // vias to bottom. DN immediately continues coupled along [0, 6] on bottom
-  // (no copper gap between its two coupled runs, only the single via at x = 0).
-  // DP takes a 4 mm (1 x 1 mm) loop on bottom at x = 0 before rejoining DN.
-  // DN's single via was already balanced by DP's via at the end of the top run,
-  // so DP's skew ramps from 0 to 4.0 mm across the loop — never 5.6 mm.
-  const circuitJson = renderPairBoard({
-    positivePath: [
-      { x: 12, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: 11, y: 0 },
-      { x: 11, y: 1 },
-      { x: 12, y: 1 },
-      { x: 12, y: 0 },
-      { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    negativePath: [
-      { x: 12, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    pcbTraceGap: "0.45mm",
-  })
+test("a detour right after a shared via does not double-count the partner's single via", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 12, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: 11, y: 0 },
+          { x: 11, y: 1 },
+          { x: 12, y: 1 },
+          { x: 12, y: 0 },
+          { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 12, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="a detour right after a shared via does not double-count the partner's single via"
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: -6 }).local_skew,
-  ).toBe(0)
-  expect(
-    segmentAtX({ segments: pair.positive.segments, x: 3 }).local_skew,
-  ).toBeCloseTo(4, 5)
-  expect(
-    segmentAtX({ segments: pair.negative.segments, x: 3 }).local_skew,
-  ).toBeCloseTo(-4, 5)
-
-  // At x = -0.5, y = 1.3 (2.5 mm along the 4 mm loop), skew is 2.5 mm (not 3.5 mm).
-  const loopTop = segmentAtX({
-    segments: pair.positive.segments,
-    x: -0.5,
-    y: 1.3,
-  })
-  expect(loopTop.coupling).toBe("interpolated")
-  expect(loopTop.local_skew).toBeCloseTo(2.5, 2)
-
-  expect(pair.positive).toMatchObject({
-    positive_skew_scale: 4,
-    negative_skew_scale: 0,
-  })
-  expect(pair.max_local_skew).toBeCloseTo(4, 5)
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P 0,0.3  N 0,-0.3  skew 0
+    P 0,0.3  N 0,-0.3  skew 0
+    P 0,0.3  N 0,-0.3  skew 4
+    P 6,0.3  N 6,-0.3  skew 4
+    P 6,0.3  N 6,-0.3  skew 4
+    P 12,0.3  N 12,-0.3  skew 4"
+  `)
 })

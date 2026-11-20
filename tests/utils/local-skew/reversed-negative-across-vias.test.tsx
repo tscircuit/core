@@ -1,41 +1,93 @@
 import { expect, test } from "bun:test"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { DETOUR_EXTRA_LENGTH } from "tests/fixtures/local-skew/differential-pair-board"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("a negative trace routed from its load across two vias keeps its layers and distances", async () => {
-  // Both traces hop to the bottom layer between x = -6 and x = 6. DP also
-  // detours right after its source. DN is routed from its load end.
-  const circuitJson = renderPairBoard({
-    positivePath: [
-      { x: 2, y: 0 },
-      { x: 2.5, y: 1 },
-      { x: 3, y: 0 },
-      { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    negativePath: [
-      { x: -6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: -18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    pcbTraceGap: "0.45mm",
-    negativeFromLoad: true,
-  })
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  for (const x of [-3, 3]) {
-    const positive = segmentAtX({ segments: pair.positive.segments, x })
-    const negative = segmentAtX({ segments: pair.negative.segments, x })
-    expect(positive.layer).toBe("bottom")
-    expect(negative.layer).toBe("bottom")
-    expect(positive.local_skew).toBeCloseTo(DETOUR_EXTRA_LENGTH, 5)
-    expect(negative.local_skew).toBeCloseTo(-DETOUR_EXTRA_LENGTH, 5)
-  }
-  expect(segmentAtX({ segments: pair.negative.segments, x: 9 }).layer).toBe(
-    "top",
+test("a negative trace routed from its load across two vias keeps its layers and distances", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 2, y: 0 },
+          { x: 2.5, y: 1 },
+          { x: 3, y: 0 },
+          { x: 6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: 18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <trace
+        name="DN"
+        from=".TN_LOAD > .pin1"
+        to=".TN_SRC > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: -6, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: -18, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="a negative trace routed from its load across two vias keeps its layers and distances"
+      />
+    </board>,
   )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -10,0.3  N -10,-0.3  skew 0
+    P -9,0.3  N -9,-0.3  skew 1.23607
+    P -6,0.3  N -6,-0.3  skew 1.23607
+    P -6,0.3  N -6,-0.3  skew 1.23607
+    P 6,0.3  N 6,-0.3  skew 1.23607
+    P 6,0.3  N 6,-0.3  skew 1.23607
+    P 12,0.3  N 12,-0.3  skew 1.23607"
+  `)
 })

@@ -1,32 +1,85 @@
 import { expect, test } from "bun:test"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("a coupled stretch right at the 1 nm overlap threshold finishes without hanging", async () => {
-  // DN only comes beside DP for 1 nm between x = 4 and x = 4.000001, just
-  // above MIN_OVERLAP because of floating-point rounding.
-  const circuitJson = renderPairBoard({
-    positivePath: [],
-    negativePath: [
-      { x: 0, y: -3 },
-      { x: 16, y: -3 },
-      { x: 16, y: 0 },
-      { x: 16.000001, y: 0 },
-      { x: 16.000001, y: -3 },
-      { x: 24, y: -3 },
-    ],
-    pcbTraceGap: "0.45mm",
-  })
-
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  const coupled = pair.positive.segments.filter(
-    (segment) => segment.coupling === "coupled",
+test("a coupled stretch right at the 1 nm overlap threshold finishes without hanging", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 0, y: -3 },
+          { x: 16, y: -3 },
+          { x: 16, y: 0 },
+          { x: 16.000001, y: 0 },
+          { x: 16.000001, y: -3 },
+          { x: 24, y: -3 },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="a coupled stretch right at the 1 nm overlap threshold finishes without hanging"
+      />
+    </board>,
   )
-  expect(coupled).toHaveLength(1)
-  expect(coupled[0].local_skew).toBeCloseTo(-6, 5)
-  expect(pair.max_local_skew).toBeCloseTo(6, 5)
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
-}, 2000)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P 4,0.3  N 4.000001,-0.3  skew -6
+    P 4.000001,0.3  N 4.000001,-0.3  skew -6"
+  `)
+})

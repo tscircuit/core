@@ -1,9 +1,18 @@
-import type { Point } from "@tscircuit/math-utils"
-import type { LayerRef, PcbStackup, PcbTrace } from "circuit-json"
+import type {
+  LayerRef,
+  LocalSkewRouteStep,
+  PcbPort,
+  PcbTrace,
+  Point,
+} from "circuit-json"
+import {
+  type LayerChangeBoard,
+  getLayerChangeLength,
+} from "lib/components/primitive-components/Trace/trace-utils/compute-trace-length"
 
 /**
  * A straight copper piece in PCB world XY (mm, +X right, +Y up, +Z above)
- * and its starting distance along the trace.
+ * and its starting distance along the walk.
  */
 export type TraceStep = {
   start: Point
@@ -13,60 +22,87 @@ export type TraceStep = {
   /** Distance along the walk from its first point to `start`, in mm. */
   startDistance: number
   length: number
-  /** Length of any via directly before `start`, in mm. */
+  /** Length of any layer change directly before `start`, in mm. */
   startViaLength: number
-  /** Length of any via directly after `end`, in mm. */
+  /** Length of any layer change directly after `end`, in mm. */
   endViaLength: number
 }
 
-/** A trace's steps in walk order, and its total length including vias, in mm. */
-export type TraceWalk = {
-  steps: TraceStep[]
+/** One route edge of a walk with planar length, and where it starts along the walk. */
+export type WalkEdge = {
+  routeStep: LocalSkewRouteStep
+  /** Distance along the walk from its first point to the edge's start, in mm. */
+  startDistance: number
+  /** Planar length of the edge, in mm. */
   length: number
 }
 
-/** A point the route passes through, and the copper arriving at it. */
+/**
+ * One side's copper in walk order: its straight steps, its route edges,
+ * its length including layer changes in mm and the ports at its ends.
+ */
+export type TraceWalk = {
+  steps: TraceStep[]
+  edges: WalkEdge[]
+  length: number
+  startPcbPortId: PcbPort["pcb_port_id"] | undefined
+  endPcbPortId: PcbPort["pcb_port_id"] | undefined
+}
+
+/** A route point with the incoming copper layer and outgoing copper width. */
 type RouteCorner = {
   point: Point
   layer: LayerRef
   width: number
   viaLength: number
+  /** Index of the route edge whose copper arrives at this corner, or null for the copper across a through pad. */
+  edgeIndex: number | null
 }
 
-/** Default via length, in mm, when neither `pcb_stackup` nor `pcb_board.thickness` is present. */
-const DEFAULT_VIA_LENGTH = 1.6
+/** The ports a PCB trace's route starts and ends at, when it names them. */
+export type TraceEndPorts = Pick<TraceWalk, "startPcbPortId" | "endPcbPortId">
+
+/** Cosine above which two steps count as one straight line (about 0.003°). */
+const STRAIGHT_COSINE = 1 - 1e-9
 
 /**
  * Splits a trace route into straight pieces in stored route order.
  *
- * Copper arriving at a wire point uses that wire's layer and width.
- * Copper arriving at a via uses the via's `from_layer` and the last wire's
- * width, so sparse routes still contribute planar length between vias.
- * A via between two different layers adds their Z-distance from
- * `stackup`, else `boardThickness`, else {@link DEFAULT_VIA_LENGTH}.
+ * A planar piece uses its start point's width, including the starting
+ * width of a taper. Vias carry the last wire width for sparse routes.
+ * Vias and through pads that change layers add the same Z-distance as
+ * `trace_length` does, from {@link getLayerChangeLength}.
  *
  * Consecutive pieces that continue in a straight line on the same copper
  * are joined, so how finely a route is split into points doesn't matter.
  */
 export function walkTrace({
-  trace,
-  stackup,
+  pcbTrace,
+  pcbStackup,
   boardThickness,
-}: {
-  trace: PcbTrace
-  stackup?: PcbStackup
-  boardThickness?: number
-}): TraceWalk {
+}: { pcbTrace: PcbTrace } & LayerChangeBoard): TraceWalk {
   const steps: TraceStep[] = []
+  const edges: WalkEdge[] = []
   let distance = 0
   let from: RouteCorner | undefined
   let pendingViaLength = 0
-  for (const to of routeCorners({ trace, stackup, boardThickness })) {
+  for (const to of routeCorners({ pcbTrace, pcbStackup, boardThickness })) {
     if (from) {
       const length = Math.hypot(
         to.point.x - from.point.x,
         to.point.y - from.point.y,
       )
+      if (length > 0 && to.edgeIndex !== null) {
+        edges.push({
+          routeStep: {
+            pcb_trace_id: pcbTrace.pcb_trace_id,
+            edge_index: to.edgeIndex,
+            reverse: false,
+          },
+          startDistance: distance,
+          length,
+        })
+      }
       if (length > 0) {
         addStep({
           steps,
@@ -88,7 +124,24 @@ export function walkTrace({
     }
     from = to
   }
-  return { steps, length: distance }
+  return {
+    steps,
+    edges,
+    length: distance,
+    ...getTraceEndPorts(pcbTrace),
+  }
+}
+
+/** The ports named by the first and last wire points of a route. */
+export function getTraceEndPorts(pcbTrace: PcbTrace): TraceEndPorts {
+  let startPcbPortId: PcbPort["pcb_port_id"] | undefined
+  let endPcbPortId: PcbPort["pcb_port_id"] | undefined
+  for (const routePoint of pcbTrace.route) {
+    if (routePoint.route_type !== "wire") continue
+    startPcbPortId ??= routePoint.start_pcb_port_id
+    endPcbPortId = routePoint.end_pcb_port_id ?? endPcbPortId
+  }
+  return { startPcbPortId, endPcbPortId }
 }
 
 /** Appends the step from one corner to the next, joining it to the previous step when it carries straight on. */
@@ -105,14 +158,14 @@ function addStep({
   to: RouteCorner
   startDistance: number
   length: number
-  /** Length of any via directly before `start`, in mm. */
+  /** Length of any layer change directly before `start`, in mm. */
   startViaLength: number
 }): void {
   const step: TraceStep = {
     start: from.point,
     end: to.point,
     layer: to.layer,
-    width: to.width,
+    width: from.width,
     startDistance,
     length,
     startViaLength,
@@ -130,9 +183,6 @@ function addStep({
   }
   steps.push(step)
 }
-
-/** Cosine above which two steps count as one straight line (about 0.003°). */
-const STRAIGHT_COSINE = 1 - 1e-9
 
 /** True when `next` carries on from `previous` in a straight line on the same layer and width. */
 function continuesStraight({
@@ -156,6 +206,15 @@ function continuesStraight({
 export function reverseWalk(walk: TraceWalk): TraceWalk {
   return {
     length: walk.length,
+    edges: walk.edges
+      .map((edge) => ({
+        routeStep: { ...edge.routeStep, reverse: !edge.routeStep.reverse },
+        startDistance: walk.length - edge.startDistance - edge.length,
+        length: edge.length,
+      }))
+      .reverse(),
+    startPcbPortId: walk.endPcbPortId,
+    endPcbPortId: walk.startPcbPortId,
     steps: walk.steps
       .map((step) => ({
         ...step,
@@ -169,19 +228,48 @@ export function reverseWalk(walk: TraceWalk): TraceWalk {
   }
 }
 
-/** The route's points in order, each with the copper arriving at it. */
+/**
+ * Joins walks that meet end to end into one, in the order given. Distances
+ * carry on from one walk to the next; the hop across a pad the two share is
+ * not trace copper and adds nothing, as in the sum of their `trace_length`s.
+ */
+export function joinWalks(walks: TraceWalk[]): TraceWalk {
+  const joined: TraceWalk = {
+    steps: [],
+    edges: [],
+    length: 0,
+    startPcbPortId: walks[0].startPcbPortId,
+    endPcbPortId: walks[walks.length - 1].endPcbPortId,
+  }
+  for (const walk of walks) {
+    for (const step of walk.steps) {
+      joined.steps.push({
+        ...step,
+        startDistance: joined.length + step.startDistance,
+      })
+    }
+    for (const edge of walk.edges) {
+      joined.edges.push({
+        ...edge,
+        startDistance: joined.length + edge.startDistance,
+      })
+    }
+    joined.length += walk.length
+  }
+  return joined
+}
+
+/** The corners and layer transitions of a walk in stored route order. */
 function routeCorners({
-  trace,
-  stackup,
+  pcbTrace,
+  pcbStackup,
   boardThickness,
-}: {
-  trace: PcbTrace
-  stackup?: PcbStackup
-  boardThickness?: number
-}): RouteCorner[] {
+}: { pcbTrace: PcbTrace } & LayerChangeBoard): RouteCorner[] {
   const corners: RouteCorner[] = []
   let width = 0
-  for (const routePoint of trace.route) {
+  for (const [routeIndex, routePoint] of pcbTrace.route.entries()) {
+    // The edge from the previous route point arrives at this point's first corner.
+    const edgeIndex = routeIndex - 1
     if (routePoint.route_type === "wire") {
       width = routePoint.width
       corners.push({
@@ -189,6 +277,7 @@ function routeCorners({
         layer: routePoint.layer,
         width,
         viaLength: 0,
+        edgeIndex,
       })
       continue
     }
@@ -197,101 +286,37 @@ function routeCorners({
         point: { x: routePoint.x, y: routePoint.y },
         layer: routePoint.from_layer,
         width,
-        viaLength: viaLayerDistance({
+        viaLength: getLayerChangeLength({
           fromLayer: routePoint.from_layer,
           toLayer: routePoint.to_layer,
-          stackup,
+          pcbStackup,
           boardThickness,
         }),
+        edgeIndex,
       })
       continue
     }
-    // A through-pad point is a straight run across the pad.
+    // Walk across the pad before adding the layer transition at its end.
     width = routePoint.width
     corners.push({
       point: routePoint.start,
       layer: routePoint.start_layer,
       width,
       viaLength: 0,
+      edgeIndex,
     })
     corners.push({
       point: routePoint.end,
       layer: routePoint.start_layer,
       width,
-      viaLength: 0,
+      viaLength: getLayerChangeLength({
+        fromLayer: routePoint.start_layer,
+        toLayer: routePoint.end_layer,
+        pcbStackup,
+        boardThickness,
+      }),
+      edgeIndex: null,
     })
   }
   return corners
-}
-
-/**
- * Z-distance a via travels between two copper layers, in mm. Equal layers add
- * nothing; otherwise uses `stackup` (full outer copper, half inner endpoint
- * copper, all intervening copper and dielectrics), else `boardThickness`, else
- * {@link DEFAULT_VIA_LENGTH}.
- */
-function viaLayerDistance({
-  fromLayer,
-  toLayer,
-  stackup,
-  boardThickness,
-}: {
-  fromLayer: LayerRef
-  toLayer: LayerRef
-  stackup?: PcbStackup
-  boardThickness?: number
-}): number {
-  if (fromLayer === toLayer) return 0
-  if (stackup) {
-    const distance = stackupLayerDistance({ stackup, fromLayer, toLayer })
-    if (distance !== undefined) return distance
-  }
-  if (
-    boardThickness !== undefined &&
-    Number.isFinite(boardThickness) &&
-    boardThickness >= 0
-  ) {
-    return boardThickness
-  }
-  return DEFAULT_VIA_LENGTH
-}
-
-/** Z-distance between two copper layers in `stackup`, in mm, or undefined if either is missing. */
-function stackupLayerDistance({
-  stackup,
-  fromLayer,
-  toLayer,
-}: {
-  stackup: PcbStackup
-  fromLayer: LayerRef
-  toLayer: LayerRef
-}): number | undefined {
-  const fromIndex = stackup.layers.findIndex(
-    (layer) => layer.layer_type === "copper" && layer.layer === fromLayer,
-  )
-  const toIndex = stackup.layers.findIndex(
-    (layer) => layer.layer_type === "copper" && layer.layer === toLayer,
-  )
-  if (fromIndex < 0 || toIndex < 0) return undefined
-
-  const start = Math.min(fromIndex, toIndex)
-  const end = Math.max(fromIndex, toIndex)
-  let total = 0
-  for (let index = start; index <= end; index++) {
-    const layer = stackup.layers[index]
-    const { thickness } = layer
-    if (thickness === undefined || !Number.isFinite(thickness) || thickness < 0)
-      return undefined
-    if (
-      layer.layer_type === "copper" &&
-      (index === start || index === end) &&
-      layer.layer !== "top" &&
-      layer.layer !== "bottom"
-    ) {
-      total += thickness / 2
-      continue
-    }
-    total += thickness
-  }
-  return total
 }

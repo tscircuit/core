@@ -8,6 +8,9 @@ import type {
 } from "circuit-json"
 import { getRoutePointPositions } from "lib/utils/pcb-trace-route-point-utils"
 
+/** Board thickness in mm assumed for a trace that is routed without a board. */
+export const STANDARD_BOARD_THICKNESS = 1.6
+
 /** What a layer change travels through: the board's stackup when it has one, else its thickness in mm. */
 export type LayerChangeBoard = {
   pcbStackup?: PcbStackup | null

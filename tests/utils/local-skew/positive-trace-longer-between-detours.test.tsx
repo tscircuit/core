@@ -1,21 +1,92 @@
 import { expect, test } from "bun:test"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import {
-  DETOUR_EXTRA_LENGTH,
-  renderDifferentialPairBoard,
-} from "tests/fixtures/local-skew/differential-pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("positive trace is longer by the detour length between the detours", async () => {
-  const circuitJson = renderDifferentialPairBoard({ compensated: true })
-  const [pair] = getStoredLocalSkew(circuitJson)
+test("the positive trace is longer by its detour between the two detours and in step outside them", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="30mm" height="8mm">
+      <testpoint
+        name="TP_DP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TP_DN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_DP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TP_DN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="USB_DP"
+        from=".TP_DP_SRC > .pin1"
+        to=".TP_DP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 2, y: 0 },
+          { x: 2.5, y: 1 },
+          { x: 3, y: 0 },
+        ]}
+      />
+      <trace
+        name="USB_DN"
+        from=".TP_DN_SRC > .pin1"
+        to=".TP_DN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 20, y: 0 },
+          { x: 20, y: -0.61803398875 },
+          { x: 21, y: -0.61803398875 },
+          { x: 21, y: 0 },
+        ]}
+      />
+      <differentialpair
+        name="USB"
+        positiveConnection="USB_DP"
+        negativeConnection="USB_DN"
+        pcbTraceGap="0.45mm"
+        maxLengthSkew="0.1mm"
+      />
+      <pcbnotetext
+        pcbY={3}
+        fontSize={0.5}
+        text="the positive trace is longer by its detour between the two detours and in step outside them"
+      />
+    </board>,
+  )
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  const positive = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  const negative = segmentAtX({ segments: pair.negative.segments, x: 0 })
-  expect(positive.coupling).toBe("coupled")
-  expect(positive.local_skew).toBeCloseTo(DETOUR_EXTRA_LENGTH, 5)
-  expect(negative.local_skew).toBeCloseTo(-DETOUR_EXTRA_LENGTH, 5)
-
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -10,0.3  N -10,-0.3  skew 0
+    P -9,0.3  N -9,-0.3  skew 1.23607
+    P 8,0.3  N 8,-0.3  skew 1.23607
+    P 9,0.3  N 9,-0.3  skew 0
+    P 12,0.3  N 12,-0.3  skew 0"
+  `)
 })

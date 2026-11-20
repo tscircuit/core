@@ -1,40 +1,83 @@
 import { expect, test } from "bun:test"
-import { getStoredLocalSkew } from "tests/fixtures/local-skew/get-stored-local-skew"
-import { walkTrace } from "lib/utils/local-skew/walk-trace"
-import { localSkewSvg } from "tests/fixtures/local-skew/local-skew-svg"
-import { renderPairBoard } from "tests/fixtures/local-skew/pair-board"
-import { segmentAtX } from "tests/fixtures/local-skew/segment-at-x"
+import { computeLocalSkew } from "lib/utils/local-skew/compute-local-skew"
+import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
-test("colocated vias keep their full skew step between straight runs", async () => {
-  const circuitJson = renderPairBoard({
-    positivePath: [],
-    negativePath: [
-      { x: 10, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
-      { x: 10, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
-    ],
-    pcbTraceGap: "0.45mm",
-    thickness: "0.8mm",
-  })
-  const [pair] = getStoredLocalSkew(circuitJson)
-
-  const before = segmentAtX({ segments: pair.positive.segments, x: -4 })
-  const after = segmentAtX({ segments: pair.positive.segments, x: 0 })
-  expect(before.coupling).toBe("coupled")
-  expect(before.local_skew).toBe(0)
-  expect(after.coupling).toBe("coupled")
-  expect(after.local_skew).toBeCloseTo(-1.6, 5)
-  expect(pair.max_local_skew).toBeCloseTo(1.6, 5)
-
-  const trace = circuitJson.find(
-    (element) =>
-      element.type === "pcb_trace" &&
-      element.pcb_trace_id === pair.negative.pcb_trace_id,
+test("colocated vias keep their full skew step between straight runs", () => {
+  const { circuit } = getTestFixture({ platform: { drcChecksDisabled: true } })
+  circuit.add(
+    <board routeRemaining={false} width="40mm" height="20mm" thickness="0.8mm">
+      <testpoint
+        name="TP_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_SRC"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={-12}
+        pcbY={-0.3}
+      />
+      <testpoint
+        name="TP_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={0.3}
+      />
+      <testpoint
+        name="TN_LOAD"
+        footprintVariant="pad"
+        padDiameter="0.3mm"
+        doNotPlace
+        pcbX={12}
+        pcbY={-0.3}
+      />
+      <trace
+        name="DP"
+        from=".TP_SRC > .pin1"
+        to=".TP_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[]}
+      />
+      <trace
+        name="DN"
+        from=".TN_SRC > .pin1"
+        to=".TN_LOAD > .pin1"
+        thickness="0.15mm"
+        pcbPath={[
+          { x: 10, y: 0, via: true, fromLayer: "top", toLayer: "bottom" },
+          { x: 10, y: 0, via: true, fromLayer: "bottom", toLayer: "top" },
+        ]}
+      />
+      <differentialpair
+        name="PAIR"
+        positiveConnection="DP"
+        negativeConnection="DN"
+        pcbTraceGap="0.45mm"
+      />
+      <pcbnotetext
+        pcbY={8}
+        fontSize={0.5}
+        text="colocated vias keep their full skew step between straight runs"
+      />
+    </board>,
   )
-  if (trace?.type !== "pcb_trace") throw new Error("Missing negative trace")
-  const { steps } = walkTrace({ trace, boardThickness: 0.8 })
-  expect(steps).toHaveLength(2)
-  expect(steps[0].endViaLength).toBeCloseTo(1.6, 5)
-  expect(steps[1].startViaLength).toBeCloseTo(1.6, 5)
+  circuit.render()
+  expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
-  await expect(localSkewSvg(circuitJson)).toMatchSvgSnapshot(import.meta.path)
+  const circuitJson = circuit.getCircuitJson()
+  const [localSkew] = computeLocalSkew({ circuitJson }).localSkews
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -2,0.3  N -2,-0.3  skew 0
+    P -2,0.3  N -2,-0.3  skew -1.6
+    P 12,0.3  N 12,-0.3  skew -1.6"
+  `)
 })

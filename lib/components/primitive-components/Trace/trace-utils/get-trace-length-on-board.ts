@@ -1,9 +1,9 @@
 import type { PcbTrace } from "circuit-json"
 import type { Trace } from "../Trace"
-import { getTraceLength } from "./compute-trace-length"
-
-/** Board thickness in mm assumed for a trace that is routed without a board. */
-const STANDARD_BOARD_THICKNESS = 1.6
+import {
+  STANDARD_BOARD_THICKNESS,
+  getTraceLength,
+} from "./compute-trace-length"
 
 /**
  * Copper length in mm of a route drawn by `trace`. Layer changes are
