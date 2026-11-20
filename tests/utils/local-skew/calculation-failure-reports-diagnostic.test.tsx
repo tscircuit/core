@@ -41,8 +41,7 @@ test("one failed local skew calculation reports an error and preserves the other
   expect(circuit.db.source_runtime_error.list()).toEqual([
     expect.objectContaining({
       phase_name: "PcbDifferentialPairLocalSkewRender",
-      message:
-        'Could not calculate local skew for differential pair "FAULTY_PAIR".',
+      message: `Could not calculate local skew for differential pair "FAULTY_PAIR" (${badBus.source_bus_id} in ${badBus.subcircuit_id}): Injected route read failure`,
     }),
   ])
   await expect(localSkewSvg(circuit.getCircuitJson())).toMatchSvgSnapshot(

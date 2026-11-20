@@ -56,6 +56,24 @@ type SkewSpan = {
 /** Routed copper grouped by the source trace it belongs to. */
 type TracesBySource = Map<SourceTrace["source_trace_id"], PcbTrace[]>
 
+/** A differential pair with a side routed as several pcb_traces, whose order along the signal isn't recorded. */
+export type SplitPair = {
+  bus: SourceBus
+  /** The pcb_traces carrying each side. */
+  positiveTraces: PcbTrace[]
+  negativeTraces: PcbTrace[]
+}
+
+/** A differential pair whose calculation threw, and the error message. */
+export type FailedPair = { bus: SourceBus; reason: string }
+
+/** Local skew for every measurable pair, and the pairs that could not be measured. */
+export type LocalSkewResult = {
+  pairs: PcbDifferentialPairLocalSkew[]
+  splitPairs: SplitPair[]
+  failedPairs: FailedPair[]
+}
+
 /**
  * Computes local skew along every routed differential pair: at each point,
  * how much farther one trace has run than the other, not only at the ends.
@@ -67,10 +85,11 @@ type TracesBySource = Map<SourceTrace["source_trace_id"], PcbTrace[]>
  * measured from the positive trace's first route point and the negative
  * trace is walked from the end that matches it.
  */
-export function computeLocalSkew(
-  circuitJson: CircuitJson,
-  onPairError: (bus: SourceBus) => void,
-): PcbDifferentialPairLocalSkew[] {
+export function computeLocalSkew({
+  circuitJson,
+}: {
+  circuitJson: CircuitJson
+}): LocalSkewResult {
   const tracesBySource: TracesBySource = new Map()
   const pcbPortsById = new Map<PcbPortId, PcbPort>()
   const sourcePortsById = new Map<SourcePortId, SourcePort>()
@@ -130,60 +149,65 @@ export function computeLocalSkew(
     return undefined
   }
 
-  const pairs: PcbDifferentialPairLocalSkew[] = []
-  for (const element of circuitJson) {
-    if (element.type !== "source_bus") continue
+  const result: LocalSkewResult = { pairs: [], splitPairs: [], failedPairs: [] }
+  for (const bus of circuitJson) {
+    if (bus.type !== "source_bus") continue
+    const differentialPair = bus.differential_pair
+    if (!differentialPair) continue
+    const positiveId = differentialPair.positive_source_trace_id
+    const negativeId = differentialPair.negative_source_trace_id
+    if (positiveId === negativeId) continue
+    const positiveTraces = tracesBySource.get(positiveId) ?? []
+    const negativeTraces = tracesBySource.get(negativeId) ?? []
+    if (positiveTraces.length > 1 || negativeTraces.length > 1) {
+      result.splitPairs.push({ bus, positiveTraces, negativeTraces })
+      continue
+    }
+    if (positiveTraces.length === 0 || negativeTraces.length === 0) continue
     try {
       const pair = computePairSkew({
-        bus: element,
-        tracesBySource,
+        bus,
+        traceGap: differentialPair.trace_gap,
+        positiveTrace: positiveTraces[0],
+        negativeTrace: negativeTraces[0],
         pcbPortsById,
         sourcePortsById,
         findBoard,
         stackupsByBoard,
       })
-      if (pair) pairs.push(pair)
-    } catch {
+      if (pair) result.pairs.push(pair)
+    } catch (error) {
       // A failed pair must not hide skew on the rest of the board.
-      onPairError(element)
+      result.failedPairs.push({ bus, reason: errorMessage(error) })
     }
   }
-  return pairs
+  return result
 }
 
 /**
- * Local skew for one differential pair. Null when the bus isn't a pair of
- * two different traces each routed as one pcb_trace (the order of split
- * pieces along the signal isn't recorded), or when a route is empty or has
- * non-finite or absurd geometry.
+ * Local skew for one differential pair routed as one pcb_trace per side.
+ * Null when a route is empty or has non-finite or absurd geometry.
  */
 function computePairSkew({
   bus,
-  tracesBySource,
+  traceGap,
+  positiveTrace,
+  negativeTrace,
   pcbPortsById,
   sourcePortsById,
   findBoard,
   stackupsByBoard,
 }: {
   bus: SourceBus
-  tracesBySource: TracesBySource
+  /** The pair's declared edge-to-edge gap in mm, if any. */
+  traceGap: number | undefined
+  positiveTrace: PcbTrace
+  negativeTrace: PcbTrace
   pcbPortsById: Map<PcbPortId, PcbPort>
   sourcePortsById: Map<SourcePortId, SourcePort>
   findBoard: (subcircuitId: SubcircuitId | undefined) => PcbBoard | undefined
   stackupsByBoard: Map<PcbBoard["pcb_board_id"], PcbStackup>
 }): PcbDifferentialPairLocalSkew | null {
-  const differentialPair = bus.differential_pair
-  if (!differentialPair) return null
-  const positiveId = differentialPair.positive_source_trace_id
-  const negativeId = differentialPair.negative_source_trace_id
-  if (positiveId === negativeId) return null
-
-  const positiveTraces = tracesBySource.get(positiveId) ?? []
-  const negativeTraces = tracesBySource.get(negativeId) ?? []
-  if (positiveTraces.length !== 1 || negativeTraces.length !== 1) return null
-  const positiveTrace = positiveTraces[0]
-  const negativeTrace = negativeTraces[0]
-
   const subcircuitId =
     positiveTrace.subcircuit_id ??
     negativeTrace.subcircuit_id ??
@@ -232,7 +256,7 @@ function computePairSkew({
   const runs = findCoupledRuns({
     positive: positive.steps,
     negative: negative.steps,
-    traceGap: differentialPair.trace_gap,
+    traceGap,
   })
 
   const positiveTrack = skewSpans({
@@ -289,6 +313,12 @@ function computePairSkew({
       }),
     },
   }
+}
+
+/** The message of a thrown value. */
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return String(error)
 }
 
 /**

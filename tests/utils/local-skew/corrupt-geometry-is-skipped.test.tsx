@@ -17,10 +17,10 @@ test("a pair with non-finite or absurd coordinates is skipped instead of hanging
     if (corner?.route_type !== "wire") throw new Error("Expected a wire corner")
     corner.x = x
 
-    expect(
-      computeLocalSkew(circuitJson, () => {
-        throw new Error("Unexpected calculation failure")
-      }),
-    ).toEqual([])
+    expect(computeLocalSkew({ circuitJson })).toEqual({
+      pairs: [],
+      splitPairs: [],
+      failedPairs: [],
+    })
   }
 })
