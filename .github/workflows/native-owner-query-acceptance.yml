@@ -1,0 +1,160 @@
+name: Verify ordered A03 owner queries with native copper
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-owner-query-acceptance.yml]
+permissions:
+  contents: read
+jobs:
+  a03-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 3db7290cb61e37315b2d4429ce82c4cd75b9037b
+          persist-credentials: false
+      - run: bun install
+      - run: bun test --timeout 9999999
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+      - run: bun run build
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 11396d1303dd7cab1849850f868ae356f35036a6
+          path: autorouter
+          persist-credentials: false
+      - name: Build exact indexed-query candidate
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - name: Preserve the original board checks
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install exact candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - name: Preserve original Core connectivity, via count and clearance assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+      BENCHMARK_TERMINATE_TIMEOUT_MS: '1000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - run: bun install
+        working-directory: base
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: aa55c35bfbb3229fe6670a658379541f18e5f6b0
+          path: native
+          persist-credentials: false
+      - run: bun install
+        working-directory: native
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 11396d1303dd7cab1849850f868ae356f35036a6
+          path: optimized
+          persist-credentials: false
+      - run: bun install
+        working-directory: optimized
+      - name: Record only route digests for exact output comparisons
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          anchor='    const traceLinter = runTraceLinting(solver.getOutputSimpleRouteJson())'
+          addition='    console.log("ROUTE_DIGEST", task.scenarioName, new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"))\n'
+          for variant in ['base','native','optimized']:
+            p=Path(variant)/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(s.replace(anchor,addition+anchor))
+          PY
+      - name: Run all sixteen original cases sequentially on each revision
+        run: |
+          set -o pipefail
+          for variant in base native optimized; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18) > "$variant-run.log" 2>&1
+          done
+      - name: Compare complete results using the existing benchmark reporter
+        working-directory: native
+        run: |
+          bun scripts/benchmark/same-machine-results.ts --base-report ../base/benchmark-result.json --pr-report ../optimized/benchmark-result.json --base-sha 2b1207ad70971f326166b134ea19418137273f23 --pr-sha 11396d1303dd7cab1849850f868ae356f35036a6 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-base.md
+          bun scripts/benchmark/same-machine-results.ts --base-report benchmark-result.json --pr-report ../optimized/benchmark-result.json --base-sha aa55c35bfbb3229fe6670a658379541f18e5f6b0 --pr-sha 11396d1303dd7cab1849850f868ae356f35036a6 --repository tscircuit/tscircuit-autorouter --runner-name "${{ runner.name }}" --output ../comparison-native.md
+          cat ../comparison-base.md
+          cat ../comparison-native.md
+          cat ../comparison-base.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Compare all complete routed output digests
+        run: |
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          maps={}
+          for variant in ['base','native','optimized']:
+            maps[variant]=dict(re.findall(r'ROUTE_DIGEST\s+(\S+)\s+([a-f0-9]{64})',Path(variant+'-run.log').read_text()))
+          assert len(maps['native'])==16,'Expected sixteen aggregate route digests'
+          assert maps['native']==maps['optimized'],'Optimization changed complete routed output'
+          summary={'cases':len(maps['native']),'mismatches':0}
+          print('EXACT_ROUTED_OUTPUT_PARITY',json.dumps(summary))
+          Path('output-parity.json').write_text(json.dumps(summary))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ordered-owner-query-acceptance
+          path: |
+            comparison-*.md
+            output-parity.json
