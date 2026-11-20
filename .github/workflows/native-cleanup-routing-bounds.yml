@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 540385a5d0bfad2dd52a0db98a1bbce6efc91e7b
+          ref: 6b6a210ddeef34baa7b0ab239c7e21852a5035d5
           path: autorouter
           persist-credentials: false
       - run: |
