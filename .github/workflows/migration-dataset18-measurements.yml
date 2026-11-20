@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: migration-final-ownership-${{ matrix.order }}
+          name: migration-preserved-candidates-${{ matrix.order }}
           path: measurement
-          run-id: 44747436086
+          run-id: 44756830997
           github-token: ${{ github.token }}
       - name: Report per-sample numeric deltas without circuit data
         run: |
