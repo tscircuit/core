@@ -1,9 +1,8 @@
-import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
-import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
 import type { PcbSoldermaskOpeningProps, PinLabelsProp } from "@tscircuit/props"
 import {
   type AnyCircuitElement,
+  type PcbSmtPad,
   type PcbSolderPastePolygon,
   type SchematicComponent,
   layer_ref,
@@ -43,13 +42,13 @@ import { SilkscreenPath } from "lib/components/primitive-components/SilkscreenPa
 import { SilkscreenRect } from "lib/components/primitive-components/SilkscreenRect"
 import { SilkscreenText } from "lib/components/primitive-components/SilkscreenText"
 import { SmtPad } from "lib/components/primitive-components/SmtPad"
-import {
-  SolderPaste,
-  isStandalonePcbSolderPaste,
-} from "lib/components/primitive-components/SolderPaste"
+import { SolderPaste } from "lib/components/primitive-components/SolderPaste"
 import { SymbolComponent } from "lib/components/primitive-components/Symbol"
 import type { PrimitiveComponent } from "../components/base-components/PrimitiveComponent"
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
+import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
+import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
+import { isPillSolderPaste } from "./pcb/transform-pcb-solder-paste-pill"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -131,7 +130,7 @@ export const createComponentsFromCircuitJson = (
     footprinterString,
     pinLabels,
     pcbPinLabels,
-    preserveSolderPaste = false,
+    preserveSolderPaste,
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
@@ -143,6 +142,11 @@ export const createComponentsFromCircuitJson = (
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  const importedSmtPads = new Map<PcbSmtPad["pcb_smtpad_id"], SmtPad>()
+  // Explicit stencil records own paste geometry; legacy pad-only inputs retain defaults.
+  const preserveAuthoredSolderPaste =
+    preserveSolderPaste ??
+    circuitJson.some((element) => element.type === "pcb_solder_paste")
   const joinedCourtyards = joinImportedCourtyardOutlines(
     circuitJson.filter((elm) => elm.type === "pcb_courtyard_outline"),
     componentName,
@@ -163,6 +167,10 @@ export const createComponentsFromCircuitJson = (
     }
   }
   const components: PrimitiveComponent[] = []
+  const addImportedSmtPad = (record: PcbSmtPad, pad: SmtPad) => {
+    components.push(pad)
+    importedSmtPads.set(record.pcb_smtpad_id, pad)
+  }
   const schematicSymbolsByImportedId = new Map<string, SymbolComponent>()
   const schematicComponentsByImportedId = new Map<string, SchematicComponent>()
   const sourceComponentIdByPcbComponentId = new Map<string, string>()
@@ -310,26 +318,29 @@ export const createComponentsFromCircuitJson = (
 
     // When rebuilding rendered copper, do not recreate an automatic aperture
     // that was deliberately suppressed (for example, for a windowed stencil).
-    let solderPasteMargin: number | undefined
-    if (
-      preserveSolderPaste &&
+    const hasImportedAperture =
       elm.type === "pcb_smtpad" &&
-      !circuitJson.some(
+      circuitJson.some(
         (paste) =>
           paste.type === "pcb_solder_paste" &&
-          paste.pcb_smtpad_id === elm.pcb_smtpad_id,
+          paste.pcb_smtpad_id === elm.pcb_smtpad_id &&
+          paste.shape !== "polygon" &&
+          paste.shape !== "oval",
       )
-    ) {
-      if (elm.shape === "circle") {
-        solderPasteMargin = -elm.radius
-      } else if (elm.shape !== "polygon") {
-        solderPasteMargin = -Math.min(elm.width, elm.height) / 2
-      }
-    }
+    const noSolderPaste =
+      hasImportedAperture ||
+      (preserveAuthoredSolderPaste &&
+        elm.type === "pcb_smtpad" &&
+        !circuitJson.some(
+          (paste) =>
+            paste.type === "pcb_solder_paste" &&
+            paste.pcb_smtpad_id === elm.pcb_smtpad_id,
+        ))
 
-    if (isStandalonePcbSolderPaste(elm)) {
-      components.push(SolderPaste.fromCircuitJson(elm))
-    } else if (elm.type === "pcb_soldermask_opening") {
+    if (elm.type === "pcb_solder_paste") {
+      continue
+    }
+    if (elm.type === "pcb_soldermask_opening") {
       let openingProps: PcbSoldermaskOpeningProps
       if (elm.shape === "polygon") {
         openingProps = {
@@ -362,7 +373,8 @@ export const createComponentsFromCircuitJson = (
       }
       components.push(new PcbSoldermaskOpening(openingProps))
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rect") {
-      components.push(
+      addImportedSmtPad(
+        elm,
         new SmtPad({
           pcbX: elm.x,
           pcbY: elm.y,
@@ -372,13 +384,14 @@ export const createComponentsFromCircuitJson = (
           width: elm.width,
           portHints: resolvedPortHints,
           rectBorderRadius: elm.rect_border_radius,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "circle") {
-      components.push(
+      addImportedSmtPad(
+        elm,
         new SmtPad({
           pcbX: elm.x,
           pcbY: elm.y,
@@ -386,13 +399,14 @@ export const createComponentsFromCircuitJson = (
           shape: "circle",
           radius: elm.radius,
           portHints: resolvedPortHints,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "pill") {
-      components.push(
+      addImportedSmtPad(
+        elm,
         new SmtPad({
           shape: "pill",
           height: elm.height,
@@ -402,13 +416,14 @@ export const createComponentsFromCircuitJson = (
           pcbX: elm.x,
           pcbY: elm.y,
           layer: elm.layer,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
       )
     } else if (elm.type === "pcb_smtpad" && elm.shape === "rotated_pill") {
-      components.push(
+      addImportedSmtPad(
+        elm,
         new SmtPad({
           shape: "rotated_pill",
           height: elm.height,
@@ -419,7 +434,7 @@ export const createComponentsFromCircuitJson = (
           pcbY: elm.y,
           layer: elm.layer,
           ccwRotation: elm.ccw_rotation,
-          solderPasteMargin,
+          noSolderPaste,
           coveredWithSolderMask: elm.is_covered_with_solder_mask,
           solderMaskMargin: elm.soldermask_margin,
         }),
@@ -435,12 +450,12 @@ export const createComponentsFromCircuitJson = (
         ccwRotation: elm.ccw_rotation,
         cornerRadius: elm.corner_radius,
         portHints: resolvedPortHints,
-        solderPasteMargin,
+        noSolderPaste,
         coveredWithSolderMask: elm.is_covered_with_solder_mask,
         solderMaskMargin: elm.soldermask_margin,
       })
       smtpad._importedRectBorderRadius = elm.rect_border_radius
-      components.push(smtpad)
+      addImportedSmtPad(elm, smtpad)
     } else if (elm.type === "pcb_smtpad" && elm.shape === "polygon") {
       const smtpad = new SmtPad({
         shape: "polygon",
@@ -456,10 +471,10 @@ export const createComponentsFromCircuitJson = (
           paste.shape === "polygon" &&
           paste.pcb_smtpad_id === elm.pcb_smtpad_id,
       )
-      if (preserveSolderPaste || polygonPaste.length > 0) {
+      if (preserveAuthoredSolderPaste || polygonPaste.length > 0) {
         smtpad._inflatedPcbSolderPaste = polygonPaste
       }
-      components.push(smtpad)
+      addImportedSmtPad(elm, smtpad)
     } else if (elm.type === "pcb_silkscreen_path") {
       components.push(
         new SilkscreenPath({
@@ -1112,6 +1127,25 @@ export const createComponentsFromCircuitJson = (
           }),
         )
       }
+    }
+  }
+  for (const aperture of circuitJson) {
+    if (aperture.type !== "pcb_solder_paste") continue
+    const smtPad = aperture.pcb_smtpad_id
+      ? importedSmtPads.get(aperture.pcb_smtpad_id)
+      : undefined
+    if (
+      isPillSolderPaste(aperture) ||
+      aperture.shape === "circle" ||
+      aperture.shape === "rect" ||
+      aperture.shape === "rotated_rect"
+    ) {
+      components.push(SolderPaste.fromCircuitJson(aperture, smtPad))
+    }
+  }
+  if (preserveAuthoredSolderPaste) {
+    for (const primitive of components) {
+      if (primitive instanceof PlatedHole) primitive._preserveSolderPaste = true
     }
   }
   return components

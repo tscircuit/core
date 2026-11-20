@@ -3,7 +3,17 @@ import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { PcbComponent } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
-import { compose, inverse, rotate, translate } from "transformation-matrix"
+import {
+  compose,
+  inverse,
+  rotate,
+  rotateDEG,
+  translate,
+} from "transformation-matrix"
+import {
+  isPillSolderPaste,
+  transformPcbSolderPastePill,
+} from "./pcb/transform-pcb-solder-paste-pill"
 
 /**
  * Extracts PCB primitive components (pads, holes, silkscreen, etc.) from circuit JSON
@@ -49,9 +59,27 @@ export const extractPcbPrimitivesFromCircuitJson = ({
 
   // Transform all PCB elements using the standard transformation utility
   transformPCBElements(
-    clonedRelativeElements,
+    clonedRelativeElements.filter((element) => !isPillSolderPaste(element)),
     absoluteToComponentRelativeTransform,
   )
+
+  const transformedElements = clonedRelativeElements.map((element) => {
+    if (!isPillSolderPaste(element)) return element
+    const { x, y, width, height, radius, shape, ...metadata } = element
+    const rotation = element.shape === "rotated_pill" ? element.ccw_rotation : 0
+    Reflect.deleteProperty(metadata, "ccw_rotation")
+    return {
+      ...metadata,
+      ...transformPcbSolderPastePill(
+        element,
+        compose(
+          absoluteToComponentRelativeTransform,
+          translate(x, y),
+          rotateDEG(rotation),
+        ),
+      ),
+    }
+  })
 
   return createComponentsFromCircuitJson(
     {
@@ -60,6 +88,6 @@ export const extractPcbPrimitivesFromCircuitJson = ({
       // Rendered footprints must retain missing apertures as well as geometry.
       preserveSolderPaste: true,
     },
-    clonedRelativeElements,
+    transformedElements,
   )
 }
