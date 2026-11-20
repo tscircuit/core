@@ -1,0 +1,164 @@
+name: Isolate native global-repair copper context
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-isolation.yml]
+permissions:
+  contents: read
+jobs:
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [immutable, outside-pad]
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: aa55c35bfbb3229fe6670a658379541f18e5f6b0
+          path: autorouter
+          persist-credentials: false
+      - name: Restore native copper to existing global repair
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("autorouter/lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
+          s=p.read_text()
+          old="""          hdRoutes:
+            cms.highDensityForceImproveSolver?.getOutput() ??
+            cms.highDensityRouteSolver!.routes,
+          obstacles: cms.srj.obstacles,"""
+          assert s.count(old)==1
+          predicate="route.isFixed === true"
+          if "${{ matrix.variant }}" == "outside-pad":
+              predicate += " && !route.isThroughObstacle"
+          new=old.replace("          obstacles:", "          fixedHdRoutes: cms.highDensityRouteSolver!\n            .getUpdatedFixedHdRoutes()\n            .filter((route) => "+predicate+"),\n          obstacles:")
+          p.write_text(s.replace(old,new))
+          PY
+      - name: Build exact candidate
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - name: Keep original board clearance and protected-preload assertions
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: b9b22d186faf889f6b69fe53ac11979ee9d6fd05
+          path: core
+          persist-credentials: false
+      - name: Install candidate with unchanged Core source
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          variant="${{ matrix.variant }}"
+          if variant=="old-published":
+              d["devDependencies"]["@tscircuit/capacity-autorouter"]="https://npm-releases.tscircuit.com/npm-tarballs/44628229346-1/tscircuit-capacity-autorouter-0.0.1135.tgz"
+          elif variant!="current":
+              d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - name: Preserve the 36-via zero-DRC fanout and SEPIC assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [old-published, current, immutable, outside-pad]
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: aa55c35bfbb3229fe6670a658379541f18e5f6b0
+          path: autorouter
+          persist-credentials: false
+      - name: Restore native copper to existing global repair
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("autorouter/lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
+          s=p.read_text()
+          old="""          hdRoutes:
+            cms.highDensityForceImproveSolver?.getOutput() ??
+            cms.highDensityRouteSolver!.routes,
+          obstacles: cms.srj.obstacles,"""
+          assert s.count(old)==1
+          predicate="route.isFixed === true"
+          if "${{ matrix.variant }}" == "outside-pad":
+              predicate += " && !route.isThroughObstacle"
+          new=old.replace("          obstacles:", "          fixedHdRoutes: cms.highDensityRouteSolver!\n            .getUpdatedFixedHdRoutes()\n            .filter((route) => "+predicate+"),\n          obstacles:")
+          p.write_text(s.replace(old,new))
+          PY
+      - name: Build exact candidate
+        if: matrix.variant != 'old-published' && matrix.variant != 'current'
+        working-directory: autorouter
+        run: |
+          bun install
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+
+      - uses: actions/checkout@v4
+        with:
+          ref: b9b22d186faf889f6b69fe53ac11979ee9d6fd05
+          path: core
+          persist-credentials: false
+      - name: Install candidate with unchanged Core source
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("package.json")
+          d=json.loads(p.read_text())
+          variant="${{ matrix.variant }}"
+          if variant=="old-published":
+              d["devDependencies"]["@tscircuit/capacity-autorouter"]="https://npm-releases.tscircuit.com/npm-tarballs/44628229346-1/tscircuit-capacity-autorouter-0.0.1135.tgz"
+          elif variant!="current":
+              d["devDependencies"]["@tscircuit/capacity-autorouter"]="file:../candidate/autorouter.tgz"
+          p.write_text(json.dumps(d,indent=2)+"\n")
+          PY
+          bun install
+
+      - name: Compare the same two DDR circuits at the original budget
+        working-directory: core
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results" --timeout 120 --circuit h616 --circuit glider
+          cat "$GITHUB_WORKSPACE/results/report.md"
+          cat "$GITHUB_WORKSPACE/results/report.md" >> "$GITHUB_STEP_SUMMARY"
