@@ -386,9 +386,15 @@ export function Trace_doInitialPcbManualTraceRender(trace: Trace) {
     layer: currentLayer,
     start_pcb_port_id: anchorPort.pcb_port_id!,
   })
+  const parentTransform =
+    anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
   const transform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
-    : anchorPort?._computePcbGlobalTransformBeforeLayout?.() || identity()
+    : {
+        ...parentTransform,
+        e: anchorPos?.x ?? parentTransform.e,
+        f: anchorPos?.y ?? parentTransform.f,
+      }
   const pcbPath = props.pcbPath as Array<string | ManualPcbPathPoint>
   for (const pt of pcbPath) {
     let coordinates: { x: number; y: number }

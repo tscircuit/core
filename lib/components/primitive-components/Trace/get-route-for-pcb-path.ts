@@ -15,9 +15,10 @@ interface GetRouteForPcbPathInput {
 /**
  * Numeric path entries are points in a right-handed local PCB frame measured
  * in millimetres (+X right, +Y top), so the local-to-board transform includes
- * translation. The local frame belongs to the anchor footprint, or to the
- * containing subcircuit for inflated Circuit JSON. Selector entries are
- * already points in the right-handed board-world frame and remain unchanged.
+ * translation. The local frame belongs to the anchor port (offset from the port's
+ * global position with anchor orientation), or to the containing subcircuit for
+ * inflated Circuit JSON. Selector entries are already points in the right-handed
+ * board-world frame and remain unchanged.
  */
 export const getRouteForPcbPath = ({
   trace,
@@ -27,9 +28,16 @@ export const getRouteForPcbPath = ({
 }: GetRouteForPcbPathInput): PcbTraceRoutePoint[] | undefined => {
   const { db } = trace.root!
   const subcircuit = trace.getSubcircuit()
+  const anchorPos = anchorPort._getGlobalPcbPositionAfterLayout?.()
+  const parentTransform =
+    anchorPort._computePcbGlobalTransformBeforeLayout?.() ?? identity()
   const pcbPathLocalToBoardTransform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
-    : (anchorPort._computePcbGlobalTransformBeforeLayout?.() ?? identity())
+    : {
+        ...parentTransform,
+        e: anchorPos?.x ?? parentTransform.e,
+        f: anchorPos?.y ?? parentTransform.f,
+      }
   let currentLayer = (anchorPort.getAvailablePcbLayers()[0] ??
     "top") as LayerRef
   const route: PcbTraceRoutePoint[] = []
