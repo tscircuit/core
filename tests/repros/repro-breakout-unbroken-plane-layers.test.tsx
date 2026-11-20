@@ -16,6 +16,8 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
       width={18}
       height={20}
       layers={4}
+      isViaInPadAllowed={false}
+      allowBlindAndBuriedVias={false}
       minTraceWidth={0.15}
       minTraceToPadEdgeClearance={0.1}
       minTraceToHoleEdgeClearance={0.1}
@@ -25,6 +27,7 @@ test("automatic BGA exits avoid unbroken power planes", async () => {
       <copperpour layer="inner2" connectsTo="net.VCC" unbroken />
       <breakout
         name="CONTROLLER"
+        autorouter="fanout"
         pcbY={4}
         padding="0.3mm"
         fanoutRoutingLayers={["top", "inner1", "inner2", "bottom"]}
