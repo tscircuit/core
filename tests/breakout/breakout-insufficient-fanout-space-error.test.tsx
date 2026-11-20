@@ -5,8 +5,9 @@ const qfnFootprint =
   "qfn56_w7.8_h7.8_p0.4mm_pw0.23mm_pl0.8mm_thermalpad3.2x3.2" as const
 
 /**
- * A breakout that hugs a fine-pitch QFN cannot fan out: the escapes have no
- * room between the pads and the boundary. The failure should say so, and say
+ * A bottom-only breakout that hugs a fine-pitch QFN cannot fit the vias
+ * needed to leave its top-layer pads. Same-layer escapes can now fit here.
+ * The failure should say so, and say
  * what to change, rather than surfacing the solver's bare routed/total count.
  */
 test("a breakout with too little room reports how to give the fanout space", async () => {
@@ -18,7 +19,11 @@ test("a breakout with too little room reports how to give the fanout space", asy
 
   circuit.add(
     <board width="30mm" height="30mm" layers={4}>
-      <breakout name="TIGHT" padding="0.05mm">
+      <breakout
+        name="TIGHT"
+        padding="0.05mm"
+        fanoutRoutingLayers={["bottom"]}
+      >
         <chip name="U1" footprint={qfnFootprint} pcbX={0} pcbY={0} />
       </breakout>
       {pins.map((pin) => (
