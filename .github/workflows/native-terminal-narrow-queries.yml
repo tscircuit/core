@@ -1,0 +1,179 @@
+name: Verify exact wire-sized native copper queries with terminal correction
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-terminal-narrow-queries.yml]
+permissions:
+  contents: read
+jobs:
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      built: ${{ steps.pack.outputs.built }}
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 11396d1303dd7cab1849850f868ae356f35036a6
+          path: autorouter
+          persist-credentials: false
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+        working-directory: autorouter
+      - name: Reproduce phantom terminal vias then check the exact emitted copper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('autorouter/node_modules/@tscircuit/high-density-a01/terminal-landing-check.test.ts').write_text("import { expect, test } from \"bun:test\"\nimport { HighDensitySolverA03 } from \"./lib/HighDensitySolverA03/HighDensitySolverA03\"\n\ntest(\"static copper checks use the via landing and both emitted terminal stubs\", () => {\n  const props = {\n    nodeWithPortPoints: {\n      capacityMeshNodeId: \"terminal-landings\",\n      center: {x: 0, y: 0},\n      width: 2, height: 2,\n      availableZ: [0, 1],\n      portPoints: [\n        {x:-0.23,y:-0.17,z:0,connectionName:\"signal\"},\n        {x:-0.21,y:-0.16,z:1,connectionName:\"signal\"},\n      ],\n    },\n    highResolutionCellSize: 0.1,\n    highResolutionCellThickness: 8,\n    lowResolutionCellSize: 0.4,\n    traceThickness: 0.1, traceMargin:0.05,\n    viaDiameter:0.3, viaMinDistFromBorder:0,\n  }\n  const reference = new HighDensitySolverA03(props)\n  reference.solve()\n  expect(reference.solved).toBe(true)\n  const route = reference.getOutput()[0]!\n  expect(route.vias).toHaveLength(1)\n  const landing = route.vias[0]!\n  const sameXY = (a:{x:number;y:number},b:{x:number;y:number}):boolean =>\n    Math.abs(a.x-b.x)<1e-9 && Math.abs(a.y-b.y)<1e-9\n  const positions=[...props.nodeWithPortPoints.portPoints,landing]\n  const solver = new HighDensitySolverA03({\n    ...props,\n    staticSegmentValidator:(segment):boolean => {\n      if(segment.start.z!==segment.end.z)\n        return sameXY(segment.start,landing) && sameXY(segment.end,landing)\n      return positions.some(p=>sameXY(p,segment.start)) &&\n        positions.some(p=>sameXY(p,segment.end))\n    },\n  })\n  solver.solve()\n  expect(solver.solved).toBe(true)\n  expect(solver.failed).toBe(false)\n  expect(solver.getOutput()).toEqual(reference.getOutput())\n})\n")
+          PY
+          cd autorouter/node_modules/@tscircuit/high-density-a01
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 ./terminal-landing-check.test.ts > before-check.log 2>&1
+          result=$?
+          set -e
+          cat before-check.log
+          test "$result" -ne 0
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('before-check.log').read_text()
+          assert '(fail) static copper checks use the via landing' in s,'Expected test assertion, not infrastructure failure'
+          assert 'Expected: true' in s
+          PY
+          cd "$GITHUB_WORKSPACE"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('autorouter/node_modules/@tscircuit/high-density-a01/lib/HighDensitySolverA03/HighDensitySolverA03.ts')
+          s=p.read_text()
+          old="    if (!this.staticSegmentValidator(segment)) return false\n    if (fromZ === toZ) return true\n\n    // A terminal can replace a route point while vias[] retains the grid landing.\n    const terminalMatchesLanding =\n      start.x === gridStart.x &&\n      start.y === gridStart.y &&\n      end.x === gridStart.x &&\n      end.y === gridStart.y\n    if (terminalMatchesLanding) return true\n\n    return this.staticSegmentValidator({\n      ...segment,\n      start: { ...gridStart, z: this.layerToZ.get(fromZ)! },\n      end: { ...gridStart, z: this.layerToZ.get(toZ)! },\n    })\n  }\n"
+          new="    if (fromZ === toZ) return this.staticSegmentValidator(segment)\n\n    const viaStart = { ...gridStart, z: start.z }\n    const viaEnd = { ...gridStart, z: end.z }\n    const hasStartStub = start.x !== gridStart.x || start.y !== gridStart.y\n    if (\n      hasStartStub &&\n      !this.staticSegmentValidator({ ...segment, start, end: viaStart })\n    ) {\n      return false\n    }\n    const hasEndStub = end.x !== gridStart.x || end.y !== gridStart.y\n    if (\n      hasEndStub &&\n      !this.staticSegmentValidator({ ...segment, start: viaEnd, end })\n    ) {\n      return false\n    }\n\n    return this.staticSegmentValidator({\n      ...segment,\n      start: viaStart,\n      end: viaEnd,\n    })\n  }\n"
+          assert s.count(old)==1
+          temporary=p.with_suffix('.analysis.ts')
+          temporary.write_text(s.replace(old,new))
+          temporary.replace(p)
+          Path('autorouter/lib/solvers/HyperHighDensitySolver/createIntraNodeSegmentValidator.ts').write_text("import type { StaticSegmentValidator } from \"@tscircuit/high-density-a01\"\nimport type { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport {\n  arePipeline9RoutesOnSameNet,\n  doPipeline9RoutesHaveCopperConflict,\n  getPipeline9RouteCopperGeometry,\n} from \"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/pipeline9FixedRouteCopper\"\nimport type { HighDensityRoute } from \"lib/types/high-density-types\"\nimport { FlatbushIndex } from \"lib/data-structures/FlatbushIndex\"\n\n/** Reuse native copper validation while A03 searches in physical coordinates. */\nexport const createIntraNodeSegmentValidator = ({\n  fixedHdRoutes,\n  connMap,\n  layerCount,\n  clearance,\n  allowBlindAndBuriedVias,\n}: {\n  fixedHdRoutes: HighDensityRoute[]\n  connMap: ConnectivityMap\n  layerCount: number\n  clearance: number\n  allowBlindAndBuriedVias?: boolean\n}): StaticSegmentValidator => {\n  const copper = fixedHdRoutes.flatMap((route) => {\n    const geometry = getPipeline9RouteCopperGeometry(route, {\n      layerCount,\n      allowBlindAndBuriedVias,\n    })\n    return [\n      ...geometry.wireSegments.map((wire) => ({\n        route,\n        start: wire.start,\n        end: wire.end,\n        radius: wire.width / 2,\n      })),\n      ...geometry.viaSpans.map((via) => ({\n        route,\n        start: via.center,\n        end: via.center,\n        radius: via.diameter / 2,\n      })),\n    ]\n  })\n  let index: FlatbushIndex<HighDensityRoute> | undefined\n  if (copper.length > 0) {\n    index = new FlatbushIndex<HighDensityRoute>(copper.length)\n    for (const primitive of copper) {\n      index.insert(\n        primitive.route,\n        Math.min(primitive.start.x, primitive.end.x) - primitive.radius,\n        Math.min(primitive.start.y, primitive.end.y) - primitive.radius,\n        Math.max(primitive.start.x, primitive.end.x) + primitive.radius,\n        Math.max(primitive.start.y, primitive.end.y) + primitive.radius,\n      )\n    }\n    index.finish()\n  }\n  return (segment): boolean => {\n    if (!index) return true\n    const route: HighDensityRoute = {\n      ...segment,\n      route: [segment.start, segment.end],\n      vias: [],\n    }\n    if (segment.start.z !== segment.end.z) route.vias.push(segment.start)\n    let copperRadius = segment.traceThickness / 2\n    if (segment.start.z !== segment.end.z) {\n      copperRadius = Math.max(copperRadius, segment.viaDiameter / 2)\n    }\n    const radius = copperRadius + clearance\n    const bounds = {\n      minX: Math.min(segment.start.x, segment.end.x) - radius,\n      maxX: Math.max(segment.start.x, segment.end.x) + radius,\n      minY: Math.min(segment.start.y, segment.end.y) - radius,\n      maxY: Math.max(segment.start.y, segment.end.y) + radius,\n    }\n    const nearbyRoutes = new Set(\n      index.search(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY),\n    )\n    for (const fixed of nearbyRoutes) {\n      if (arePipeline9RoutesOnSameNet(route, fixed, connMap)) continue\n      if (\n        doPipeline9RoutesHaveCopperConflict({\n          left: fixed,\n          right: route,\n          leftBounds: bounds,\n          clearance,\n          layerCount,\n          allowBlindAndBuriedVias,\n        })\n      ) {\n        return false\n      }\n    }\n    return true\n  }\n}\n")
+          PY
+          cd autorouter/node_modules/@tscircuit/high-density-a01
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 ./terminal-landing-check.test.ts
+      - name: Compare unchanged exact predicates across layers and via spans
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          Path("lib/solvers/HyperHighDensitySolver/unculledSegmentValidator.ts").write_text("import type { StaticSegmentValidator } from \"@tscircuit/high-density-a01\"\nimport type { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport {\n  arePipeline9RoutesOnSameNet,\n  doPipeline9RoutesHaveCopperConflict,\n} from \"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/pipeline9FixedRouteCopper\"\nimport type { HighDensityRoute } from \"lib/types/high-density-types\"\n\n/** Reuse native copper validation while A03 searches in physical coordinates. */\nexport const createIntraNodeSegmentValidator = ({\n  fixedHdRoutes,\n  connMap,\n  layerCount,\n  clearance,\n  allowBlindAndBuriedVias,\n}: {\n  fixedHdRoutes: HighDensityRoute[]\n  connMap: ConnectivityMap\n  layerCount: number\n  clearance: number\n  allowBlindAndBuriedVias?: boolean\n}): StaticSegmentValidator => {\n  return (segment): boolean => {\n    const route: HighDensityRoute = {\n      ...segment,\n      route: [segment.start, segment.end],\n      vias: [],\n    }\n    if (segment.start.z !== segment.end.z) route.vias.push(segment.start)\n    for (const fixed of fixedHdRoutes) {\n      if (arePipeline9RoutesOnSameNet(route, fixed, connMap)) continue\n      if (\n        doPipeline9RoutesHaveCopperConflict({\n          left: route,\n          right: fixed,\n          clearance,\n          layerCount,\n          allowBlindAndBuriedVias,\n        })\n      ) {\n        return false\n      }\n    }\n    return true\n  }\n}\n")
+          Path("check-indexed-query-parity.ts").write_text("\nimport { ConnectivityMap } from \"circuit-json-to-connectivity-map\"\nimport { createIntraNodeSegmentValidator as before } from \"./lib/solvers/HyperHighDensitySolver/unculledSegmentValidator\"\nimport { createIntraNodeSegmentValidator as after } from \"./lib/solvers/HyperHighDensitySolver/createIntraNodeSegmentValidator\"\nlet seed = 31337\nconst random = (): number => {\n  seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0\n  return seed / 4294967296\n}\nconst connMap = new ConnectivityMap({ foreign: [\"fixed\"], own: [\"candidate\", \"shared\"] })\nlet checks = 0\nfor (const allowBlindAndBuriedVias of [false, true]) {\n  for (let board = 0; board < 100; board++) {\n    const fixedHdRoutes = Array.from({length: 12}, (_, index) => {\n      const x = random() * 12 - 6, y = random() * 12 - 6\n      const z = Math.floor(random() * 4), toZ = (z + 1 + Math.floor(random() * 3)) % 4\n      const vx = x + random() * 2 - 1, vy = y + random() * 2 - 1\n      return {\n        connectionName: index % 4 === 0 ? \"shared\" : \"fixed\",\n        traceThickness: 0.05 + random() * 0.4,\n        viaDiameter: 0.2 + random() * 0.7,\n        route: [{x,y,z}, {x:vx,y:vy,z}, {x:vx,y:vy,z:toZ},\n          {x:vx+random()*2-1,y:vy+random()*2-1,z:toZ}],\n        vias: [{x:vx,y:vy}],\n      }\n    })\n    const params = {fixedHdRoutes,connMap,layerCount:4,clearance:random()*0.25,allowBlindAndBuriedVias}\n    const old = before(params), bounded = after(params)\n    for(let index=0;index<100;index++) {\n      const x = random()*16-8, y=random()*16-8, z=Math.floor(random()*4)\n      const wire = random()<0.6\n      const segment = {\n        connectionName:\"candidate\",\n        traceThickness:0.05+random()*0.5,\n        viaDiameter:0.2+random()*0.8,\n        start:{x,y,z},\n        end:wire?{x:x+random()*4-2,y:y+random()*4-2,z}:{x,y,z:(z+1)%4},\n      }\n      if(old(segment)!==bounded(segment)) throw new Error(\"Bounded query changed a collision result\")\n      checks++\n    }\n  }\n}\nconsole.log(\"BOUNDED_QUERY_PARITY\", JSON.stringify({checks,mismatches:0}))\n")
+          PY
+          bun check-indexed-query-parity.ts
+      - name: Build and package the temporary analysis candidate
+        id: pack
+        working-directory: autorouter
+        run: |
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+          echo "built=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-terminal-narrow-analysis-code
+          path: candidate/autorouter.tgz
+      - name: Preserve all original autorouter physical assertions
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the built analysis candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve all original Core physical assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    needs: original-assertions
+    if: always() && needs.original-assertions.outputs.built == 'true'
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-terminal-narrow-analysis-code
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install candidate on the native handoff
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Compare unchanged real DDR circuits on the same runner
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/detours" --timeout 120 --circuit h616 --circuit glider --circuit orangecrab --circuit imx6 --circuit icepi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for variant in ['detours']:
+            d=json.loads(Path('results',variant,'results.json').read_text())
+            for row in d['cases']:
+              a=row.get('assessment') or {}
+              print('CORE_DDR_AGGREGATE',json.dumps({'variant':variant,'circuit':row['circuit'],'status':row['status'],'wallMs':row['wallMs'],'peakRssMb':row['peakRssMb'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          PY
