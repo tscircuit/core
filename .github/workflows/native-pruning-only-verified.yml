@@ -33,6 +33,14 @@ jobs:
           from pathlib import Path
           Path('tests/a03/search-pruning.test.ts').write_text("import { expect, test } from \"bun:test\"\nimport { createHash } from \"node:crypto\"\nimport { HighDensitySolverA03 } from \"../../lib/HighDensitySolverA03/HighDensitySolverA03\"\nimport { HighDensitySolverA03 as UnoptimizedA03 } from \"../../lib/HighDensitySolverA03/UnoptimizedA03\"\nimport { defaultA03Params } from \"../../lib/default-params\"\nimport cases from \"./search-pruning-cases.json\"\n\ntest(\"A03 pruning preserves routes and completion across ordinary and unusual costs\", () => {\n  // Compare against the frozen terminal-corrected implementation in the same process.\n  // Include negative and nonfinite costs, where a nonnegative lower bound\n  // cannot justify discarding an OPEN destination.\n  for (const entry of cases) {\n    const layers = entry.layers\n    const hyperParameters = Object.fromEntries(\n      Object.entries(entry.hyperParameters).map(([key, value]) => [\n        key,\n        Number(value),\n      ]),\n    )\n    const params = {\n      ...defaultA03Params,\n      hyperParameters,\n      nodeWithPortPoints: {\n        capacityMeshNodeId: \"numeric-domain\",\n        center: { x: 0, y: 0 },\n        width: 2,\n        height: 2,\n        availableZ: Array.from({ length: layers }, (_, i) => i),\n        portPoints: [\n          { connectionName: \"a\", x: -1, y: -0.5, z: 0 },\n          { connectionName: \"a\", x: 1, y: 0.5, z: layers - 1 },\n          { connectionName: \"b\", x: -1, y: 0.5, z: 0 },\n          { connectionName: \"b\", x: 1, y: -0.5, z: 0 },\n          { connectionName: \"c\", x: 0, y: -1, z: layers - 1 },\n          { connectionName: \"c\", x: 0, y: 1, z: 0 },\n        ],\n      },\n    }\n    const baseline = new UnoptimizedA03(params)\n    baseline.solve()\n    for (const viaOccupantQuery of [\"dense\", \"owner-runs\"] as const) {\n    const solver = new HighDensitySolverA03({...params, viaOccupantQuery})\n    solver.solve()\n    expect({\n      solved: solver.solved,\n      failed: solver.failed,\n      error: solver.error ?? null,\n      iterations: solver.iterations,\n      outputSha256: createHash(\"sha256\")\n        .update(JSON.stringify(solver.getOutput()))\n        .digest(\"hex\"),\n    }).toEqual({\n      solved: baseline.solved,\n      failed: baseline.failed,\n      error: baseline.error ?? null,\n      iterations: baseline.iterations,\n      outputSha256: createHash(\"sha256\").update(JSON.stringify(baseline.getOutput())).digest(\"hex\"),\n    })\n    }\n  }\n})\n")
           PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
           bun install
           BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999
           bun run build
@@ -53,7 +61,16 @@ jobs:
           ref: 2b1207ad70971f326166b134ea19418137273f23
           path: base
           persist-credentials: false
-      - run: bun install
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
         working-directory: base
       - uses: actions/checkout@v4
         with:
@@ -61,7 +78,16 @@ jobs:
           ref: aa55c35bfbb3229fe6670a658379541f18e5f6b0
           path: native
           persist-credentials: false
-      - run: bun install
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
         working-directory: native
       - uses: actions/checkout@v4
         with:
@@ -69,7 +95,16 @@ jobs:
           ref: 11396d1303dd7cab1849850f868ae356f35036a6
           path: optimized
           persist-credentials: false
-      - run: bun install
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
         working-directory: optimized
       - name: Keep exact move pruning while using the existing dense occupancy representation
         working-directory: optimized
