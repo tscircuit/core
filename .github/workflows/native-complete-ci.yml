@@ -12,7 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        source: [1a2e757a0230bae0e8f915023485978587d7fe14, 0f98be6237dfa0a852360b07d38f0e2fbee5f92d]
+        include:
+          - variant: parent
+            source: 1a2e757a0230bae0e8f915023485978587d7fe14
+          - variant: native
+            source: 0f98be6237dfa0a852360b07d38f0e2fbee5f92d
+          - variant: guard
+            source: 0f98be6237dfa0a852360b07d38f0e2fbee5f92d
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,67 +34,59 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path("lib/solvers/HighDensityRepairSolver/Pipeline4HighDensityRepairSolver.ts")
+          import json
+          p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts")
           s=p.read_text()
-          s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
-          s=s.replace('  readonly repairMargin: number','  private readonly repairRoutes: RepairHdRoute[]\n  private readonly hasNativeCopper: boolean\n  readonly repairMargin: number',1)
-          s=s.replace('    const routeIndex = new FlatbushIndex', '    this.repairRoutes = repairRoutes\n    this.hasNativeCopper = (params.fixedHdRoutes?.length ?? 0) > 0\n    const routeIndex = new FlatbushIndex',1)
-          old='    for (let i = 0; i < sampleEntry.routeIndexes.length; i++) {'
+          old='          fixedHdRoutes: cms.highDensityRouteSolver!.getUpdatedFixedHdRoutes(),'
           assert s.count(old)==1
-          new="""    let repairedRoutes = result.repairedRoutes
-              if (this.hasNativeCopper) {
-                const ownedIndexes = new Set(sampleEntry.routeIndexes)
-                const fixedRoutes = this.repairRoutes.filter(
-                  (_, index) => !ownedIndexes.has(index),
-                )
-                const guard = new FixedCopperClearanceGuard(
-                  fixedRoutes,
-                  this.minClearance ?? 0.1,
-                  [],
-                  this.viaCopperClearance,
-                )
-                if (!guard.allows(
-                  sampleEntry.sample.nodeHdRoutes!,
-                  repairedRoutes,
-                  repairedRoutes.keys(),
-                )) {
-                  repairedRoutes = sampleEntry.sample.nodeHdRoutes!
-                }
-              }
-              for (let i = 0; i < sampleEntry.routeIndexes.length; i++) {"""
-          s=s.replace(old,new,1)
-          s=s.replace('      const repairedRoute = result.repairedRoutes[i]','      const repairedRoute = repairedRoutes[i]\n      if (repairedRoute) this.repairRoutes[routeIndex] = repairedRoute',1)
-          p.write_text(s)
-          if '${{ matrix.source }}' == '0f98be6237dfa0a852360b07d38f0e2fbee5f92d':
-              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensityForceImproveSolver.ts")
-              s=p.read_text()
-              s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
-              s=s.replace('    if (this.fixedViaObstacleIndexes.size === 0) return','    if (this.fixedViaObstacleIndexes.size === 0 && this.fixedHdRoutes.length === 0) return',1)
-              old='    if (!worsensViaClearance) return'
+          s=s.replace(old,'',1)
+          if '${{ matrix.variant }}' != 'parent':
+              old='''          fixedHdRoutes: cms.highDensityRouteSolver!
+                      .getUpdatedFixedHdRoutes(),'''
               assert s.count(old)==1
-              new="""    let allowsNativeCopper = true
-                  if (this.fixedHdRoutes.length > 0) {
-                    const ownedIndexes = new Set(routeIndexes)
-                    const readOnlyRoutes = [
-                      ...this.fixedHdRoutes,
-                      ...this.getOutput().filter((_, index) => !ownedIndexes.has(index)),
-                    ]
-                    const guard = new FixedCopperClearanceGuard(
-                      readOnlyRoutes,
-                      this.inputSrj.minTraceToPadEdgeClearance ??
-                        this.inputSrj.defaultObstacleMargin ??
-                        RELAXED_DRC_OPTIONS.traceClearance,
-                      [],
-                      this.inputSrj.minPadEdgeToPadEdgeClearance,
-                    )
-                    allowsNativeCopper = guard.allows(
-                      originalRoutes,
-                      candidateRoutes,
-                      candidateRoutes.keys(),
-                    )
-                  }
-                  if (!worsensViaClearance && allowsNativeCopper) return"""
-              p.write_text(s.replace(old,new,1))
+              s=s.replace(old,'''          fixedHdRoutes: cms.highDensityRouteSolver!
+                      .getUpdatedFixedHdRoutes()
+                      .filter((route) => route.isFixed),''',1)
+          p.write_text(s)
+          if '${{ matrix.variant }}' != 'parent':
+              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
+              # Regional force gets read-only copper only in the physical native frame.
+              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
+              s=p.read_text()
+              old='      fixedHdRoutes: this.fixedHdRoutes,'
+              # The forwarding is in the physical pipeline regional implementation.
+              p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts")
+              # Inspect the published orchestration rather than changing search behavior.
+              if '${{ matrix.variant }}' == 'guard':
+                  p=Path("lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensityForceImproveSolver.ts")
+                  s=p.read_text()
+                  s='import { FixedCopperClearanceGuard } from "high-density-repair02/lib/high-density-repair-solver/functions/FixedCopperClearanceGuard"\n'+s
+                  s=s.replace('    if (this.fixedViaObstacleIndexes.size === 0) return','    if (this.fixedViaObstacleIndexes.size === 0 && this.fixedHdRoutes.length === 0) return',1)
+                  old='    if (!worsensViaClearance) return'
+                  assert s.count(old)==1
+                  new="""    let allowsNativeCopper = true
+                      if (this.fixedHdRoutes.length > 0) {
+                        const ownedIndexes = new Set(routeIndexes)
+                        const readOnlyRoutes = [
+                          ...this.fixedHdRoutes,
+                          ...this.getOutput().filter((_, index) => !ownedIndexes.has(index)),
+                        ]
+                        const guard = new FixedCopperClearanceGuard(
+                          readOnlyRoutes,
+                          this.inputSrj.minTraceToPadEdgeClearance ??
+                            this.inputSrj.defaultObstacleMargin ??
+                            RELAXED_DRC_OPTIONS.traceClearance,
+                          [],
+                          this.inputSrj.minPadEdgeToPadEdgeClearance,
+                        )
+                        allowsNativeCopper = guard.allows(
+                          originalRoutes,
+                          candidateRoutes,
+                          candidateRoutes.keys(),
+                        )
+                      }
+                      if (!worsensViaClearance && allowsNativeCopper) return"""
+                  p.write_text(s.replace(old,new,1))
           PY
       - run: bun install && bun run build
         working-directory: autorouter
