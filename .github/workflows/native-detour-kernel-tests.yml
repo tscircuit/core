@@ -1,0 +1,54 @@
+name: Verify existing detour fix against native force context
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-detour-kernel-tests.yml]
+permissions:
+  contents: read
+jobs:
+  kernel-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-repair01
+          ref: 565efc51c7c9afb6433f9fcecdf51e9ccd9ec74f
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-repair01
+          ref: 84cb6557d6b7cc5dce1e64d615e81b384d4a998b
+          path: detours
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-repair01
+          ref: 3dfd90b982d749c0bf286be39dd16f776692e101
+          path: candidate
+          persist-credentials: false
+      - name: Apply the same clean runtime merge and original public tests
+        run: |
+          git merge-file -p candidate/lib/HighDensityForceImproveSolver.ts base/lib/HighDensityForceImproveSolver.ts detours/lib/HighDensityForceImproveSolver.ts > force-merged.ts
+          mv force-merged.ts candidate/lib/HighDensityForceImproveSolver.ts
+          cp detours/lib/utils/high-density-force-improve-topology.ts candidate/lib/utils/high-density-force-improve-topology.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          for f in ["tests/fixtures/rvboy-boundary-port-precision.json.gz","tests/fixtures/rvboy-force-pair-pruning/expected.json.gz","tests/fixtures/rvboy-force-pair-pruning/input.json.gz","tests/fixtures/rvboy-impossible-alignment.json.gz","tests/fixtures/rvboy-regional-cleanup.json.gz","tests/rvboy-boundary-port-precision.test.ts","tests/rvboy-force-pair-pruning.test.ts","tests/rvboy-impossible-alignment.test.ts","tests/rvboy-regional-cleanup.test.ts"]:
+            dst=Path('candidate',f)
+            dst.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(Path('detours',f),dst)
+          PY
+      - run: bun install
+        working-directory: candidate
+      - run: bun test --timeout 9999999
+        working-directory: candidate
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+      - run: bunx tsc --noEmit
+        working-directory: candidate
