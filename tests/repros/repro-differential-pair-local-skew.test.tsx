@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { runAllRoutingChecks } from "@tscircuit/checks"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { formatKnotPoints } from "tests/fixtures/local-skew/get-knot-points"
 
 test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
   const { circuit } = getTestFixture()
@@ -98,10 +99,16 @@ test("matched USB trace totals hide 1.236 mm of mid-route skew", async () => {
   expect(positive.trace_length).toBeCloseTo(25.2360679775, 9)
   expect(negative.trace_length).toBeCloseTo(25.2360679775, 9)
   expect(await runAllRoutingChecks(circuitJson)).toEqual([])
-  expect(
-    circuitJson.filter(
-      ({ type }) => String(type) === "pcb_differential_pair_local_skew",
-    ),
-  ).toEqual([])
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
+
+  // D+ is 1.236 mm ahead between its detour and D-'s, and in step at both ends.
+  const [localSkew] = circuit.db.pcb_differential_pair_local_skew.list()
+  expect(formatKnotPoints({ circuitJson, localSkew })).toMatchInlineSnapshot(`
+    "P -12,0.3  N -12,-0.3  skew 0
+    P -10,0.3  N -10,-0.3  skew 0
+    P -9,0.3  N -9,-0.3  skew 1.23607
+    P 8,0.3  N 8,-0.3  skew 1.23607
+    P 9,0.3  N 9,-0.3  skew 0
+    P 12,0.3  N 12,-0.3  skew 0"
+  `)
 })
