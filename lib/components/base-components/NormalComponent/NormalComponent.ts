@@ -1,16 +1,6 @@
-import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
-import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
-import {
-  getNumericPinLabels,
-  isPhysicalPinName,
-  resolvePinLabels,
-  type ResolvedPinLabel,
-} from "lib/utils/schematic/resolvePinLabels"
-import { resolveManufacturerPartNumber } from "@tscircuit/props"
-import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
-import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
 import { normalizeDegrees } from "@tscircuit/math-utils"
+import { resolveManufacturerPartNumber } from "@tscircuit/props"
 import type {
   CadModelGlb,
   CadModelGltf,
@@ -46,9 +36,12 @@ import {
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
+import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
+import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { createNetsFromProps } from "lib/utils/components/createNetsFromProps"
 import { createComponentsFromCircuitJson } from "lib/utils/createComponentsFromCircuitJson"
 import { filterPinLabels } from "lib/utils/filterPinLabels"
+import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import {
   getPinNumberFromLabels,
@@ -71,6 +64,12 @@ import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFr
 import { isCircuitJsonSymbol } from "lib/utils/schematic/isCircuitJsonSymbol"
 import { normalizeSchematicSymbolCircuitJson } from "lib/utils/schematic/normalizeSchematicSymbolCircuitJson"
 import { parsePinNumberFromLabelsOrThrow } from "lib/utils/schematic/parsePinNumberFromLabelsOrThrow"
+import {
+  type ResolvedPinLabel,
+  getNumericPinLabels,
+  isPhysicalPinName,
+  resolvePinLabels,
+} from "lib/utils/schematic/resolvePinLabels"
 import { selectSymbolCircuitJson } from "lib/utils/schematic/selectSymbolCircuitJson"
 import {
   type ReactElement,
@@ -95,6 +94,8 @@ import {
   NormalComponent_doInitialCheckRefDesConvention,
   getDefaultExpectedRefDesPrefixesForFtype,
 } from "./NormalComponent_doInitialCheckRefDesConvention"
+import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
+import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
 import {
   NormalComponent_doInitialPartOrientationAnalysis,
   NormalComponent_updatePartOrientationAnalysis,
@@ -105,8 +106,7 @@ import { NormalComponent_doInitialResolveFootprintPinLabels } from "./NormalComp
 import { NormalComponent_doInitialSchematicComponentRender } from "./NormalComponent_doInitialSchematicComponentRender"
 import { NormalComponent_doInitialSilkscreenOverlapAdjustment } from "./NormalComponent_doInitialSilkscreenOverlapAdjustment"
 import { NormalComponent_doInitialSourceDesignRuleChecks } from "./NormalComponent_doInitialSourceDesignRuleChecks"
-import { NormalComponent_doInitialMissingManufacturerPartNumberWarning } from "./NormalComponent_doInitialMissingManufacturerPartNumberWarning"
-import { NormalComponent_doInitialComponentAvailabilityWarning } from "./NormalComponent_doInitialComponentAvailabilityWarning"
+import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import { NormalComponent_doInitialSupplierFootprintMismatchWarning } from "./NormalComponent_doInitialSupplierFootprintMismatchWarning"
 import { canMergePortDefinitions } from "./utils/canMergePortDefinitions"
 import { getPrimaryPortsFromPortHintGroups } from "./utils/getPrimaryPortsFromPortHintGroups"
@@ -2269,14 +2269,46 @@ export class NormalComponent<
     source_component: any,
     footprinterString?: string,
   ): string {
-    return JSON.stringify({
-      ftype: source_component.ftype,
-      name: source_component.name,
-      manufacturer_part_number: source_component.manufacturer_part_number,
-      standard: source_component.standard,
-      pin_count: source_component.pin_count,
-      footprinterString,
-    })
+    const ignoredKeys = new Set([
+      "type",
+      "source_component_id",
+      "name",
+      "subcircuit_id",
+      "source_group_id",
+      "pcb_group_id",
+      "supplier_part_numbers",
+      "manufacturer_part_number_id",
+    ])
+    const normalizeCacheValue = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map(normalizeCacheValue)
+      }
+      if (value && typeof value === "object") {
+        const sorted: Record<string, unknown> = {}
+        for (const key of Object.keys(value).sort()) {
+          const entry = (value as Record<string, unknown>)[key]
+          if (entry !== undefined) {
+            sorted[key] = normalizeCacheValue(entry)
+          }
+        }
+        return sorted
+      }
+      return value
+    }
+
+    const spec: Record<string, unknown> = {
+      footprinterString: footprinterString ?? null,
+    }
+    if (source_component && typeof source_component === "object") {
+      for (const key of Object.keys(source_component)) {
+        if (ignoredKeys.has(key)) continue
+        const value = source_component[key]
+        if (value !== undefined) {
+          spec[key] = value
+        }
+      }
+    }
+    return JSON.stringify(normalizeCacheValue(spec))
   }
 
   protected async _getSupplierPartNumbers(
