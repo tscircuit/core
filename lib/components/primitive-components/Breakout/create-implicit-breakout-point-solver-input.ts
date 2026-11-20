@@ -20,6 +20,7 @@ import {
   assignSingleRegionBreakoutEdges,
 } from "./assign-single-region-breakout-edges"
 import type { Breakout } from "./Breakout"
+import { getBreakoutBusesOutsideUnbrokenPours } from "./get-breakout-buses-outside-unbroken-pours"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
 type SourcePortId = NonNullable<SourcePort["source_port_id"]>
@@ -844,7 +845,11 @@ export const createImplicitBreakoutPointSolverContext = (
     input: {
       regions: solverRegions,
       connections,
-      buses,
+      buses: getBreakoutBusesOutsideUnbrokenPours({
+        routingScope,
+        buses,
+        regions: solverRegions,
+      }),
       boundaryPointSpacing,
     },
     sourcePortIdByConnectionIdByRegionId,
