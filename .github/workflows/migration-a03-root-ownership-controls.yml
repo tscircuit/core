@@ -1,0 +1,147 @@
+name: Verify original board clearances with preserved A03 ownership
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-a03-root-ownership-controls.yml]
+permissions:
+  contents: read
+jobs:
+  dependency-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: 4abd1d41bca9d6cdca6af8fa8aee69a56b6066be
+          path: solver
+          persist-credentials: false
+      - name: Install the exact rebased dependency
+        working-directory: solver
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Run every dependency test with original assertions
+        working-directory: solver
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 > "$RUNNER_TEMP/a03-unit.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import re,os,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'a03-unit.log').read_text(errors='replace')
+          print('A03_UNIT_AGGREGATE',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if re.match(r'^tests/[^:]+:$',line) or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
+      - run: bunx tsc --noEmit
+        working-directory: solver
+      - run: bun run build
+        working-directory: solver
+
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: d33dea99143785b9ad22126dcc7e601d4dd29a42
+          path: autorouter
+          persist-credentials: false
+      - name: Install the final routing stack
+        working-directory: autorouter
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve the four original autorouter assertions
+        working-directory: autorouter
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts > "$RUNNER_TEMP/ar-heldout.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import os,re,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'ar-heldout.log').read_text(errors='replace')
+          s=re.sub(r'\x1b\[[0-9;]*m','',s)
+          print('AR_PHYSICAL_ASSERTIONS',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if line.startswith('(pass)') or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
+      - name: Build the same routing source for Core
+        working-directory: autorouter
+        run: |
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the exact compiled routing stack
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve the two original Core assertions
+        working-directory: core
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx > "$RUNNER_TEMP/core-heldout.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import os,re,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'core-heldout.log').read_text(errors='replace')
+          s=re.sub(r'\x1b\[[0-9;]*m','',s)
+          print('CORE_PHYSICAL_ASSERTIONS',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if line.startswith('(pass)') or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
