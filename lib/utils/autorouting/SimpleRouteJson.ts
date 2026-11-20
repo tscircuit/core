@@ -21,6 +21,8 @@ export type SimplifiedPcbTrace = Omit<
 > & {
   type: "pcb_trace"
   pcb_trace_id: string
+  /** Preserve this preloaded trace's copper geometry throughout routing. */
+  isFixed?: boolean
   connection_name?: string
   connectsTo?: string[]
   route: Array<

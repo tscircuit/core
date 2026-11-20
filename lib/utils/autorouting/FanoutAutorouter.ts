@@ -304,11 +304,16 @@ const inferPlaneBusDirection = (
 
 const createDownstreamSimpleRouteJson = ({
   fanoutSimpleRouteJson,
+  fanoutTraces,
   sourceComponentIds,
 }: {
   fanoutSimpleRouteJson: SimpleRouteJson
+  fanoutTraces: readonly SimplifiedPcbTrace[]
   sourceComponentIds: Set<string>
 }): SimpleRouteJson => {
+  const fanoutTraceIds = new Set(
+    fanoutTraces.map((trace) => trace.pcb_trace_id),
+  )
   const sourceObstaclesByComponentId = new Map<
     string,
     SimpleRouteJson["obstacles"]
@@ -361,6 +366,11 @@ const createDownstreamSimpleRouteJson = ({
   }
   return {
     ...fanoutSimpleRouteJson,
+    traces: fanoutSimpleRouteJson.traces?.map((trace) =>
+      fanoutTraceIds.has(trace.pcb_trace_id)
+        ? { ...trace, isFixed: true }
+        : trace,
+    ),
     obstacles: [
       ...fanoutSimpleRouteJson.obstacles.filter(
         (obstacle) =>
@@ -548,6 +558,7 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
     return {
       downstreamSimpleRouteJson: createDownstreamSimpleRouteJson({
         fanoutSimpleRouteJson,
+        fanoutTraces,
         sourceComponentIds: new Set(
           fanoutSolver.preparedBuses.map((bus) => bus.componentId),
         ),

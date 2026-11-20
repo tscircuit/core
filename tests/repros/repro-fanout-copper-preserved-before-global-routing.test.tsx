@@ -4,10 +4,13 @@ import {
   checkHoleTraceClearance,
   checkPadTraceClearance,
 } from "@tscircuit/checks"
+import { pcb_trace } from "circuit-json"
+import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("global routing preserves completed fanout copper", async () => {
   const { circuit } = getTestFixture()
+  const autoroutingPhaseIoStack = createAutoroutingPhaseIoStack(circuit)
   circuit.add(
     <board
       width={24}
@@ -64,6 +67,14 @@ test("global routing preserves completed fanout copper", async () => {
   )
   await circuit.renderUntilSettled()
   const circuitJson = circuit.getCircuitJson()
+  const fanoutTraces = autoroutingPhaseIoStack[0]!.endSimpleRouteJson!.traces!
+  expect(fanoutTraces).toHaveLength(6)
+  for (const fanoutTrace of fanoutTraces) {
+    const finalTrace = circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)
+    expect(pcb_trace.parse(finalTrace).route).toEqual(
+      pcb_trace.parse(fanoutTrace).route,
+    )
+  }
   expect(checkEachPcbTraceNonOverlapping(circuitJson)).toEqual([])
   expect(checkHoleTraceClearance(circuitJson)).toEqual([])
   expect(checkPadTraceClearance(circuitJson)).toEqual([])
