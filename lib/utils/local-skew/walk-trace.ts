@@ -25,11 +25,11 @@ export type TraceWalk = {
   length: number
 }
 
-/** A point the route passes through, and the copper arriving at it. */
+/** A point the route passes through, the layer of the copper arriving at it, and its own width (none for a via). */
 type RouteCorner = {
   point: Point
   layer: LayerRef
-  width: number
+  width: number | undefined
   viaLength: number
 }
 
@@ -39,9 +39,10 @@ const DEFAULT_VIA_LENGTH = 1.6
 /**
  * Splits a trace route into straight pieces in stored route order.
  *
- * Copper arriving at a wire point uses that wire's layer and width.
- * Copper arriving at a via uses the via's `from_layer` and the last wire's
- * width, so sparse routes still contribute planar length between vias.
+ * Copper arriving at a wire point uses that wire's layer; copper arriving
+ * at a via uses the via's `from_layer`. Each piece is as wide as its start
+ * point, or its end point when it starts at a via, as renderers draw it. A
+ * piece from one via to the next keeps the previous piece's width.
  * A via, or a through pad, between two different layers adds their
  * Z-distance from `stackup`, else `boardThickness`, else
  * {@link DEFAULT_VIA_LENGTH}.
@@ -109,17 +110,19 @@ function addStep({
   /** Length of any via directly before `start`, in mm. */
   startViaLength: number
 }): void {
+  const previous = steps[steps.length - 1]
+  const width = from.width ?? to.width ?? previous?.width
+  if (width === undefined) return
   const step: TraceStep = {
     start: from.point,
     end: to.point,
     layer: to.layer,
-    width: to.width,
+    width,
     startDistance,
     length,
     startViaLength,
     endViaLength: 0,
   }
-  const previous = steps[steps.length - 1]
   if (
     previous &&
     startViaLength === 0 &&
@@ -181,14 +184,12 @@ function routeCorners({
   boardThickness?: number
 }): RouteCorner[] {
   const corners: RouteCorner[] = []
-  let width = 0
   for (const routePoint of trace.route) {
     if (routePoint.route_type === "wire") {
-      width = routePoint.width
       corners.push({
         point: { x: routePoint.x, y: routePoint.y },
         layer: routePoint.layer,
-        width,
+        width: routePoint.width,
         viaLength: 0,
       })
       continue
@@ -197,7 +198,7 @@ function routeCorners({
       corners.push({
         point: { x: routePoint.x, y: routePoint.y },
         layer: routePoint.from_layer,
-        width,
+        width: undefined,
         viaLength: viaLayerDistance({
           fromLayer: routePoint.from_layer,
           toLayer: routePoint.to_layer,
@@ -209,17 +210,16 @@ function routeCorners({
     }
     // A through-pad point is a straight run across the pad, which then
     // changes layers like a via when its end layer differs.
-    width = routePoint.width
     corners.push({
       point: routePoint.start,
       layer: routePoint.start_layer,
-      width,
+      width: routePoint.width,
       viaLength: 0,
     })
     corners.push({
       point: routePoint.end,
       layer: routePoint.start_layer,
-      width,
+      width: routePoint.width,
       viaLength: viaLayerDistance({
         fromLayer: routePoint.start_layer,
         toLayer: routePoint.end_layer,
