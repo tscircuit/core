@@ -1,0 +1,67 @@
+name: Locate first native trace clearance regression by routing stage
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-stage-clearance.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 18
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: existing-native-recovery-code
+          path: candidate
+          run-id: 44727093808
+          github-token: ${{ github.token }}
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the same compiled routing candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Observe only numeric recovery metrics
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('core/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx')
+          s=p.read_text()
+          anchor='const { RootCircuit } = await import(join(corePath, "index.ts"))'
+          assert s.count(anchor)==1
+          temporary=p.with_suffix('.analysis.tsx')
+          temporary.write_text(s.replace(anchor,"\nconst routerRoot = join(corePath, \"node_modules/@tscircuit/capacity-autorouter\")\nconst routerPackage = JSON.parse(readFileSync(join(routerRoot, \"package.json\"), \"utf8\"))\nconst routerModule = await import(join(routerRoot, routerPackage.main))\nconst Pipeline = routerModule.AutoroutingPipelineSolver9_PreloadedTraceGraph\nif (!Pipeline) throw new Error(\"Diagnostic pipeline export is missing\")\nconst originalPipelineStep = Pipeline.prototype._step\nconst loggedSolvers = new WeakSet<object>()\nPipeline.prototype._step = function () {\n  const phase = this.getCurrentPhase()\n  const active = this[phase]\n  const result = originalPipelineStep.call(this)\n  if (active && (active.solved || active.failed) && !loggedSolvers.has(active)) {\n    loggedSolvers.add(active)\n    const metrics: Record<string, number | boolean | Record<string, number>> = {}\n    for (const [key, value] of Object.entries(active.stats ?? {})) {\n      if (typeof value === \"number\" || typeof value === \"boolean\") metrics[key] = value\n    }\n    const issueCounts = active.stats?.initialJointDrcIssueCountByType\n    if (issueCounts) {\n      const counts: Record<string, number> = {}\n      for (const key of [\"pcb_trace_error\", \"pcb_pad_trace_clearance_error\", \"pcb_via_trace_clearance_error\", \"pcb_via_clearance_error\", \"pcb_pad_pad_clearance_error\"]) {\n        if (typeof issueCounts[key] === \"number\") counts[key] = issueCounts[key]\n      }\n      metrics.initialIssuesByType = counts\n    }\n    if (phase === \"portPointPathingSolver\") {\n      const p = active.getSolveGraphBenchmarkMetrics()\n      metrics.nodePfSum = p.downstreamNodePfSum\n      metrics.nodePfMax = p.downstreamNodePfMax\n      metrics.recoveryEvaluated = p.blockerRecoveryCandidateEvaluated\n    }\n    console.log(\"NATIVE_STAGE_AGGREGATE\", JSON.stringify({\n      phase, solved: active.solved, failed: active.failed,\n      iterations: active.iterations, stats: metrics\n    }))\n  }\n  return result\n}\n"+'\n'+anchor))
+          temporary.replace(p)
+          PY
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/activation" --timeout 120 --circuit h616 --circuit imx6 --circuit icepi
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          for p in Path('results').rglob('render.log'):
+            for line in p.read_text(errors='replace').splitlines():
+              if line.startswith('NATIVE_STAGE_AGGREGATE '):
+                print(line)
+          d=json.loads(Path('results/activation/results.json').read_text())
+          for row in d['cases']:
+            a=row.get('assessment') or {}
+            print('CORE_DDR_AGGREGATE',json.dumps({'circuit':row['circuit'],'status':row['status'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          PY
