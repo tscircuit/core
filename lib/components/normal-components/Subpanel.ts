@@ -494,6 +494,21 @@ export class Subpanel extends Group<typeof subpanelProps> {
               tabLength: props.tabLength ?? DEFAULT_TAB_LENGTH,
               mouseBites: props.mouseBites ?? true,
               vScore: props.vScore ?? false,
+              // Traces between boards cross tabs, which keep a drill-free
+              // corridor along each trace's straight path between its pads.
+              panelTraceSegments: db.source_trace
+                .list()
+                .filter((trace) => trace.subcircuit_id === this.subcircuit_id)
+                .map((trace) =>
+                  trace.connected_source_port_ids.map((sourcePortId) =>
+                    db.pcb_port.getWhere({ source_port_id: sourcePortId }),
+                  ),
+                )
+                .filter((ports) => ports.length === 2 && ports.every(Boolean))
+                .map(([start, end]) => ({
+                  start: { x: start!.x, y: start!.y },
+                  end: { x: end!.x, y: end!.y },
+                })),
             })
 
         for (const tabCutout of tabCutouts) {

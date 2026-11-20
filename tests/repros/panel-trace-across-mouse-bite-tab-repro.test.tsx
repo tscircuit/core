@@ -27,10 +27,5 @@ test("autorouted panel trace crosses a mouse-bite tab between two boards", async
       ...circuit.db.pcb_trace_error.list(),
       ...circuit.db.pcb_placement_error.list(),
     ].map((error) => error.message),
-  ).toMatchInlineSnapshot(`
-    [
-      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
-      "Copper for .B1 .R1 .pin2 to .B2 .R2 .pin1 violates clearance to cutout unnamed cutout (measured 0.000mm, required 0.200mm)",
-    ]
-  `)
+  ).toMatchInlineSnapshot(`[]`)
 })
