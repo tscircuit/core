@@ -8,7 +8,7 @@ import { getRouteForPcbPath } from "./get-route-for-pcb-path"
 import { insertPcbPathViaContactErrors } from "./insert-pcb-path-via-contact-errors"
 import { insertPcbPathViaPolicyErrors } from "./insert-pcb-path-via-policy-errors"
 import type { Trace } from "./Trace"
-import { getTraceLength } from "./trace-utils/compute-trace-length"
+import { getTraceLengthOnBoard } from "./trace-utils/get-trace-length-on-board"
 
 interface RenderPcbPathsInput {
   trace: Trace
@@ -65,7 +65,7 @@ export const renderPcbPaths = ({
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
       pcb_group_id: trace.getGroup()?.pcb_group_id ?? undefined,
       pcb_panel_id: getOwningPanel(trace)?.pcb_panel_id ?? undefined,
-      trace_length: getTraceLength(route),
+      trace_length: getTraceLengthOnBoard({ trace, route }),
     })
     trace.pcb_trace_id ??= pcbTrace.pcb_trace_id
 
