@@ -33,6 +33,7 @@ beforeAll(async () => {
     <board width={30} height={30} schematicDisabled>
       <connector
         name="J1"
+        layer="bottom"
         pcbX={0}
         pcbY={0}
         footprint="kicad:Connector_USB/USB_A_Receptacle_GCT_USB1046"
@@ -45,7 +46,7 @@ beforeAll(async () => {
         }}
       />
       <pcbnotetext
-        text="USB1046: preserve the imported top stencil; no bottom paste"
+        text="USB1046: source stencil follows bottom-mounted J1"
         pcbY={13}
         fontSize={0.45}
       />
@@ -82,13 +83,11 @@ beforeAll(async () => {
 })
 
 test.failing(
-  "USB1046 preserves the converter's six top paste apertures without bottom duplicates",
+  "USB1046 preserves six apertures on bottom-mounted J1 without top duplicates",
   () => {
     const paste = circuit.db.pcb_solder_paste.list()
     expect(paste).toHaveLength(6)
-    expect(
-      paste.filter((aperture) => aperture.layer === "bottom"),
-    ).toHaveLength(0)
+    expect(paste.filter((aperture) => aperture.layer === "top")).toHaveLength(0)
     for (const aperture of input.filter(
       (element) => element.type === "pcb_solder_paste",
     )) {
@@ -103,7 +102,7 @@ test.failing(
           width: aperture.width,
           height: aperture.height,
           radius: aperture.radius,
-          layer: "top",
+          layer: "bottom",
         }),
       )
     }
