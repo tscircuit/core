@@ -1,4 +1,4 @@
-name: Compare published native-trace DDR architecture
+name: Repeat latest published DDR boards
 on:
   push:
     branches: [analysis/ddr-native-3257-force-check]
@@ -16,16 +16,16 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - {circuit: h3, order: "previous latest"}
-          - {circuit: a64, order: "latest previous"}
-          - {circuit: stmp157, order: "previous latest"}
-          - {circuit: orangecrab, order: "latest previous"}
-          - {circuit: a13, order: "previous latest"}
-          - {circuit: h616, order: "latest previous"}
-          - {circuit: butterstick, order: "latest previous"}
-          - {circuit: glider, order: "latest previous"}
-          - {circuit: imx6, order: "previous latest"}
-          - {circuit: icepi, order: "latest previous"}
+          - {circuit: h3, order: "latest"}
+          - {circuit: a64, order: "latest"}
+          - {circuit: stmp157, order: "latest"}
+          - {circuit: orangecrab, order: "latest"}
+          - {circuit: a13, order: "latest"}
+          - {circuit: h616, order: "latest"}
+          - {circuit: butterstick, order: "latest"}
+          - {circuit: glider, order: "latest"}
+          - {circuit: imx6, order: "latest"}
+          - {circuit: icepi, order: "latest"}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,6 @@ jobs:
            return await response.json()
           }
           for(const release of [
-           {label:"previous",tscircuit:"0.0.3256",core:"0.0.2434",autorouter:"0.0.1135",sourceRevision:"published-0.0.3256"},
            {label:"latest",tscircuit:"0.0.3257",core:"0.0.2436",autorouter:"0.0.1139",sourceRevision:"published-0.0.3257"}
           ]) {
            const published=await metadata("tscircuit",release.tscircuit)
@@ -68,8 +67,7 @@ jobs:
           }
           JS
           node prepare-published.private.mjs
-          (cd previous && bun install --ignore-scripts)
-          (cd latest && bun install --ignore-scripts)
+                    (cd latest && bun install --ignore-scripts)
       - name: Route real TSX circuits through published Core
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -95,7 +93,7 @@ jobs:
           const assessmentScript=path.resolve("latest/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts")
           const circuitName=process.env.CIRCUIT
           mkdirSync("metrics",{recursive:true})
-          for(const release of ["previous","latest"]) {
+          for(const release of ["latest"]) {
            const root=path.resolve("results",release)
            if(!existsSync(root+"/results.json"))throw Error("Missing native render results "+release)
            const report=JSON.parse(readFileSync(root+"/results.json","utf8"))
