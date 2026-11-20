@@ -1,0 +1,166 @@
+name: Verify routing bounds are retained through native cleanup
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-cleanup-routing-bounds.yml]
+permissions:
+  contents: read
+jobs:
+  dependency-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: cd6446ab0aaeb713c7113c89aef04a010400bfb4
+          persist-credentials: false
+      - run: bun install
+      - run: bun test --timeout 9999999
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+      - run: bun run build
+  original-assertions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      built: ${{ steps.pack.outputs.built }}
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 540385a5d0bfad2dd52a0db98a1bbce6efc91e7b
+          path: autorouter
+          persist-credentials: false
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+        working-directory: autorouter
+      - name: Build and package the temporary analysis candidate
+        id: pack
+        working-directory: autorouter
+        run: |
+          bun run build
+          mkdir ../candidate
+          npm pack --pack-destination ../candidate
+          mv ../candidate/*.tgz ../candidate/autorouter.tgz
+          echo "built=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-cleanup-routing-bounds-code
+          path: candidate/autorouter.tgz
+      - name: Preserve all original autorouter physical assertions
+        working-directory: autorouter
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/bugs/bugreport96-full-gameboy-no-breakout.test.ts tests/bugs/usb-dp-phase-detour.test.ts tests/features/pipeline9-orangecrab-native-fixed-traces.test.ts tests/repro/pipeline9-h616-portfolio-candidate-clearance.test.ts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install the built analysis candidate
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Preserve all original Core physical assertions
+        working-directory: core
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
+        run: bun test --timeout 9999999 tests/repros/repro-fanout-routed-layer-impact.test.tsx tests/repros/repro-autorouter-clearance-board.test.tsx
+  benchmark:
+    needs: original-assertions
+    if: always() && needs.original-assertions.outputs.built == 'true'
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-cleanup-routing-bounds-code
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: core
+          persist-credentials: false
+      - name: Install candidate on the native handoff
+        working-directory: core
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d['devDependencies']['@tscircuit/capacity-autorouter']='file:../candidate/autorouter.tgz'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Verify OrangeCrab and H616 before extending the board run
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/initial" --timeout 120 --circuit h616 --circuit orangecrab
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('results/initial/results.json').read_text())
+          for row in d['cases']:
+            a=row.get('assessment') or {}
+            print('CORE_DDR_AGGREGATE',json.dumps({'circuit':row['circuit'],'status':row['status'],'wallMs':row['wallMs'],'peakRssMb':row['peakRssMb'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          assert all(r['status']=='passed' for r in d['cases']),'Physical acceptance failed; do not promote this experiment'
+          PY
+      - name: Verify all other previously completed native DDR boards
+        run: |
+          benchmark="$GITHUB_WORKSPACE/core/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/core" --out "$GITHUB_WORKSPACE/results/remaining" --timeout 120 --circuit glider --circuit imx6 --circuit icepi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('results/remaining/results.json').read_text())
+          for row in d['cases']:
+            a=row.get('assessment') or {}
+            print('CORE_DDR_AGGREGATE',json.dumps({'circuit':row['circuit'],'status':row['status'],'wallMs':row['wallMs'],'peakRssMb':row['peakRssMb'],'connectedNets':a.get('connectedNets'),'findings':a.get('findings')}))
+          assert all(r['status']=='passed' for r in d['cases']),'Core DDR regression remains'
+          PY
