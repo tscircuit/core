@@ -70,7 +70,15 @@ jobs:
           const after="Pq=(e,t)=>{for(const n of e)if(!n.isFixed)for(const e of n.nodes)if(!e.fixed)Cq(e,t)}"
           const bundle=readFileSync(file,"utf8")
           if(bundle.split(before).length!==2)throw Error("Published force clamp must match exactly once")
-          writeFileSync(file,bundle.replace(before,after))
+          let candidate=bundle.replace(before,after)
+          for(const [original,replacement] of [
+           ["x:r.isThroughObstacleAnchor?r.x:dq(r.x),y:r.isThroughObstacleAnchor?r.y:dq(r.y)","x:r.fixed?r.originalX:dq(r.x),y:r.fixed?r.originalY:dq(r.y)"],
+           ["const r={x:Math.round(1e3*o.x)/1e3,y:Math.round(1e3*o.y)/1e3},s=t.at(-1)","const r={x:o.x,y:o.y},s=t.at(-1)"]
+          ]) {
+           if(candidate.split(original).length!==2)throw Error("Upstream fixed-coordinate transformation must match exactly once")
+           candidate=candidate.replace(original,replacement)
+          }
+          writeFileSync(file,candidate)
           JS
       - name: Route real TSX circuits through published Core
         env:
