@@ -1,0 +1,37 @@
+name: Inspect numeric dataset18 memory measurements
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-dataset18-measurements.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: migration-cache-only-reverse
+          path: reverse
+          run-id: 44737655816
+          github-token: ${{ github.token }}
+      - name: Report per-sample numeric deltas without circuit data
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('reverse/aggregate-measurements.json').read_text())
+          base={r['sample']:r for r in d['base']}
+          rows=[]
+          for r in d['candidate']:
+            b=base[r['sample']]
+            rows.append({
+              'sample':r['sample'],
+              'baseRssMiB':round(b['peakRssBytes']/1048576,1),
+              'headRssMiB':round(r['peakRssBytes']/1048576,1),
+              'rssDeltaPercent':round((r['peakRssBytes']/b['peakRssBytes']-1)*100,2),
+              'timeDeltaPercent':round((r['timeMs']/b['timeMs']-1)*100,2),
+            })
+          print('DATASET18_NUMERIC_MEMORY',json.dumps(sorted(rows,key=lambda r:r['rssDeltaPercent'],reverse=True)))
+          PY
