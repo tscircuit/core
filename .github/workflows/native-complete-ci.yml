@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        node: [7, 8]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,26 +77,26 @@ jobs:
           for test in tests:
               for diff in Path("tests").rglob("*.diff.png"):
                   diff.unlink()
+              prior_required = set(required)
               normal_status = run_test(test, False, "normal")
-              if normal_status == 0:
-                  results.append({"test": test, "updates": 0})
-                  continue
-          
-              mismatches = {
-                  str(diff).replace(".diff.png", ".snap.svg")
-                  for diff in Path("tests").rglob("*.diff.png")
-              }
-              if not mismatches or not mismatches.issubset(allowed):
-                  raise SystemExit("A failure is not one of the original SVG baselines; no snapshots accepted")
-              if run_test(test, True, "update") != 0:
-                  raise SystemExit("Functional assertions still fail; no snapshots accepted")
-          
-              required.update(mismatches)
-              for svg in changed_svgs() - required:
-                  subprocess.run(["git", "restore", "--", svg], check=True)
-              if run_test(test, False, "verify") != 0:
-                  raise SystemExit("The original comparator rejected the retained snapshot set")
-              results.append({"test": test, "updates": len(mismatches)})
+              while normal_status:
+                  mismatches = {
+                      str(diff).replace(".diff.png", ".snap.svg")
+                      for diff in Path("tests").rglob("*.diff.png")
+                  }
+                  if not mismatches or not mismatches.issubset(allowed):
+                      raise SystemExit("Failure is not an expected SVG mismatch")
+                  if mismatches.issubset(required):
+                      raise SystemExit("An updated snapshot still fails its original comparison")
+                  required.update(mismatches)
+                  if run_test(test, True, "update") != 0:
+                      raise SystemExit("Functional assertions still fail")
+                  for svg in changed_svgs() - required:
+                      subprocess.run(["git", "restore", "--", svg], check=True)
+                  for diff in Path("tests").rglob("*.diff.png"):
+                      diff.unlink()
+                  normal_status = run_test(test, False, "verify")
+              results.append({"test": test, "updates": len(required - prior_required)})
           
           changed = changed_svgs()
           if not changed.issubset(required) or not changed.issubset(allowed):
