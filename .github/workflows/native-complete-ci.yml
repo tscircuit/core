@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [7, 8]
+        node: [2]
     steps:
       - uses: actions/checkout@v4
         with:
