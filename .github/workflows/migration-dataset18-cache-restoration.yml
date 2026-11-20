@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/high-density-a01
-          ref: c4590eb264661f28d087b192411c34619afbfd1e
+          ref: 76e0dc7952649d64db9832fe93ae724d4c7e5f44
           path: solver
           persist-credentials: false
       - name: Install the exact rebased dependency
