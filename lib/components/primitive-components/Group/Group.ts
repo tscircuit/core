@@ -77,6 +77,7 @@ import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
+import { AutoplacedBreakoutPoint } from "../AutoplacedBreakoutPoint"
 import { Port } from "../Port/Port"
 import { Net } from "../Net"
 import { Trace } from "../Trace/Trace"
@@ -2253,6 +2254,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _startAsyncAutorouting() {
     if (this._hasStartedAsyncAutorouting) return
+    // Unresolved handoffs would bypass fanout and route the unsplit connections.
+    for (const routingGroup of this.selectAll("group")) {
+      if (!routingGroup.isRoutingDirective) continue
+      const hasUnresolvedBreakoutPoints = routingGroup.children.some(
+        (point) =>
+          point instanceof AutoplacedBreakoutPoint &&
+          point.pcb_breakout_point_id === null,
+      )
+      if (hasUnresolvedBreakoutPoints) return
+    }
     this._hasStartedAsyncAutorouting = true
     if (this._getAutorouterConfig().local) {
       this._queueAsyncEffect("autorouting", async () => {
