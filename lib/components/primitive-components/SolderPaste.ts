@@ -8,7 +8,6 @@ import type {
   PcbSolderPasteRotatedPill,
   PcbSolderPasteRotatedRect,
 } from "circuit-json"
-import { transformPcbSolderPastePill } from "lib/utils/pcb/transform-pcb-solder-paste-pill"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { SmtPad } from "./SmtPad"
@@ -135,10 +134,21 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
         radius: props.radius,
       })
     } else if (props.shape === "pill") {
-      aperture = db.pcb_solder_paste.insert({
+      const geometry = {
         ...base,
-        ...transformPcbSolderPastePill(props, transform),
-      })
+        width: props.width,
+        height: props.height,
+        radius: props.radius,
+      }
+      if (Math.abs(rotation) < 1e-8) {
+        aperture = db.pcb_solder_paste.insert({ ...geometry, shape: "pill" })
+      } else {
+        aperture = db.pcb_solder_paste.insert({
+          ...geometry,
+          shape: "rotated_pill",
+          ccw_rotation: rotation,
+        })
+      }
     } else if (Math.abs(rotation) < 1e-8) {
       aperture = db.pcb_solder_paste.insert({
         ...base,

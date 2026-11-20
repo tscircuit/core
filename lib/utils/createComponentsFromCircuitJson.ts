@@ -48,7 +48,6 @@ import type { PrimitiveComponent } from "../components/base-components/Primitive
 import { createPinrowSilkscreenText } from "./createPinrowSilkscreenText"
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
-import { isPillSolderPaste } from "./pcb/transform-pcb-solder-paste-pill"
 
 type SchematicPrimitiveWithStrokeWidth = Extract<
   AnyCircuitElement,
@@ -1135,10 +1134,11 @@ export const createComponentsFromCircuitJson = (
       ? importedSmtPads.get(aperture.pcb_smtpad_id)
       : undefined
     if (
-      isPillSolderPaste(aperture) ||
       aperture.shape === "circle" ||
       aperture.shape === "rect" ||
-      aperture.shape === "rotated_rect"
+      aperture.shape === "rotated_rect" ||
+      aperture.shape === "pill" ||
+      aperture.shape === "rotated_pill"
     ) {
       components.push(SolderPaste.fromCircuitJson(aperture, smtPad))
     }
