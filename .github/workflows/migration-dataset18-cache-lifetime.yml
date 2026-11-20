@@ -1,0 +1,147 @@
+name: Diagnose retained A03 cache memory without changing routing
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/migration-dataset18-cache-lifetime.yml]
+permissions:
+  contents: read
+jobs:
+  dependency-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/high-density-a01
+          ref: ec2c2d9dd9d490837acfab4f4c53753c0c389e6d
+          path: solver
+          persist-credentials: false
+      - name: Install the exact rebased dependency
+        working-directory: solver
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json')
+          d=json.loads(p.read_text())
+          d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+          d['overrides']['tscircuit']='0.0.3250'
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          bun install
+      - name: Run every dependency test with original assertions
+        working-directory: solver
+        run: |
+          set +e
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 > "$RUNNER_TEMP/a03-unit.log" 2>&1
+          status=$?
+          set -e
+          python3 - <<'PY'
+          import re,os,json
+          from pathlib import Path
+          s=Path(os.environ['RUNNER_TEMP'],'a03-unit.log').read_text(errors='replace')
+          print('A03_UNIT_AGGREGATE',json.dumps(re.findall(r'(\d+)\s+(pass|fail|skip)\b',s)))
+          for line in s.splitlines():
+            if re.match(r'^tests/[^:]+:$',line) or line.startswith('(fail)'):
+              print(line)
+          PY
+          exit "$status"
+      - run: bunx tsc --noEmit
+        working-directory: solver
+      - run: bun run build
+        working-directory: solver
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [forward, reverse]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    env:
+      BENCHMARK_TASK_TIMEOUT_PER_EFFORT_MS: '60000'
+      BENCHMARK_HEARTBEAT_INTERVAL_MS: '30000'
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 2b1207ad70971f326166b134ea19418137273f23
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: e8b2b3042a46e45fa30147a68a8260d996a2b1a4
+          path: retained
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 88ac502661a49ea2c6e4992e59f3d3480c289340
+          path: scoped
+          persist-credentials: false
+      - name: Observe only cache entry counts and complete output digests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          study=json.loads("\"import { HighDensitySolverA03 as CacheStudySolver } from \\\"@tscircuit/high-density-a01\\\"\\nconst a03CacheStudy = { solverCount: 0, entryCount: 0, ownerCount: 0, maxEntries: 0 }\\nconst cacheStudySeen = new WeakSet<object>()\\nconst cacheStudyGetOutput = CacheStudySolver.prototype.getOutput\\nCacheStudySolver.prototype.getOutput = function () {\\n  const output = cacheStudyGetOutput.call(this)\\n  if (this.solved && !cacheStudySeen.has(this)) {\\n    cacheStudySeen.add(this)\\n    const cache = Reflect.get(this, \\\"viaOccupantsByCell\\\") as Map<number, readonly number[]>\\n    a03CacheStudy.solverCount += 1\\n    a03CacheStudy.entryCount += cache.size\\n    a03CacheStudy.maxEntries = Math.max(a03CacheStudy.maxEntries, cache.size)\\n    for (const owners of cache.values()) a03CacheStudy.ownerCount += owners.length\\n  }\\n  return output\\n}\\n\"")
+          anchor='      traceLintIssueCounts,\n      stageTiming,'
+          addition='      routedOutputSha256: new Bun.CryptoHasher("sha256").update(JSON.stringify(traces)).digest("hex"),\n      a03CacheStudy: { ...a03CacheStudy },\n'
+          type_anchor='export type WorkerResult<\n  TBenchmarkSnapshot extends BenchmarkSnapshot = BenchmarkSnapshot,\n> = {'
+          for variant in ['base','retained','scoped']:
+            root=Path(variant)
+            p=root/'package.json'
+            d=json.loads(p.read_text())
+            d.setdefault('overrides',{})['@tscircuit/cli']='0.1.2475'
+            d['overrides']['tscircuit']='0.0.3250'
+            p.write_text(json.dumps(d,indent=2)+'\n')
+            p=root/'scripts/benchmark/benchmark-run-task.ts'
+            s=p.read_text()
+            assert s.count(anchor)==1
+            p.write_text(study+s.replace(anchor,addition+anchor))
+            p=root/'scripts/benchmark/benchmark-types.ts'
+            s=p.read_text()
+            assert s.count(type_anchor)==1
+            p.write_text(s.replace(type_anchor,type_anchor+'\n  routedOutputSha256?: string\n  a03CacheStudy?: {solverCount:number;entryCount:number;ownerCount:number;maxEntries:number}'))
+          PY
+          for variant in base retained scoped; do
+            (cd "$variant" && bun install) > "$variant-install.log" 2>&1
+          done
+      - name: Measure the two affected samples in both orders without concurrent sample pressure
+        env:
+          RUN_ORDER: ${{ matrix.order }}
+        run: |
+          if [ "$RUN_ORDER" = forward ]; then
+            variants="base retained scoped"
+          else
+            variants="scoped retained base"
+          fi
+          for variant in $variants; do
+            (cd "$variant" && bash ./benchmark.sh --dataset 18 --sample-numbers 2,14 --concurrency 1) > "$variant-run.log" 2>&1
+          done
+      - name: Require exact route parity and report numeric memory results
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows={}
+          for variant in ['base','retained','scoped']:
+            tests=json.loads(Path(variant,'benchmark-result.json').read_text())['tests']
+            assert len(tests)==2
+            assert all(r['didSolve'] and not r['didTimeout'] and r['relaxedDrcPassed'] and r['drcErrorCount']==0 for r in tests)
+            rows[variant]=[{'sample':r['sampleNumber'],'timeMs':r['elapsedTimeMs'],'peakRssMiB':r['peakRssBytes']/1048576,'outputHash':r['routedOutputSha256'],'cache':r['a03CacheStudy']} for r in tests]
+          assert {r['sample']:r['outputHash'] for r in rows['retained']}=={r['sample']:r['outputHash'] for r in rows['scoped']}
+          print('CACHE_LIFETIME_NUMERIC',json.dumps(rows))
+          Path('memory-study.json').write_text(json.dumps(rows,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cache-lifetime-study-${{ matrix.order }}
+          path: memory-study.json
