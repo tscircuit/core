@@ -1,11 +1,13 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
+import { resolveSafeSchematicCoordinate } from "lib/utils/schematic/validate-schematic-distance-props"
 import { z } from "zod"
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
     super(props)
+    this._invalidSchematicProps.clear()
     const resolveCoordinate = (value: unknown, axis: "pcbX" | "pcbY") => {
-      if (typeof value === "number") return value
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0
       if (typeof value === "string") {
         try {
           return this._resolvePcbCoordinate(value, axis, {
@@ -26,8 +28,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       message: error instanceof Error ? error.message : String(error),
       pcbX: resolveCoordinate(props.pcbX, "pcbX"),
       pcbY: resolveCoordinate(props.pcbY, "pcbY"),
-      schX: props.schX,
-      schY: props.schY,
+      schX: resolveSafeSchematicCoordinate(props.schX),
+      schY: resolveSafeSchematicCoordinate(props.schY),
     }
   }
 

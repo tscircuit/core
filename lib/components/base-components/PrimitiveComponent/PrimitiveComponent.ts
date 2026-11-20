@@ -35,6 +35,10 @@ import type {
   SchematicBoxDimensions,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getRotatedSymbolName } from "lib/utils/schematic/getRotatedSymbolName"
+import {
+  collectAndSanitizeSchematicDistanceProps,
+  getInvalidSchematicDistanceErrorMessage,
+} from "lib/utils/schematic/validate-schematic-distance-props"
 import { isMatchingSelector } from "lib/utils/selector-matching"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import {
@@ -192,6 +196,7 @@ export abstract class PrimitiveComponent<
   pcb_component_id: string | null = null
   cad_component_id: string | null = null
   _reportedInvalidPcbCalcWarnings = new Set<string>()
+  protected _invalidSchematicProps = new Map<string, unknown>()
 
   private _reportInvalidComponentPropertyError(
     propertyName: string,
@@ -209,6 +214,51 @@ export abstract class PrimitiveComponent<
     })
     this._reportedInvalidPcbCalcWarnings.add(propertyName)
   }
+
+  private _validateAndSanitizeSchematicProps(
+    rawProps: Record<string, any> | undefined,
+    parsedProps: Record<string, any> | undefined,
+    clearUnmentionedProps: boolean,
+  ): void {
+    const { invalid, valid } = collectAndSanitizeSchematicDistanceProps({
+      componentName: this.componentName,
+      rawProps,
+      parsedProps,
+    })
+    if (clearUnmentionedProps) {
+      this._invalidSchematicProps.clear()
+    }
+    for (const [propertyName, rawValue] of invalid) {
+      this._invalidSchematicProps.set(propertyName, rawValue)
+    }
+    for (const propertyName of valid) {
+      this._invalidSchematicProps.delete(propertyName)
+      this._reportedInvalidPcbCalcWarnings.delete(propertyName)
+    }
+  }
+
+  protected _insertPendingInvalidSchematicPropertyErrors(): void {
+    if (!this.root || this._invalidSchematicProps.size === 0) return
+    const componentDisplayName = this.getDisplayName()
+    for (const [propertyName, rawValue] of this._invalidSchematicProps) {
+      this._reportInvalidComponentPropertyError(
+        propertyName,
+        getInvalidSchematicDistanceErrorMessage({
+          propertyName,
+          componentDisplayName,
+          rawValue,
+        }),
+      )
+    }
+  }
+
+  doInitialSourceComponentPropertyValidation(): void {
+    this._insertPendingInvalidSchematicPropertyErrors()
+  }
+
+  updateSourceComponentPropertyValidation(): void {
+    this._insertPendingInvalidSchematicPropertyErrors()
+  }
   fallbackUnassignedName?: string
 
   constructor(props: z.input<ZodProps>) {
@@ -221,6 +271,11 @@ export abstract class PrimitiveComponent<
     const parsePropsResult = zodProps.safeParse(props ?? {})
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
+      this._validateAndSanitizeSchematicProps(
+        this.props,
+        this._parsedProps,
+        true,
+      )
     } else {
       throw new InvalidProps(
         this.lowercaseComponentName,
@@ -231,13 +286,22 @@ export abstract class PrimitiveComponent<
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
-    const newProps = this.config.zodProps.parse({
+    const mergedRawProps = {
       ...this.props,
       ...props,
-    }) as z.infer<ZodProps>
+    }
+    const newProps = this.config.zodProps.parse(
+      mergedRawProps,
+    ) as z.infer<ZodProps>
+    collectAndSanitizeSchematicDistanceProps({
+      componentName: this.componentName,
+      rawProps: mergedRawProps,
+      parsedProps: newProps,
+    })
     const oldProps = this.props
     this.props = newProps
     this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this._validateAndSanitizeSchematicProps(props, this._parsedProps, false)
     this.onPropsChange({
       oldProps,
       newProps,
@@ -814,7 +878,15 @@ export abstract class PrimitiveComponent<
    */
   computeSchematicPropsTransform(): Matrix {
     const { _parsedProps: props } = this
-    return compose(translate(props.schX ?? 0, props.schY ?? 0))
+    const schX =
+      typeof props.schX === "number" && Number.isFinite(props.schX)
+        ? props.schX
+        : 0
+    const schY =
+      typeof props.schY === "number" && Number.isFinite(props.schY)
+        ? props.schY
+        : 0
+    return compose(translate(schX, schY))
   }
 
   /**
