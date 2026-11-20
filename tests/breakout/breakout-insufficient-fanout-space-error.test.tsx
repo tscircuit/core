@@ -19,11 +19,7 @@ test("a breakout with too little room reports how to give the fanout space", asy
 
   circuit.add(
     <board width="30mm" height="30mm" layers={4}>
-      <breakout
-        name="TIGHT"
-        padding="0.05mm"
-        fanoutRoutingLayers={["bottom"]}
-      >
+      <breakout name="TIGHT" padding="0.05mm" fanoutRoutingLayers={["bottom"]}>
         <chip name="U1" footprint={qfnFootprint} pcbX={0} pcbY={0} />
       </breakout>
       {pins.map((pin) => (
