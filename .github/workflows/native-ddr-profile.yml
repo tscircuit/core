@@ -1,0 +1,97 @@
+name: Profile real DDR native-path regressions
+on:
+  push:
+    branches: [analysis/core-native-complete-ci]
+    paths: [.github/workflows/native-ddr-profile.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+    timeout-minutes: 30
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          ref: 395fffa2392f08af3effcc6e0e21f54a3729302d
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 7d28fe0bdc6c57b828e54c6cd8e32bcc13d2ee1e
+          path: native
+          persist-credentials: false
+      - name: Observe stage timing and counts without exporting routing input
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          helper="\nconst getRoutingProfilePath = (solver: any): Array<Record<string, unknown>> => {\n  const path: Array<Record<string, unknown>> = []\n  let active = solver\n  for (let depth = 0; active && depth < 7; depth++) {\n    const counters = Object.fromEntries(\n      Object.entries(active.stats ?? {}).filter(([name, value]) =>\n        typeof value === \"number\" && Number.isFinite(value) &&\n        /(?:Count|Iterations|Attempted|Accepted|Budget|Work|Steps|Solved|Failed)$/.test(name),\n      ),\n    )\n    path.push({\n      solver: active.constructor.name,\n      phase: typeof active.getCurrentPhase === \"function\" ? active.getCurrentPhase() : null,\n      iterations: active.iterations,\n      solved: active.solved,\n      failed: active.failed,\n      routes: active.routes?.length,\n      fixedRoutes: active.fixedHdRoutes?.length,\n      unsolvedNodes: active.unsolvedNodePortPoints?.length,\n      counters,\n    })\n    active = active.activeSubSolver ?? active.activeRegularSolver ??\n      active.activeB01Solver ?? active.activeFallbackSolver ??\n      active.activeSolver ?? active.subSolver\n  }\n  return path\n}\n"
+          for folder in ["base","native"]:
+              p=Path(folder)/"lib/utils/autorouting/CapacityMeshAutorouter.ts"
+              s=p.read_text()
+              anchor="export class TscircuitAutorouter implements GenericLocalAutorouter {"
+              assert s.count(anchor)==1
+              s=s.replace(anchor,helper+"\n"+anchor)
+              s=s.replace("  private cycleCount = 0","""  private profileStartedAt = performance.now()
+            private profileLastAt = 0
+            private profileLastPhase = ""
+            private profileStepMs = 0
+            private profilePreviewMs = 0
+            private cycleCount = 0""",1)
+              anchor="      const startTime = Date.now()"
+              assert s.count(anchor)==1
+              observe="""      const profileNow = performance.now()
+                const profilePhase = (this.solver as any).getCurrentPhase?.() ??
+                  this.solver.constructor.name
+                if (profilePhase !== this.profileLastPhase || profileNow - this.profileLastAt >= 5000) {
+                  console.log("ROUTE_PROFILE " + JSON.stringify({
+                    variant: process.env.PROFILE_VARIANT,
+                    elapsedMs: Math.round(profileNow - this.profileStartedAt),
+                    phase: profilePhase,
+                    stepMs: Math.round(this.profileStepMs),
+                    previewMs: Math.round(this.profilePreviewMs),
+                    input: {
+                      obstacles: this.input.obstacles.length,
+                      traces: this.input.traces?.length ?? 0,
+                      connections: this.input.connections.length,
+                    },
+                    path: getRoutingProfilePath(this.solver),
+                  }))
+                  this.profileLastAt = profileNow
+                  this.profileLastPhase = profilePhase
+                }
+          """
+              s=s.replace(anchor,observe+anchor,1)
+              anchor="      const iterationsPerSecond ="
+              assert s.count(anchor)==1
+              s=s.replace(anchor,"      this.profileStepMs += Date.now() - startTime\n"+anchor,1)
+              anchor="      const debugGraphics = this.solver?.preview() || undefined"
+              assert s.count(anchor)==1
+              s=s.replace(anchor,"      const profilePreviewStartedAt = performance.now()\n"+anchor+"\n      this.profilePreviewMs += performance.now() - profilePreviewStartedAt",1)
+              p.write_text(s)
+          PY
+      - name: Install both exact dependency sets
+        run: |
+          cd base
+          bun install --ignore-scripts
+          cd ../native
+          bun install --ignore-scripts
+      - name: Profile the same H616 and Glider circuits sequentially
+        run: |
+          benchmark="$GITHUB_WORKSPACE/native/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          PROFILE_VARIANT=base bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" --circuit h616 --circuit glider --timeout 120
+          PROFILE_VARIANT=native bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/native" --out "$GITHUB_WORKSPACE/results/native" --circuit h616 --circuit glider --timeout 120
+          bun "$benchmark/report.ts" results/native/results.json results/base/results.json results/comparison.md
+          cat results/comparison.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Show aggregate stage profiles
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in sorted(Path("results").glob("*/*/render.log")):
+              print("PROFILE_CASE",p.parent.parent.name,p.parent.name)
+              for line in p.read_text().splitlines():
+                  if line.startswith("ROUTE_PROFILE "): print(line)
+          PY
