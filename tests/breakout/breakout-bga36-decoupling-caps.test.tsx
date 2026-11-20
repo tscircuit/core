@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pcb_trace } from "circuit-json"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -93,8 +94,13 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   expect(breakoutPhases).toHaveLength(2)
   expect(breakoutPhases[0]?.startSimpleRouteJson?.traces ?? []).toHaveLength(0)
   expect(breakoutPhases[0]?.endSimpleRouteJson?.traces).toHaveLength(8)
-  expect(breakoutPhases[1]?.startSimpleRouteJson?.traces).toHaveLength(8)
-  expect(breakoutPhases[1]?.endSimpleRouteJson?.traces).toHaveLength(16)
+  expect(breakoutPhases[1]?.startSimpleRouteJson?.traces).toHaveLength(0)
+  expect(breakoutPhases[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
+  const fixedCopperConnectionNames = new Set(
+    breakoutPhases[1]!.startSimpleRouteJson!.obstacles.flatMap(
+      (obstacle) => obstacle.connectedTo,
+    ),
+  )
 
   const u1SourceComponent = circuit.db.source_component.getWhere({
     name: "U1",
@@ -153,6 +159,12 @@ test("breakout defaults to fanout for a 6x6 BGA surrounded by four 0603 decoupli
   )
   for (const fanoutTrace of breakoutPhases[0]?.endSimpleRouteJson?.traces ??
     []) {
+    expect(fixedCopperConnectionNames.has(fanoutTrace.connection_name!)).toBe(
+      true,
+    )
+    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+      pcb_trace.parse(fanoutTrace).route,
+    )
     const exitPoint = fanoutTrace.route.findLast(
       (routePoint) => "x" in routePoint,
     )

@@ -93,7 +93,7 @@ test("repro: multilayer fanout completes a routed controller link", async () => 
   expect(exits).toHaveLength(16)
   expect(connectedSignals).toHaveLength(16)
   expect(traces).toHaveLength(32)
-  expect(vias).toHaveLength(36)
+  expect(vias).toHaveLength(33)
   expect(json.filter((element) => element.type.endsWith("_error"))).toEqual([])
   expect(checkEachPcbTraceNonOverlapping(json)).toEqual([])
   expect(checkHoleTraceClearance(json)).toEqual([])

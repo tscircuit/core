@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pcb_trace } from "circuit-json"
 import { createAutoroutingPhaseIoStack } from "tests/fixtures/create-autorouting-phase-io-stack"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -134,10 +135,15 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
   ])
   expect(autoroutingPhaseIoStack[0]?.endSimpleRouteJson?.traces).toHaveLength(4)
   expect(autoroutingPhaseIoStack[1]?.startSimpleRouteJson?.traces).toHaveLength(
-    4,
+    0,
   )
   const allowedFanoutLayers = new Set(["inner2", "bottom"])
-  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(8)
+  expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(4)
+  const fixedCopperConnectionNames = new Set(
+    autoroutingPhaseIoStack[1]!.startSimpleRouteJson!.obstacles.flatMap(
+      (obstacle) => obstacle.connectedTo,
+    ),
+  )
 
   const u1SourceComponent = circuit.db.source_component.getWhere({
     name: "U1",
@@ -159,6 +165,12 @@ test('autorouter="fanout" escapes an inner BGA bus before board routing', async 
     ) + 1.2
   for (const fanoutTrace of autoroutingPhaseIoStack[0]?.endSimpleRouteJson
     ?.traces ?? []) {
+    expect(fixedCopperConnectionNames.has(fanoutTrace.connection_name!)).toBe(
+      true,
+    )
+    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+      pcb_trace.parse(fanoutTrace).route,
+    )
     expect(
       fanoutTrace.route.some(
         (routePoint) =>

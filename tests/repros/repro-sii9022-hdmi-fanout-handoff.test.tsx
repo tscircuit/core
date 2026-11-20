@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pcb_trace } from "circuit-json"
 import { renderSii9022HdmiFanoutHandoff } from "tests/fixtures/create-sii9022-hdmi-fanout-handoff"
 
 test("SII9022 HDMI fanout handoff routes all TMDS connections", async () => {
@@ -15,7 +16,21 @@ test("SII9022 HDMI fanout handoff routes all TMDS connections", async () => {
     ),
   ).toEqual([2, 2, 2, 2])
   expect(autoroutingPhaseIoStack[1]?.endSimpleRouteJson?.traces).toHaveLength(
-    24,
+    16,
   )
+  const fixedCopperConnectionNames = new Set(
+    autoroutingPhaseIoStack[1]!.startSimpleRouteJson!.obstacles.flatMap(
+      (obstacle) => obstacle.connectedTo,
+    ),
+  )
+  for (const fanoutTrace of autoroutingPhaseIoStack[0]!.endSimpleRouteJson!
+    .traces!) {
+    expect(fixedCopperConnectionNames.has(fanoutTrace.connection_name!)).toBe(
+      true,
+    )
+    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+      pcb_trace.parse(fanoutTrace).route,
+    )
+  }
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 }, 300_000)

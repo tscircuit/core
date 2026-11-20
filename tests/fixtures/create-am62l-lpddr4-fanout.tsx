@@ -1,5 +1,6 @@
 import { expect } from "bun:test"
 import type { ChipProps } from "@tscircuit/props"
+import { pcb_trace } from "circuit-json"
 import { orderedRenderPhases } from "lib/components/base-components/Renderable"
 import type { Board } from "lib/components/normal-components/Board/Board"
 import { createInstanceFromReactElement } from "lib/fiber/create-instance-from-react-element"
@@ -3590,11 +3591,9 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
   const globalPhaseInputTraces = globalPhaseInput.traces ?? []
-  // Hand-authored decoupling copper is fixed obstacle geometry in the global
-  // routing phase, not editable preloaded traces.
-  expect(globalPhaseInputTraces).toHaveLength(
-    signalConnections.length * 2 + planeDrops.length,
-  )
+  // Completed fanout and authored decoupling copper enter global routing as
+  // fixed obstacles, not editable preloaded traces.
+  expect(globalPhaseInputTraces).toHaveLength(0)
   const fixedDecouplingTraceNames = [
     ...decouplingPlaneDrops.map((drop) => drop.traceName),
     ...(includeDirectDecouplingNetworkInInitialRender
@@ -3611,9 +3610,15 @@ export const renderAm62lLpddr4Fanout = async ({
     const sourceTrace = circuit.db.source_trace.getWhere({ name })!
     expect(obstacleConnectionIds.has(sourceTrace.source_trace_id)).toBe(true)
   }
-  expect(
-    new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,
-  ).toBe(globalPhaseInputTraces.length)
+  const completedFanoutTraces = autoroutingPhaseIoStack
+    .slice(0, 2)
+    .flatMap((phase) => phase.endSimpleRouteJson!.traces!)
+  for (const fanoutTrace of completedFanoutTraces) {
+    expect(obstacleConnectionIds.has(fanoutTrace.connection_name!)).toBe(true)
+    expect(circuit.db.pcb_trace.get(fanoutTrace.pcb_trace_id)?.route).toEqual(
+      pcb_trace.parse(fanoutTrace).route,
+    )
+  }
   const signalGlobalConnections = globalPhaseInput.connections.filter(
     (connection) => connection.pointsToConnect.length === 2,
   )
