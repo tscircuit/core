@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 test("millimeter placement composes group and component offsets in sheet units", () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board schematicLengthUnit="mm">
+    <board defaultSchematicLengthUnit="mm">
       <group schX="0.4in">
         <resistor
           name="R1"

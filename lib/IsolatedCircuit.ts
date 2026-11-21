@@ -1,6 +1,6 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
-import type { BoardProps, PlatformConfig } from "@tscircuit/props"
+import type { SchematicLengthUnit, PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
 import { type ReactElement, isValidElement } from "react"
@@ -54,7 +54,7 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
-  inheritedSchematicLengthUnit?: BoardProps["schematicLengthUnit"]
+  inheritedSchematicLengthUnit?: SchematicLengthUnit
   pcbDisabled = false
   pcbRoutingDisabled = false
 

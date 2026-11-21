@@ -80,7 +80,7 @@ test("chip symbol accepts imported circuit json without mutating the input", asy
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="20mm" height="12mm" schematicLengthUnit="mm">
+    <board width="20mm" height="12mm" defaultSchematicLengthUnit="mm">
       <chip
         name="U1"
         footprint="pinrow2"

@@ -5,15 +5,19 @@ import type { InflatorContext } from "../InflatorFn"
 /** Restore the cached schematic center as a board-unit placement (right +X, up +Y). */
 export const getInflatedSchematicPlacement = (
   source: SourceComponentBase,
-  { injectionDb, schematicLengthUnit }: InflatorContext,
+  { injectionDb, defaultSchematicLengthUnit }: InflatorContext,
 ) => {
-  if (schematicLengthUnit !== "mm") return
+  if (
+    defaultSchematicLengthUnit !== "mm" &&
+    defaultSchematicLengthUnit !== "in"
+  )
+    return
   const schematic = injectionDb.schematic_component.getWhere({
     source_component_id: source.source_component_id,
   })
   if (!schematic) return
   return {
-    schX: schematic.center.x * SCHEMATIC_UNIT_TO_MM,
-    schY: schematic.center.y * SCHEMATIC_UNIT_TO_MM,
+    schX: `${schematic.center.x * SCHEMATIC_UNIT_TO_MM}mm`,
+    schY: `${schematic.center.y * SCHEMATIC_UNIT_TO_MM}mm`,
   }
 }

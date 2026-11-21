@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("omitting schematicLengthUnit preserves existing numeric and string positions", () => {
+test("omitting defaultSchematicLengthUnit preserves existing numeric and string positions", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board>

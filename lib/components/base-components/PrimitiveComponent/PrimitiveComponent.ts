@@ -11,7 +11,7 @@ import {
   type NetSelector,
 } from "./select-net-by-literal-selector"
 import type { Net } from "lib/components/primitive-components/Net"
-import type { PcbSx } from "@tscircuit/props"
+import type { PcbSx, SchematicLengthUnit } from "@tscircuit/props"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import { type Options, selectAll, selectOne } from "css-select"
 import Debug from "debug"
@@ -107,11 +107,12 @@ export abstract class PrimitiveComponent<
     return this.config.componentName
   }
 
-  getInheritedProperty(propertyName: string) {
+  getInheritedProperty(propertyName: string, skipUndefined = false) {
     let current: PrimitiveComponent<ZodProps> | null = this
     while (current) {
       if (current._parsedProps && propertyName in current._parsedProps) {
-        return current._parsedProps[propertyName]
+        const value = current._parsedProps[propertyName]
+        if (!skipUndefined || value !== undefined) return value
       }
       current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
     }
@@ -812,9 +813,9 @@ export abstract class PrimitiveComponent<
   /** Imported Circuit JSON positions already use the schematic renderer’s units. */
   _schematicPositionFromCircuitJson = false
 
-  _getSchematicLengthUnit() {
+  _getSchematicLengthUnit(): SchematicLengthUnit | undefined {
     return (
-      this.getInheritedProperty("schematicLengthUnit") ??
+      this.getInheritedProperty("defaultSchematicLengthUnit", true) ??
       this.root?.inheritedSchematicLengthUnit
     )
   }
@@ -825,8 +826,21 @@ export abstract class PrimitiveComponent<
     const x = schX ?? 0
     const y = schY ?? 0
     if ((!x && !y) || this._schematicPositionFromCircuitJson) return { x, y }
-    if (this._getSchematicLengthUnit() === "mm") {
-      return { x: x / SCHEMATIC_UNIT_TO_MM, y: y / SCHEMATIC_UNIT_TO_MM }
+    const unit = this._getSchematicLengthUnit()
+    if (unit === "mm" || unit === "in") {
+      // The distance parser already converts suffixed strings to mm. Only
+      // bare coordinates take their unit from the nearest subcircuit.
+      const toSchematicUnits = (parsed: number, raw: unknown) => {
+        const bare =
+          typeof raw === "number" ||
+          (typeof raw === "string" && Number.isFinite(Number(raw)))
+        const mm = unit === "in" && bare ? parsed * 25.4 : parsed
+        return mm / SCHEMATIC_UNIT_TO_MM
+      }
+      return {
+        x: toSchematicUnits(x, this.props.schX),
+        y: toSchematicUnits(y, this.props.schY),
+      }
     }
     return { x, y }
   }
