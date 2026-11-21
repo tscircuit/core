@@ -48,28 +48,25 @@ beforeAll(async () => {
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-test.failing(
-  "explicit trace thickness and ownership stay on the VBUS trunk",
-  () => {
-    const trunk = circuit.db.source_trace.getWhere({ name: "VBUS trunk" })!
-    const traceWidths = circuit.db.pcb_trace
-      .list()
-      .map((trace) => ({
-        belongsToTrunk: trace.source_trace_id === trunk.source_trace_id,
-        wireWidths: [
-          ...new Set(
-            trace.route.flatMap((point) =>
-              point.route_type === "wire" ? [point.width] : [],
-            ),
+test("explicit trace thickness and ownership stay on the VBUS trunk", () => {
+  const trunk = circuit.db.source_trace.getWhere({ name: "VBUS trunk" })!
+  const traceWidths = circuit.db.pcb_trace
+    .list()
+    .map((trace) => ({
+      belongsToTrunk: trace.source_trace_id === trunk.source_trace_id,
+      wireWidths: [
+        ...new Set(
+          trace.route.flatMap((point) =>
+            point.route_type === "wire" ? [point.width] : [],
           ),
-        ],
-      }))
-      .sort((a, b) => Number(b.belongsToTrunk) - Number(a.belongsToTrunk))
+        ),
+      ],
+    }))
+    .sort((a, b) => Number(b.belongsToTrunk) - Number(a.belongsToTrunk))
 
-    expect(traceWidths).toEqual([
-      { belongsToTrunk: true, wireWidths: [0.8] },
-      { belongsToTrunk: false, wireWidths: [0.2] },
-      { belongsToTrunk: false, wireWidths: [0.2] },
-    ])
-  },
-)
+  expect(traceWidths).toEqual([
+    { belongsToTrunk: true, wireWidths: [0.8] },
+    { belongsToTrunk: false, wireWidths: [0.2] },
+    { belongsToTrunk: false, wireWidths: [0.2] },
+  ])
+})
