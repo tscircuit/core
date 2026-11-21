@@ -1,6 +1,6 @@
 import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import { getViaBoardLayers } from "lib/utils/getViaSpanLayers"
+import { getViaBoardLayers, getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { fillCircleWithRects } from "./fillCircleWithRects"
 import { fillPolygonWithRects } from "./fillPolygonWithRects"
 import { type RotatedRect } from "./generateApproximatingRects"
@@ -553,6 +553,21 @@ export const getObstaclesFromCircuitJson = (
               x: rp.x,
               y: rp.y,
               layer: rp.route_type === "wire" ? rp.layer : rp.from_layer,
+              width:
+                rp.route_type === "wire"
+                  ? Math.max(rp.width, rp.start_width ?? 0, rp.end_width ?? 0)
+                  : undefined,
+              outgoingLayer: rp.route_type === "via" ? rp.to_layer : undefined,
+              viaDiameter:
+                rp.route_type === "via" ? rp.outer_diameter : undefined,
+              viaLayers:
+                rp.route_type === "via"
+                  ? getViaSpanLayers({
+                      fromLayer: rp.from_layer,
+                      toLayer: rp.to_layer,
+                      layerCount: board?.num_layers ?? 2,
+                    })
+                  : undefined,
             },
           ]
         }),
