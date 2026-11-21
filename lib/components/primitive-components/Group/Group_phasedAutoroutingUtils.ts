@@ -174,15 +174,15 @@ function applyMinTraceWidthToConnections(
 export function Group_applyDrcTolerancesToSimpleRouteJson(
   simpleRouteJson: SimpleRouteJson,
   drcTolerances: RoutingPhaseDrcTolerances | undefined,
-  traceClearance?: AutorouterConfig["traceClearance"],
+  autorouterConfig: AutorouterConfig,
 ): SimpleRouteJson {
   const minimum =
     drcTolerances?.minTraceToPadEdgeClearance ??
     simpleRouteJson.minTraceToPadEdgeClearance
   const minTraceToPadEdgeClearance =
-    traceClearance === undefined
+    autorouterConfig.traceClearance === undefined
       ? minimum
-      : Math.max(minimum ?? 0, distance.parse(traceClearance))
+      : Math.max(minimum ?? 0, distance.parse(autorouterConfig.traceClearance))
 
   if (!hasDrcTolerances(drcTolerances)) {
     return minTraceToPadEdgeClearance ===

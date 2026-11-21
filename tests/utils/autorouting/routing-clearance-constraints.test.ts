@@ -19,7 +19,9 @@ test("trace clearance preserves independent spacing rules and phase overrides", 
     minViaDiameter: 0.7,
   }
   expect(
-    Group_applyDrcTolerancesToSimpleRouteJson(input, undefined, "0.8mm"),
+    Group_applyDrcTolerancesToSimpleRouteJson(input, undefined, {
+      traceClearance: "0.8mm",
+    }),
   ).toEqual({ ...input, minTraceToPadEdgeClearance: 0.8 })
   const resolved = Group_applyDrcTolerancesToSimpleRouteJson(
     input,
@@ -28,7 +30,7 @@ test("trace clearance preserves independent spacing rules and phase overrides", 
       minTraceToHoleEdgeClearance: 0.3,
       minBoardEdgeClearance: 0.4,
     },
-    "0.35mm",
+    { traceClearance: "0.35mm" },
   )
   expect(resolved).toMatchObject({
     minTraceToPadEdgeClearance: 0.35,
