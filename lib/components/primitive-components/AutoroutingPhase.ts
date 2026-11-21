@@ -13,7 +13,7 @@ export class AutoroutingPhase extends PrimitiveComponent<
     }
   }
 
-  doInitialSourceRender() {
+  doInitialSourceComponentPropertyValidation(): void {
     warnIfAutorouterTraceClearanceIsSet(this, this._parsedProps.autorouter)
   }
 

@@ -485,8 +485,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  doInitialSourceRender() {
+  override doInitialSourceComponentPropertyValidation(): void {
+    super.doInitialSourceComponentPropertyValidation()
     warnIfAutorouterTraceClearanceIsSet(this, this._parsedProps.autorouter)
+  }
+
+  doInitialSourceRender() {
     const { db } = this.root!
 
     // Schematic sheets are transparent, so include their nested components.
