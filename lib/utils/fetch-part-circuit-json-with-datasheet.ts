@@ -15,6 +15,8 @@ type DatasheetPartFetchResult = {
   datasheetFailureReason?: string
 }
 
+const SUPPLIER_PART_LOOKUP_TIMEOUT_MS = 10_000
+
 // Keep pending, fulfilled, empty, and rejected results for this circuit instance.
 // Weak circuit ownership lets a fresh circuit retry, even with the same engine.
 const chipDatasheetPartFetches = new WeakMap<
@@ -25,7 +27,7 @@ const chipDatasheetPartFetches = new WeakMap<
   >
 >()
 
-const fetchDatasheetPart = async (
+const requestDatasheetPart = async (
   fetchPartCircuitJson: FetchPartCircuitJson,
   request: DatasheetPartCircuitJsonRequest,
 ): Promise<DatasheetPartFetchResult> => {
@@ -94,6 +96,35 @@ const fetchDatasheetPart = async (
         ? error.message
         : String(error)
     return { circuitJson, datasheetFailureReason: reason }
+  }
+}
+
+const fetchDatasheetPart = async (
+  fetchPartCircuitJson: FetchPartCircuitJson,
+  request: DatasheetPartCircuitJsonRequest,
+) => {
+  const deadline = new AbortController()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(
+        `Supplier part lookup timed out after ${SUPPLIER_PART_LOOKUP_TIMEOUT_MS} ms`,
+      )
+      deadline.abort(error)
+      reject(error)
+    }, SUPPLIER_PART_LOOKUP_TIMEOUT_MS)
+  })
+  try {
+    return await Promise.race([
+      requestDatasheetPart((partRequest) => {
+        // A late rejection from the engine must not start another request.
+        deadline.signal.throwIfAborted()
+        return fetchPartCircuitJson(partRequest)
+      }, request),
+      timedOut,
+    ])
+  } finally {
+    clearTimeout(timer)
   }
 }
 
