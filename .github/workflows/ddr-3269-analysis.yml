@@ -1,4 +1,4 @@
-name: Compare published DDR routing in 3269 and 3270
+name: Published DDR through-via query intervention
 on:
   push:
     branches: [analysis/ddr-3269-next-fix-20261121]
@@ -50,8 +50,8 @@ jobs:
            return await response.json()
           }
           for(const release of [
-           {label:"previous",tscircuit:"0.0.3269",core:"0.0.2447",autorouter:"0.0.1145",sourceRevision:"published-0.0.3269"},
-           {label:"latest",tscircuit:"0.0.3270",core:"0.0.2448",autorouter:"0.0.1145",sourceRevision:"published-0.0.3270"}
+           {label:"previous",tscircuit:"0.0.3270",core:"0.0.2448",autorouter:"0.0.1145",sourceRevision:"via-query-baseline"},
+           {label:"latest",tscircuit:"0.0.3270",core:"0.0.2448",autorouter:"0.0.1145",sourceRevision:"via-query-intervention"}
           ]) {
            const published=await metadata("tscircuit",release.tscircuit)
            const core=await metadata("@tscircuit/core",release.core)
@@ -64,12 +64,135 @@ jobs:
            await writeFile(release.label+"/index.ts",'export { RootCircuit } from "tscircuit"\n')
            await writeFile(release.label+"/tsconfig.json",await readFile("tsconfig.json"))
            await symlink(path.resolve("lib"),release.label+"/lib","dir")
-           await writeFile(release.label+"/published-runtime.json",JSON.stringify({...release,benchmark,tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,sourceTreeExecuted:false,dependencies},null,2))
+           await writeFile(release.label+"/published-runtime.json",JSON.stringify({...release,benchmark,tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,sourceTreeExecuted:release.label==="latest",dependencies},null,2))
           }
           JS
           node prepare-published.private.mjs
                     (cd previous && bun install --ignore-scripts)
           (cd latest && bun install --ignore-scripts)
+      - name: Prepare the measured search intervention
+        run: |
+          cat > candidate-neighbors.private.js <<'INTERVENTION'
+          const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
+          export const getNeighbors = function getNeighbors(node) {
+              const neighbors = [];
+              let sharedPlanarObstacleQuery, queriedPlanarNeighbors = !1;
+              const { maxX, minX, maxY, minY } = this.bounds, lowerY = clamp(node.y - this.cellStep, minY, maxY), centerY = clamp(node.y, minY, maxY), upperY = clamp(node.y + this.cellStep, minY, maxY), lowerYIndex = Math.round(lowerY / this.cellStep) - this.gridMinYIndex, centerYIndex = Math.round(centerY / this.cellStep) - this.gridMinYIndex, upperYIndex = Math.round(upperY / this.cellStep) - this.gridMinYIndex;
+              for (let x = -1;x <= 1; x++) {
+                const neighborX = clamp(node.x + x * this.cellStep, minX, maxX), xIndex = Math.round(neighborX / this.cellStep) - this.gridMinXIndex;
+                for (let y = -1;y <= 1; y++) {
+                  if (x === 0 && y === 0)
+                    continue;
+                  const neighborY = y < 0 ? lowerY : y === 0 ? centerY : upperY, yIndex = y < 0 ? lowerYIndex : y === 0 ? centerYIndex : upperYIndex, neighborKey = (node.z * this.gridHeight + yIndex) * this.gridWidth + xIndex;
+                  if (this.exploredNodes.has(neighborKey))
+                    continue;
+                  const neighbor = {
+                    x: neighborX,
+                    y: neighborY,
+                    z: node.z,
+                    g: node.g,
+                    h: node.h,
+                    f: node.f,
+                    parent: node
+                  };
+                  if (!queriedPlanarNeighbors) {
+                    sharedPlanarObstacleQuery = this.getPlanarNeighborObstacleQuery(node);
+                    queriedPlanarNeighbors = !0;
+                  }
+                  const planarObstacleQuery = this.getPlanarObstacleQuery(neighbor, sharedPlanarObstacleQuery, neighborKey);
+                  if (this.isNodeTooCloseToObstacle(neighbor, void 0, !1, planarObstacleQuery)) {
+                    if (this.debugEnabled)
+                      this.debug_nodesTooCloseToObstacle.add(neighborKey);
+                    this.exploredNodes.add(neighborKey);
+                    continue;
+                  }
+                  if (this.isNodeTooCloseToEdge(neighbor, !1)) {
+                    this.exploredNodes.add(neighborKey);
+                    continue;
+                  }
+                  if (this.doesPathToParentIntersectObstacle(neighbor, planarObstacleQuery)) {
+                    if (this.debugEnabled)
+                      this.debug_nodePathToParentIntersectsObstacle.add(neighborKey);
+                    this.exploredNodes.add(neighborKey);
+                    continue;
+                  }
+                  this.setNodeCosts(neighbor);
+                  neighbors.push(neighbor);
+                }
+              }
+              let viaIsClear;
+              for (const newZ of this.availableZ) {
+                if (newZ === node.z)
+                  continue;
+                const viaNeighbor = {
+                  x: node.x,
+                  y: node.y,
+                  z: newZ,
+                  g: node.g,
+                  h: node.h,
+                  f: node.f,
+                  parent: node
+                };
+                if (this.exploredNodes.has(this.getNodeKey(viaNeighbor)))
+                  continue;
+                if (viaIsClear === void 0)
+                  viaIsClear = !this.isNodeTooCloseToEdge(viaNeighbor, !0) && !this.isNodeTooCloseToObstacle(viaNeighbor, this.viaDiameter / 2 + this.obstacleMargin / 2, !0);
+                if (!viaIsClear)
+                  break;
+                this.setNodeCosts(viaNeighbor);
+                neighbors.push(viaNeighbor);
+              }
+              return neighbors;
+            }
+          INTERVENTION
+          cat > candidate-runtime-hook.private.ts <<'INTERVENTION'
+          import { getNeighbors } from "./candidate-neighbors.private.js"
+          import { createHash } from "node:crypto"
+          import { writeFileSync } from "node:fs"
+          const root = process.env.DDR_PACKAGE_ROOT
+          if (!root) throw new Error("Missing exact published package root")
+          const ar = await import(Bun.resolveSync("@tscircuit/capacity-autorouter", root))
+          const base = Object.getPrototypeOf(ar.Pipeline9HighDensitySolver.prototype)
+          const originalStep = base.step
+          let applied = false
+          let inspected = false
+          base.step = function (...args) {
+            if (this.getSolverName() === "SingleHighDensityRouteSolver") {
+              let prototype = Object.getPrototypeOf(this)
+              while (prototype && !Object.hasOwn(prototype, "getNeighbors")) {
+                prototype = Object.getPrototypeOf(prototype)
+              }
+              if (!prototype || !prototype.getPlanarObstacleQuery) {
+                throw new Error("Published search does not match the inspected API")
+              }
+              inspected = true
+              if (process.env.DDR_CANDIDATE_LABEL === "head") {
+                prototype.getNeighbors = getNeighbors
+                applied = true
+              }
+              base.step = originalStep
+            }
+            return originalStep.apply(this, args)
+          }
+          process.on("exit", () => { const record = {
+            label: process.env.DDR_CANDIDATE_LABEL,
+            inspected,
+            applied,
+            methodSha256: createHash("sha256").update(getNeighbors.toString()).digest("hex"),
+          }; writeFileSync(root + "/routing-interception.json", JSON.stringify(record)); console.log("DDR_INTERCEPTION=" + JSON.stringify(record))
+          })
+          INTERVENTION
+          cat > prepare-worker-interception.private.mjs <<'WORKER'
+          import {readFileSync,writeFileSync} from "node:fs"
+          import path from "node:path"
+          for(const label of ["previous","latest"]) {
+            const worker=path.resolve(label,"node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx")
+            const hook=JSON.stringify(path.resolve("candidate-runtime-hook.private.ts"))
+            const original=readFileSync(worker,"utf8")
+            if(!original.includes(hook))writeFileSync(worker,"import "+hook+"\n"+original)
+          }
+          WORKER
+          node prepare-worker-interception.private.mjs
       - name: Route real TSX circuits through published Core
         env:
           CIRCUIT: ${{ matrix.circuit }}
@@ -78,6 +201,9 @@ jobs:
           mkdir -p results
           infrastructure_status=0
           for release in $RELEASE_ORDER; do
+            export DDR_PACKAGE_ROOT="$GITHUB_WORKSPACE/$release"
+            export DDR_CANDIDATE_LABEL=base
+            if [ "$release" = latest ]; then export DDR_CANDIDATE_LABEL=head; fi
             bun "$GITHUB_WORKSPACE/$release/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/$release" --out "$GITHUB_WORKSPACE/results/$release" --circuit "$CIRCUIT" --timeout 1200 > "native-$release.private.log" 2>&1 || infrastructure_status=$?
             cp "$release/published-runtime.json" "results/$release/"
           done
@@ -117,13 +243,14 @@ jobs:
             const requestedAr=Bun.resolveSync("@tscircuit/capacity-autorouter",releaseRoot)
             if(realpathSync(executedAr)!==realpathSync(requestedAr))throw Error("Published Core did not execute the candidate package")
             const executedAutorouterSha256=createHash("sha256").update(readFileSync(executedAr)).digest("hex")
+            const routingInterception=JSON.parse(readFileSync(path.resolve(release,"routing-interception.json"),"utf8"))
             const dependencies=Object.fromEntries(["tscircuit","@tscircuit/core","@tscircuit/capacity-autorouter","@tscircuit/bus-lanes-solver","@tscircuit/fanout-solver","@tscircuit/checks","@tscircuit/props","circuit-json"].map(name=>[name,JSON.parse(readFileSync(path.resolve(release,"node_modules",name,"package.json"),"utf8")).version]))
             if(dependencies.tscircuit!==published.tscircuit||dependencies["@tscircuit/core"]!==published.core||dependencies["@tscircuit/capacity-autorouter"]!==published.autorouter)throw Error("Unexpected installed routing versions")
             const errors=row.progress?.errors??[]
             const errorText=errors.join(" ")
             const reason=/time.?out|iteration/i.test(errorText)?"search_limit":/path|region|graph/i.test(errorText)?"path_planning":/route|solv/i.test(errorText)?"routing_failure":errors.length?"render_error":row.status==="timeout"?"render_timeout":null
             const phaseInputs=readdirSync(dir).filter(name=>/^phase-[0-9]+-start[.]srj[.]json$/.test(name)).sort().map(file=>{const srj=JSON.parse(readFileSync(path.join(dir,file),"utf8"));return {file,sha256:createHash("sha256").update(JSON.stringify(srj)).digest("hex"),connections:srj.connections.length,obstacles:srj.obstacles.length,tracePaths:srj.traces?.length??0,fixedTracePaths:srj.traces?.filter(trace=>trace.isFixed===true).length??0,traceVias:srj.traces?.flatMap(trace=>trace.route.filter(point=>point.route_type==="via")).length??0,circularObstacles:srj.obstacles.filter(obstacle=>obstacle.shape==="circle").length}})
-            const metric={autorouterSourceCommit:null,phaseInputs,release,sourceRevision:published.sourceRevision,executedAutorouterSha256,comparisonValidatorVersion:dependencies["@tscircuit/checks"],circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment.connectedNets,requested:assessment.requestedNets,vias:assessment.vias,findings:assessment.findings,geometryErrorCount:assessment.geometryErrors.length,zeroClearance,physicalFindings,validationVersion:dependencies["@tscircuit/checks"],dependencies,fixtureHash:report.fixtureHashes[row.circuit],phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:errors.length,reason,copperSha256:createHash("sha256").update(JSON.stringify(circuit.filter(p=>p.type==="pcb_trace"||p.type==="pcb_via"))).digest("hex")}
+            const metric={routingInterception,autorouterSourceCommit:null,phaseInputs,release,sourceRevision:published.sourceRevision,executedAutorouterSha256,comparisonValidatorVersion:dependencies["@tscircuit/checks"],circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment.connectedNets,requested:assessment.requestedNets,vias:assessment.vias,findings:assessment.findings,geometryErrorCount:assessment.geometryErrors.length,zeroClearance,physicalFindings,validationVersion:dependencies["@tscircuit/checks"],dependencies,fixtureHash:report.fixtureHashes[row.circuit],phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:errors.length,reason,copperSha256:createHash("sha256").update(JSON.stringify(circuit.filter(p=>p.type==="pcb_trace"||p.type==="pcb_via"))).digest("hex")}
             writeFileSync("metrics/"+row.circuit+"-"+release+".json",JSON.stringify(metric,null,2))
             console.log("PUBLISHED_DDR_METRICS="+JSON.stringify(metric))
            }
@@ -133,6 +260,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-ddr-3270-${{ matrix.circuit }}
+          name: native-ddr-via-query-${{ matrix.circuit }}
           path: metrics/*.json
           if-no-files-found: warn
