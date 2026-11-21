@@ -11,7 +11,7 @@ import {
 import { getH3RoutingPhaseIntentSnapshot } from "tests/fixtures/h3-routing-phase-intent/snapshot"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 
-test("native H3 byte 0 routing input omits later phase intent", async () => {
+test("native H3 byte 0 routing input preserves every later phase request", async () => {
   const fixtureBytes = readFileSync(
     new URL(
       "../fixtures/h3-routing-phase-intent/source.json.gz",
@@ -49,13 +49,51 @@ test("native H3 byte 0 routing input omits later phase intent", async () => {
   expect(
     circuit.db.pcb_autorouting_error.list().map((error) => error.message),
   ).toEqual([stopAfterCapture])
-  expect(phaseSimpleRouteJson).not.toHaveProperty("pendingRoutingAccess")
+  expect(
+    phaseSimpleRouteJson.pendingRoutingAccess?.map(
+      (access) => access.connections.length,
+    ),
+  ).toEqual([8, 37])
+  const pendingConnections = phaseSimpleRouteJson.pendingRoutingAccess!.flatMap(
+    (access) => access.connections,
+  )
+  const futureNetNames = new Set(
+    source.traces
+      .filter((trace) => trace.group !== "byte0")
+      .map((trace) => trace.name),
+  )
+  const futureSourceNetIds = circuit.db.source_net
+    .list()
+    .filter((net) => futureNetNames.has(net.name!))
+    .map((net) => net.source_net_id)
+  expect(futureSourceNetIds).toHaveLength(45)
+  expect(
+    new Set(pendingConnections.map((connection) => connection.name)),
+  ).toEqual(new Set(futureSourceNetIds))
+  for (const access of phaseSimpleRouteJson.pendingRoutingAccess!) {
+    expect(access.bounds).toEqual(phaseSimpleRouteJson.bounds)
+    expect(access.minViaPadDiameter).toBe(source.rules.viaPad)
+    expect(access.minViaHoleDiameter).toBe(source.rules.viaDrill)
+    expect(access.minTraceToPadEdgeClearance).toBe(
+      source.rules.appliedGlobalClearance,
+    )
+    expect(access.allowViaInPad).toBe(false)
+    expect(access).not.toHaveProperty("obstacles")
+    expect(access).not.toHaveProperty("traces")
+  }
+  expect(
+    phaseSimpleRouteJson.pendingRoutingAccess![0]!.buses?.[0]?.allowedLayers,
+  ).toEqual(
+    source.signalLayers?.map((layer) =>
+      typeof layer === "string" ? layer : layer.name,
+    ),
+  )
 
   await expect(
     getH3RoutingPhaseIntentSnapshot({
       circuitJson: circuit.getCircuitJson(),
       phaseSimpleRouteJson,
-      pendingConnections: [],
+      pendingConnections,
     }),
   ).toMatchSvgSnapshot(import.meta.path, "h3-routing-phase-future-intent-pcb", {
     diffThresholdPercent: 0,

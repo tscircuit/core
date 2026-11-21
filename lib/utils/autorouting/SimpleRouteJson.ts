@@ -156,6 +156,7 @@ export type SimpleRouteJson = Omit<
   | "availableJumperTypes"
   | "differentialPairs"
   | "buses"
+  | "pendingRoutingAccess"
 > & {
   layerCount: number
   /** Whether autorouters may use vias that do not span the full board stack. */
@@ -195,6 +196,38 @@ export type SimpleRouteJson = Omit<
   availableJumperTypes?: Array<"1206x4" | "0603">
   differentialPairs?: SimpleRouteDifferentialPair[]
   buses?: SimpleRouteBus[]
+  /** Future routing requests whose native terminal access must remain available. */
+  pendingRoutingAccess?: PendingRoutingAccess[]
+}
+
+/**
+ * Future routing intent in board-world millimetres (+X right, +Y up).
+ * Bounds and outline retain the selected future SRJ physical area; terminals are
+ * positions. Fanout exit targets are not area limits. This describes necessary
+ * native terminal access, not future fanout target or complete routing feasibility.
+ * Obstacles and fixed copper come only from the current SRJ to avoid stale copper.
+ */
+export type PendingRoutingAccess = Pick<
+  SimpleRouteJson,
+  | "connections"
+  | "buses"
+  | "bounds"
+  | "outline"
+  | "minTraceWidth"
+  | "defaultObstacleMargin"
+  | "minTraceToPadEdgeClearance"
+  | "minTraceToHoleEdgeClearance"
+  | "minViaEdgeToPadEdgeClearance"
+  | "minViaPadDiameter"
+  | "minViaHoleDiameter"
+  | "minViaHoleEdgeToViaHoleEdgeClearance"
+  | "minPlatedHoleDrillEdgeToDrillEdgeClearance"
+  | "minPadEdgeToPadEdgeClearance"
+  | "minBoardEdgeClearance"
+  | "allowViaInPad"
+  | "allowBlindAndBuriedVias"
+> & {
+  allowedLayers?: string[]
 }
 
 // declare module "autorouting-dataset" {
