@@ -1282,7 +1282,7 @@ export abstract class PrimitiveComponent<
           for (const selector of selectors) {
             const ar = this._cachedSelectAllQueries.get(selector)
             if (ar) {
-              ar.push(port)
+              if (!ar.includes(port)) ar.push(port)
             } else {
               this._cachedSelectAllQueries.set(selector, [port])
             }
