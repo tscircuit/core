@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "pcbtrace infers wire fields from component-level layer and thickness props",
   testPcbTraceShorthand,
 )

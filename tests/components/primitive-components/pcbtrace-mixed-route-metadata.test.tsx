@@ -4,7 +4,7 @@ import type { Board } from "lib/components/normal-components/Board/Board"
 import type { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "pcbtrace retains explicit metadata and resolves coordinates after layer transitions",
   testPcbTraceMixedRouteMetadata,
 )

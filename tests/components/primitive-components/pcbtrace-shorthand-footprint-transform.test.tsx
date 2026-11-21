@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "pcbtrace shorthand follows its footprint pads on both sides at every quarter turn",
   testPcbTraceFootprintTransforms,
 )

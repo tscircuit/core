@@ -5,7 +5,7 @@ import type { PcbTrace } from "lib/components/primitive-components/PcbTrace"
 import { Fragment } from "react"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing(
+test(
   "pcbtrace resolves defaults and point overrides without modifying its input",
   testPcbTraceDefaults,
 )
