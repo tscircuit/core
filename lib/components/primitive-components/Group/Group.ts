@@ -143,6 +143,25 @@ type PcbTraceId = PcbTrace["pcb_trace_id"]
 type AutoroutedPcbTrace = (PcbTrace | SimplifiedPcbTrace) &
   Partial<Pick<PcbTrace, "subcircuit_id" | "route_thickness_mode">>
 
+const resolveMinTraceToPadEdgeClearance = (
+  explicitMinTraceToPadEdgeClearance: unknown,
+  autorouterTraceClearance: unknown,
+): number | undefined => {
+  const explicitVal =
+    explicitMinTraceToPadEdgeClearance !== undefined &&
+    explicitMinTraceToPadEdgeClearance !== null
+      ? distance.parse(explicitMinTraceToPadEdgeClearance as string | number)
+      : undefined
+  const autorouterVal =
+    autorouterTraceClearance !== undefined && autorouterTraceClearance !== null
+      ? distance.parse(autorouterTraceClearance as string | number)
+      : undefined
+  if (explicitVal !== undefined && autorouterVal !== undefined) {
+    return Math.max(explicitVal, autorouterVal)
+  }
+  return explicitVal ?? autorouterVal
+}
+
 type GroupAutoroutingResult = {
   output_test_points?: ConnectedRoutedTestPoint[]
   output_simple_route_json?: SimpleRouteJson
@@ -898,11 +917,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
+    const resolvedMinTraceToPadEdgeClearance =
+      resolveMinTraceToPadEdgeClearance(
+        props.minTraceToPadEdgeClearance,
+        autorouterConfig.traceClearance,
+      )
     const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
       pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
       db,
       allowViaInPad: autorouterConfig.allowViaInPad,
       minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
       nominalTraceWidth:
         preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
       subcircuit_id: this.subcircuit_id,
@@ -1159,11 +1184,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
+    const resolvedMinTraceToPadEdgeClearance =
+      resolveMinTraceToPadEdgeClearance(
+        props.minTraceToPadEdgeClearance,
+        autorouterConfig.traceClearance,
+      )
     let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
         minTraceWidth,
+        minTraceToPadEdgeClearance: resolvedMinTraceToPadEdgeClearance,
         nominalTraceWidth,
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
@@ -1548,6 +1579,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+      if (phaseAutorouterConfig.traceClearance !== undefined) {
+        const phaseBaseClearance =
+          routingPhasePlan.drcTolerances?.minTraceToPadEdgeClearance ??
+          props.minTraceToPadEdgeClearance
+        simpleRouteJson.minTraceToPadEdgeClearance =
+          resolveMinTraceToPadEdgeClearance(
+            phaseBaseClearance,
+            phaseAutorouterConfig.traceClearance,
+          )
+      }
 
       const getPrecomputedRoutingResult = usesPreviousStageOutput
         ? undefined
