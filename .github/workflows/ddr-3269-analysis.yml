@@ -1,4 +1,4 @@
-name: Compare published DDR routing in 3267 and 3269
+name: Compare published DDR routing in 3269 and 3270
 on:
   push:
     branches: [analysis/ddr-3269-next-fix-20261121]
@@ -50,8 +50,8 @@ jobs:
            return await response.json()
           }
           for(const release of [
-           {label:"previous",tscircuit:"0.0.3267",core:"0.0.2444",autorouter:"0.0.1145",sourceRevision:"published-0.0.3267"},
-           {label:"latest",tscircuit:"0.0.3269",core:"0.0.2447",autorouter:"0.0.1145",sourceRevision:"published-0.0.3269"}
+           {label:"previous",tscircuit:"0.0.3269",core:"0.0.2447",autorouter:"0.0.1145",sourceRevision:"published-0.0.3269"},
+           {label:"latest",tscircuit:"0.0.3270",core:"0.0.2448",autorouter:"0.0.1145",sourceRevision:"published-0.0.3270"}
           ]) {
            const published=await metadata("tscircuit",release.tscircuit)
            const core=await metadata("@tscircuit/core",release.core)
@@ -133,6 +133,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-ddr-3269-${{ matrix.circuit }}
+          name: native-ddr-3270-${{ matrix.circuit }}
           path: metrics/*.json
           if-no-files-found: warn
