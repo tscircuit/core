@@ -10,6 +10,23 @@ type CheckedSchematicElement = SchematicElementWithBounds
 const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
 const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
+export const getSchematicSheetDrawingDimensions = ({
+  sheetWidth,
+  sheetHeight,
+}: {
+  sheetWidth: number
+  sheetHeight: number
+}): { width: number; height: number } => ({
+  width: Math.max(
+    0,
+    sheetWidth / SCHEMATIC_UNIT_TO_MM - SCHEMATIC_SHEET_INNER_MARGIN * 2,
+  ),
+  height: Math.max(
+    0,
+    sheetHeight / SCHEMATIC_UNIT_TO_MM - SCHEMATIC_SHEET_INNER_MARGIN * 2,
+  ),
+})
+
 const BOUNDS_EPSILON = 1e-6
 
 const getSchematicElementId = (
@@ -40,25 +57,15 @@ export const warnIfSchematicElementsOutsideSheet = ({
   sheetWidth: number
   sheetHeight: number
 }): void => {
-  const sheetWidthInSchematicUnits = sheetWidth / SCHEMATIC_UNIT_TO_MM
-  const sheetHeightInSchematicUnits = sheetHeight / SCHEMATIC_UNIT_TO_MM
+  const drawingDimensions = getSchematicSheetDrawingDimensions({
+    sheetWidth,
+    sheetHeight,
+  })
   const sheetContentBounds = {
-    minX:
-      schematicSheetCenter.x -
-      sheetWidthInSchematicUnits / 2 +
-      SCHEMATIC_SHEET_INNER_MARGIN,
-    maxX:
-      schematicSheetCenter.x +
-      sheetWidthInSchematicUnits / 2 -
-      SCHEMATIC_SHEET_INNER_MARGIN,
-    minY:
-      schematicSheetCenter.y -
-      sheetHeightInSchematicUnits / 2 +
-      SCHEMATIC_SHEET_INNER_MARGIN,
-    maxY:
-      schematicSheetCenter.y +
-      sheetHeightInSchematicUnits / 2 -
-      SCHEMATIC_SHEET_INNER_MARGIN,
+    minX: schematicSheetCenter.x - drawingDimensions.width / 2,
+    maxX: schematicSheetCenter.x + drawingDimensions.width / 2,
+    minY: schematicSheetCenter.y - drawingDimensions.height / 2,
+    maxY: schematicSheetCenter.y + drawingDimensions.height / 2,
   }
   const checkedElements: CheckedSchematicElement[] = [
     ...db.schematic_component.list(),
