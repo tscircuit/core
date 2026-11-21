@@ -29,6 +29,7 @@ export class Diode extends NormalComponent<
     const symbolMap: Record<string, BaseSymbolName> = {
       schottky: "schottky_diode",
       avalanche: "avalanche_diode",
+      tvs: "avalanche_diode",
       zener: "zener_diode",
       photodiode: "photodiode",
     }
@@ -37,13 +38,15 @@ export class Diode extends NormalComponent<
       ? "schottky"
       : this.props.avalanche
         ? "avalanche"
-        : this.props.zener
-          ? "zener"
-          : this.props.photo
-            ? "photo"
-            : this.props.standard
-              ? "standard"
-              : this.props.variant
+        : this.props.tvs
+          ? "tvs"
+          : this.props.zener
+            ? "zener"
+            : this.props.photo
+              ? "photo"
+              : this.props.standard
+                ? "standard"
+                : this.props.variant
     const variantSymbol = variant === "photo" ? "photodiode" : variant
 
     const baseSymbolName =
