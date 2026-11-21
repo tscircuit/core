@@ -3,7 +3,9 @@ import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import simpleCircuitJson from "tests/components/normal-components/assets/simple-circuit.json"
 import { getTestFixture } from "./get-test-fixture"
 
-export const getBoardStackupFixture = async (boardProps: BoardProps) => {
+export const getBoardStackupFixture = async (
+  boardProps: BoardProps & { jlcpcbStackup?: string },
+) => {
   const { circuit } = getTestFixture()
   circuit.add(<board {...boardProps} />)
   await circuit.renderUntilSettled()
