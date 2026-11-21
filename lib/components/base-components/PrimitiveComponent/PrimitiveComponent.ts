@@ -2,7 +2,10 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
-import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
+import {
+  DEFAULT_SCHEMATIC_LENGTH_UNIT,
+  MM_PER_SCHEMATIC_UNIT,
+} from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -813,10 +816,11 @@ export abstract class PrimitiveComponent<
   /** Imported Circuit JSON positions already use the schematic renderer’s units. */
   _schematicPositionFromCircuitJson = false
 
-  _getSchematicLengthUnit(): SchematicLengthUnit | undefined {
+  _getSchematicLengthUnit(): SchematicLengthUnit {
     return (
       this.getInheritedProperty("defaultSchematicLengthUnit", true) ??
-      this.root?.inheritedSchematicLengthUnit
+      this.root?.inheritedSchematicLengthUnit ??
+      DEFAULT_SCHEMATIC_LENGTH_UNIT
     )
   }
 

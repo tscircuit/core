@@ -1,4 +1,3 @@
-import { DEFAULT_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -482,7 +481,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
       this.root!.schematicLengthUnits.set(
         this.subcircuit_id!,
-        this._getSchematicLengthUnit() ?? DEFAULT_SCHEMATIC_LENGTH_UNIT,
+        this._getSchematicLengthUnit(),
       )
       db.source_group.update(source_group.source_group_id, {
         subcircuit_id: this.subcircuit_id!,
