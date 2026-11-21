@@ -23,14 +23,19 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
       return ""
     }
 
-    const rawCurrent = this._parsedProps.currentRating
-    const rawVoltage = this._parsedProps.voltageRating
+    const current = parseAndConvertSiUnit(
+      this._parsedProps.currentRating,
+      "A",
+    ).value
+    const voltage = parseAndConvertSiUnit(
+      this._parsedProps.voltageRating,
+      "V",
+    ).value
 
-    const current = parseAndConvertSiUnit(rawCurrent, "A").value
-
-    const voltage = parseAndConvertSiUnit(rawVoltage, "V").value
-
-    return `${formatSiUnit(current)}A / ${formatSiUnit(voltage)}V`
+    const parts: string[] = []
+    if (current != null) parts.push(`${formatSiUnit(current)}A`)
+    if (voltage != null) parts.push(`${formatSiUnit(voltage)}V`)
+    return parts.length > 0 ? parts.join(" / ") : undefined
   }
 
   doInitialSourceRender() {
@@ -45,8 +50,12 @@ export class Fuse extends NormalComponent<typeof fuseProps, PassivePorts> {
     let display_voltage_rating: string | undefined
 
     if (props.schShowRatings !== false) {
-      display_current_rating = `${formatSiUnit(currentRating)}A`
-      display_voltage_rating = `${formatSiUnit(voltageRating)}V`
+      if (currentRating != null) {
+        display_current_rating = `${formatSiUnit(currentRating)}A`
+      }
+      if (voltageRating != null) {
+        display_voltage_rating = `${formatSiUnit(voltageRating)}V`
+      }
     }
 
     const source_component = db.source_component.insert({
