@@ -521,6 +521,7 @@ export function applyTracesFromSolverOutput(args: {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
     db.schematic_trace.insert({
+      subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
       source_trace_id: pendingTrace?.boundarySourceTraceId ?? t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],

@@ -87,6 +87,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
+      subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: netLabelText,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
@@ -103,6 +104,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
+      subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: netLabelText,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,

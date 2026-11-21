@@ -40,7 +40,10 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   if (resolvedCopperPours.length === 0) return
 
-  const circuitJson = db.toArray()
+  // Copper connectivity comes from source and PCB records. Schematic routing keys are local to the drawing.
+  const circuitJson = db
+    .toArray()
+    .filter((element) => !element.type.startsWith("schematic_"))
   const boardComponent = subcircuit._getBoard()
   const pcbBoard = boardComponent?.pcb_board_id
     ? db.pcb_board.get(boardComponent.pcb_board_id)

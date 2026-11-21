@@ -1,3 +1,7 @@
+import {
+  convertSchematicLengthUnits,
+  LEGACY_SCHEMATIC_LENGTH_UNIT,
+} from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { SchematicLengthUnit, PlatformConfig } from "@tscircuit/props"
@@ -54,6 +58,7 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
+  readonly schematicLengthUnits = new Map<string, SchematicLengthUnit>()
   inheritedSchematicLengthUnit?: SchematicLengthUnit
   pcbDisabled = false
   pcbRoutingDisabled = false
@@ -287,7 +292,10 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    return this.db.toArray()
+    return convertSchematicLengthUnits(
+      this.db.toArray(),
+      this.schematicLengthUnits,
+    )
   }
 
   toJson(): AnyCircuitElement[] {
@@ -309,7 +317,10 @@ export class IsolatedCircuit {
     }
     if (options.view === "schematic") {
       return circuitToSvg.convertCircuitJsonToSchematicSvg(
-        this.getCircuitJson(),
+        convertSchematicLengthUnits(
+          this.getCircuitJson(),
+          LEGACY_SCHEMATIC_LENGTH_UNIT,
+        ),
       )
     }
     throw new Error(`Invalid view: ${options.view}`)

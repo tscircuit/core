@@ -181,6 +181,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         schematic_sheet_id: schematicSheetId,
       })
       const dbTrace = db.schematic_trace.insert({
+        subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions,
@@ -196,6 +197,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       const side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       db.schematic_net_label.insert({
+        subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
         text: schematicNetLabelText,
         source_net_id: net.source_net_id!,
         anchor_position: anchorPos,
@@ -213,6 +215,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
     const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
     const netLabel = db.schematic_net_label.insert({
+      subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: net._parsedProps.name,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
@@ -499,6 +502,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   // Insert schematic trace
   const dbTrace = db.schematic_trace.insert({
+    subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,

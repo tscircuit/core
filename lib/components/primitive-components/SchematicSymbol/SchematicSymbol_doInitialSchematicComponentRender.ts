@@ -21,6 +21,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
   const subcircuitId =
     schematicSymbol.getSubcircuit().subcircuit_id ?? undefined
   const schematicComponent = db.schematic_component.insert({
+    subcircuit_id: schematicSymbol.getSubcircuit().subcircuit_id ?? undefined,
     center,
     size: { ...symbol.size },
     is_box_with_pins: true,

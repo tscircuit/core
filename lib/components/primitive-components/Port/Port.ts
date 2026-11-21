@@ -718,6 +718,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // For each obstacle, create a schematic_debug_object
     if (this.getSubcircuit().props._schDebugObjectsEnabled) {
       db.schematic_debug_object.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         shape: "rect",
         center: portCenter,
         size: {
@@ -809,6 +810,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       else if (direction === "down") y2 += schStemLength
 
       const stemLine = db.schematic_line.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         schematic_component_id: parentNormalComponent?.schematic_component_id!,
         x1: portCenter.x,
         y1: portCenter.y,

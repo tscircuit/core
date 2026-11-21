@@ -1,3 +1,7 @@
+import {
+  convertSchematicLengthUnits,
+  LEGACY_SCHEMATIC_LENGTH_UNIT,
+} from "circuit-json"
 import { cju } from "@tscircuit/circuit-json-util"
 import type { CircuitJson } from "circuit-json"
 import type { Group } from "../../components/primitive-components/Group/Group"
@@ -31,9 +35,15 @@ export const inflateCircuitJson = (
   target: SubcircuitI & Group<any>,
   circuitJson: CircuitJson | undefined,
   children: any[],
+  fromIsolatedCache = false,
 ) => {
   if (!circuitJson) return
-  const injectionDb = cju(circuitJson)
+  const sourceGroups = circuitJson.filter(
+    (element) => element.type === "source_group",
+  )
+  const injectionDb = cju(
+    convertSchematicLengthUnits(circuitJson, LEGACY_SCHEMATIC_LENGTH_UNIT),
+  )
 
   if (circuitJson && children?.length > 0) {
     throw new Error("Component cannot have both circuitJson and children")
@@ -50,7 +60,6 @@ export const inflateCircuitJson = (
 
   // Inflate source_groups in dependency order (parents before children)
   // Using explicit dependency tracking to detect cycles
-  const sourceGroups = injectionDb.source_group.list()
   const renderedGroupIds = new Set<string>()
   const groupsToRender = [...sourceGroups]
 
@@ -72,7 +81,7 @@ export const inflateCircuitJson = (
     }
 
     const groupToRender = groupsToRender[groupIndex]
-    inflateSourceGroup(groupToRender, inflationCtx)
+    inflateSourceGroup(groupToRender, inflationCtx, fromIsolatedCache)
     renderedGroupIds.add(groupToRender.source_group_id)
     groupsToRender.splice(groupIndex, 1)
   }

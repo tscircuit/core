@@ -1,3 +1,7 @@
+import {
+  convertSchematicLengthUnits,
+  LEGACY_SCHEMATIC_LENGTH_UNIT,
+} from "circuit-json"
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
@@ -143,6 +147,10 @@ export const createComponentsFromCircuitJson = (
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  circuitJson = convertSchematicLengthUnits(
+    circuitJson,
+    LEGACY_SCHEMATIC_LENGTH_UNIT,
+  )
   const joinedCourtyards = joinImportedCourtyardOutlines(
     circuitJson.filter((elm) => elm.type === "pcb_courtyard_outline"),
     componentName,

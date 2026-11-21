@@ -57,6 +57,7 @@ export class SchematicGraphic extends PrimitiveComponent<
             mimetype: SVG_MIMETYPE,
           } satisfies Asset
           const schematicGraphic = this.root!.db.schematic_graphic.insert({
+            subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
             asset,
             schematic_sheet_id: this._resolveSchematicSheetId(),
             svg_content: svgContent,
@@ -85,6 +86,7 @@ export class SchematicGraphic extends PrimitiveComponent<
           ? svgContent
           : sourceImage.text
         const schematicGraphic = this.root!.db.schematic_graphic.insert({
+          subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
           asset,
           schematic_sheet_id: this._resolveSchematicSheetId(),
           ...(fallbackSvgContent === undefined
@@ -106,6 +108,7 @@ export class SchematicGraphic extends PrimitiveComponent<
         mimetype: SVG_MIMETYPE,
       } satisfies Asset
       const schematicGraphic = db.schematic_graphic.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         asset,
         schematic_sheet_id: this._resolveSchematicSheetId(),
         ...(width === undefined ? {} : { width }),

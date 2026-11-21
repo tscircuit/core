@@ -923,6 +923,7 @@ export class NormalComponent<
 
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         center,
         size: { ...symbol.size },
         source_component_id: this.source_component_id!,
@@ -945,6 +946,7 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
     const schematic_component = db.schematic_component.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       center,
       // width/height are computed in the SchematicComponentSizeCalculation phase
       size: { width: 0, height: 0 },
@@ -977,6 +979,7 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
     const schPortArrangement = this._getSchematicPortArrangement()
     const schematic_component = db.schematic_component.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       center,
       rotation: props.schRotation ?? 0,
       size: dimensions.getSize(),
@@ -1009,6 +1012,7 @@ export class NormalComponent<
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       text: resolveManufacturerPartNumber(props) ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
@@ -1026,6 +1030,7 @@ export class NormalComponent<
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
     const component_name_text = db.schematic_text.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       text: props.displayName ?? props.name ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",

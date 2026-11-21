@@ -135,6 +135,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     })
 
     const netLabel = db.schematic_net_label.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       text: props.net!,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
@@ -296,6 +297,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       }
 
       db.schematic_trace.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         source_trace_id: source_trace_id!,
         edges,
         junctions: [],

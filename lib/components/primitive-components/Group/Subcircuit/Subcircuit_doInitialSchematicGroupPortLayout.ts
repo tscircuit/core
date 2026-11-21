@@ -213,6 +213,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
       if (port.schematic_port_id)
         db.schematic_port.delete(port.schematic_port_id)
       const schematicPort = db.schematic_port.insert({
+        subcircuit_id: subcircuit.getSubcircuit().subcircuit_id ?? undefined,
         source_port_id: port.source_port_id!,
         schematic_group_id: subcircuit.schematic_group_id!,
         schematic_sheet_id: schematicSheetId,

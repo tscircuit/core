@@ -167,6 +167,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   )
 
   const schematicComponent = db.schematic_component.insert({
+    subcircuit_id: schematicBox.getSubcircuit().subcircuit_id ?? undefined,
     center,
     size,
     source_component_id: referencedChip.source_component_id,
@@ -202,6 +203,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     }[portPosition.side] as SchematicPort["facing_direction"]
 
     db.schematic_port.insert({
+      subcircuit_id: schematicBox.getSubcircuit().subcircuit_id ?? undefined,
       schematic_component_id: schematicComponent.schematic_component_id,
       center: {
         x: center.x + portPosition.x,
@@ -221,6 +223,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
 
   const sectionName = props.name ?? props.chipRef
   db.schematic_text.insert({
+    subcircuit_id: schematicBox.getSubcircuit().subcircuit_id ?? undefined,
     text: sectionName,
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",
@@ -238,6 +241,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     referencedChip.source_component_id,
   )
   db.schematic_text.insert({
+    subcircuit_id: schematicBox.getSubcircuit().subcircuit_id ?? undefined,
     text: referencedSourceComponent?.manufacturer_part_number ?? "",
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",

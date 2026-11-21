@@ -32,6 +32,7 @@ export class SchematicText extends PrimitiveComponent<
     const text = this._resolveText()
 
     const schematic_text = db.schematic_text.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       schematic_symbol_id,
       schematic_component_id,
       anchor: props.anchor ?? "center",

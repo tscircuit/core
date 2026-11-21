@@ -113,6 +113,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     }
 
     db.schematic_box.insert({
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       height,
       width,
       x,
@@ -164,6 +165,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const titleY = anchorPos.y + titleOffsetY
 
       db.schematic_text.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         anchor: textAnchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,

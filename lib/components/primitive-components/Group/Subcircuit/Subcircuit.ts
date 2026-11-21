@@ -145,7 +145,7 @@ export class Subcircuit
     if (isolatedJson) {
       this._isInflatedFromCircuitJson = true
       this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [])
+      inflateCircuitJson(this, isolatedJson, [], true)
       return
     }
 

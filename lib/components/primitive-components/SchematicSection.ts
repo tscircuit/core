@@ -156,6 +156,7 @@ export class SchematicSection extends PrimitiveComponent<
     )
     for (const line of dividers) {
       db.schematic_line.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         x1: line.start.x,
         y1: line.start.y,
         x2: line.end.x,
@@ -204,6 +205,7 @@ export class SchematicSection extends PrimitiveComponent<
 
       const fontSize = sectionTitleFontSize ?? 0.18
       db.schematic_text.insert({
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
         anchor: "top_left",
         text: displayName,
         font_size: fontSize,

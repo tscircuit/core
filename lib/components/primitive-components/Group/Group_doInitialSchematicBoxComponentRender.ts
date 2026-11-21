@@ -128,6 +128,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const title = props.schTitle ?? props.name
   if (title) {
     db.schematic_text.insert({
+      subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
       text: title,
       schematic_component_id: schematicComponent.schematic_component_id,
       anchor: "left",

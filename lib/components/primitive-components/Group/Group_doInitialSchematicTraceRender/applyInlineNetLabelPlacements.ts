@@ -172,6 +172,7 @@ export function applyInlineNetLabelPlacements(args: {
 
     if (stubTracePath && stubTracePath.length === 2) {
       db.schematic_trace.insert({
+        subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
         source_trace_id: sourceTraceId,
         edges: [{ from: stubTracePath[0]!, to: stubTracePath[1]! }],
         junctions: [],
@@ -184,6 +185,7 @@ export function applyInlineNetLabelPlacements(args: {
     }
 
     db.schematic_text.insert({
+      subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
       text,
       // Links the label back to the trace it names, so a consumer can tell an
       // inline net label apart from free-standing schematic text.
