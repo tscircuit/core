@@ -2,6 +2,7 @@ import type { CadComponent, PcbComponent, SourceSimpleLed } from "circuit-json"
 import { Led } from "lib/components/normal-components/Led"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceLed(
@@ -26,6 +27,7 @@ export function inflateSourceLed(
 
   const led = new Led({
     name: sourceElm.name,
+    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
     color: sourceElm.color,
     wavelength: sourceElm.wavelength ?? (sourceElm as any).wave_length,
     layer: pcbElm?.layer,

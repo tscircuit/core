@@ -90,6 +90,8 @@ export const inflateSourceChip = (
     internallyConnectedPins,
   })
 
+  chip._schematicPositionFromCircuitJson = true
+
   // Store the footprinter string in props for reference (used by cad_component generation)
   if (footprinterString) {
     Object.assign(chip.props, { footprint: footprinterString })

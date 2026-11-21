@@ -88,6 +88,9 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
         pendingSubcircuitRenders,
       })
 
+      isolatedCircuit.inheritedSchematicLengthUnit =
+        subcircuit._getSchematicLengthUnit()
+
       for (const child of childrenToRender) {
         isolatedCircuit.add(child)
       }

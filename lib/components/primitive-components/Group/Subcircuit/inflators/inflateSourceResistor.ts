@@ -6,6 +6,7 @@ import type {
 import { Resistor } from "lib/components/normal-components/Resistor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceResistor(
@@ -30,6 +31,7 @@ export function inflateSourceResistor(
 
   const resistor = new Resistor({
     name: sourceElm.name,
+    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
     resistance: sourceElm.resistance,
     layer: pcbElm?.layer,
     pcbX,

@@ -85,11 +85,18 @@ function getHashableProps(props: Record<string, any>): Record<string, any> {
 /**
  * Recursively collect hashable data from children.
  */
-function getChildrenHashData(children: PrimitiveComponent[]): any[] {
+function getChildrenHashData(
+  children: PrimitiveComponent[],
+  millimeterPlacement: boolean,
+): any[] {
   return children.map((child) => ({
     componentName: child.componentName,
     props: getHashableProps(child.props ?? {}),
-    children: getChildrenHashData(child.children),
+    ...(millimeterPlacement && {
+      schX: child.props.schX,
+      schY: child.props.schY,
+    }),
+    children: getChildrenHashData(child.children, millimeterPlacement),
   }))
 }
 
@@ -133,9 +140,11 @@ function computeHash(data: any): string {
 export function Subcircuit_getSubcircuitPropHash(
   subcircuit: ISubcircuit,
 ): string {
+  const millimeterPlacement = subcircuit._getSchematicLengthUnit() === "mm"
   const hashableData = {
+    ...(millimeterPlacement && { schematicLengthUnit: "mm" }),
     props: getHashableProps(subcircuit.props ?? {}),
-    children: getChildrenHashData(subcircuit.children),
+    children: getChildrenHashData(subcircuit.children, millimeterPlacement),
   }
 
   return computeHash(hashableData)

@@ -2,6 +2,7 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
+import { SCHEMATIC_UNIT_TO_MM } from "lib/utils/schematic/schematic-unit-to-mm"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -808,13 +809,35 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  /** Imported Circuit JSON positions already use the schematic renderer’s units. */
+  _schematicPositionFromCircuitJson = false
+
+  _getSchematicLengthUnit() {
+    return (
+      this.getInheritedProperty("schematicLengthUnit") ??
+      this.root?.inheritedSchematicLengthUnit
+    )
+  }
+
+  /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */
+  _getSchematicPropsPosition() {
+    const { schX, schY } = this._parsedProps
+    const x = schX ?? 0
+    const y = schY ?? 0
+    if ((!x && !y) || this._schematicPositionFromCircuitJson) return { x, y }
+    if (this._getSchematicLengthUnit() === "mm") {
+      return { x: x / SCHEMATIC_UNIT_TO_MM, y: y / SCHEMATIC_UNIT_TO_MM }
+    }
+    return { x, y }
+  }
+
   /**
    * Computes a transformation matrix from the props of this component for
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    const { _parsedProps: props } = this
-    return compose(translate(props.schX ?? 0, props.schY ?? 0))
+    const { x, y } = this._getSchematicPropsPosition()
+    return translate(x, y)
   }
 
   /**

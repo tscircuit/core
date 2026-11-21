@@ -240,7 +240,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         })
       }
 
-      return { x: schX, y: schY }
+      return this._getSchematicPropsPosition()
     }
 
     const parentNormalComponent = this.getParentNormalComponent()

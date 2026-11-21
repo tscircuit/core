@@ -131,6 +131,7 @@ export function inflateSourceConnector(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   }
   const connector = new Connector(connectorProps)
+  connector._schematicPositionFromCircuitJson = true
 
   if (cadElm?.footprinter_string) {
     Object.assign(connector.props, { footprint: cadElm.footprinter_string })

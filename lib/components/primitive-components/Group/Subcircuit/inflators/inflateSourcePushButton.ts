@@ -6,6 +6,7 @@ import type {
 import { PushButton } from "lib/components/normal-components/PushButton"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
+import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourcePushButton(
@@ -30,6 +31,7 @@ export function inflateSourcePushButton(
 
   const pushButton = new PushButton({
     name: sourceElm.name,
+    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
     layer: pcbElm?.layer,
     pcbX,
     pcbY,

@@ -95,8 +95,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
       width = right - left
       height = bottom - top
-      x = left + (props.schX ?? 0)
-      y = top + (props.schY ?? 0)
+      const offset = this._getSchematicPropsPosition()
+      x = left + offset.x
+      y = top + offset.y
       centerX = x + width / 2
       centerY = y + height / 2
     } else if (hasFixedSize) {
