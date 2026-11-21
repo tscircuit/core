@@ -2,8 +2,9 @@ import type { PcbPath } from "@tscircuit/props"
 import type { LayerRef, PcbTraceRoutePoint } from "circuit-json"
 import { applyToPoint, identity } from "transformation-matrix"
 import type { Port } from "../Port"
-import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 import type { Trace } from "./Trace"
+import { getSharedPcbPathLayer } from "./get-shared-pcb-path-layer"
+import { getPcbSelectorErrorForTracePort } from "./getPcbSelectorErrorForTracePort"
 
 interface GetRouteForPcbPathInput {
   trace: Trace
@@ -30,7 +31,13 @@ export const getRouteForPcbPath = ({
   const pcbPathLocalToBoardTransform = subcircuit._isInflatedFromCircuitJson
     ? trace._computePcbGlobalTransformBeforeLayout()
     : (anchorPort._computePcbGlobalTransformBeforeLayout?.() ?? identity())
-  let currentLayer = (anchorPort.getAvailablePcbLayers()[0] ??
+  const sharedLayer = getSharedPcbPathLayer({
+    path,
+    connectedPorts: [],
+    subcircuit,
+  })
+  let currentLayer = (sharedLayer ??
+    anchorPort.getAvailablePcbLayers()[0] ??
     "top") as LayerRef
   const route: PcbTraceRoutePoint[] = []
 
@@ -66,7 +73,8 @@ export const getRouteForPcbPath = ({
         return
       }
       if (index === 0) {
-        currentLayer = (resolvedPort.getAvailablePcbLayers()[0] ??
+        currentLayer = (sharedLayer ??
+          resolvedPort.getAvailablePcbLayers()[0] ??
           currentLayer) as LayerRef
       }
       const position = resolvedPort._getGlobalPcbPositionAfterLayout()
