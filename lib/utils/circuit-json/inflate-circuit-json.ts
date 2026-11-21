@@ -44,6 +44,7 @@ export const inflateCircuitJson = (
   const inflationCtx: InflatorContext = {
     injectionDb,
     subcircuit: target,
+    schematicLengthUnit: target._getSchematicLengthUnit(),
     groupsMap,
   }
 
