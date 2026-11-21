@@ -94,7 +94,11 @@ test("CAD is inserted folded after layout while PCB records stay flat", async ()
         ),
       ).toBe(true)
       const before = JSON.stringify(circuit.db.toArray())
-      expect(JSON.stringify(circuit.getCircuitJson())).toBe(before)
+      const serializedCad = circuit
+        .getCircuitJson()
+        .filter((element) => element.type === "cad_component")
+      expect(serializedCad).toEqual(cad)
+      expect(JSON.stringify(circuit.db.toArray())).toBe(before)
       await circuit.renderUntilSettled()
       expect(JSON.stringify(circuit.db.toArray())).toBe(before)
       return circuit.db.toArray()
