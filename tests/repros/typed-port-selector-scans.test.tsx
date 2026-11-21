@@ -29,7 +29,7 @@ test("a cold typed port lookup shares its ambiguity-check traversal", async () =
   }
   board.add(
     <pcbnotetext
-      text={`Cold port lookup: ${traversals} tree traversals`}
+      text={`Cold port lookup — tree traversals: ${traversals}`}
       pcbY={4}
       fontSize={0.8}
     />,
