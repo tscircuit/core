@@ -32,7 +32,11 @@ export const getDatasheetInternalConnectionWarnings = (
   const declared = component._parsedProps.internallyConnectedPins as
     | (string | number)[][]
     | undefined
-  const declaredGroups = (declared ?? []).map((group) =>
+  // A component's own defaults (e.g. a footprinter pushbutton's tied pad
+  // pairs) already model the connection, so only warn when they don't.
+  const declaredGroups = (
+    declared ?? component.defaultInternallyConnectedPinNames
+  ).map((group) =>
     group.map(resolvePort).filter((port): port is Port => port !== undefined),
   )
   return reported.flatMap((group) => {
