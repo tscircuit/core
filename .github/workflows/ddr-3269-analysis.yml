@@ -1,4 +1,4 @@
-name: A64 through-via query timing controls
+name: Published DDR through-via query comparison
 on:
   push:
     branches: [analysis/ddr-3269-next-fix-20261121]
@@ -8,7 +8,7 @@ permissions:
   actions: read
 jobs:
   benchmark:
-    name: A64 ${{ matrix.replica }}
+    name: Native ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 60
     strategy:
@@ -16,8 +16,16 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - {circuit: a64, order: "previous latest", replica: forward}
-          - {circuit: a64, order: "latest previous", replica: reverse}
+          - {circuit: h3, order: "latest previous"}
+          - {circuit: a64, order: "previous latest"}
+          - {circuit: stmp157, order: "latest previous"}
+          - {circuit: orangecrab, order: "previous latest"}
+          - {circuit: a13, order: "latest previous"}
+          - {circuit: h616, order: "previous latest"}
+          - {circuit: butterstick, order: "latest previous"}
+          - {circuit: glider, order: "previous latest"}
+          - {circuit: imx6, order: "previous latest"}
+          - {circuit: icepi, order: "latest previous"}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -263,6 +271,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-ddr-via-query-${{ matrix.circuit }}-${{ matrix.replica }}
+          name: native-ddr-via-query-scoped-${{ matrix.circuit }}
           path: metrics/*.json
           if-no-files-found: warn
