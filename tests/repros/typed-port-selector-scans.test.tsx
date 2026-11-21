@@ -17,7 +17,7 @@ test("a cold typed port lookup shares its ambiguity-check traversal", async () =
   board._cachedSelectOneQueries.clear()
   board._cachedSelectAllQueries.clear()
   const findAll = spyOn(
-    cssSelectPrimitiveComponentAdapterWithoutSubcircuits,
+    cssSelectPrimitiveComponentAdapterWithoutSubcircuits!,
     "findAll",
   )
   let traversals: number

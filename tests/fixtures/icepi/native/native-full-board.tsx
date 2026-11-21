@@ -1,4 +1,4 @@
-import type { ReactElement } from "react"
+import { Fragment, type ReactElement } from "react"
 import type {
   BoardProps,
   BusProps,
@@ -246,61 +246,66 @@ export function NativeFullBoard({
         />
       ))}
       {source.nets.map((net) => (
-        <net
-          key={net.name}
-          name={net.name}
-          connectsTo={net.members}
-          nominalTraceWidth={net.width}
-          isGroundNet={net.isGround}
-          routingPhaseIndex={
-            net.routable ? phases.indexOf(net.group) : undefined
-          }
-        />
+        <Fragment key={net.name}>
+          <net
+            name={net.name}
+            connectsTo={net.members}
+            nominalTraceWidth={net.width}
+            isGroundNet={net.isGround}
+            routingPhaseIndex={
+              net.routable ? phases.indexOf(net.group) : undefined
+            }
+          />
+        </Fragment>
       ))}
       {zones.flatMap((zone) =>
         zone.outlines.map((outline, index) => (
-          <copperpour
-            key={`${zone.name}_${index}`}
-            name={`${zone.name}_${index}`}
-            connectsTo={`net.${zone.netName}`}
-            layer={zone.layer as CopperPourProps["layer"]}
-            outline={outline}
-            clearance={zone.clearance}
-            boardEdgeMargin={source.rules.appliedGlobalClearance}
-            unbroken={zone.unbroken}
-            useThermalReliefs={zone.useThermalReliefs}
-          />
+          <Fragment key={`${zone.name}_${index}`}>
+            <copperpour
+              name={`${zone.name}_${index}`}
+              connectsTo={`net.${zone.netName}`}
+              layer={zone.layer as CopperPourProps["layer"]}
+              outline={outline}
+              clearance={zone.clearance}
+              boardEdgeMargin={source.rules.appliedGlobalClearance}
+              unbroken={zone.unbroken}
+              useThermalReliefs={zone.useThermalReliefs}
+            />
+          </Fragment>
         )),
       )}
       {bytes.map((group) => (
-        <bus
-          key={group}
-          name={`DDR_BUS_${group}`}
-          connections={source.nets
-            .filter((net) => net.group === group)
-            .map((net) => {
-              if (!fanout) return net.members[0]
-              const bgaMember = net.members.find((member) =>
-                source.parts.some(
-                  (part) =>
-                    (/bga/i.test(part.footprint) ||
-                      part.pads.filter((pad) =>
-                        /^[A-Z]+\d+$/.test(pad.nativePin),
-                      ).length >= 64) &&
-                    Object.keys(part.pinLabels).length >= 64 &&
-                    member.startsWith(`.${part.name} > .`),
-                ),
-              )
-              if (!bgaMember)
-                throw new Error(
-                  `No BGA endpoint for byte bus ${net.nativeName}`,
+        <Fragment key={group}>
+          <bus
+            name={`DDR_BUS_${group}`}
+            connections={source.nets
+              .filter((net) => net.group === group)
+              .map((net) => {
+                if (!fanout) return net.members[0]
+                const bgaMember = net.members.find((member) =>
+                  source.parts.some(
+                    (part) =>
+                      (/bga/i.test(part.footprint) ||
+                        part.pads.filter((pad) =>
+                          /^[A-Z]+\d+$/.test(pad.nativePin),
+                        ).length >= 64) &&
+                      Object.keys(part.pinLabels).length >= 64 &&
+                      member.startsWith(`.${part.name} > .`),
+                  ),
                 )
-              const match = /^\.(\S+) > \.(\S+)$/.exec(bgaMember)!
-              return `ESC_${match[1]}_${match[2]}`
-            })}
-          routingPhaseIndex={phases.indexOf(group)}
-          pcbAllowedLayers={source.signalLayers as BusProps["pcbAllowedLayers"]}
-        />
+                if (!bgaMember)
+                  throw new Error(
+                    `No BGA endpoint for byte bus ${net.nativeName}`,
+                  )
+                const match = /^\.(\S+) > \.(\S+)$/.exec(bgaMember)!
+                return `ESC_${match[1]}_${match[2]}`
+              })}
+            routingPhaseIndex={phases.indexOf(group)}
+            pcbAllowedLayers={
+              source.signalLayers as BusProps["pcbAllowedLayers"]
+            }
+          />
+        </Fragment>
       ))}
     </board>
   )

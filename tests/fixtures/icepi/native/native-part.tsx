@@ -175,11 +175,9 @@ export function NativePart({ part }: { part: NativePartData }): ReactElement {
             return <Fragment key={index}>{primitive}</Fragment>
           })}
           {part.silkscreen.map((points, index) => (
-            <silkscreenpath
-              key={`silk${index}`}
-              route={points}
-              strokeWidth={0.12}
-            />
+            <Fragment key={`silk${index}`}>
+              <silkscreenpath route={points} strokeWidth={0.12} />
+            </Fragment>
           ))}
         </footprint>
       }
