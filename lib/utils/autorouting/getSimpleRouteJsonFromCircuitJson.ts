@@ -721,6 +721,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     })
     .filter((c): c is SimpleRouteConnection => c !== null)
 
+  const directTraceSourceTraceIds = new Set(
+    directTraceConnections
+      .map((connection) => connection.source_trace_id)
+      .filter((id): id is string => Boolean(id)),
+  )
   const explicitPathConnections = directTraceConnections.filter(
     (connection) =>
       connection.source_trace_id !== undefined &&
@@ -840,6 +845,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     }
     for (const sourceTrace of connectedSourceTraces) {
+      if (directTraceSourceTraceIds.has(sourceTrace.source_trace_id)) continue
       if (sourceTrace.min_trace_thickness === undefined) continue
       nominalTraceWidthForConnection = Math.max(
         nominalTraceWidthForConnection ?? 0,
@@ -854,8 +860,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
       connection.netConnectionName = net.source_net_id
-      connection.nominalTraceWidth = nominalTraceWidthForConnection
-      connection.width = nominalTraceWidthForConnection
+      connection.nominalTraceWidth ??= nominalTraceWidthForConnection
+      connection.width ??= nominalTraceWidthForConnection
     }
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
