@@ -9,7 +9,7 @@ import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-compone
 const conflictingPcbTraceId =
   "source_trace_3__source_trace_4__source_trace_5__source_trace_6__source_trace_7__source_trace_8__source_trace_9__source_trace_10__source_trace_11_mst7_0"
 
-test("the full NEMA8 board accepts a routed trace with endpoints on VM and GND", async () => {
+test("the full NEMA8 board rejects a routed trace with endpoints on VM and GND", async () => {
   const circuitJson = JSON.parse(
     gunzipSync(
       readFileSync(
@@ -41,13 +41,13 @@ test("the full NEMA8 board accepts a routed trace with endpoints on VM and GND",
     "CONTROLLER_PCB_connectivity_net2",
     "CONTROLLER_PCB_connectivity_net33",
   ])
-  expect(
+  expect(() =>
     getSourceTraceIdForRoutedTrace({
       db,
       trace: autoroutedPcbTrace,
       subcircuit_id: autoroutedPcbTrace.subcircuit_id,
     }),
-  ).toBe("source_trace_8")
+  ).toThrow("Autorouted trace declares endpoints on different nets")
 
   const note: PcbNoteText = {
     type: "pcb_note_text",

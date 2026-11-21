@@ -232,7 +232,7 @@ function getSourceIdsFromConnectedPcbTraces(
   return [...sourceIds]
 }
 
-function getSourcePortIdsFromRoutedTrace(
+function getDeclaredSourcePortIdsFromRoutedTrace(
   db: CircuitJsonUtilObjects,
   trace: RoutedTrace,
 ) {
@@ -246,7 +246,19 @@ function getSourcePortIdsFromRoutedTrace(
     }
   }
 
-  if (sourcePortIds.size > 0) return [...sourcePortIds]
+  return [...sourcePortIds]
+}
+
+function getSourcePortIdsFromRoutedTrace(
+  db: CircuitJsonUtilObjects,
+  trace: RoutedTrace,
+) {
+  const declaredSourcePortIds = getDeclaredSourcePortIdsFromRoutedTrace(
+    db,
+    trace,
+  )
+
+  if (declaredSourcePortIds.length > 0) return declaredSourcePortIds
 
   return getEndpointSourcePortIdsFromGeometry(db, trace)
 }
@@ -278,11 +290,33 @@ export function getSourceTraceIdForRoutedTrace({
     return trace.source_trace_id
   }
 
+  const sourceTraces = db.source_trace.list()
+  const connMap = buildSourceConnectivityMap(sourceTraces)
+  const declaredSourcePortIds = getDeclaredSourcePortIdsFromRoutedTrace(
+    db,
+    trace,
+  )
+  const declaredEndpointNetIds = new Set(
+    declaredSourcePortIds.flatMap((sourcePortId) => {
+      const netId = connMap.getNetConnectedToId(sourcePortId)
+      return netId ? [netId] : []
+    }),
+  )
+  if (declaredEndpointNetIds.size > 1) {
+    throw new Error(
+      `Autorouted trace declares endpoints on different nets: ${declaredSourcePortIds
+        .map(
+          (sourcePortId) =>
+            `${sourcePortId} (${connMap.getNetConnectedToId(sourcePortId)})`,
+        )
+        .join(", ")}`,
+    )
+  }
+  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
+
   const routedSourceNet = trace.source_trace_id
     ? db.source_net.get(trace.source_trace_id)
     : undefined
-  const sourceTraces = db.source_trace.list()
-  const connMap = buildSourceConnectivityMap(sourceTraces)
   const routedSourceNetConnectivityId = routedSourceNet
     ? connMap.getNetConnectedToId(routedSourceNet.source_net_id)
     : undefined
@@ -295,7 +329,6 @@ export function getSourceTraceIdForRoutedTrace({
     : []
   const soleRoutedNetSourceTrace =
     routedNetSourceTraces.length === 1 ? routedNetSourceTraces[0] : undefined
-  const sourcePortIds = getSourcePortIdsFromRoutedTrace(db, trace)
   if (sourcePortIds.length === 0) {
     return (
       soleRoutedNetSourceTrace?.source_trace_id ??
