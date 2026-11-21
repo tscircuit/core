@@ -69,7 +69,7 @@
     "@tscircuit/solver-utils": "^0.0.16",
     "@tscircuit/soup-util": "^0.0.41",
     "@tscircuit/via-stitch-solver": "github:tscircuit/via-stitch-solver#64f2ac7781b795bdc0d74ba411988e60767fa653",
-    "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#202dbe9eb0088633b6fa094120dba6f2f41f8803",
+    "@tscircuit/winding-breakout-point-solver": "github:tscircuit/winding-breakout-point-solver#08d8da9d8dbb037eba332e7bfd685063f8805ed4",
     "@types/bun": "^1.2.16",
     "@types/debug": "^4.1.12",
     "@types/react": "^19.1.8",
