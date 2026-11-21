@@ -7,7 +7,37 @@ permissions:
   contents: read
   actions: read
 jobs:
+  build-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 822879905b66fa0121566ceef84c223353f7bd76
+          path: ar-previous
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: dc86db60ed1e5622fc95bc486431e70259b342ec
+          path: ar-latest
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Build both exact integration commits
+        run: |
+          (cd ar-previous && bun install --backend=copyfile && bun run build)
+          (cd ar-latest && bun install --backend=copyfile && bun run build)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b01-integration-builds
+          path: |
+            ar-previous/dist
+            ar-latest/dist
+          retention-days: 7
   benchmark:
+    needs: build-integration
     name: Native ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 60
@@ -70,14 +100,12 @@ jobs:
           node prepare-published.private.mjs
           (cd previous && bun install --ignore-scripts --backend=copyfile)
           (cd latest && bun install --ignore-scripts --backend=copyfile)
-      - name: Build the actual autorouter base and PR commits
+      - uses: actions/download-artifact@v4
+        with:
+          name: b01-integration-builds
+          path: compiled
+      - name: Install the actual isolated autorouter builds
         run: |
-          mkdir -p ar-previous ar-latest
-          curl --fail --location --retry 3 https://codeload.github.com/tscircuit/tscircuit-autorouter/tar.gz/822879905b66fa0121566ceef84c223353f7bd76 | tar -xz --strip-components=1 -C ar-previous
-          curl --fail --location --retry 3 https://codeload.github.com/tscircuit/tscircuit-autorouter/tar.gz/dc86db60ed1e5622fc95bc486431e70259b342ec | tar -xz --strip-components=1 -C ar-latest
-          (cd ar-previous && bun install --backend=copyfile && bun run build)
-          cp ar-previous/bun.lock ar-latest/bun.lock
-          (cd ar-latest && bun install --backend=copyfile && bun run build)
           cat > install-actual-ar.private.ts <<'TS'
           import {readFileSync,writeFileSync,realpathSync,rmSync,cpSync,statSync} from "node:fs"
           import path from "node:path"
@@ -90,7 +118,7 @@ jobs:
             if(!entry.startsWith(path.resolve(release) + path.sep) || path.basename(entry) !== "index.js") throw Error("Unexpected autorouter entry location: " + entry)
             const destination = path.dirname(entry)
             rmSync(destination, {recursive:true, force:true})
-            cpSync(path.resolve("ar-" + release, "dist"), destination, {recursive:true})
+            cpSync(path.resolve("compiled", "ar-" + release, "dist"), destination, {recursive:true})
             console.log(release + " executes actual autorouter source: " + JSON.stringify({entry,sha256:createHash("sha256").update(readFileSync(entry)).digest("hex")}))
           }
           const hashes = entries.map(entry => createHash("sha256").update(readFileSync(entry)).digest("hex"))
