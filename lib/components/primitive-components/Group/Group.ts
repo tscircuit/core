@@ -71,6 +71,7 @@ import {
   POWER_NET_REGEX,
 } from "lib/utils/gnd-power-net-regex"
 import { getRoutePointPosition } from "lib/utils/pcb-trace-route-point-utils"
+import { findPcbGroupMemberWithUnsupportedPlacement } from "lib/utils/pcb/pcb-group-member-reflection"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
@@ -529,10 +530,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     })
   }
 
+  protected override _getPcbComponentLayer(): LayerRef {
+    if (findPcbGroupMemberWithUnsupportedPlacement(this)) {
+      return this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top"
+    }
+    return super._getPcbComponentLayer()
+  }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
+    const unsupportedMember = findPcbGroupMemberWithUnsupportedPlacement(this)
+    if (unsupportedMember) {
+      db.source_property_ignored_warning.insert({
+        source_component_id:
+          unsupportedMember.source_component_id ?? this.source_group_id ?? "",
+        property_name: "layer",
+        message: `Group ${this.name ?? "(unnamed group)"} keeps its authored side because ${unsupportedMember.name ?? `an unnamed ${unsupportedMember.lowercaseComponentName}`} uses non-numeric PCB placement. Bottom-side groups require numeric member coordinates.`,
+        error_type: "source_property_ignored_warning",
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      })
+    }
 
     const groupProps = props as SubcircuitGroupProps
     const hasOutline = groupProps.outline && groupProps.outline.length > 0

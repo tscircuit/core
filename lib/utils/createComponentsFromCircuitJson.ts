@@ -57,10 +57,9 @@ type SchematicPrimitiveWithStrokeWidth = Extract<
 >
 
 const calculateCcwRotation = (
-  componentRotationStr: string | undefined | null,
+  componentAngle: number,
   elementCcwRotation: number | undefined | null,
 ): number => {
-  const componentAngle = parseInt(componentRotationStr || "0", 10)
   let totalRotation: number
   if (elementCcwRotation !== undefined && elementCcwRotation !== null) {
     totalRotation = elementCcwRotation - componentAngle
@@ -682,24 +681,21 @@ export const createComponentsFromCircuitJson = (
         )
       }
     } else if (elm.type === "pcb_silkscreen_text") {
-      const ccwRotation = calculateCcwRotation(
-        componentRotation,
-        elm.ccw_rotation,
-      )
+      const componentAngle = parseInt(componentRotation || "0", 10)
+      const ccwRotation = calculateCcwRotation(componentAngle, elm.ccw_rotation)
+      let silkscreenText: SilkscreenText
       if (
         (footprinterString?.includes("pinrow") ||
           footprinterString?.includes("headermodule")) &&
         elm.text.includes("PIN")
       ) {
-        components.push(
-          createPinrowSilkscreenText({
-            elm,
-            pinLabels: pcbPinLabels ?? pinLabels ?? {},
-            layer: elm.layer,
-            readableRotation: ccwRotation,
-            anchorAlignment: elm.anchor_alignment,
-          }),
-        )
+        silkscreenText = createPinrowSilkscreenText({
+          elm,
+          pinLabels: pcbPinLabels ?? pinLabels ?? {},
+          layer: elm.layer,
+          readableRotation: ccwRotation,
+          anchorAlignment: elm.anchor_alignment,
+        })
       } else {
         // Footprinter-generated reference text is a placeholder that should
         // resolve to the component name. A literal from the explicit
@@ -719,7 +715,7 @@ export const createComponentsFromCircuitJson = (
         if (Number.isNaN(pcbX)) {
           pcbX = 0
         }
-        const silkscreenText = new SilkscreenText({
+        silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
           text,
           pcbX,
@@ -727,8 +723,15 @@ export const createComponentsFromCircuitJson = (
           pcbRotation: ccwRotation ?? 0,
         })
         silkscreenText._footprinterFontSize = elm.font_size + 0.2
-        components.push(silkscreenText)
       }
+      // String footprints can be inflated before the member has a parent.
+      if (sourcePortOwner?.componentName !== "PinHeader") {
+        silkscreenText._pcbRotationWhenGroupFlipped = calculateCcwRotation(
+          -componentAngle,
+          elm.ccw_rotation,
+        )
+      }
+      components.push(silkscreenText)
     } else if (elm.type === "pcb_trace") {
       const pcbTrace = new PcbTrace({ route: elm.route })
       for (const [routeIndex, point] of elm.route.entries()) {

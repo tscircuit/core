@@ -9,6 +9,7 @@ import {
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
+import { shouldFlipPcbGroupMember } from "lib/utils/pcb/pcb-group-member-reflection"
 
 export class Jumper<PinLabels extends string = never> extends NormalComponent<
   typeof jumperProps,
@@ -63,22 +64,31 @@ export class Jumper<PinLabels extends string = never> extends NormalComponent<
     this.source_component_id = source_component.source_component_id!
   }
 
+  protected override _getPcbComponentLayer() {
+    return super._getPcbComponentLayer(
+      shouldFlipPcbGroupMember(this) ? "top" : undefined,
+    )
+  }
+
   doInitialPcbComponentRender() {
     if (this.root?.pcbDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this
     const { pcbX, pcbY } = this.getResolvedPcbPositionProp()
     const globalTransformRotation = this.getGlobalTransformRotation()
+    const layer = shouldFlipPcbGroupMember(this)
+      ? this._getPcbComponentLayer()
+      : (props.layer ?? "top")
 
     const pcb_component = db.pcb_component.insert({
       footprint_origin: this._getGlobalPcbPositionBeforeLayout(),
       center: { x: pcbX, y: pcbY },
       width: 2, // Default width, adjust as needed
       height: 3, // Default height, adjust as needed
-      layer: props.layer ?? "top",
+      layer,
       rotation: normalizeDegrees(globalTransformRotation),
       insertion_direction: this._getPcbComponentInsertionDirection(
-        props.layer ?? "top",
+        layer,
         globalTransformRotation,
       ),
       source_component_id: this.source_component_id!,
