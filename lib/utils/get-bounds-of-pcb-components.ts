@@ -1,4 +1,6 @@
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
+import { applyToPoint, decomposeTSR } from "transformation-matrix"
 
 const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "Silkscreen",
@@ -6,6 +8,45 @@ const NON_PHYSICAL_PCB_PRIMITIVE_PREFIXES = [
   "Courtyard",
   "FabricationNote",
 ]
+
+function getPcbPrimitiveBoundsBeforeLayout(child: PrimitiveComponent) {
+  const props = child._parsedProps
+  if (
+    child.componentName === "SmtPad" &&
+    (props?.shape === "rotated_rect" || props?.shape === "rotated_pill")
+  ) {
+    const globalTransform = child._computePcbGlobalTransformBeforeLayout()
+    const position = applyToPoint(globalTransform, { x: 0, y: 0 })
+    const decomposedTransform = decomposeTSR(globalTransform)
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+    const rotationTolerance = 0.01
+    const transformRotationBeforeFlip =
+      Math.abs(normalizedRotationDegrees - 360) < rotationTolerance
+        ? 0
+        : normalizedRotationDegrees
+    const { isFlipped } = child._getPcbPrimitiveFlippedHelpers()
+    const baseRotation = props.ccwRotation ?? 0
+    const combinedRotationBeforeFlip =
+      (transformRotationBeforeFlip + baseRotation + 360) % 360
+    const padRotation = isFlipped
+      ? (360 - combinedRotationBeforeFlip + 360) % 360
+      : combinedRotationBeforeFlip
+    const { xExtent, yExtent } = getAxisAlignedSizeFromRotatedRect({
+      width: props.width,
+      height: props.height,
+      ccwRotationDegrees: padRotation,
+    })
+    return {
+      left: position.x - xExtent,
+      right: position.x + xExtent,
+      top: position.y + yExtent,
+      bottom: position.y - yExtent,
+    }
+  }
+
+  return child._getPcbBoundsBeforeLayout()
+}
 
 export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
   let minX = Infinity
@@ -21,7 +62,7 @@ export function getBoundsOfPcbComponents(components: PrimitiveComponent[]) {
         child.componentName.startsWith(prefix),
       )
     ) {
-      const bounds = child._getPcbBoundsBeforeLayout()
+      const bounds = getPcbPrimitiveBoundsBeforeLayout(child)
       minX = Math.min(minX, bounds.left)
       minY = Math.min(minY, bounds.bottom)
       maxX = Math.max(maxX, bounds.right)
