@@ -147,14 +147,15 @@ export const Group_doInitialPcbLayoutFlex = (group: Group) => {
   const groupCenter = group._getGlobalPcbPositionBeforeLayout()
   const offset = {
     x: groupCenter.x - (bounds.maxX + bounds.minX) / 2,
-    y: groupCenter.y - (bounds.maxY + bounds.minY) / 2,
+    y: groupCenter.y + (bounds.maxY + bounds.minY) / 2,
   }
 
   for (const child of flexBox.children) {
     const childMetadata = child.metadata as PcbChild
     childMetadata._repositionOnPcb({
       x: child.position.x + child.size.width / 2 + offset.x,
-      y: child.position.y + child.size.height / 2 + offset.y,
+      // miniflex lays out y-down like CSS, the PCB is y-up
+      y: offset.y - (child.position.y + child.size.height / 2),
     })
   }
 

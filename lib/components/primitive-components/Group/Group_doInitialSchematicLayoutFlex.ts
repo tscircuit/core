@@ -275,12 +275,14 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
 
   const offset = {
     x: -(bounds.maxX + bounds.minX) / 2,
-    y: -(bounds.maxY + bounds.minY) / 2,
+    y: (bounds.maxY + bounds.minY) / 2,
   }
 
   const allCircuitJson = db.toArray()
 
   for (const child of flexBox.children) {
+    // miniflex lays out y-down like CSS, the schematic is y-up
+    const childCenterY = offset.y - (child.position.y + child.size.height / 2)
     const { sourceComponent, sourceGroup } = child.metadata as Pick<
       TreeNode,
       "sourceComponent" | "sourceGroup"
@@ -295,7 +297,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
         schComponent.schematic_component_id,
         {
           x: child.position.x + child.size.width / 2 + offset.x,
-          y: child.position.y + child.size.height / 2 + offset.y,
+          y: childCenterY,
         },
       )
     }
@@ -315,10 +317,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
             child.size.width / 2 +
             offset.x -
             textOnlyLayout.center.x,
-          child.position.y +
-            child.size.height / 2 +
-            offset.y -
-            textOnlyLayout.center.y,
+          childCenterY - textOnlyLayout.center.y,
         )
         for (const text of textOnlyLayout.texts) {
           db.schematic_text.update(text.schematic_text_id, {
@@ -337,7 +336,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
       }
       repositionSchematicGroupTo(allCircuitJson, sourceGroup.source_group_id, {
         x: child.position.x + child.size.width / 2 + offset.x,
-        y: child.position.y + child.size.height / 2 + offset.y,
+        y: childCenterY,
       })
     }
   }

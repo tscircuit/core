@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("pcbFlexDirection column order", async () => {
+test("pcbFlexDirection column puts the first child on top", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="16mm" height="16mm" routingDisabled>
