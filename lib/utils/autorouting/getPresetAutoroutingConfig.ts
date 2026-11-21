@@ -72,8 +72,11 @@ export function getPresetAutoroutingConfig(
   const providedConfig =
     typeof autorouterConfig === "object" ? autorouterConfig : {}
 
-  const normalizedPreset =
+  const hyphenatedPreset =
     typeof preset === "string" ? preset.replace(/_/g, "-") : preset
+
+  const normalizedPreset =
+    hyphenatedPreset === "tscircuit-beta" ? "tscircuit" : hyphenatedPreset
 
   const platformAutorouter =
     normalizedPreset && typeof normalizedPreset === "string"
@@ -90,6 +93,7 @@ export function getPresetAutoroutingConfig(
   }
 
   switch (normalizedPreset) {
+    case "tscircuit":
     case "default":
     case "auto":
     case "auto-local":
