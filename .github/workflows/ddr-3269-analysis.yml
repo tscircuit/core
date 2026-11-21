@@ -1,4 +1,4 @@
-name: Published DDR through-via query intervention
+name: A64 through-via query timing controls
 on:
   push:
     branches: [analysis/ddr-3269-next-fix-20261121]
@@ -8,7 +8,7 @@ permissions:
   actions: read
 jobs:
   benchmark:
-    name: Native ${{ matrix.circuit }}
+    name: A64 ${{ matrix.replica }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 60
     strategy:
@@ -16,16 +16,8 @@ jobs:
       max-parallel: 5
       matrix:
         include:
-          - {circuit: h3, order: "previous latest"}
-          - {circuit: a64, order: "previous latest"}
-          - {circuit: stmp157, order: "previous latest"}
-          - {circuit: orangecrab, order: "previous latest"}
-          - {circuit: a13, order: "previous latest"}
-          - {circuit: h616, order: "previous latest"}
-          - {circuit: butterstick, order: "previous latest"}
-          - {circuit: glider, order: "previous latest"}
-          - {circuit: imx6, order: "previous latest"}
-          - {circuit: icepi, order: "previous latest"}
+          - {circuit: a64, order: "previous latest", replica: forward}
+          - {circuit: a64, order: "latest previous", replica: reverse}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -156,7 +148,8 @@ jobs:
           const originalStep = base.step
           let applied = false
           let inspected = false
-          base.step = function (...args) {
+          let firstViaSearchAtMs = null
+          const inspectSingleStep = function (...args) {
             if (this.getSolverName() === "SingleHighDensityRouteSolver") {
               let prototype = Object.getPrototypeOf(this)
               while (prototype && !Object.hasOwn(prototype, "getNeighbors")) {
@@ -166,6 +159,7 @@ jobs:
                 throw new Error("Published search does not match the inspected API")
               }
               inspected = true
+              firstViaSearchAtMs = performance.now()
               if (process.env.DDR_CANDIDATE_LABEL === "head") {
                 prototype.getNeighbors = getNeighbors
                 applied = true
@@ -174,9 +168,18 @@ jobs:
             }
             return originalStep.apply(this, args)
           }
+          const highDensityPrototype = ar.Pipeline9HighDensitySolver.prototype
+          const originalHighDensityStep = highDensityPrototype._step
+          highDensityPrototype._step = function (...args) {
+            base.step = inspectSingleStep
+            highDensityPrototype._step = originalHighDensityStep
+            return originalHighDensityStep.apply(this, args)
+          }
           process.on("exit", () => { const record = {
             label: process.env.DDR_CANDIDATE_LABEL,
             inspected,
+            firstViaSearchAtMs,
+            afterFirstViaSearchMs: firstViaSearchAtMs === null ? null : performance.now() - firstViaSearchAtMs,
             applied,
             methodSha256: createHash("sha256").update(getNeighbors.toString()).digest("hex"),
           }; writeFileSync(root + "/routing-interception.json", JSON.stringify(record)); console.log("DDR_INTERCEPTION=" + JSON.stringify(record))
@@ -260,6 +263,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-ddr-via-query-${{ matrix.circuit }}
+          name: native-ddr-via-query-${{ matrix.circuit }}-${{ matrix.replica }}
           path: metrics/*.json
           if-no-files-found: warn
