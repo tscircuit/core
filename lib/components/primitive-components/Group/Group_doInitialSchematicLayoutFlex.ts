@@ -273,16 +273,20 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
   bounds.width = bounds.maxX - bounds.minX
   bounds.height = bounds.maxY - bounds.minY
 
-  const offset = {
-    x: -(bounds.maxX + bounds.minX) / 2,
+  // bounds and child positions are in the miniflex frame (y-down like CSS),
+  // the schematic is y-up, so y is mirrored around the center
+  const flexCenter = {
+    x: (bounds.maxX + bounds.minX) / 2,
     y: (bounds.maxY + bounds.minY) / 2,
   }
 
   const allCircuitJson = db.toArray()
 
   for (const child of flexBox.children) {
-    // miniflex lays out y-down like CSS, the schematic is y-up
-    const childCenterY = offset.y - (child.position.y + child.size.height / 2)
+    const childCenter = {
+      x: child.position.x + child.size.width / 2 - flexCenter.x,
+      y: flexCenter.y - (child.position.y + child.size.height / 2),
+    }
     const { sourceComponent, sourceGroup } = child.metadata as Pick<
       TreeNode,
       "sourceComponent" | "sourceGroup"
@@ -295,10 +299,7 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
       repositionSchematicComponentTo(
         allCircuitJson,
         schComponent.schematic_component_id,
-        {
-          x: child.position.x + child.size.width / 2 + offset.x,
-          y: childCenterY,
-        },
+        childCenter,
       )
     }
     if (sourceGroup) {
@@ -313,11 +314,8 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
       if (textOnlyLayout) {
         // Unattached schematic text is not included by the generic group mover.
         const transform = translate(
-          child.position.x +
-            child.size.width / 2 +
-            offset.x -
-            textOnlyLayout.center.x,
-          childCenterY - textOnlyLayout.center.y,
+          childCenter.x - textOnlyLayout.center.x,
+          childCenter.y - textOnlyLayout.center.y,
         )
         for (const text of textOnlyLayout.texts) {
           db.schematic_text.update(text.schematic_text_id, {
@@ -334,10 +332,11 @@ export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
         }
         continue
       }
-      repositionSchematicGroupTo(allCircuitJson, sourceGroup.source_group_id, {
-        x: child.position.x + child.size.width / 2 + offset.x,
-        y: childCenterY,
-      })
+      repositionSchematicGroupTo(
+        allCircuitJson,
+        sourceGroup.source_group_id,
+        childCenter,
+      )
     }
   }
 
