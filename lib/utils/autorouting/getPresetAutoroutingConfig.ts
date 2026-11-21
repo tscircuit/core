@@ -64,13 +64,15 @@ export function getPresetAutoroutingConfig(
     }
   }
 
-  const preset =
+  const { preset, ...options } =
     typeof autorouterConfig === "object"
-      ? autorouterConfig.preset
-      : autorouterConfig
-
-  const providedConfig =
-    typeof autorouterConfig === "object" ? autorouterConfig : {}
+      ? autorouterConfig
+      : { preset: autorouterConfig }
+  const localConfig = {
+    ...options,
+    local: true,
+    groupMode: "subcircuit" as const,
+  }
 
   const normalizedPreset =
     typeof preset === "string" ? preset.replace(/_/g, "-") : preset
@@ -82,113 +84,33 @@ export function getPresetAutoroutingConfig(
 
   if (platformAutorouter) {
     return {
-      local: true,
-      groupMode: "subcircuit",
+      ...localConfig,
       algorithmFn: async (simpleRouteJson) =>
         platformAutorouter.createAutorouter(simpleRouteJson),
     }
   }
 
   switch (normalizedPreset) {
-    case "default":
-    case "auto":
-    case "auto-local":
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        allowViaInPad: providedConfig.allowViaInPad,
-      }
     case "sequential-trace":
-      return {
-        local: true,
-        groupMode: "sequential-trace",
-      }
-    case "subcircuit":
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
+      return { ...localConfig, groupMode: "sequential-trace" }
     case "beta-pipeline9":
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        autorouterVersion: "beta_pipeline9",
-      }
+      return { ...localConfig, autorouterVersion: "beta_pipeline9" }
     case "single-layer-fanout":
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        preset: "single_layer_fanout",
-      }
+      return { ...localConfig, preset: "single_layer_fanout" }
     case "single-layer-routing":
     case "bus-lanes":
-      return {
-        ...providedConfig,
-        local: true,
-        groupMode: "subcircuit",
-        preset: "bus_lanes",
-      }
+      return { ...localConfig, preset: "bus_lanes" }
     case "dogbone":
-      return { local: true, groupMode: "subcircuit", preset: "dogbone" }
     case "fanout":
-      return {
-        ...providedConfig,
-        local: true,
-        groupMode: "subcircuit",
-        preset: "fanout",
-      }
     case "simplify":
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        preset: "simplify",
-      }
-    case "auto-cloud": {
-      const {
-        preset: _preset,
-        local: _local,
-        groupMode: _groupMode,
-        ...rest
-      } = providedConfig
-      return {
-        local: false,
-        groupMode: "subcircuit",
-        ...defaults,
-        ...rest,
-      }
-    }
-    case "laser-prefab": {
-      const {
-        preset: _preset,
-        local: _local,
-        groupMode: _groupMode,
-        ...rest
-      } = providedConfig
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        preset: "laser_prefab",
-        ...rest,
-      }
-    }
-    case "auto-jumper": {
-      const {
-        preset: _preset,
-        local: _local,
-        groupMode: _groupMode,
-        ...rest
-      } = providedConfig
-      return {
-        local: true,
-        groupMode: "subcircuit",
-        preset: "auto_jumper",
-        ...rest,
-      }
-    }
+      return { ...localConfig, preset: normalizedPreset }
+    case "auto-cloud":
+      return { ...defaults, ...localConfig, local: false }
+    case "laser-prefab":
+      return { ...localConfig, preset: "laser_prefab" }
+    case "auto-jumper":
+      return { ...localConfig, preset: "auto_jumper" }
     default:
-      return {
-        local: true,
-        groupMode: "subcircuit",
-      }
+      return localConfig
   }
 }

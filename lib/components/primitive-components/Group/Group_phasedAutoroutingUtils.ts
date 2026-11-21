@@ -1,3 +1,5 @@
+import { distance } from "circuit-json"
+import type { AutorouterConfig } from "@tscircuit/props"
 import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
@@ -172,8 +174,22 @@ function applyMinTraceWidthToConnections(
 export function Group_applyDrcTolerancesToSimpleRouteJson(
   simpleRouteJson: SimpleRouteJson,
   drcTolerances: RoutingPhaseDrcTolerances | undefined,
+  traceClearance?: AutorouterConfig["traceClearance"],
 ): SimpleRouteJson {
-  if (!hasDrcTolerances(drcTolerances)) return simpleRouteJson
+  const minimum =
+    drcTolerances?.minTraceToPadEdgeClearance ??
+    simpleRouteJson.minTraceToPadEdgeClearance
+  const minTraceToPadEdgeClearance =
+    traceClearance === undefined
+      ? minimum
+      : Math.max(minimum ?? 0, distance.parse(traceClearance))
+
+  if (!hasDrcTolerances(drcTolerances)) {
+    return minTraceToPadEdgeClearance ===
+      simpleRouteJson.minTraceToPadEdgeClearance
+      ? simpleRouteJson
+      : { ...simpleRouteJson, minTraceToPadEdgeClearance }
+  }
 
   const minTraceWidth =
     drcTolerances.minTraceWidth ?? simpleRouteJson.minTraceWidth
@@ -184,9 +200,6 @@ export function Group_applyDrcTolerancesToSimpleRouteJson(
   const minTraceToHoleEdgeClearance =
     drcTolerances.minTraceToHoleEdgeClearance ??
     simpleRouteJson.minTraceToHoleEdgeClearance
-  const minTraceToPadEdgeClearance =
-    drcTolerances.minTraceToPadEdgeClearance ??
-    simpleRouteJson.minTraceToPadEdgeClearance
   const minViaEdgeToPadEdgeClearance =
     drcTolerances.minViaEdgeToPadEdgeClearance ??
     simpleRouteJson.minViaEdgeToPadEdgeClearance

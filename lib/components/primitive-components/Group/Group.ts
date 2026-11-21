@@ -1233,6 +1233,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       phaseSimpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         phaseSimpleRouteJson,
         routingPhasePlan.drcTolerances,
+        phaseAutorouterConfig.traceClearance,
       )
       const breakoutPoints = db.pcb_breakout_point
         .list()
@@ -1545,6 +1546,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
+        phaseAutorouterConfig.traceClearance,
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
