@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: ec1722c5087cc64720b8db3dead3106b20a8e1df
+          ref: a7606d555961c98f9df5c508054b7e07a9b6345f
           path: router-under-test
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -57,7 +57,7 @@ jobs:
           }
           for(const release of [
            {label:"latest",tscircuit:"0.0.3259",core:"0.0.2437",autorouter:"0.0.1139",sourceRevision:"published-0.0.3259"},
-           {label:"fixed",tscircuit:"0.0.3259",core:"0.0.2437",autorouter:"0.0.1139",sourceRevision:"ec1722c5087cc64720b8db3dead3106b20a8e1df"}
+           {label:"fixed",tscircuit:"0.0.3259",core:"0.0.2437",autorouter:"0.0.1139",sourceRevision:"a7606d555961c98f9df5c508054b7e07a9b6345f"}
           ]) {
            const published=await metadata("tscircuit",release.tscircuit)
            const core=await metadata("@tscircuit/core",release.core)
@@ -135,7 +135,7 @@ jobs:
             const errorText=errors.join(" ")
             const reason=/time.?out|iteration/i.test(errorText)?"search_limit":/path|region|graph/i.test(errorText)?"path_planning":/route|solv/i.test(errorText)?"routing_failure":errors.length?"render_error":row.status==="timeout"?"render_timeout":null
             const phaseInputs=readdirSync(dir).filter(name=>/^phase-[0-9]+-start[.]srj[.]json$/.test(name)).sort().map(file=>{const srj=JSON.parse(readFileSync(path.join(dir,file),"utf8"));return {file,connections:srj.connections.length,obstacles:srj.obstacles.length,tracePaths:srj.traces?.length??0,fixedTracePaths:srj.traces?.filter(trace=>trace.isFixed===true).length??0,traceVias:srj.traces?.flatMap(trace=>trace.route.filter(point=>point.route_type==="via")).length??0,circularObstacles:srj.obstacles.filter(obstacle=>obstacle.shape==="circle").length}})
-            const metric={autorouterSourceCommit:release==="fixed"?"ec1722c5087cc64720b8db3dead3106b20a8e1df":null,phaseInputs,release,sourceRevision:published.sourceRevision,executedAutorouterSha256,comparisonValidatorVersion:dependencies["@tscircuit/checks"],circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment.connectedNets,requested:assessment.requestedNets,vias:assessment.vias,findings:assessment.findings,geometryErrorCount:assessment.geometryErrors.length,zeroClearance,physicalFindings,validationVersion:dependencies["@tscircuit/checks"],dependencies,fixtureHash:report.fixtureHashes[row.circuit],phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:errors.length,reason,copperSha256:createHash("sha256").update(JSON.stringify(circuit.filter(p=>p.type==="pcb_trace"||p.type==="pcb_via"))).digest("hex")}
+            const metric={autorouterSourceCommit:release==="fixed"?"a7606d555961c98f9df5c508054b7e07a9b6345f":null,phaseInputs,release,sourceRevision:published.sourceRevision,executedAutorouterSha256,comparisonValidatorVersion:dependencies["@tscircuit/checks"],circuit:row.circuit,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,connected:assessment.connectedNets,requested:assessment.requestedNets,vias:assessment.vias,findings:assessment.findings,geometryErrorCount:assessment.geometryErrors.length,zeroClearance,physicalFindings,validationVersion:dependencies["@tscircuit/checks"],dependencies,fixtureHash:report.fixtureHashes[row.circuit],phases:row.progress?.phases.map(({phase,status,connections,durationMs})=>({phase,status,connections,durationMs})),lastSolver:row.progress?.solverEvents.at(-1)?.solverName,progressErrorCount:errors.length,reason,copperSha256:createHash("sha256").update(JSON.stringify(circuit.filter(p=>p.type==="pcb_trace"||p.type==="pcb_via"))).digest("hex")}
             writeFileSync("metrics/"+row.circuit+"-"+release+".json",JSON.stringify(metric,null,2))
             console.log("PUBLISHED_DDR_METRICS="+JSON.stringify(metric))
            }
