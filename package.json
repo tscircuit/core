@@ -123,7 +123,9 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690",
+    "circuit-to-canvas": "^0.0.123",
+    "@tscircuit/circuit-json-to-jlcpcb-quote": "https://jscdn.tscircuit.com/@tscircuit/circuit-json-to-jlcpcb-quote/0.0.4.tgz"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
