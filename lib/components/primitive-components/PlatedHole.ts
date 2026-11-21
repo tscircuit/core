@@ -11,7 +11,13 @@ import type {
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
 } from "circuit-json"
-import { decomposeTSR } from "transformation-matrix"
+import {
+  applyToPoint,
+  compose,
+  decomposeTSR,
+  flipY,
+  identity,
+} from "transformation-matrix"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
@@ -139,16 +145,63 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
 
     const { isFlipped } = this._getPcbPrimitiveFlippedHelpers()
+    const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     // _computePcbGlobalTransformBeforeLayout composes flipY() for flipped
     // footprints; account for that reflection before extracting the angle.
-    const decomposedTransform = decomposeTSR(
-      this._computePcbGlobalTransformBeforeLayout(),
-      false,
-      isFlipped,
-    )
+    const decomposedTransform = decomposeTSR(globalTransform, false, isFlipped)
     const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
     const normalizedRotationDegrees = ((rotationDegrees % 360) + 360) % 360
-    const finalRotationDegrees = normalizedRotationDegrees
+    const finalRotationDegrees =
+      Math.abs(normalizedRotationDegrees - 360) < 1e-6 ||
+      Math.abs(normalizedRotationDegrees) < 1e-6
+        ? 0
+        : normalizedRotationDegrees
+
+    const normalizeZero = (value: number) =>
+      Math.abs(value) < 1e-12 ? 0 : value
+    // Footprint-frame hole offsets follow parent component/group rotation and
+    // bottom-side reflection, while preserving offsets already expressed in the
+    // footprint frame when pcbRotation is set directly on <platedhole />.
+    const parentFootprintTransform = compose(
+      this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
+      isFlipped ? flipY() : identity(),
+    )
+    const parentFootprintOrigin = applyToPoint(parentFootprintTransform, {
+      x: 0,
+      y: 0,
+    })
+    const getTransformedHoleOffsets = (
+      rawOffsetX: number | string | undefined,
+      rawOffsetY: number | string | undefined,
+    ) => {
+      if (rawOffsetX === undefined && rawOffsetY === undefined) {
+        return { holeOffsetX: undefined, holeOffsetY: undefined }
+      }
+      const localOffsetX =
+        typeof rawOffsetX === "number"
+          ? rawOffsetX
+          : rawOffsetX !== undefined
+            ? distance.parse(rawOffsetX)
+            : 0
+      const localOffsetY =
+        typeof rawOffsetY === "number"
+          ? rawOffsetY
+          : rawOffsetY !== undefined
+            ? distance.parse(rawOffsetY)
+            : 0
+      const transformedHoleCenter = applyToPoint(parentFootprintTransform, {
+        x: localOffsetX,
+        y: localOffsetY,
+      })
+      return {
+        holeOffsetX: normalizeZero(
+          transformedHoleCenter.x - parentFootprintOrigin.x,
+        ),
+        holeOffsetY: normalizeZero(
+          transformedHoleCenter.y - parentFootprintOrigin.y,
+        ),
+      }
+    }
 
     if (props.shape === "circle") {
       const pcb_plated_hole = db.pcb_plated_hole.insert({
@@ -196,6 +249,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         })
       }
     } else if (props.shape === "pill" && props.rectPad) {
+      const { holeOffsetX, holeOffsetY } = getTransformedHoleOffsets(
+        props.holeOffsetX,
+        props.holeOffsetY,
+      )
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -219,8 +276,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         rect_ccw_rotation: finalRotationDegrees,
         rect_pad_width: props.outerWidth,
         rect_pad_height: props.outerHeight,
-        hole_offset_x: props.holeOffsetX,
-        hole_offset_y: props.holeOffsetY,
+        hole_offset_x: holeOffsetX,
+        hole_offset_y: holeOffsetY,
       } as Omit<PcbHoleRotatedPillWithRectPad, "pcb_plated_hole_id">)
 
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
@@ -300,6 +357,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         })
       }
     } else if (props.shape === "circular_hole_with_rect_pad") {
+      const { holeOffsetX, holeOffsetY } = getTransformedHoleOffsets(
+        props.holeOffsetX,
+        props.holeOffsetY,
+      )
       const pcb_plated_hole = db.pcb_plated_hole.insert({
         pcb_component_id,
         pcb_port_id: this.matchedPort?.pcb_port_id!,
@@ -315,13 +376,17 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
-        hole_offset_x: props.holeOffsetX,
-        hole_offset_y: props.holeOffsetY,
+        hole_offset_x: holeOffsetX,
+        hole_offset_y: holeOffsetY,
         rect_border_radius: props.rectBorderRadius ?? 0,
         rect_ccw_rotation: finalRotationDegrees,
       } as PcbHoleCircularWithRectPad)
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
     } else if (props.shape === "pill_hole_with_rect_pad") {
+      const { holeOffsetX, holeOffsetY } = getTransformedHoleOffsets(
+        props.holeOffsetX,
+        props.holeOffsetY,
+      )
       if (finalRotationDegrees !== 0) {
         const pcb_plated_hole = db.pcb_plated_hole.insert({
           pcb_component_id,
@@ -330,8 +395,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           hole_height: props.holeHeight,
           rect_pad_width: props.rectPadWidth,
           rect_pad_height: props.rectPadHeight,
-          hole_offset_x: props.holeOffsetX,
-          hole_offset_y: props.holeOffsetY,
+          hole_offset_x: holeOffsetX,
+          hole_offset_y: holeOffsetY,
           shape: "rotated_pill_hole_with_rect_pad" as const,
           type: "pcb_plated_hole",
           hole_shape: "rotated_pill",
@@ -357,8 +422,8 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           hole_height: props.holeHeight,
           rect_pad_width: props.rectPadWidth,
           rect_pad_height: props.rectPadHeight,
-          hole_offset_x: props.holeOffsetX,
-          hole_offset_y: props.holeOffsetY,
+          hole_offset_x: holeOffsetX,
+          hole_offset_y: holeOffsetY,
           shape: "pill_hole_with_rect_pad" as const,
           rect_border_radius: props.rectBorderRadius,
           port_hints: this.getNameAndAliases(),
@@ -373,8 +438,9 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
         this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
       }
     } else if (props.shape === "hole_with_polygon_pad") {
-      // Pad outline points are relative to the hole position (x, y)
-      const padOutline = (props.padOutline || []).map((point) => {
+      // Pad outline points are relative to the hole position (x, y) and rotated
+      // downstream by ccw_rotation; mirror across Y when the footprint flips.
+      const parsedPadOutline = (props.padOutline || []).map((point) => {
         let x = point.x
         if (typeof x !== "number") x = parseFloat(String(x))
         let y = point.y
@@ -384,10 +450,19 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
           y,
         }
       })
+      const padOutline = isFlipped
+        ? [...parsedPadOutline].reverse().map((point) => ({
+            x: normalizeZero(-point.x),
+            y: point.y,
+          }))
+        : parsedPadOutline
 
       let holeOffsetX = props.holeOffsetX
       if (typeof holeOffsetX !== "number") {
         holeOffsetX = parseFloat(String(holeOffsetX || 0))
+      }
+      if (isFlipped) {
+        holeOffsetX = normalizeZero(-holeOffsetX)
       }
       let holeOffsetY = props.holeOffsetY
       if (typeof holeOffsetY !== "number") {
