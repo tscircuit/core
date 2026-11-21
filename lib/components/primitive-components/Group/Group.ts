@@ -1,3 +1,4 @@
+import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -482,6 +483,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id!,
       })
     }
+  }
+
+  override doInitialSourceComponentPropertyValidation(): void {
+    super.doInitialSourceComponentPropertyValidation()
+    warnIfAutorouterTraceClearanceIsSet(this, this._parsedProps.autorouter)
   }
 
   doInitialSourceRender() {
