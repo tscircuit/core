@@ -3,13 +3,13 @@ import {
   type SchematicElementWithBounds,
   getSchematicElementBounds,
 } from "@tscircuit/circuit-json-util"
-import { SCHEMATIC_UNIT_TO_MM } from "./schematic-unit-to-mm"
+import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
 
 type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
-const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
+const SCHEMATIC_SHEET_INNER_MARGIN = 5 / MM_PER_SCHEMATIC_UNIT
 
 const BOUNDS_EPSILON = 1e-6
 
@@ -41,8 +41,8 @@ export const warnIfSchematicElementsOutsideSheet = ({
   sheetWidth: number
   sheetHeight: number
 }): void => {
-  const sheetWidthInSchematicUnits = sheetWidth / SCHEMATIC_UNIT_TO_MM
-  const sheetHeightInSchematicUnits = sheetHeight / SCHEMATIC_UNIT_TO_MM
+  const sheetWidthInSchematicUnits = sheetWidth / MM_PER_SCHEMATIC_UNIT
+  const sheetHeightInSchematicUnits = sheetHeight / MM_PER_SCHEMATIC_UNIT
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -

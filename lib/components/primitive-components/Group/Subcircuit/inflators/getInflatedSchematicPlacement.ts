@@ -1,5 +1,5 @@
 import type { SourceComponentBase } from "circuit-json"
-import { SCHEMATIC_UNIT_TO_MM } from "lib/utils/schematic/schematic-unit-to-mm"
+import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
 import type { InflatorContext } from "../InflatorFn"
 
 /** Restore the cached schematic center as a board-unit placement (right +X, up +Y). */
@@ -17,7 +17,7 @@ export const getInflatedSchematicPlacement = (
   })
   if (!schematic) return
   return {
-    schX: `${schematic.center.x * SCHEMATIC_UNIT_TO_MM}mm`,
-    schY: `${schematic.center.y * SCHEMATIC_UNIT_TO_MM}mm`,
+    schX: `${schematic.center.x * MM_PER_SCHEMATIC_UNIT}mm`,
+    schY: `${schematic.center.y * MM_PER_SCHEMATIC_UNIT}mm`,
   }
 }

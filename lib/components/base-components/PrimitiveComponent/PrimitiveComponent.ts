@@ -2,7 +2,7 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
-import { SCHEMATIC_UNIT_TO_MM } from "lib/utils/schematic/schematic-unit-to-mm"
+import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -835,7 +835,7 @@ export abstract class PrimitiveComponent<
           typeof raw === "number" ||
           (typeof raw === "string" && Number.isFinite(Number(raw)))
         const mm = unit === "in" && bare ? parsed * 25.4 : parsed
-        return mm / SCHEMATIC_UNIT_TO_MM
+        return mm / MM_PER_SCHEMATIC_UNIT
       }
       return {
         x: toSchematicUnits(x, this.props.schX),
