@@ -96,6 +96,7 @@ export function getPresetAutoroutingConfig(
       return {
         local: true,
         groupMode: "subcircuit",
+        allowViaInPad: providedConfig.allowViaInPad,
       }
     case "sequential-trace":
       return {
