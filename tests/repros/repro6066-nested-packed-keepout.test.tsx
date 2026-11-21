@@ -1,8 +1,10 @@
 import { beforeAll, expect, test } from "bun:test"
+import type { PcbComponent } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const { circuit } = getTestFixture()
-const clearance = { pcbY: 3, width: 4, height: 2 }
+const keepoutOffsetY = 3
+let r2: PcbComponent
 
 beforeAll(async () => {
   circuit.add(
@@ -12,15 +14,26 @@ beforeAll(async () => {
       </group>
       <group name="Packed">
         <group name="Inner" pcbX={0} pcbY={0}>
-          <resistor name="R2" resistance="1k" footprint="1206">
-            <pcbnoterect {...clearance} color="#36e4be" />
-          </resistor>
-          <keepout shape="rect" {...clearance} allowPlacements allowTraces />
+          <resistor
+            name="R2"
+            resistance="1k"
+            footprint="1206"
+            pcbX={0}
+            pcbY={0}
+          />
+          <keepout
+            shape="rect"
+            pcbY={keepoutOffsetY}
+            width={4}
+            height={2}
+            allowPlacements
+            allowTraces
+          />
         </group>
       </group>
       <trace from=".R1 > .pin2" to=".R2 > .pin1" />
       <pcbnotetext
-        text="GREEN SHOULD MATCH HATCHED KEEPOUT"
+        text="HATCHED KEEPOUT SHOULD BE 3 MM ABOVE R2"
         pcbY={7}
         fontSize={0.9}
       />
@@ -28,15 +41,22 @@ beforeAll(async () => {
   )
   await circuit.renderUntilSettled()
   expect(circuit.db.pcb_packing_error.list()).toHaveLength(0)
-  expect(circuit.db.pcb_note_rect.list()).toHaveLength(1)
   expect(circuit.db.pcb_keepout.list()).toHaveLength(1)
-  const [expectedClearance] = circuit.db.pcb_note_rect.list()
-  expect(expectedClearance.center).not.toEqual({ x: 0, y: clearance.pcbY })
+  const [keepout] = circuit.db.pcb_keepout.list()
+  const r2Source = circuit.db.source_component.getWhere({ name: "R2" })!
+  r2 = circuit.db.pcb_component.getWhere({
+    source_component_id: r2Source.source_component_id,
+  })!
+  expect(r2.pcb_group_id).toBeDefined()
+  expect(keepout.pcb_group_id).toBe(r2.pcb_group_id)
+  expect(r2.center).not.toEqual({ x: 0, y: 0 })
+  expect(r2.rotation).toBe(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
 
-test.failing("a nested group keepout follows its packed ancestor", () => {
-  const [expectedClearance] = circuit.db.pcb_note_rect.list()
+test.failing("packing preserves the keepout's offset from R2", () => {
   const [keepout] = circuit.db.pcb_keepout.list()
-  expect(keepout).toMatchObject({ center: expectedClearance.center })
+  expect(keepout).toMatchObject({
+    center: { x: r2.center.x, y: r2.center.y + keepoutOffsetY },
+  })
 })
