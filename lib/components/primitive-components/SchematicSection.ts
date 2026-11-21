@@ -5,7 +5,10 @@ import {
   computeBoundsFromCellContents,
 } from "calculate-cell-boundaries"
 import type { SchematicSheet } from "circuit-json"
-import { getSchematicTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import {
+  getSchematicComponentWithTextBounds,
+  getSchematicTextBounds,
+} from "lib/utils/schematic/getSchematicComponentWithTextBounds"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
@@ -22,12 +25,11 @@ export class SchematicSection extends PrimitiveComponent<
     }
   }
 
-  // Pass null to compute bounds for components with no schSectionName
-  _computeSectionBounds(
+  private _computeSectionDetails(
     schematicRoot: PrimitiveComponent,
     sectionName: string | null,
     schematicSheetId: SchematicSheetId | undefined,
-  ): Bounds | null {
+  ): { bounds: Bounds; memberBounds: Bounds[] } | null {
     const { db } = this.root!
 
     const members = schematicRoot
@@ -37,6 +39,7 @@ export class SchematicSection extends PrimitiveComponent<
     if (members.length === 0) return null
 
     const positions: Bounds[] = []
+    const memberBounds: Bounds[] = []
 
     for (const member of members) {
       const schematicComponentId = (member as any).schematic_component_id
@@ -47,17 +50,19 @@ export class SchematicSection extends PrimitiveComponent<
 
       const hw = schComp.size.width / 2
       const hh = schComp.size.height / 2
-      positions.push({
-        minX: schComp.center.x - hw,
-        maxX: schComp.center.x + hw,
-        minY: schComp.center.y - hh,
-        maxY: schComp.center.y + hh,
-      })
+      const memberPositions: Bounds[] = [
+        {
+          minX: schComp.center.x - hw,
+          maxX: schComp.center.x + hw,
+          minY: schComp.center.y - hh,
+          maxY: schComp.center.y + hh,
+        },
+      ]
       // Chip and schematic-box reference/value labels extend outside the body.
       for (const text of db.schematic_text.list({
         schematic_component_id: schematicComponentId,
       })) {
-        positions.push(
+        memberPositions.push(
           getSchematicTextBounds({
             text: text.text,
             position: text.position,
@@ -66,10 +71,27 @@ export class SchematicSection extends PrimitiveComponent<
           }),
         )
       }
+      positions.push(...memberPositions)
+      memberBounds.push(computeBoundsFromCellContents(memberPositions))
     }
 
     if (positions.length === 0) return null
-    return computeBoundsFromCellContents(positions)
+    return {
+      bounds: computeBoundsFromCellContents(positions),
+      memberBounds,
+    }
+  }
+
+  // Pass null to compute bounds for components with no schSectionName
+  _computeSectionBounds(
+    schematicRoot: PrimitiveComponent,
+    sectionName: string | null,
+    schematicSheetId: SchematicSheetId | undefined,
+  ): Bounds | null {
+    return (
+      this._computeSectionDetails(schematicRoot, sectionName, schematicSheetId)
+        ?.bounds ?? null
+    )
   }
 
   doInitialSchematicSectionRender(): void {
@@ -104,16 +126,18 @@ export class SchematicSection extends PrimitiveComponent<
 
     const namedSectionsWithBounds = allSections
       .map((section) => {
-        const bounds = section._computeSectionBounds(
+        const details = section._computeSectionDetails(
           schematicRoot,
           section._parsedProps.name,
           schematicSheetId,
         )
-        if (!bounds) return null
+        if (!details) return null
+        const { bounds, memberBounds } = details
         return {
           displayName: section._parsedProps.displayName,
           sectionTitleFontSize: section._parsedProps.sectionTitleFontSize,
           rawBounds: bounds,
+          memberBounds,
           cell: {
             minX: bounds.minX - PADDING,
             maxX: bounds.maxX + PADDING,
@@ -125,22 +149,23 @@ export class SchematicSection extends PrimitiveComponent<
       .filter((s): s is NonNullable<typeof s> => s !== null)
 
     // Include unsectioned components (no schSectionName) as a virtual section
-    const unsectionedBounds = this._computeSectionBounds(
+    const unsectionedDetails = this._computeSectionDetails(
       schematicRoot,
       null,
       schematicSheetId,
     )
     const allSectionsWithBounds = [...namedSectionsWithBounds]
-    if (unsectionedBounds)
+    if (unsectionedDetails)
       allSectionsWithBounds.push({
         displayName: undefined,
         sectionTitleFontSize: undefined,
-        rawBounds: unsectionedBounds,
+        rawBounds: unsectionedDetails.bounds,
+        memberBounds: unsectionedDetails.memberBounds,
         cell: {
-          minX: unsectionedBounds.minX - PADDING,
-          maxX: unsectionedBounds.maxX + PADDING,
-          minY: unsectionedBounds.minY - PADDING,
-          maxY: unsectionedBounds.maxY + PADDING,
+          minX: unsectionedDetails.bounds.minX - PADDING,
+          maxX: unsectionedDetails.bounds.maxX + PADDING,
+          minY: unsectionedDetails.bounds.minY - PADDING,
+          maxY: unsectionedDetails.bounds.maxY + PADDING,
         },
       })
 
@@ -174,9 +199,56 @@ export class SchematicSection extends PrimitiveComponent<
       (l) => Math.abs(l.start.x - l.end.x) < TOL,
     )
 
+    let cachedObstacleBounds: Bounds[] | undefined
+    const getObstacleBounds = (): Bounds[] => {
+      if (cachedObstacleBounds) return cachedObstacleBounds
+      const obstacles: Bounds[] = allSectionsWithBounds.flatMap(
+        (section) => section.memberBounds,
+      )
+      for (const schComp of db.schematic_component.list()) {
+        if (schComp.schematic_sheet_id !== schematicSheetId) continue
+        const withText = getSchematicComponentWithTextBounds({
+          db,
+          schematicComponent: schComp,
+        })
+        if (withText) {
+          obstacles.push(withText)
+        } else {
+          const hw = schComp.size.width / 2
+          const hh = schComp.size.height / 2
+          obstacles.push({
+            minX: schComp.center.x - hw,
+            maxX: schComp.center.x + hw,
+            minY: schComp.center.y - hh,
+            maxY: schComp.center.y + hh,
+          })
+        }
+      }
+      for (const text of db.schematic_text.list()) {
+        if (text.schematic_sheet_id !== schematicSheetId) continue
+        obstacles.push(
+          getSchematicTextBounds({
+            text: text.text,
+            position: text.position,
+            anchor: text.anchor,
+            fontSize: text.font_size,
+          }),
+        )
+      }
+      cachedObstacleBounds = obstacles
+      return obstacles
+    }
+
+    const placedTitleBounds: Bounds[] = []
+
     for (const sectionWithBounds of allSectionsWithBounds) {
-      const { displayName, sectionTitleFontSize, rawBounds, cell } =
-        sectionWithBounds
+      const {
+        displayName,
+        sectionTitleFontSize,
+        rawBounds,
+        memberBounds,
+        cell,
+      } = sectionWithBounds
       if (!displayName) continue
 
       const overlapsAnotherSection = allSectionsWithBounds.some(
@@ -203,19 +275,194 @@ export class SchematicSection extends PrimitiveComponent<
       }
 
       const fontSize = sectionTitleFontSize ?? 0.18
+      const defaultPosition = {
+        x: leftBoundary + LABEL_PADDING,
+        // A top-left anchor extends downwards by the title's font size.
+        y: Math.max(
+          topBoundary - LABEL_PADDING,
+          rawBounds.maxY + LABEL_PADDING + fontSize,
+        ),
+      }
+      const getTitleBoundsAt = (position: { x: number; y: number }) =>
+        getSchematicTextBounds({
+          text: displayName,
+          position,
+          anchor: "top_left",
+          fontSize,
+        })
+
+      let otherMemberBounds: Bounds[] | undefined
+      const getOtherMemberBounds = () => {
+        if (!otherMemberBounds) {
+          otherMemberBounds = allSectionsWithBounds
+            .filter((section) => section !== sectionWithBounds)
+            .flatMap((section) => section.memberBounds)
+        }
+        return otherMemberBounds
+      }
+
+      const collidesWithPlacedTitle = (bounds: Bounds) =>
+        placedTitleBounds.some((placed) => doBoundsOverlap(bounds, placed))
+
+      const isShadowedByOtherSection = (bounds: Bounds, anchorMinX: number) => {
+        const others = getOtherMemberBounds()
+        if (others.length === 0) {
+          return false
+        }
+        const bandMinX = Math.min(anchorMinX, bounds.minX)
+        const bandMaxX = Math.max(anchorMinX + PADDING, bounds.maxX)
+        const ownInBand = memberBounds.filter(
+          (m) => m.maxX > bandMinX + TOL && m.minX < bandMaxX - TOL,
+        )
+        const ownTopY =
+          ownInBand.length > 0
+            ? Math.max(...ownInBand.map((m) => m.maxY))
+            : Number.NEGATIVE_INFINITY
+        return others.some(
+          (other) =>
+            other.maxX > bandMinX + TOL &&
+            other.minX < bandMaxX - TOL &&
+            other.maxY > ownTopY + TOL &&
+            other.minY < bounds.minY + TOL,
+        )
+      }
+
+      let chosenPosition = defaultPosition
+      let chosenBounds = getTitleBoundsAt(defaultPosition)
+
+      if (
+        collidesWithPlacedTitle(chosenBounds) ||
+        (overlapsAnotherSection &&
+          isShadowedByOtherSection(chosenBounds, rawBounds.minX))
+      ) {
+        const obstacles = getObstacleBounds()
+        const collidesWithObstacle = (bounds: Bounds) =>
+          obstacles.some((obs) => doBoundsOverlap(bounds, obs))
+
+        const sortedMembers = [...memberBounds].sort((a, b) =>
+          Math.abs(b.maxY - a.maxY) > TOL ? b.maxY - a.maxY : a.minX - b.minX,
+        )
+
+        const candidateSpecs: Array<{
+          position: { x: number; y: number }
+          anchorMinX: number
+        }> = []
+
+        for (const member of sortedMembers) {
+          const memberDividersLeft = vDividers
+            .map((l) => l.start.x)
+            .filter((x) => x < member.minX)
+          const memberLeft =
+            memberDividersLeft.length > 0
+              ? Math.max(member.minX - PADDING, Math.max(...memberDividersLeft))
+              : member.minX - PADDING
+          candidateSpecs.push({
+            position: {
+              x: memberLeft + LABEL_PADDING,
+              y: defaultPosition.y,
+            },
+            anchorMinX: member.minX,
+          })
+        }
+
+        for (const member of sortedMembers) {
+          const memberDividersLeft = vDividers
+            .map((l) => l.start.x)
+            .filter((x) => x < member.minX)
+          const memberLeft =
+            memberDividersLeft.length > 0
+              ? Math.max(member.minX - PADDING, Math.max(...memberDividersLeft))
+              : member.minX - PADDING
+          candidateSpecs.push({
+            position: {
+              x: memberLeft + LABEL_PADDING,
+              y: member.maxY + LABEL_PADDING + fontSize,
+            },
+            anchorMinX: member.minX,
+          })
+        }
+
+        let resolved = false
+        for (const candidate of candidateSpecs) {
+          const candidateBounds = getTitleBoundsAt(candidate.position)
+          if (
+            !collidesWithPlacedTitle(candidateBounds) &&
+            !collidesWithObstacle(candidateBounds) &&
+            !isShadowedByOtherSection(candidateBounds, candidate.anchorMinX)
+          ) {
+            chosenPosition = candidate.position
+            chosenBounds = candidateBounds
+            resolved = true
+            break
+          }
+        }
+
+        if (!resolved) {
+          const fallbackStart =
+            candidateSpecs.find(
+              (c) =>
+                !isShadowedByOtherSection(
+                  getTitleBoundsAt(c.position),
+                  c.anchorMinX,
+                ),
+            )?.position ?? defaultPosition
+          let pos = { ...fallbackStart }
+          let bounds = getTitleBoundsAt(pos)
+
+          const overlappingPlaced = placedTitleBounds.filter((placed) =>
+            doBoundsOverlap(bounds, placed),
+          )
+          if (overlappingPlaced.length > 0) {
+            const shiftedRight = {
+              x:
+                Math.max(...overlappingPlaced.map((placed) => placed.maxX)) +
+                LABEL_PADDING,
+              y: pos.y,
+            }
+            const shiftedRightBounds = getTitleBoundsAt(shiftedRight)
+            if (
+              shiftedRightBounds.maxX <= cell.maxX + TOL &&
+              !collidesWithPlacedTitle(shiftedRightBounds) &&
+              !collidesWithObstacle(shiftedRightBounds)
+            ) {
+              pos = shiftedRight
+              bounds = shiftedRightBounds
+              resolved = true
+            }
+          }
+
+          if (!resolved) {
+            for (let step = 0; step < 16; step++) {
+              const blockers = [
+                ...placedTitleBounds.filter((placed) =>
+                  doBoundsOverlap(bounds, placed),
+                ),
+                ...obstacles.filter((obs) => doBoundsOverlap(bounds, obs)),
+              ]
+              if (blockers.length === 0) break
+              pos = {
+                x: pos.x,
+                y:
+                  Math.max(...blockers.map((b) => b.maxY)) +
+                  LABEL_PADDING +
+                  fontSize,
+              }
+              bounds = getTitleBoundsAt(pos)
+            }
+          }
+
+          chosenPosition = pos
+          chosenBounds = bounds
+        }
+      }
+
+      placedTitleBounds.push(chosenBounds)
       db.schematic_text.insert({
         anchor: "top_left",
         text: displayName,
         font_size: fontSize,
         color: "#000000",
-        position: {
-          x: leftBoundary + LABEL_PADDING,
-          // A top-left anchor extends downwards by the title's font size.
-          y: Math.max(
-            topBoundary - LABEL_PADDING,
-            rawBounds.maxY + LABEL_PADDING + fontSize,
-          ),
-        },
+        position: chosenPosition,
         rotation: 0,
         schematic_sheet_id: schematicSheetId,
       })
