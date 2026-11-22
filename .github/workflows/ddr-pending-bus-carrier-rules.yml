@@ -57,7 +57,7 @@ jobs:
           after="function innerCarrier(\n  input: SimpleRouteJson,\n  connection: Connection,\n): string | undefined {\n  const physicalLayers = getCopperLayerNames(input.layerCount)\n  return signalLayers(input, connection).find(\n    (layer) => /^inner\\d+$/.test(layer) && physicalLayers.includes(layer),\n  )\n}\n"
           assert s.count(before)==1
           s=s.replace(before,after)
-          assert s.count('innerCarrier(input)')==3
+          assert s.count('innerCarrier(input)')==4
           p.write_text(s.replace('innerCarrier(input)','innerCarrier(input, connection)'))
           PY
       - name: Instrument finite access misses without changing search decisions
