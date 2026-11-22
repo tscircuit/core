@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 937b80656f983f3fdbb310ed511f7c31c59daf66
+          ref: 6c294a4356bd609da734754455b03a57f095f5ef
           path: core-head
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -42,7 +42,7 @@ jobs:
             for(const section of["dependencies","devDependencies"])
               for(const name of Object.keys(packageJson[section]??{}))
                 if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
-            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":revision==="head"?"https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@f7454b1":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":revision==="head"?"https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@6f69522":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
             writeFileSync(filename,JSON.stringify(packageJson,null,2))
           }
           JS
@@ -91,14 +91,18 @@ jobs:
             inputs.push(input)
           }
           const [base,head]=inputs
+          let differences=0
           for(const trace of base.traces){
             const next=head.traces.find(t=>t.pcb_trace_id===trace.pcb_trace_id)
             if(!next)throw Error("Trace missing")
             if(stableStringify(trace)!==stableStringify(next)){
+              differences++
               const keys=new Set([...Object.keys(trace),...Object.keys(next)])
               const changed=[...keys].filter(key=>stableStringify(trace[key])!==stableStringify(next[key]))
               console.log("ACTUAL_IMX6_METADATA_DIFF="+JSON.stringify({pcb_trace_id:trace.pcb_trace_id,connection_name:trace.connection_name,changed,routeEqual:stableStringify(trace.route)===stableStringify(next.route),before:trace.connectsTo,after:next.connectsTo,beforeLayers:trace.allowedLayers,afterLayers:next.allowedLayers,declaredBuses:base.buses?.filter(bus=>bus.connectionNames.includes(trace.connection_name))}))
             }
           }
+          if(differences!==0)throw Error("Public bus metadata still differs")
+          console.log("ACTUAL_IMX6_HANDOFF_EQUIVALENT=true")
           TS
           bun diff.private.ts
