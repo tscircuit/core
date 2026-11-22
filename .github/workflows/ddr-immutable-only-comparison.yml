@@ -44,7 +44,7 @@ jobs:
           before="      immutableHdRoutes: this.activeFallbackFixedObstacleRoutes.filter(\n        (route) => route.isFixed === true || route.isThroughObstacle === true,\n      ),"
           assert s.count(before)==1
           s=s.replace(before,'      immutableHdRoutes,')
-          start=s.index('    if (hasImmutablePreload) {\\n      // Native-copper repairs can leave the mesh cell.')
+          start=s.index('    if (hasImmutablePreload) {')
           end=s.index('    this.activeFallbackSolver = new Pipeline9RegionalFallbackSolver({',start)
           p.write_text(s[:start]+s[end:])
           PY
