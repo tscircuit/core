@@ -7,6 +7,7 @@ import { NormalComponent } from "../base-components/NormalComponent/NormalCompon
 import { Port } from "../primitive-components/Port"
 import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { getSingleColumnSchematicBoxWidth } from "lib/utils/schematic/getSingleColumnSchematicBoxWidth"
 
 export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
   _getPcbRotationBeforeLayout(): number | null {
@@ -152,6 +153,31 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
         pins: schPinArrangement?.rightSide?.pins ?? pins,
       },
     }
+  }
+
+  /**
+   * A pin header's labels form a single column, so the box only needs to be as
+   * wide as its labels. The generic sizing would add room for a second,
+   * facing column and leave the box mostly empty.
+   */
+  _getDefaultSchematicBoxWidth({
+    pinLabels,
+  }: {
+    pinLabels: Record<string, string | readonly string[]>
+  }): number | undefined {
+    const facingDirection =
+      this._parsedProps.schFacingDirection ??
+      this._parsedProps.facingDirection ??
+      "right"
+    if (facingDirection !== "left" && facingDirection !== "right") {
+      return undefined
+    }
+
+    return getSingleColumnSchematicBoxWidth(
+      Object.values(pinLabels).map((pinLabel) =>
+        typeof pinLabel === "string" ? pinLabel : pinLabel[0],
+      ),
+    )
   }
 
   doInitialSourceRender() {
