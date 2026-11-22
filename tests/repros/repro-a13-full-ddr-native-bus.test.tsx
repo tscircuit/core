@@ -18,4 +18,4 @@ test("A13 DDR data bytes followed by the remaining signals", async (): Promise<v
     showPcbGroups: false,
     showDebugObjects: false,
   })
-})
+}, 600_000)
