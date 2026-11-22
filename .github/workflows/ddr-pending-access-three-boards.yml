@@ -94,6 +94,7 @@ jobs:
         working-directory: core
         env:
           MODE: ${{ matrix.mode }}
+          CIRCUIT: ${{ matrix.circuit }}
         run: |
           test -f "../results/$CIRCUIT/circuit.json"
           bun node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$PWD" "$CIRCUIT" "$GITHUB_WORKSPACE/results/$CIRCUIT"
