@@ -60,8 +60,8 @@ jobs:
             this.uncertifiedSearches++
             console.warn("PENDING_DIAG_BASELINE="+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId}))
           }''')
-          before='          blocked.add(terminal.obligation)\\n          if (stopAfterFirst) return [terminal.obligation]'
-          after='          console.warn("PENDING_DIAG_BLOCKED="+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId,baseline:!!terminal.baseline,candidateTraceCount:newTraces.length}))\\n'+before
+          before="          blocked.add(terminal.obligation)\n          if (stopAfterFirst) return [terminal.obligation]"
+          after="          console.warn(\"PENDING_DIAG_BLOCKED=\"+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId,baseline:!!terminal.baseline,candidateTraceCount:newTraces.length}))\n          blocked.add(terminal.obligation)\n          if (stopAfterFirst) return [terminal.obligation]"
           assert s.count(before)>=1
           p.write_text(s.replace(before,after))
           PY
