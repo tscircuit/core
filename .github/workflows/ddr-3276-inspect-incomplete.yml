@@ -5,7 +5,7 @@ on:
     paths: [.github/workflows/ddr-3276-inspect-incomplete.yml]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
   benchmark:
     name: Native ${{ matrix.circuit }}
@@ -19,6 +19,12 @@ jobs:
           - {circuit: a64}
           - {circuit: stmp157}
     steps:
+      - name: Stop superseded full diagnostic
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const old=await github.rest.actions.getWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992362452})
+            if(old.data.status!=="completed")await github.rest.actions.cancelWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992362452})
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -98,6 +104,18 @@ jobs:
             const before=this.activeFallbackSolver??this.activeB01Solver??this.activeRegularSolver
             original.call(this)
             const after=this.activeFallbackSolver??this.activeB01Solver??this.activeRegularSolver
+            if(capture.previous!==after){capture.previous=after;capture.activeStarted=performance.now()}
+            if(after&&this.fixedHdRoutes.length>=16&&this.iterations%4096===0&&performance.now()-capture.activeStarted>30000){
+              const snapshot={detail:describe(this),hdParams:this.params,activeParams:after.params??after.getConstructorParams?.()}
+              save("blocked-search",snapshot)
+              const {gzipSync}=require("node:zlib")
+              const zipped=gzipSync(JSON.stringify(snapshot,replace))
+              writeFileSync(output+"/blocked-search.json.gz",zipped)
+              const encoded=zipped.toString("base64")
+              for(let i=0;i<encoded.length;i+=12000)console.log("DDR_BLOCKED_SEARCH_GZIP_"+String(i/12000).padStart(3,"0")+"="+encoded.slice(i,i+12000))
+              console.log("DDR_BLOCKED_SEARCH="+JSON.stringify(describe(this)))
+              process.exit(0)
+            }
             if(before!==after&&before?.failed){
               const detail=describe(before)
               console.log("DDR_CHILD_FAILURE="+JSON.stringify({hd:capture.id,detail}))
@@ -120,7 +138,7 @@ jobs:
           python - <<'PY'
           import json
           for line in open('diagnostic-render.log'):
-            if line.startswith(('DDR_HD_FAILURE=','DDR_CHILD_FAILURE=','DDR_PIPELINE_FAILURE=')):print(line.rstrip())
+            if line.startswith(('DDR_HD_FAILURE=','DDR_CHILD_FAILURE=','DDR_PIPELINE_FAILURE=','DDR_BLOCKED_SEARCH=','DDR_BLOCKED_SEARCH_GZIP_')):print(line.rstrip())
           p=json.load(open('diagnostic-output/progress.json'))
           print('DDR_FINAL_PROGRESS='+json.dumps({'errors':p['errors'],'phases':p['phases'],'lastSolvers':p['solverEvents'][-12:]}))
           PY
