@@ -51,7 +51,10 @@ jobs:
             text=worker.read_text()
             before='import * as autorouterModule from "../../lib"'
             assert text.count(before)==1
-            worker.write_text(text.replace(before,'import * as autorouterModule from "./compiled-runtime"'))
+            text=text.replace(before,'import * as autorouterModule from "./compiled-runtime"')
+            before='import { convertSrjToGraphicsObject } from "../../lib"'
+            assert text.count(before)==1
+            worker.write_text(text.replace(before,'import { convertSrjToGraphicsObject } from "./compiled-runtime"'))
             index=root/'scripts/benchmark/index.ts'
             text=index.read_text()
             before='import { AUTOROUTER_VERSION } from "../../lib"'
