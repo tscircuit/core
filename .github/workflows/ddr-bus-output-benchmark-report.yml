@@ -1,0 +1,27 @@
+name: Read upstream bus benchmark evidence
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-bus-output-benchmark-report.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: am3352-control
+          path: upstream-bus
+          repository: tscircuit/bus-lanes-solver
+          run-id: 45074048787
+          github-token: ${{ github.token }}
+      - name: Inspect public benchmark report structure
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          for p in pathlib.Path('upstream-bus').rglob('*.json'):
+            pair=json.load(open(p));print('UPSTREAM_REPORT_KEYS='+json.dumps({'file':str(p),'keys':list(pair),'mainKeys':list(pair.get('main',{})),'prKeys':list(pair.get('pr',{}))}))
+          PY
