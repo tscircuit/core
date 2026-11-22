@@ -92,6 +92,14 @@ export type SimpleRouteConnection = {
   mergedConnectionNames?: string[]
   isOffBoard?: boolean
   netConnectionName?: string
+  /** Limits on the copper belonging to each source trace within this connection. */
+  traceConstraints?: Array<{
+    sourceTraceId: string
+    pointIds: string[]
+    /** Maximum total routed copper length in mm. */
+    maxLength?: number
+    maxViaCount?: number
+  }>
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number

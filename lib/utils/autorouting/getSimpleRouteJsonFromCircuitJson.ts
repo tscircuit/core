@@ -740,6 +740,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
+  const constrainedTracesByNetConnection = new Map<
+    SimpleRouteConnection,
+    SourceTrace[]
+  >()
   const handledNetConnectivityKeys = new Set<string>()
 
   // The scoped DB includes descendants so their routed copper can be preserved
@@ -894,6 +898,16 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     if (pointsToConnect.length === 0) continue
 
+    const constrainedTraces = connectedSourceTraces.filter(
+      (trace) =>
+        (trace.max_length !== undefined || trace.max_via_count !== undefined) &&
+        trace.connected_source_net_ids.length > 0 &&
+        !explicitPathSourceTraceIds.has(trace.source_trace_id) &&
+        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
+    )
+    if (constrainedTraces.length) {
+      constrainedTracesByNetConnection.set(connection, constrainedTraces)
+    }
     connectionsFromNets.push(connection)
     for (const sourceNetId of connectedSourceNetIds) {
       connectionFromNetId.set(sourceNetId, connection)
@@ -992,6 +1006,42 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...routableConnectionsFromNets,
     ...connectionsFromBreakoutPoints,
   ]
+  // Net reduction may combine separately constrained branches. Retain each
+  // declaration and its surviving routing endpoints, including breakout IDs.
+  for (const connection of allConns) {
+    const directTrace = connection.source_trace_id
+      ? sourceTraceById.get(connection.source_trace_id)
+      : undefined
+    const traces = directTrace
+      ? [directTrace]
+      : constrainedTracesByNetConnection.get(connection)
+    if (!traces) continue
+    for (const trace of traces) {
+      if (trace.max_length === undefined && trace.max_via_count === undefined) {
+        continue
+      }
+      const pointIds = trace.connected_source_port_ids.flatMap((id) => {
+        const port = db.pcb_port.getWhere({ source_port_id: id })
+        if (!port) return []
+        const routePointId = getPcbPortRoutePoint(port).pointId
+        const point = connection.pointsToConnect.find(
+          (p) =>
+            p.pcb_port_id === port.pcb_port_id || p.pointId === routePointId,
+        )
+        return point?.pointId ? [point.pointId] : []
+      })
+      if (!pointIds.length) continue
+      connection.traceConstraints ??= []
+      connection.traceConstraints.push({
+        sourceTraceId: trace.source_trace_id,
+        pointIds,
+        ...(trace.max_length !== undefined && { maxLength: trace.max_length }),
+        ...(trace.max_via_count !== undefined && {
+          maxViaCount: trace.max_via_count,
+        }),
+      })
+    }
+  }
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   const preferredTraceWidth =
     nominalTraceWidth ?? board?.default_nominal_trace_width
