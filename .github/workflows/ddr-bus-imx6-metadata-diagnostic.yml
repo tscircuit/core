@@ -1,0 +1,104 @@
+name: Inspect actual iMX6 bus metadata handoff
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-bus-imx6-metadata-diagnostic.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    name: Native ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [imx6]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fec68cdfd923964d5b249578bf955d42653166d8
+          path: core-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 937b80656f983f3fdbb310ed511f7c31c59daf66
+          path: core-head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact latest routing stack in two independent Core checkouts
+        run: |
+          cat > prepare.private.mjs <<'JS'
+          import{readFileSync,writeFileSync}from"node:fs"
+          const response=await fetch("https://registry.npmjs.org/tscircuit/0.0.3279")
+          if(!response.ok)throw Error("Missing exact published metadata")
+          const published=await response.json()
+          for(const revision of["base","head"]){
+            const filename="core-"+revision+"/package.json"
+            const packageJson=JSON.parse(readFileSync(filename,"utf8"))
+            for(const section of["dependencies","devDependencies"])
+              for(const name of Object.keys(packageJson[section]??{}))
+                if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":revision==="head"?"https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@f7454b1":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            writeFileSync(filename,JSON.stringify(packageJson,null,2))
+          }
+          JS
+          node prepare.private.mjs
+          for revision in base head;do
+            (cd "core-$revision" && bun install --ignore-scripts --backend=copyfile)
+          done
+      - name: Record actual solver constructor inputs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for revision in ['base','head']:
+            p=Path('core-'+revision+'/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx')
+            s=p.read_text()
+            anchor='    const { solverParams, solverConstructorArgs, ...metadata } = event'
+            assert s.count(anchor)==1
+            s=s.replace(anchor,anchor+'''
+              if (eventName === "solver:started" && solverParams) {
+                const actualInput = solverParams.input ?? solverParams
+                if (Array.isArray(actualInput.connections) && Array.isArray(actualInput.obstacles)) {
+                  writeFileSync(join(output, "actual-solver-" + progress.solverEvents.length + ".srj.json"), JSON.stringify(actualInput))
+                  if (actualInput.traces?.length === 17) { console.log("CAPTURED_ACTUAL_HANDOFF"); process.exit(0) }
+                }
+              }''')
+            p.write_text(s)
+          PY
+      - name: Route identical real boards
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          for revision in base head;do
+            bun "core-$revision/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/core-$revision" --out "$GITHUB_WORKSPACE/results-$revision" --circuit "$CIRCUIT" --timeout 1200 > "routing-$revision.private.log" 2>&1 || true
+          done
+      - name: Compare the actual handoff fields without running native routing
+        if: always()
+        run: |
+          cat > diff.private.ts <<'TS'
+          import{readFileSync,readdirSync}from"node:fs"
+          import stableStringify from "./core-head/node_modules/fast-json-stable-stringify"
+          const inputs=[]
+          for(const revision of["base","head"]){
+            const dir="results-"+revision+"/imx6"
+            const candidates=readdirSync(dir).filter(f=>f.startsWith("actual-solver-")).map(f=>JSON.parse(readFileSync(dir+"/"+f,"utf8")))
+            const input=candidates.find(input=>input.traces?.length===17)
+            if(!input)throw Error("Missing real bus handoff for "+revision)
+            inputs.push(input)
+          }
+          const [base,head]=inputs
+          for(const trace of base.traces){
+            const next=head.traces.find(t=>t.pcb_trace_id===trace.pcb_trace_id)
+            if(!next)throw Error("Trace missing")
+            if(stableStringify(trace)!==stableStringify(next)){
+              const keys=new Set([...Object.keys(trace),...Object.keys(next)])
+              const changed=[...keys].filter(key=>stableStringify(trace[key])!==stableStringify(next[key]))
+              console.log("ACTUAL_IMX6_METADATA_DIFF="+JSON.stringify({pcb_trace_id:trace.pcb_trace_id,connection_name:trace.connection_name,changed,routeEqual:stableStringify(trace.route)===stableStringify(next.route),before:trace.connectsTo,after:next.connectsTo,beforeLayers:trace.allowedLayers,afterLayers:next.allowedLayers,declaredBuses:base.buses?.filter(bus=>bus.connectionNames.includes(trace.connection_name))}))
+            }
+          }
+          TS
+          bun diff.private.ts
