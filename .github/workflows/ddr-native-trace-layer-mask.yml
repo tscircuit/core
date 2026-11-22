@@ -1,4 +1,4 @@
-name: Check native trace layer masks with the existing route-segment filter
+name: Locate where native A13 layer domains are lost
 on:
   push:
     branches: [analysis/ddr-3277-completion-20261122-1035]
@@ -78,6 +78,50 @@ jobs:
           p=root/helper_paths[0];s=p.read_text();before="  return result";assert s.count(before)==1;p.write_text(s.replace(before,"  for (const trace of srj.traces ?? []) {\n    if (trace.isFixed || !trace.allowedLayers) continue\n    const layers = getUniqueValidZLayersFromLayerNames(trace.allowedLayers, srj.layerCount)\n    if (!layers.length) throw new Error(\"Native trace has no allowed signal layer\")\n    result.set(trace.pcb_trace_id, new Set(layers))\n  }\n"+before))
           p=root/helper_paths[2];s=p.read_text();before="      const connectionId: unknown =\n        problem.routeMetadata?.[routeId]?.connectionId";after="      const metadata = problem.routeMetadata?.[routeId] as { connectionId?: unknown; preloadedTraceSection?: { traceId?: unknown } } | undefined\n      const traceId = metadata?.preloadedTraceSection?.traceId\n      if (typeof traceId === \"string\") return allowedLayersByConnection.get(traceId)\n      const connectionId: unknown = metadata?.connectionId";assert s.count(before)==1;p.write_text(s.replace(before,after))
           p=root/helper_paths[1];s=p.read_text();before="    const layers = constraints.allowedLayersByConnection.get(\n      trace.connection_name,\n    )";after="    const layers = constraints.allowedLayersByConnection.get(trace.pcb_trace_id) ?? constraints.allowedLayersByConnection.get(trace.connection_name)";assert s.count(before)==1;p.write_text(s.replace(before,after))
+          for root in [Path("ar-previous"),Path("ar-latest")]:
+            p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts"
+            s=p.read_text()
+            before="        pipelineStepDef.onSolved?.(this)"
+            after=before+'''
+                  if (this.portPointPathingSolver?.solved) {
+                    const layerNames = Array.from({ length: this.srj.layerCount }, (_, z) => z === 0 ? "top" : z === this.srj.layerCount - 1 ? "bottom" : "inner" + z)
+                    const masks = new Map<string, Set<number>>()
+                    for (const trace of this.originalSrj.traces ?? []) {
+                      const layers = (trace as typeof trace & { allowedLayers?: string[] }).allowedLayers
+                      if (!layers) continue
+                      const mask = new Set(layers.map(layer => layerNames.indexOf(layer)))
+                      masks.set(trace.pcb_trace_id, mask)
+                      masks.set(trace.connection_name, mask)
+                    }
+                    for (const section of this.portPointPathingSolver.getOutput().changedPreloadedTraceSections) {
+                      const mask = masks.get(section.traceId)
+                      if (mask) masks.set(section.connectionName, mask)
+                    }
+                    const candidates = [
+                      ["nodes", this.portPointPathingSolver.getOutput().nodesWithPortPoints.flatMap(node => node.portPoints.map(point => ({ connectionName: point.connectionName, route: [point, { ...point, x: point.x + 1 }] })))],
+                      ["highDensity", this.highDensityRouteSolver?.routes ?? []],
+                      ["current", this.highDensityStitchSolver?.solved ? this._getOutputHdRoutes() : []],
+                    ] as const
+                    for (const [kind, routes] of candidates) {
+                      const bad = routes.flatMap(route => {
+                        const mask = masks.get(route.connectionName) ?? masks.get((route as { rootConnectionName?: string }).rootConnectionName ?? "")
+                        if (!mask) return []
+                        const layers = new Set<number>()
+                        for (let index = 1; index < route.route.length; index++) {
+                          const a = route.route[index - 1]!, b = route.route[index]!
+                          if (a.z === b.z && (a.x !== b.x || a.y !== b.y) && !mask.has(a.z)) layers.add(a.z)
+                        }
+                        return layers.size ? [{ name: route.connectionName, layers: [...layers] }] : []
+                      })
+                      console.log("NATIVE_LAYER_STAGE_AUDIT=" + JSON.stringify({ stage: pipelineStepDef.solverName, kind, violations: bad.slice(0, 16), total: bad.length }))
+                    }
+                  }'''
+            assert s.count(before)==1
+            p.write_text(s.replace(before,after))
+            p=root/"lib/solvers/PortPointPathingSolver/tinyhypergraph/createAllowedLayerSegmentFilter.ts"
+            s=p.read_text();before="  if (!restrictions.some((layers) => layers !== undefined)) return"
+            assert s.count(before)==1
+            p.write_text(s.replace(before,'  console.log("NATIVE_LAYER_ROUTE_FILTER=" + JSON.stringify({ routes: problem.routeCount, restricted: restrictions.filter(Boolean).length, masks: allowedLayersByConnection.size }))\n'+before))
           PY
       - name: Build both exact integration commits
         run: |
