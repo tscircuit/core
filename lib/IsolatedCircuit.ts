@@ -1,7 +1,8 @@
 import {
+  convertSchematicLengthUnit,
   convertSchematicLengthUnits,
-  LEGACY_SCHEMATIC_LENGTH_UNIT,
-} from "circuit-json"
+} from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { SchematicLengthUnit, PlatformConfig } from "@tscircuit/props"
@@ -58,7 +59,6 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
-  readonly schematicLengthUnits = new Map<string, SchematicLengthUnit>()
   inheritedSchematicLengthUnit?: SchematicLengthUnit
   pcbDisabled = false
   pcbRoutingDisabled = false
@@ -292,10 +292,29 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    return convertSchematicLengthUnits(
-      this.db.toArray(),
-      this.schematicLengthUnits,
-    )
+    const units = new Map<string, SchematicLengthUnit>()
+    for (const record of this.db.source_group.list()) {
+      if (
+        record.is_subcircuit &&
+        record.subcircuit_id &&
+        record.default_schematic_length_unit
+      ) {
+        units.set(record.subcircuit_id, record.default_schematic_length_unit)
+      }
+    }
+    return this.db.toArray().map((record) => {
+      if (
+        !record.type.startsWith("schematic_") &&
+        record.type !== "source_failed_to_create_component_error"
+      )
+        return record
+      const owner = "subcircuit_id" in record && record.subcircuit_id
+      const unit =
+        (owner && units.get(owner)) ||
+        ("schematic_length_unit" in record && record.schematic_length_unit) ||
+        LEGACY_SCHEMATIC_LENGTH_UNIT
+      return convertSchematicLengthUnit(record, unit)
+    })
   }
 
   toJson(): AnyCircuitElement[] {

@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test"
-import {
-  convertSchematicLengthUnits,
-  LEGACY_SCHEMATIC_LENGTH_UNIT,
-} from "circuit-json"
+import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("mm and inch subcircuits serialize and re-import physical component geometry", async () => {
@@ -23,6 +21,12 @@ test("mm and inch subcircuits serialize and re-import physical component geometr
   expect(child).toMatchObject({ default_schematic_length_unit: "in" })
   const components = stored.filter((e) => e.type === "schematic_component")
   expect(components).toHaveLength(2)
+  expect(components.find((c) => c.center.x > 0)?.schematic_length_unit).toBe(
+    "mm",
+  )
+  expect(components.find((c) => c.center.x < 0)?.schematic_length_unit).toBe(
+    "in",
+  )
   expect(components.find((c) => c.center.x > 0)?.center.x).toBeCloseTo(25.4, 10)
   expect(components.find((c) => c.center.x < 0)?.center.x).toBeCloseTo(-1, 10)
   const mm = convertSchematicLengthUnits(stored, "mm").filter(

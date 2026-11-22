@@ -283,14 +283,13 @@ export class NormalComponent<
     if (conflictingComponents.length > 0) {
       // Create naming conflict error
       const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
-      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
 
       root.db.source_failed_to_create_component_error.insert({
         component_name: this.name,
         error_type: "source_failed_to_create_component_error",
         message: `Cannot create component "${this.name}": A component with the same name already exists`,
         pcb_center: pcbPosition,
-        schematic_center: schematicPosition,
+        ...this._getSchematicErrorLocation(),
       })
 
       // Mark component for removal to prevent downstream issues

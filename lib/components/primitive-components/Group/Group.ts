@@ -479,12 +479,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     this.source_group_id = source_group.source_group_id
     if (this.isSubcircuit) {
       this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
-      this.root!.schematicLengthUnits.set(
-        this.subcircuit_id!,
-        this._getSchematicLengthUnit(),
-      )
       db.source_group.update(source_group.source_group_id, {
         subcircuit_id: this.subcircuit_id!,
+        default_schematic_length_unit: this._getSchematicLengthUnit(),
       })
     }
   }

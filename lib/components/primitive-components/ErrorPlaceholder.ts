@@ -95,7 +95,6 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
   doInitialSourceRender() {
     if (this.root?.db) {
       const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
-      const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
       const { selectorText, propsText } = this.formatErrorDetails()
       const messageDetails = [
         selectorText ? `Within selector: ${selectorText}` : null,
@@ -114,7 +113,7 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
         message: `${baseMessage}${messageDetails ? ` Details: ${messageDetails}` : ""}`,
 
         pcb_center: pcbPosition,
-        schematic_center: schematicPosition,
+        ...this._getSchematicErrorLocation(),
       })
     }
   }

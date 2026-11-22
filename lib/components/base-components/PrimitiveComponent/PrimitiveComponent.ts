@@ -2,8 +2,10 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
+import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
 import {
   DEFAULT_SCHEMATIC_LENGTH_UNIT,
+  LEGACY_SCHEMATIC_LENGTH_UNIT,
   MM_PER_SCHEMATIC_UNIT,
 } from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
@@ -822,6 +824,20 @@ export abstract class PrimitiveComponent<
       this.root?.inheritedSchematicLengthUnit ??
       DEFAULT_SCHEMATIC_LENGTH_UNIT
     )
+  }
+
+  // Name validation can report a location before the subcircuit has an ID.
+  _getSchematicErrorLocation() {
+    const center = this._getGlobalSchematicPositionBeforeLayout()
+    const unit = this._getSchematicLengthUnit()
+    const scale = getSchematicLengthUnitScale(
+      LEGACY_SCHEMATIC_LENGTH_UNIT,
+      unit,
+    )
+    return {
+      schematic_center: { x: center.x * scale, y: center.y * scale },
+      schematic_length_unit: unit,
+    }
   }
 
   /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */

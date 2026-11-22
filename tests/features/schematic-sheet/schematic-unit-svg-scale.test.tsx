@@ -23,7 +23,10 @@ test("an inch of authored placement spans one quarter of a four-inch sheet in SV
       (record) =>
         record.type === "schematic_text" && record.text === "One inch",
     ),
-  ).toMatchObject({ position: { x: 25.4, y: 12.7 } })
+  ).toMatchObject({
+    schematic_length_unit: "mm",
+    position: { x: 25.4, y: 12.7 },
+  })
   const svg = await circuit.getSvg({ view: "schematic" })
   const labels: { x: number; y: number }[] = []
   let sheetWidth = 0

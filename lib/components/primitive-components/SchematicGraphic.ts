@@ -1,3 +1,5 @@
+import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { SVG_MIMETYPE, loadImageSource } from "@tscircuit/image-utils"
 import { schematicGraphicProps } from "@tscircuit/props"
 import type {
@@ -28,6 +30,17 @@ export class SchematicGraphic extends PrimitiveComponent<
     const { db } = this.root!
     const { imageUrl, svgContent, width, height } = this._parsedProps
 
+    // Graphics carry their own size and have no subcircuit_id in Circuit JSON.
+    const unit = this._getSchematicLengthUnit()
+    const scale = getSchematicLengthUnitScale(
+      LEGACY_SCHEMATIC_LENGTH_UNIT,
+      unit,
+    )
+    const geometry = {
+      schematic_length_unit: unit,
+      ...(width === undefined ? {} : { width: width * scale }),
+      ...(height === undefined ? {} : { height: height * scale }),
+    }
     if (imageUrl !== undefined) {
       this._queueAsyncEffect("SchematicGraphicRender", async () => {
         if (this.root?.schematicDisabled) return
@@ -57,12 +70,10 @@ export class SchematicGraphic extends PrimitiveComponent<
             mimetype: SVG_MIMETYPE,
           } satisfies Asset
           const schematicGraphic = this.root!.db.schematic_graphic.insert({
-            subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+            ...geometry,
             asset,
             schematic_sheet_id: this._resolveSchematicSheetId(),
             svg_content: svgContent,
-            ...(width === undefined ? {} : { width }),
-            ...(height === undefined ? {} : { height }),
           })
 
           this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
@@ -86,14 +97,12 @@ export class SchematicGraphic extends PrimitiveComponent<
           ? svgContent
           : sourceImage.text
         const schematicGraphic = this.root!.db.schematic_graphic.insert({
-          subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+          ...geometry,
           asset,
           schematic_sheet_id: this._resolveSchematicSheetId(),
           ...(fallbackSvgContent === undefined
             ? {}
             : { svg_content: fallbackSvgContent }),
-          ...(width === undefined ? {} : { width }),
-          ...(height === undefined ? {} : { height }),
         })
 
         this.schematic_graphic_id = schematicGraphic.schematic_graphic_id
@@ -108,11 +117,9 @@ export class SchematicGraphic extends PrimitiveComponent<
         mimetype: SVG_MIMETYPE,
       } satisfies Asset
       const schematicGraphic = db.schematic_graphic.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+        ...geometry,
         asset,
         schematic_sheet_id: this._resolveSchematicSheetId(),
-        ...(width === undefined ? {} : { width }),
-        ...(height === undefined ? {} : { height }),
       })
 
       this.schematic_graphic_id = schematicGraphic.schematic_graphic_id

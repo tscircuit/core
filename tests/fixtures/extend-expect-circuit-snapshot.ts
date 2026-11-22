@@ -1,7 +1,5 @@
-import {
-  convertSchematicLengthUnits,
-  LEGACY_SCHEMATIC_LENGTH_UNIT,
-} from "circuit-json"
+import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
