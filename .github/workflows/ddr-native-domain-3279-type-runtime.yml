@@ -1,0 +1,48 @@
+name: Exact latest3279 stacked Core type and runtime checks
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-domain-3279-type-runtime.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ea9dfd58d2aef34eff2bf9a0d82a8724bd09c143
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --backend=copyfile
+      - name: Check types on the exact stacked Core head
+        run: bunx tsc --noEmit
+      - name: Install a separate published baseline runtime
+        run: |
+          mkdir runtime-base
+          cat > runtime-base/package.json <<'JSON'
+          {"private":true,"dependencies":{"@tscircuit/capacity-autorouter":"0.0.1154"}}
+          JSON
+          (cd runtime-base && bun install --ignore-scripts --backend=copyfile)
+      - name: Verify actual built implementation and independent package files
+        run: |
+          cat > verify.private.ts <<'TS'
+          import {readFileSync,realpathSync,statSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          const rows=[]
+          for(const [revision,prefix]of[["base","runtime-base/"],["head",""]]){
+            const root=prefix+"node_modules/@tscircuit/capacity-autorouter"
+            const metadata=JSON.parse(readFileSync(root+"/package.json","utf8"))
+            if(metadata.version!=="0.0.1154")throw Error("Unexpected runtime version")
+            const filename=realpathSync(root+"/dist/index.js"),stat=statSync(filename),source=readFileSync(filename,"utf8")
+            if(revision==="head"&&(!source.includes("preservePreloadedPortCapacity")||!source.includes("Native trace routed wire on a forbidden signal layer")))throw Error("Missing native domain implementation")
+            rows.push({revision,filename,device:stat.dev,inode:stat.ino,sha256:createHash("sha256").update(source).digest("hex"),version:metadata.version,dependencies:metadata.dependencies})
+          }
+          if(rows[0].filename===rows[1].filename||(rows[0].device===rows[1].device&&rows[0].inode===rows[1].inode))throw Error("Shared writable runtime files")
+          if(rows[0].sha256===rows[1].sha256)throw Error("Candidate package does not differ")
+          console.log("NATIVE_3279_RUNTIME_PROOF="+JSON.stringify({coreHead:"ea9dfd58d2aef34eff2bf9a0d82a8724bd09c143",preview:"https://npm-releases.tscircuit.com/npm-tarballs/45047749346-1/tscircuit-capacity-autorouter-0.0.1154.tgz",rows}))
+          TS
+          bun verify.private.ts
