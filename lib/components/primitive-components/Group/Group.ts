@@ -1,5 +1,4 @@
 import type { PcbTraceId } from "lib/utils/circuit-json/circuit-json-id-types"
-import { getRenegotiableBusTraceIds } from "lib/utils/autorouting/get-renegotiable-bus-trace-ids"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -2060,19 +2059,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           !getPrecomputedRoutingResult &&
           !isTestPointPhase
         if (localAutorouterStrategy.preserveOutputTraces) {
-          const renegotiableOutputTraceIds = getRenegotiableBusTraceIds({
-            input: simpleRouteJson,
-            traces,
-            fixedTraceIds,
-            isAutomaticBusOutput,
-          })
+          const hasTimingConstraints =
+            Boolean(simpleRouteJson.differentialPairs?.length) ||
+            (simpleRouteJson.buses ?? []).some(
+              (bus) =>
+                bus.minLength !== undefined ||
+                bus.maxLength !== undefined ||
+                bus.maxLengthSkew !== undefined,
+            )
+          const canRenegotiateBusOutput =
+            isAutomaticBusOutput && !hasTimingConstraints
           for (const trace of traces) {
-            fixedTraceIds.add(trace.pcb_trace_id)
-            if (!renegotiableOutputTraceIds) {
+            if (!canRenegotiateBusOutput) {
               renegotiableBusTraceIds.delete(trace.pcb_trace_id)
-            } else if (renegotiableOutputTraceIds.has(trace.pcb_trace_id)) {
+            } else if (
+              !fixedTraceIds.has(trace.pcb_trace_id) &&
+              trace.connectsTo?.length === 2 &&
+              trace.allowedLayers !== undefined
+            ) {
               renegotiableBusTraceIds.add(trace.pcb_trace_id)
             }
+            fixedTraceIds.add(trace.pcb_trace_id)
           }
         }
         let stageOutputTraces = traces
