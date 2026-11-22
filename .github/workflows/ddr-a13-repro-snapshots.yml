@@ -1,4 +1,4 @@
-name: Verify corrected A13 repro snapshots with the standard CI runtime
+name: Verify latest3279 A13 repro snapshots with the standard CI runtime
 on:
   push:
     branches: [analysis/ddr-3277-completion-20261122-1035]
