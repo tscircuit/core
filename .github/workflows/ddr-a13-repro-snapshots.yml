@@ -1,4 +1,4 @@
-name: Verify A13 repro snapshots and native bus cache replay
+name: Verify corrected A13 repro snapshots with the standard CI runtime
 on:
   push:
     branches: [analysis/ddr-3277-completion-20261122-1035]
