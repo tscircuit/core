@@ -16,10 +16,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
-          import json,os,time,urllib.request
+          import json,os,time,subprocess
           def get(path):
-            request=urllib.request.Request('https://api.github.com/repos/tscircuit/core/'+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
-            return urllib.request.urlopen(request).read().decode('utf-8-sig')
+            return subprocess.check_output(['curl','--fail','--silent','--show-error','--location','--header','Authorization: Bearer '+os.environ['GH_TOKEN'],'https://api.github.com/repos/tscircuit/core/'+path]).decode('utf-8-sig')
           for attempt in range(72):
             jobs=json.loads(get('actions/runs/45069386166/jobs?per_page=100'))['jobs']
             if len(jobs)==10 and all(job['status']=='completed'for job in jobs):break
