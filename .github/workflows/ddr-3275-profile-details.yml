@@ -1,0 +1,34 @@
+name: Inspect published DDR CPU profile
+on:
+  push:
+    branches: [analysis/ddr-3275-next-fix-20261122]
+    paths: [.github/workflows/ddr-3275-profile-details.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: published3275-butter-cpu-profile
+          run-id: 44967570159
+          github-token: ${{ github.token }}
+      - name: Locate hot methods and their callers
+        run: |
+          curl -fsSL https://registry.npmjs.org/@tscircuit/capacity-autorouter/-/capacity-autorouter-0.0.1149.tgz | tar xzf - package/dist/index.js
+          python - <<'PYPROFILE'
+          import json,collections,pathlib
+          p=json.load(open('published-butter.cpuprofile'));n={x['id']:x for x in p['nodes']};parents={c:x['id'] for x in p['nodes'] for c in x.get('children',[])}
+          counts=collections.Counter();total=sum(p['timeDeltas'])
+          for sid,d in zip(p['samples'],p['timeDeltas']):
+           f=n[sid]['callFrame'];fn=f['functionName'];url=f['url']
+           if fn in ['ji','search']:
+            f=n[parents[sid]]['callFrame'];counts[fn+' parent '+f['functionName'],f['lineNumber'],f['columnNumber']]+=d
+           elif not fn and 'capacity-autorouter' in url:counts['anonymous',f['lineNumber'],f['columnNumber']]+=d
+          source=pathlib.Path('package/dist/index.js').read_text().splitlines()
+          for (label,line,col),value in counts.most_common(30):
+           print('PROFILE_LOCATION='+json.dumps({'selfPercent':value/total*100,'label':label,'line':line,'column':col,'source':source[line][max(0,col-180):col+400]}))
+          PYPROFILE
