@@ -1,0 +1,35 @@
+name: Export current DDR reachability inputs
+on:
+  push:
+    branches: [analysis/ddr-3276-completion-20261122]
+    paths: [.github/workflows/ddr-3276-reachability-inputs.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        circuit: [h3, a13]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-ddr-3276-${{ matrix.circuit }}
+          run-id: 44992181782
+          repository: tscircuit/core
+          github-token: ${{ github.token }}
+          path: captured
+      - name: Export the unchanged final-phase routing input
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          python - <<'PY'
+          import pathlib,gzip,json,base64,hashlib,os
+          files=[p for p in pathlib.Path('captured').rglob('phase-*-start.srj.json') if 'latest' in p.parts]
+          p=max(files,key=lambda p:int(p.name.split('-')[1]))
+          raw=p.read_bytes();packed=gzip.compress(raw);encoded=base64.b64encode(packed).decode();name=os.environ['CIRCUIT']+'-'+p.name
+          print('DDR_INPUT_META='+json.dumps({'name':name,'bytes':len(raw),'gzipBytes':len(packed),'sha256':hashlib.sha256(raw).hexdigest()}))
+          for i in range(0,len(encoded),12000):print('DDR_INPUT_GZIP='+json.dumps({'name':name,'part':i//12000,'base64':encoded[i:i+12000]}))
+          PY
