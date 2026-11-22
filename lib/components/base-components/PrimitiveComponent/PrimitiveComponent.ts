@@ -5,6 +5,7 @@ import {
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
+import { normalizeRkmNotationInProps } from "lib/utils/normalize-rkm-notation"
 import {
   selectNetByLiteralSelector,
   type NetSelector,
@@ -218,7 +219,9 @@ export abstract class PrimitiveComponent<
     this.props = props ?? {}
     this.externallyAddedAliases = []
     const zodProps = getConstructionPropsSchema(this.config.zodProps)
-    const parsePropsResult = zodProps.safeParse(props ?? {})
+    const parsePropsResult = zodProps.safeParse(
+      normalizeRkmNotationInProps(props ?? {}),
+    )
     if (parsePropsResult.success) {
       this._parsedProps = parsePropsResult.data as z.infer<ZodProps>
     } else {
@@ -231,13 +234,14 @@ export abstract class PrimitiveComponent<
   }
 
   setProps(props: Partial<z.input<ZodProps>>) {
+    const normalizedProps = normalizeRkmNotationInProps(props as Record<string, unknown>)
     const newProps = this.config.zodProps.parse({
       ...this.props,
-      ...props,
+      ...normalizedProps,
     }) as z.infer<ZodProps>
     const oldProps = this.props
     this.props = newProps
-    this._parsedProps = this.config.zodProps.parse(props) as z.infer<ZodProps>
+    this._parsedProps = this.config.zodProps.parse(normalizedProps) as z.infer<ZodProps>
     this.onPropsChange({
       oldProps,
       newProps,
