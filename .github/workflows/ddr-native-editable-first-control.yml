@@ -91,7 +91,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          for revision in ['base','head']:
+          for revision in ['head']:
             p=Path('core-'+revision+'/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx')
             s=p.read_text()
             anchor='    const { solverParams, solverConstructorArgs, ...metadata } = event'
@@ -123,7 +123,7 @@ jobs:
           if p.exists():
             report=json.loads(p.read_text())
             for row in report['cases']:
-              print('EDITABLE_FIRST_SEARCH='+json.dumps({'circuit':os.environ['CIRCUIT'],'status':row.get('status'),'seconds':row.get('wallMs',0)/1000,'peakRssMb':row.get('peakRssMb'),'lastPhase':(row.get('progress',{}).get('phases')or[None])[-1]}))
+              print('EDITABLE_FIRST_SEARCH='+json.dumps({'circuit':os.environ['CIRCUIT'],'status':row.get('status'),'seconds':row.get('wallMs',0)/1000,'peakRssMb':row.get('peakRssMb'),'lastPhase':((row.get('progress')or{}).get('phases')or[None])[-1]}))
           PY
       - name: Assess both with the same validator
         if: always()
