@@ -1,5 +1,8 @@
 import { beforeAll, expect, test } from "bun:test"
-import type { PcbSolderPastePill } from "circuit-json"
+import { footprintProp } from "@tscircuit/props"
+import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
+import type { PcbSolderPaste, PcbSolderPastePill } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 const { circuit } = getTestFixture()
@@ -27,7 +30,7 @@ beforeAll(async () => {
     <board width={6} height={6} routingDisabled schematicDisabled>
       <chip
         name="U30"
-        footprint={[
+        footprint={footprintProp.parse([
           {
             type: "pcb_smtpad",
             pcb_smtpad_id: "exposed_pad",
@@ -40,7 +43,7 @@ beforeAll(async () => {
             port_hints: ["33"],
           },
           ...windows,
-        ]}
+        ])}
       />
     </board>,
   )
@@ -58,3 +61,21 @@ test.failing(
     }
   },
 )
+
+test("compare the stencil before and after footprint import", async () => {
+  const board = circuit.db.pcb_board.list()
+  const panel = (title: string, paste: PcbSolderPaste[]) =>
+    stackSvgsVertically([
+      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="40"><rect width="300" height="40" fill="white"/><text x="150" y="26" text-anchor="middle" font-family="sans-serif" font-size="17">${title} · openings: ${paste.length}</text></svg>`,
+      convertCircuitJsonToPcbSvg([...board, ...paste], {
+        width: 300,
+        height: 240,
+        showSolderPaste: true,
+      }),
+    ])
+  const comparison = stackSvgsHorizontally([
+    panel("Input", windows),
+    panel("Core output", circuit.db.pcb_solder_paste.list()),
+  ])
+  await expect(comparison).toMatchSvgSnapshot(import.meta.path)
+})
