@@ -34,6 +34,8 @@ jobs:
             if 'main'not in pair or 'pr'not in pair:continue
             pairs.append(pair)
             print('BUS_BENCHMARK_REPORT_SHAPE='+json.dumps({'sample':pair['sample'],'metadata':pair['metadata'],'main':pair['main']['wallMilliseconds'],'head':pair['pr']['wallMilliseconds'],'reportKeys':list(pair['pr']['report'])}))
+            before,after=pair['main']['report'],pair['pr']['report']
+            print('BUS_FUNCTIONAL_METRIC_COMPARE='+json.dumps({'sample':pair['sample'],'mainIterations':before['iterations'],'headIterations':after['iterations'],'sameValidation':before['validation']==after['validation'],'mainEnvelope':before['envelopeOptimization'],'headEnvelope':after['envelopeOptimization'],'validationKeys':list(after['validation'])}))
           assert len(pairs)==11
           json.dump(pairs,open('all-bus-pairs.json','w'),indent=2)
           PY
