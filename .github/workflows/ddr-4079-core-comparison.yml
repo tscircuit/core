@@ -27,7 +27,15 @@ jobs:
           bun-version: '1.4.3'
       - name: Build both exact integration commits
         run: |
-          (cd ar-previous && bun install --backend=copyfile)
+          python - <<'PYLOCK'
+          from pathlib import Path
+          for root in ['ar-previous','ar-latest']:
+            config=Path(root)/'bunfig.toml'
+            text=config.read_text()
+            assert text.count('save = false')==1
+            config.write_text(text.replace('save = false','save = true'))
+          PYLOCK
+          (cd ar-previous && bun install --save-text-lockfile --backend=copyfile)
           cp ar-previous/bun.lock ar-latest/bun.lock
           (cd ar-latest && bun install --frozen-lockfile --backend=copyfile)
           (cd ar-previous && bun run build)
@@ -96,6 +104,7 @@ jobs:
             dependencies[name]=exact(published.dependencies[name]??core.devDependencies[name])
            dependencies["@tscircuit/bus-lanes-solver"]=core.devDependencies["@tscircuit/bus-lanes-solver"]
            await mkdir(release.label,{recursive:true})
+           await writeFile(release.label+"/bunfig.toml","[install.lockfile]\nsave = true\n")
            await writeFile(release.label+"/package.json",JSON.stringify({name:"native-ddr-"+release.label,private:true,type:"module",dependencies},null,2))
            await writeFile(release.label+"/index.ts",'export { RootCircuit } from "tscircuit"\n')
            await writeFile(release.label+"/tsconfig.json",await readFile("tsconfig.json"))
