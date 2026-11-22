@@ -243,6 +243,7 @@ jobs:
           CIRCUIT: ${{ matrix.circuit }}
         run: |
           for revision in base head;do
+            grep -E "NATIVE_LAYER_(STAGE_AUDIT|ROUTE_FILTER)=" "routing-$revision.private.log" || true
             test -f "results-$revision/$CIRCUIT/circuit.json"
             bun core-head/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core-head" "$CIRCUIT" "$GITHUB_WORKSPACE/results-$revision/$CIRCUIT"
           done
