@@ -1,0 +1,43 @@
+name: Verify A13 repro snapshots and native bus cache replay
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-a13-repro-snapshots.yml]
+permissions:
+  contents: read
+jobs:
+  snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        revision: [base, head]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.revision == 'head' && 'fix/a13-native-bus-negotiation' || 'repro/a13-full-native-ddr' }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - run: bun install --backend=copyfile
+      - name: Run the unchanged full-board repro and produce its snapshot
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test --timeout 9999999 tests/repros/repro-a13-full-ddr-native-bus.test.tsx
+      - name: Export the public repro snapshot for the PR diff
+        if: always()
+        env:
+          REVISION: ${{ matrix.revision }}
+        run: |
+          python - <<'PY'
+          import gzip,base64,json,os
+          from pathlib import Path
+          for p in Path('tests/repros/__snapshots__').glob('repro-a13-full-ddr-native-bus*.svg'):
+            print('A13_REPRO_SVG_GZIP='+json.dumps({'revision':os.environ['REVISION'],'path':str(p),'data':base64.b64encode(gzip.compress(p.read_bytes())).decode()}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a13-public-repro-${{ matrix.revision }}
+          path: tests/repros/__snapshots__/repro-a13-full-ddr-native-bus*.svg
