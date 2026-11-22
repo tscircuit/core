@@ -22,6 +22,7 @@ test("Subcircuit group should have subcircuit_id", async () => {
   expect(circuit.db.source_group.list()).toMatchInlineSnapshot(`
 [
   {
+    "default_schematic_length_unit": "9.236363636363636mm",
     "is_subcircuit": true,
     "name": "G1",
     "source_group_id": "source_group_0",

@@ -1,5 +1,3 @@
-import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
-import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { type MatcherResult, expect } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -162,10 +160,7 @@ expect.extend({
     }
 
     return saveSvgSnapshotOfCircuitJson({
-      soup: convertSchematicLengthUnits(
-        circuitJson,
-        LEGACY_SCHEMATIC_LENGTH_UNIT,
-      ),
+      soup: circuitJson,
       testPath: args[0],
       mode: "schematic",
       options: args[1] ?? {
@@ -198,10 +193,7 @@ expect.extend({
     }
 
     return saveSvgSnapshotOfCircuitJson({
-      soup: convertSchematicLengthUnits(
-        circuitJson,
-        LEGACY_SCHEMATIC_LENGTH_UNIT,
-      ),
+      soup: circuitJson,
       testPath: args[0],
       mode: "schematic_stacked",
       options: args[1] ?? {

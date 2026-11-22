@@ -77,6 +77,7 @@ test("(ErrorPlaceholder) - missing prop error with parent transform", async () =
             "x": 6,
             "y": 0,
           },
+          "schematic_length_unit": "9.236363636363636mm",
           "source_failed_to_create_component_error_id": "source_failed_to_create_component_error_0",
           "type": "source_failed_to_create_component_error",
         },

@@ -47,6 +47,17 @@ export const extractPcbPrimitivesFromCircuitJson = ({
 
   const clonedRelativeElements = structuredClone(relativeElements)
 
+  // Older imports omit the angle on fabrication notes aligned with their component.
+  // Supply that world angle before converting the footprint to local coordinates.
+  for (const element of clonedRelativeElements) {
+    if (
+      element.type === "pcb_fabrication_note_text" &&
+      element.ccw_rotation === undefined
+    ) {
+      element.ccw_rotation = componentRotation
+    }
+  }
+
   // Transform all PCB elements using the standard transformation utility
   transformPCBElements(
     clonedRelativeElements,

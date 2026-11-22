@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("an inch of authored placement spans one quarter of a four-inch sheet in SVG", async () => {
@@ -27,7 +28,8 @@ test("an inch of authored placement spans one quarter of a four-inch sheet in SV
     schematic_length_unit: "mm",
     position: { x: 25.4, y: 12.7 },
   })
-  const svg = await circuit.getSvg({ view: "schematic" })
+  const svg = convertCircuitJsonToSchematicSvg(json)
+  expect(await circuit.getSvg({ view: "schematic" })).toBe(svg)
   const labels: { x: number; y: number }[] = []
   let sheetWidth = 0
   let sheetHeight = 0
