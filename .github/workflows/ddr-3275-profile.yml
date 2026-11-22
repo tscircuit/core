@@ -1,0 +1,88 @@
+name: Profile published3275 DDR routing
+on:
+  push:
+    branches: [analysis/ddr-3275-next-fix-20261122]
+    paths: [.github/workflows/ddr-3275-profile.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    name: Published ButterStick CPU profile
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact published stacks and identical native fixtures
+        run: |
+          cat > prepare-published.private.mjs <<'JS'
+          import {mkdir,writeFile,readFile,symlink} from "node:fs/promises"
+          import path from "node:path"
+          const benchmark="github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+          function exact(declared) {
+           const version=declared.replace(/^[~^]/,"")
+           if(!/^[0-9]+[.][0-9]+[.][0-9]+$/.test(version))throw Error("Expected exact release: "+declared)
+           return version
+          }
+          async function metadata(name,version) {
+           const response=await fetch("https://registry.npmjs.org/"+name+"/"+version)
+           if(!response.ok)throw Error("Registry request failed: "+name+" "+version+" "+response.status)
+           return await response.json()
+          }
+          for(const release of [
+           {label:"previous",tscircuit:"0.0.3273",core:"0.0.2452",autorouter:"0.0.1148",sourceRevision:"published-0.0.3273"},
+           {label:"latest",tscircuit:"0.0.3275",core:"0.0.2456",autorouter:"0.0.1149",sourceRevision:"published-0.0.3275"}
+          ]) {
+           const published=await metadata("tscircuit",release.tscircuit)
+           const core=await metadata("@tscircuit/core",release.core)
+           const dependencies={"tscircuit":release.tscircuit,"@tscircuit/core":release.core,"@tscircuit/capacity-autorouter":release.autorouter,"@tscircuit/core-ddr-benchmark":benchmark}
+           for(const name of ["@tscircuit/checks","@tscircuit/props","circuit-json","@tscircuit/fanout-solver"])
+            dependencies[name]=exact(published.dependencies[name]??core.devDependencies[name])
+           dependencies["@tscircuit/bus-lanes-solver"]=core.devDependencies["@tscircuit/bus-lanes-solver"]
+           await mkdir(release.label,{recursive:true})
+           await writeFile(release.label+"/package.json",JSON.stringify({name:"native-ddr-"+release.label,private:true,type:"module",dependencies},null,2))
+           await writeFile(release.label+"/index.ts",'export { RootCircuit } from "tscircuit"\n')
+           await writeFile(release.label+"/tsconfig.json",await readFile("tsconfig.json"))
+           await symlink(path.resolve("lib"),release.label+"/lib","dir")
+           await writeFile(release.label+"/published-runtime.json",JSON.stringify({...release,benchmark,tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,sourceTreeExecuted:false,dependencies},null,2))
+          }
+          JS
+          node prepare-published.private.mjs
+          (cd previous && bun install --ignore-scripts --backend=copyfile)
+          (cd latest && bun install --ignore-scripts --backend=copyfile)
+      - name: Profile unchanged real ButterStick through published Core
+        run: |
+          mkdir profile-output
+          bun --cpu-prof --cpu-prof-name=published-butter.cpuprofile --tsconfig-override "$GITHUB_WORKSPACE/latest/tsconfig.json" "$GITHUB_WORKSPACE/latest/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx" "$GITHUB_WORKSPACE/latest" butterstick "$GITHUB_WORKSPACE/profile-output" full > profile-render.private.log 2>&1
+      - name: Summarize CPU profile
+        if: always()
+        run: |
+          python - <<'PYPROFILE'
+          import json,collections
+          p=json.load(open('published-butter.cpuprofile'));n={v['id']:v for v in p['nodes']};parents={c:v['id'] for v in n.values() for c in v.get('children',[])}
+          selfs=collections.Counter();incs=collections.Counter();total=sum(p['timeDeltas'])
+          for sid,d in zip(p['samples'],p['timeDeltas']):
+           c=n[sid]['callFrame'];key=(c['functionName'],c['url']);selfs[key]+=d
+           seen=set();k=sid
+           while k:
+            c=n[k]['callFrame'];key=(c['functionName'],c['url'])
+            if key not in seen:incs[key]+=d;seen.add(key)
+            k=parents.get(k)
+          print('PROFILE_SECONDS='+str(total/1e6))
+          for key,v in selfs.most_common(35):print('PROFILE_SELF='+json.dumps({'selfPercent':v/total*100,'inclusivePercent':incs[key]/total*100,'function':key[0],'file':key[1]}))
+          for key,v in incs.most_common(35):print('PROFILE_INCLUSIVE='+json.dumps({'percent':v/total*100,'function':key[0],'file':key[1]}))
+          PYPROFILE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published3275-butter-cpu-profile
+          path: |
+            published-butter.cpuprofile
+            profile-output/
+            profile-render.private.log
+          retention-days: 7
