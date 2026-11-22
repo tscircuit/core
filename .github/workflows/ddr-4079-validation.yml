@@ -1,0 +1,23 @@
+name: Validate PR4079 format and types
+on:
+  push:
+    branches: [analysis/ddr-3275-next-fix-20261122]
+    paths: [.github/workflows/ddr-4079-validation.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: c9e6f9e09f8070269ee1a4946e32617a0541fc6e
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --backend=copyfile
+      - run: bun run format:check
+      - run: bunx tsc --noEmit
