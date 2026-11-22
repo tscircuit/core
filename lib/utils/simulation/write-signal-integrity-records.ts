@@ -1,3 +1,4 @@
+import type { SimulationPcbTransientChannelSimulation } from "circuit-json"
 import type { PcbDriverReceiverChannel } from "lib/components/primitive-components/PcbDriverReceiverChannel"
 import type { PcbTransientChannelSimulation } from "lib/components/primitive-components/PcbTransientChannelSimulation"
 import type { resolveSignalEndpoint } from "./resolve-signal-endpoint"
@@ -56,14 +57,19 @@ export function writeSignalIntegrityRecords(
 
   // Updates merge fields. Replace records to clear omitted optional values.
   const simulations = db.simulation_pcb_transient_channel_simulation
-  const simulationRecord = {
+  const simulationRecord: Omit<
+    SimulationPcbTransientChannelSimulation,
+    "type" | "simulation_pcb_transient_channel_simulation_id"
+  > = {
     name: props.name,
     bit_rate_bps: props.bitRate,
     duration_ms: durationMs,
     allow_unrouted_traces: props.allowUnroutedTraces,
-    aggressor_pattern: props.aggressorPattern,
-    aggressor_disabled: props.aggressorDisabled,
   }
+  if (props.aggressorPattern !== undefined)
+    simulationRecord.aggressor_pattern = props.aggressorPattern
+  if (props.aggressorDisabled !== undefined)
+    simulationRecord.aggressor_disabled = props.aggressorDisabled
   const {
     simulation_pcb_transient_channel_simulation_id: previousSimulationId,
   } = block

@@ -158,7 +158,9 @@ function resolveAuthoredAssemblyCablePath({
     smoothPath.push(end)
   }
   smoothPath.push(path.at(-1)!)
-  const validatedPath = cad_cable.shape.path.safeParse(smoothPath)
+  const cableSchema =
+    "innerType" in cad_cable ? cad_cable.innerType() : cad_cable
+  const validatedPath = cableSchema.shape.path.safeParse(smoothPath)
   if (!validatedPath.success) {
     throw new Error(
       `assembly.cable "${cable.name}" waypoints produce invalid curve points; adjust their positions or spacing`,

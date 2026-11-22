@@ -23,8 +23,6 @@ test("PCB transient simulation records the run settings", async () => {
         bitRate="100Mbps"
         duration="16UI"
         allowUnroutedTraces
-        aggressorPattern="1"
-        aggressorDisabled={false}
       >
         <simulation.pcbdriverreceiverchannel
           name="DATA"
@@ -41,8 +39,6 @@ test("PCB transient simulation records the run settings", async () => {
     name: "LINK",
     bit_rate_bps: 100_000_000,
     allow_unrouted_traces: true,
-    aggressor_pattern: "1",
-    aggressor_disabled: false,
   })
   expect(run.duration_ms).toBeCloseTo(0.00016, 12)
 })
