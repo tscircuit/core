@@ -2070,7 +2070,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           for (const trace of traces) {
             if (
               !fixedTraceIds.has(trace.pcb_trace_id) &&
-              trace.connectsTo?.length === 2
+              trace.connectsTo?.length === 2 &&
+              trace.allowedLayers !== undefined
             ) {
               renegotiableBusTraceIds.add(trace.pcb_trace_id)
             }
