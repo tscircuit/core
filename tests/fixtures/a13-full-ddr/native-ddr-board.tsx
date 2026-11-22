@@ -61,7 +61,9 @@ export function NativeDdrBoard({
     for (const group of bytes) phaseNameByGroup.set(group, "bytes")
   }
   const groups = dataOnly ? bytes : [...preflight, ...bytes, "remaining"]
-  const phases = [...new Set(groups.map((group) => phaseNameByGroup.get(group)!))]
+  const phases = [
+    ...new Set(groups.map((group) => phaseNameByGroup.get(group)!)),
+  ]
   const bytePhases = new Set(bytes.map((group) => phaseNameByGroup.get(group)!))
   return (
     <board
