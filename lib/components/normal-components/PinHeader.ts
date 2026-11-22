@@ -164,6 +164,7 @@ export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
       manufacturer_part_number: resolveManufacturerPartNumber(props),
       pin_count: props.pinCount,
       gender: props.gender,
+      is_right_angle: props.rightAngle,
       are_pins_interchangeable: true,
       display_name: props.displayName,
     } as SourceSimplePinHeader)
