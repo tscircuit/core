@@ -1,0 +1,104 @@
+name: Balanced ButterStick timing control for native bus recovery
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-domain-butter-timing.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    name: Native ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [butterstick]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3f46e5125969e265f9320c5496b3a308559134d3
+          path: core-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 78d291318d81d609265266715b6098205a09d3ee
+          path: core-head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact latest routing stack in two independent Core checkouts
+        run: |
+          cat > prepare.private.mjs <<'JS'
+          import{readFileSync,writeFileSync}from"node:fs"
+          const response=await fetch("https://registry.npmjs.org/tscircuit/0.0.3278")
+          if(!response.ok)throw Error("Missing exact published metadata")
+          const published=await response.json()
+          for(const revision of["base","head"]){
+            const filename="core-"+revision+"/package.json"
+            const packageJson=JSON.parse(readFileSync(filename,"utf8"))
+            for(const section of["dependencies","devDependencies"])
+              for(const name of Object.keys(packageJson[section]??{}))
+                if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":revision==="head"?"https://npm-releases.tscircuit.com/npm-tarballs/45043831146-1/tscircuit-capacity-autorouter-0.0.1153.tgz":"0.0.1153","@tscircuit/fanout-solver":"0.0.103","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            writeFileSync(filename,JSON.stringify(packageJson,null,2))
+          }
+          JS
+          node prepare.private.mjs
+          for revision in base head;do
+            (cd "core-$revision" && bun install --ignore-scripts --backend=copyfile)
+          done
+      - name: Record actual solver constructor inputs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for revision in ['base','head']:
+            p=Path('core-'+revision+'/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx')
+            s=p.read_text()
+            anchor='    const { solverParams, solverConstructorArgs, ...metadata } = event'
+            assert s.count(anchor)==1
+            s=s.replace(anchor,anchor+'''
+              if (eventName === "solver:started" && solverParams) {
+                const actualInput = solverParams.input ?? solverParams
+                if (Array.isArray(actualInput.connections) && Array.isArray(actualInput.obstacles)) {
+                  writeFileSync(join(output, "actual-solver-" + progress.solverEvents.length + ".srj.json"), JSON.stringify(actualInput))
+                }
+              }''')
+            p.write_text(s)
+          PY
+      - name: Run balanced base head head base passes
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          pass=0
+          for revision in base head head base;do
+            pass=$((pass+1))
+            echo "TIMING_PASS_START=$pass:$revision"
+            bun "core-$revision/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/core-$revision" --out "$GITHUB_WORKSPACE/timing-$pass" --circuit "$CIRCUIT" --timeout 1200 > "routing-timing-$pass.log" 2>&1
+            bun "core-head/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts" "$GITHUB_WORKSPACE/core-head" "$CIRCUIT" "$GITHUB_WORKSPACE/timing-$pass/$CIRCUIT"
+          done
+      - name: Report the four independent real-board renders
+        run: |
+          python - <<'PY'
+          import json
+          rows=[]
+          for number,revision in enumerate(['base','head','head','base'],1):
+            root='timing-'+str(number)
+            report=json.load(open(root+'/results.json'))['cases'][0]
+            assessment=json.load(open(root+'/butterstick/assessment.json'))
+            physical=sum(v for k,v in assessment['findings'].items() if k not in ['missing_traces','disconnected_ports'])
+            row={'revision':revision,'pass':number,'seconds':report['wallMs']/1000,'peakRssMb':report['peakRssMb'],'connected':assessment['connectedNets'],'requested':assessment['requestedNets'],'physical':physical,'geometry':len(assessment['geometryErrors'])}
+            rows.append(row)
+            print('BUTTER_BALANCED_TIMING='+json.dumps(row))
+            assert row['connected']==55 and physical==0 and row['geometry']==0
+          json.dump(rows,open('timing-comparison.json','w'),indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: butterstick-balanced-timing
+          path: |
+            timing-comparison.json
+            routing-timing-*.log
