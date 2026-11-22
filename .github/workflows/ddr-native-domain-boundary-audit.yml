@@ -155,6 +155,7 @@ jobs:
           }
           function auditPipeline(pipeline, stage) {
             if (!pipeline.highDensityStitchSolver?.solved) return
+            if (pipeline.pipeline9JointDrcRepairSolver && !pipeline.pipeline9JointDrcRepairSolver.solved) return
             const masks = new Map((pipeline.originalSrj.traces ?? []).filter(trace => trace.allowedLayers).map(trace => [trace.connection_name, new Set(trace.allowedLayers)]))
             const traces = pipeline.getUpdatedPreloadedTraces()
             const invalid = traces.flatMap(trace => {
