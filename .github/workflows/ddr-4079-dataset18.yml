@@ -5,12 +5,18 @@ on:
     paths: [.github/workflows/ddr-4079-dataset18.yml]
 permissions:
   contents: read
-  actions: read
+  actions: write
 jobs:
   benchmark:
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 90
     steps:
+      - name: Stop the obsolete comparison waiting for a failed build
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run=await github.rest.actions.getWorkflowRun({owner:"tscircuit",repo:"core",run_id:44971013028})
+            if(run.data.status!=="completed")await github.rest.actions.cancelWorkflowRun({owner:"tscircuit",repo:"core",run_id:44971013028})
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
@@ -31,15 +37,17 @@ jobs:
         with:
           script: |
             for(let attempt=0;attempt<80;attempt++){
-              const response=await github.rest.actions.listWorkflowRunArtifacts({owner:"tscircuit",repo:"core",run_id:44970823003})
+              const response=await github.rest.actions.listWorkflowRunArtifacts({owner:"tscircuit",repo:"core",run_id:44971157453})
               if(response.data.artifacts.some(artifact=>artifact.name==="net-comparison-builds"))return
+              const run=await github.rest.actions.getWorkflowRun({owner:"tscircuit",repo:"core",run_id:44971157453})
+              if(run.data.status==="completed")throw Error("The source build failed before publishing its lock")
               await new Promise(resolve=>setTimeout(resolve,15000))
             }
             throw Error("The source-build dependency lock did not become available")
       - uses: actions/download-artifact@v4
         with:
           name: net-comparison-builds
-          run-id: 44970823003
+          run-id: 44971157453
           github-token: ${{ github.token }}
           path: compiled
       - name: Install identical isolated dependencies
