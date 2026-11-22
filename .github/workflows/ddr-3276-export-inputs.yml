@@ -18,7 +18,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: native3276-routing-diagnostic-${{ matrix.circuit }}
-          run-id: 44992362452
+          run-id: 44992663008
           repository: tscircuit/core
           github-token: ${{ github.token }}
           path: captured
@@ -29,13 +29,7 @@ jobs:
           python - <<'PY'
           import json,pathlib,gzip,base64,hashlib,os
           root=pathlib.Path('captured')
-          files=[*root.rglob('hd-input-0.json'),*root.rglob('phase-5-start.srj.json')]
-          for path in files:
-            raw=path.read_bytes();packed=gzip.compress(raw);encoded=base64.b64encode(packed).decode()
-            stem=os.environ['CIRCUIT']+'-'+path.name
-            print('DDR_INPUT_META='+json.dumps({'name':stem,'bytes':len(raw),'gzipBytes':len(packed),'sha256':hashlib.sha256(raw).hexdigest()}))
-            for i in range(0,len(encoded),12000):print('DDR_INPUT_GZIP='+json.dumps({'name':stem,'part':i//12000,'base64':encoded[i:i+12000]}))
-          for path in root.rglob('*child-failure*.json'):
+          for path in root.rglob('*Pipeline9RegionalFallbackSolver.json'):
             d=json.load(open(path));params=d.get('params')
             if params:
               raw=json.dumps(params).encode();packed=gzip.compress(raw);encoded=base64.b64encode(packed).decode();stem=os.environ['CIRCUIT']+'-'+path.name
