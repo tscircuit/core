@@ -1,0 +1,55 @@
+name: Verify merged native-domain DDR acceptance
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-main-acceptance.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Verify complete all-ten results and compare cleanup copper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,time,urllib.request
+          def get(path):
+            request=urllib.request.Request('https://api.github.com/repos/tscircuit/core/'+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+            return urllib.request.urlopen(request).read().decode('utf-8-sig')
+          for attempt in range(72):
+            jobs=json.loads(get('actions/runs/45069386166/jobs?per_page=100'))['jobs']
+            if len(jobs)==10 and all(job['status']=='completed'for job in jobs):break
+            time.sleep(15)
+          assert len(jobs)==10 and all(job['status']=='completed'for job in jobs)
+          golden={"orangecrab":"09da77f6a988a4a23564445205291fd86ec078940ba707c4f82fc1f161c98006","glider":"cb23f89b529e91b48002f99931368830b9644994a5af0ecd15a9d8b291e5d7df","icepi":"a4c763cb549c3a236f3dd50801c66da923b2cf677123f88ddb09e939aeb63d84","a64":"e3d1b98ffbad3a428469406be0d3e8361633e5b7ca027e909882335581731a15","a13":"e8a5cb035464052853542efded7e5b905d2fd8256721a73be55e025ecab58286","h3":"9860c243d71d86408d526ac9979f5fa05c1c270f4e645c60086617a1970e80bb","imx6":"113e3c5587f7def0c8cab9bace1ac4cfa74ebce63cc0e8941aa7acb791c88a23","stmp157":"03c861970fb5d4e73a6ac0eb9831413cfb4c269b4dc4059fd5aa9cdb19502aa2","butterstick":"056fddfadfa5411d69b40db9ec92139bf49df32f77859ee766873f3d9c496c85","h616":"058c43e85056f55b949f187b7f85651f3c02f2f374b7f0dda6d67bcab3b3a8d9"}
+          rows=[]
+          for job in jobs:
+            assert job['status']=='completed',job['name']
+            log=get('actions/jobs/'+str(job['id'])+'/logs')
+            found=[json.loads(line.split('NATIVE_TRACE_LAYER_MASK_METRIC=',1)[1])for line in log.splitlines()if 'NATIVE_TRACE_LAYER_MASK_METRIC={'in line]
+            assert len(found)==2,(job['name'],len(found))
+            rows.extend(found)
+          assert len(rows)==20
+          assert {row['circuit']for row in rows}==set(golden)
+          for circuit in golden:
+            pair={row['revision']:row for row in rows if row['circuit']==circuit}
+            before,after=pair['base'],pair['head']
+            assert before['fixtureHash']==after['fixtureHash']
+            assert before['executedAutorouterSha256']=='d720821edbb83bf5df1e53be0601b51056c9bf691a269a122b7cc38dfc9bebf5'
+            assert after['executedAutorouterSha256']=='c162b127af67d2cbd6cff7abc8aa5abca0e3b87ee835a3c6808eaa91be62ea1d'
+            for row in pair.values():
+              assert row['physicalFindings']==0 and row['geometryErrorCount']==0,(circuit,row['revision'],row['findings'])
+            assert after['connected']>=before['connected'],circuit
+            if circuit=='a13':assert after['connected']==96
+            if circuit!='stmp157':assert after['copperSha256']==golden[circuit],('Cleanup changed copper',circuit)
+            print('MERGED_NATIVE_DDR_ACCEPTED='+json.dumps({'circuit':circuit,'beforeConnected':before['connected'],'afterConnected':after['connected'],'requested':after['requested'],'beforeSeconds':before['seconds'],'afterSeconds':after['seconds'],'findings':after['physicalFindings'],'sameCopperAsBeforeMainMerge':after['copperSha256']==golden[circuit]}))
+          json.dump(rows,open('accepted-all-ten.json','w'),indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: merged-native-domain-all-ten-accepted
+          path: accepted-all-ten.json
