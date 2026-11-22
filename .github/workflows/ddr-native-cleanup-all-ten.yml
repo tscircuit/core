@@ -1,4 +1,4 @@
-name: Verify cleanup preserves all ten native DDR board outputs
+name: Verify native-domain integration with current main on all ten DDR boards
 on:
   push:
     branches: [analysis/ddr-3277-completion-20261122-1035]
@@ -18,12 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: d4e9a42c3edc8b49d2a42c72795381ea1fbc467a
+          ref: ce2683b98de40a7d4eaa4dc055ae105096c744d8
           path: core-base
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: a3c5b5fe24a08cfd164c615d9c1a2e4cda145866
+          ref: fec68cdfd923964d5b249578bf955d42653166d8
           path: core-head
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -42,7 +42,7 @@ jobs:
             for(const section of["dependencies","devDependencies"])
               for(const name of Object.keys(packageJson[section]??{}))
                 if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
-            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":revision==="head"?"https://npm-releases.tscircuit.com/npm-tarballs/45063651124-1/tscircuit-capacity-autorouter-0.0.1155.tgz":"https://npm-releases.tscircuit.com/npm-tarballs/45047749346-1/tscircuit-capacity-autorouter-0.0.1154.tgz","@tscircuit/fanout-solver":"0.0.103","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":revision==="head"?"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz":"0.0.1156","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
             writeFileSync(filename,JSON.stringify(packageJson,null,2))
           }
           JS
@@ -111,8 +111,9 @@ jobs:
           if(rows.length!==2)throw Error("Incomplete source comparison")
           if(rows[0].fixtureHash!==rows[1].fixtureHash)throw Error("Different real-board fixtures")
           for(const row of rows)if(row.physicalFindings!==0||row.geometryErrorCount!==0)throw Error("Physical or layer finding")
-          if(rows[0].connected!==rows[1].connected)throw Error("Cleanup changed connected signals")
-          if(rows[0].copperSha256!==rows[1].copperSha256)throw Error("Cleanup changed emitted copper")
+          if(rows[1].connected<rows[0].connected)throw Error("Combined integration lost connected signals")
+          if(circuit==="a13"&&rows[1].connected!==96)throw Error("A13 recovery lost")
+          if(circuit!=="a13"&&rows[0].copperSha256!==rows[1].copperSha256)throw Error("Combined integration changed control copper")
           writeFileSync("comparison.json",JSON.stringify(rows,null,2))
           TS
           bun report.private.ts

@@ -1,4 +1,4 @@
-name: Verify native-domain cleanup on all Dataset18 circuits
+name: Verify current main versus native-domain integration on Dataset18
 on:
   push:
     branches: [analysis/ddr-3277-completion-20261122-1035]
@@ -30,7 +30,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json
-          for revision,version in [('base',"https://npm-releases.tscircuit.com/npm-tarballs/45047749346-1/tscircuit-capacity-autorouter-0.0.1154.tgz"),('pr',"https://npm-releases.tscircuit.com/npm-tarballs/45063651124-1/tscircuit-capacity-autorouter-0.0.1155.tgz")]:
+          for revision,version in [('base',"0.0.1156"),('pr',"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz")]:
             root=Path('same-machine-'+revision)
             manifest=json.loads((root/'package.json').read_text())
             manifest['devDependencies']['@tscircuit/checks']='0.0.282'
@@ -69,7 +69,7 @@ jobs:
           import {createHash} from "node:crypto"
           import path from "node:path"
           const records=[]
-          for(const [revision,expected] of [["base","0.0.1154"],["pr","0.0.1155"]]){
+          for(const [revision,expected] of [["base","0.0.1156"],["pr","0.0.1156"]]){
             const root=path.resolve("same-machine-"+revision,"published-runtime/node_modules/@tscircuit/capacity-autorouter")
             const meta=JSON.parse(readFileSync(root+"/package.json","utf8"))
             if(meta.version!==expected)throw Error("Unexpected package version")
