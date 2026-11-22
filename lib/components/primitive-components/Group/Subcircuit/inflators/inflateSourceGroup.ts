@@ -6,7 +6,6 @@ import type { GroupProps, SubcircuitGroupProps } from "@tscircuit/props"
 export function inflateSourceGroup(
   sourceGroup: SourceGroup,
   inflatorContext: InflatorContext,
-  fromIsolatedCache = false,
 ) {
   const { injectionDb, subcircuit, groupsMap } = inflatorContext
 
@@ -21,7 +20,7 @@ export function inflateSourceGroup(
         ?._getSchematicLengthUnit()) ||
     inflatorContext.defaultSchematicLengthUnit
   const preserveScope =
-    !fromIsolatedCache ||
+    !inflatorContext.fromIsolatedCache ||
     sourceGroup.default_schematic_length_unit !== parentUnit
   const groupProps: GroupProps = {
     ...(preserveScope &&

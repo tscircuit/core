@@ -477,19 +477,7 @@ export class Board
   }
 
   doInitialInflateSubcircuitCircuitJson() {
-    const isolatedJson = this._isolatedCircuitJson
-    if (isolatedJson) {
-      this._isInflatedFromCircuitJson = true
-      this._isolatedCircuitJson = null
-      inflateCircuitJson(this, isolatedJson, [], true)
-      return
-    }
-
-    const { circuitJson, children } = this._parsedProps
-    if (circuitJson) {
-      this._isInflatedFromCircuitJson = true
-    }
-    inflateCircuitJson(this, circuitJson, children)
+    inflateCircuitJson(this)
   }
 
   doInitialPcbComponentRender(): void {

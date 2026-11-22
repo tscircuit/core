@@ -29,13 +29,18 @@ import { inflateSourceTrace } from "../../components/primitive-components/Group/
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
 
-export const inflateCircuitJson = (
-  target: SubcircuitI & Group<any>,
-  circuitJson: CircuitJson | undefined,
-  children: any[],
-  fromIsolatedCache = false,
-) => {
+export const inflateCircuitJson = (target: SubcircuitI & Group<any>) => {
+  const cachedJson = target._isolatedCircuitJson
+  const circuitJson: CircuitJson | undefined =
+    cachedJson ?? target._parsedProps.circuitJson
   if (!circuitJson) return
+
+  target._isInflatedFromCircuitJson = true
+  target._isolatedCircuitJson = null
+  if (!cachedJson && target._parsedProps.children?.length > 0) {
+    throw new Error("Component cannot have both circuitJson and children")
+  }
+
   const sourceGroups = circuitJson.filter(
     (element) => element.type === "source_group",
   )
@@ -43,15 +48,12 @@ export const inflateCircuitJson = (
     convertSchematicLengthUnits(circuitJson, LEGACY_SCHEMATIC_LENGTH_UNIT),
   )
 
-  if (circuitJson && children?.length > 0) {
-    throw new Error("Component cannot have both circuitJson and children")
-  }
-
   const groupsMap = new Map<SourceGroupId, Group<any>>()
 
   const inflationCtx: InflatorContext = {
     injectionDb,
     subcircuit: target,
+    fromIsolatedCache: cachedJson !== null,
     defaultSchematicLengthUnit: target._getSchematicLengthUnit(),
     groupsMap,
   }
@@ -79,7 +81,7 @@ export const inflateCircuitJson = (
     }
 
     const groupToRender = groupsToRender[groupIndex]
-    inflateSourceGroup(groupToRender, inflationCtx, fromIsolatedCache)
+    inflateSourceGroup(groupToRender, inflationCtx)
     renderedGroupIds.add(groupToRender.source_group_id)
     groupsToRender.splice(groupIndex, 1)
   }

@@ -10,6 +10,7 @@ export type SourceGroupId = string
 export interface InflatorContext {
   injectionDb: CircuitJsonUtilObjects
   subcircuit: SubcircuitI
+  fromIsolatedCache: boolean
   defaultSchematicLengthUnit?: SchematicLengthUnit
 
   normalComponent?: NormalComponent

@@ -83,24 +83,6 @@ function getHashableProps(props: Record<string, any>): Record<string, any> {
 }
 
 /**
- * Recursively collect hashable data from children.
- */
-function getChildrenHashData(
-  children: PrimitiveComponent[],
-  physicalPlacement: boolean,
-): any[] {
-  return children.map((child) => ({
-    componentName: child.componentName,
-    props: getHashableProps(child.props ?? {}),
-    ...(physicalPlacement && {
-      schX: child.props.schX,
-      schY: child.props.schY,
-    }),
-    children: getChildrenHashData(child.children, physicalPlacement),
-  }))
-}
-
-/**
  * FNV-1a hash function - better distribution than djb2 for similar strings.
  * Uses 32-bit FNV-1a which provides good collision resistance for our use case.
  */
@@ -143,10 +125,23 @@ export function Subcircuit_getSubcircuitPropHash(
   const defaultSchematicLengthUnit = subcircuit._getSchematicLengthUnit()
   const physicalPlacement =
     defaultSchematicLengthUnit === "mm" || defaultSchematicLengthUnit === "in"
+
+  function getChildrenHashData(children: PrimitiveComponent[]): any[] {
+    return children.map((child) => ({
+      componentName: child.componentName,
+      props: getHashableProps(child.props ?? {}),
+      ...(physicalPlacement && {
+        schX: child.props.schX,
+        schY: child.props.schY,
+      }),
+      children: getChildrenHashData(child.children),
+    }))
+  }
+
   const hashableData = {
     ...(physicalPlacement && { defaultSchematicLengthUnit }),
     props: getHashableProps(subcircuit.props ?? {}),
-    children: getChildrenHashData(subcircuit.children, physicalPlacement),
+    children: getChildrenHashData(subcircuit.children),
   }
 
   return computeHash(hashableData)

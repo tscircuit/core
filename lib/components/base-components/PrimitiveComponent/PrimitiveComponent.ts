@@ -112,7 +112,10 @@ export abstract class PrimitiveComponent<
     return this.config.componentName
   }
 
-  getInheritedProperty(propertyName: string, skipUndefined = false) {
+  getInheritedProperty(
+    propertyName: string,
+    { skipUndefined = false }: { skipUndefined?: boolean } = {},
+  ) {
     let current: PrimitiveComponent<ZodProps> | null = this
     while (current) {
       if (current._parsedProps && propertyName in current._parsedProps) {
@@ -820,7 +823,9 @@ export abstract class PrimitiveComponent<
 
   _getSchematicLengthUnit(): SchematicLengthUnit {
     return (
-      this.getInheritedProperty("defaultSchematicLengthUnit", true) ??
+      this.getInheritedProperty("defaultSchematicLengthUnit", {
+        skipUndefined: true,
+      }) ??
       this.root?.inheritedSchematicLengthUnit ??
       DEFAULT_SCHEMATIC_LENGTH_UNIT
     )
