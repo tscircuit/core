@@ -294,7 +294,7 @@ jobs:
                   }'''
           assert s.count(before)==1
           p.write_text(s.replace(before,after))
-          p=Path("core-head/lib/utils/autorouting/AutorouterError.ts")
+          p=Path("core-head/lib/errors/AutorouterError.ts")
           s=p.read_text().replace("  constructor(message: string)", "  failureStage?: string\n\n  constructor(message: string, failureStage?: string)")
           s=s.replace('    this.name = "AutorouterError"', '    this.name = "AutorouterError"\n    this.failureStage = failureStage')
           p.write_text(s)
