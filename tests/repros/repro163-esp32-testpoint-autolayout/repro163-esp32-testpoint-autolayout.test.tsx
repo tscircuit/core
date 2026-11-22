@@ -57,10 +57,10 @@ const ESP32Testpoint = () => (
     <trace from=".U1 > .EN" to=".C_EN > .pin1" />
     <trace from=".C_EN > .pin2" to="net.GND" />
     <trace from=".U1 > .EN" to=".SW_RESET > .pin1" />
-    <trace from=".SW_RESET > .pin2" to="net.GND" />
+    <trace from=".SW_RESET > .pin3" to="net.GND" />
 
     <trace from=".U1 > .IO0" to=".SW_BOOT > .pin1" />
-    <trace from=".SW_BOOT > .pin2" to="net.GND" />
+    <trace from=".SW_BOOT > .pin3" to="net.GND" />
 
     <trace from=".U1 > .IO4" to=".TCH1 > .pin1" />
     <trace from=".U1 > .IO5" to=".TCH2 > .pin1" />

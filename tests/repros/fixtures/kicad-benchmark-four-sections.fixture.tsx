@@ -595,9 +595,9 @@ export default () => (
     <trace from=".U1 > .GPIO15" to=".R15 > .pin1" />
     <trace from=".R15 > .pin2" to="net.GND" />
     <trace from=".SW_RST > .pin1" to=".U1 > .RESET" />
-    <trace from=".SW_RST > .pin2" to="net.GND" />
+    <trace from=".SW_RST > .pin3" to="net.GND" />
     <trace from=".SW_BOOT > .pin1" to=".U1 > .GPIO0" />
-    <trace from=".SW_BOOT > .pin2" to="net.GND" />
+    <trace from=".SW_BOOT > .pin3" to="net.GND" />
     <trace from="net.V3V3" to=".RPWR > .pin1" />
     <trace from=".RPWR > .pin2" to=".LED_PWR > .anode" />
     <trace from=".LED_PWR > .cathode" to="net.GND" />
