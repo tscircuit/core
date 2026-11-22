@@ -32,6 +32,11 @@ jobs:
           from pathlib import Path
           helper_paths=["lib/utils/getAllowedLayersByConnection.ts","lib/utils/assertRoutesStayOnAllowedLayers.ts"]
           helpers={path:urllib.request.urlopen("https://raw.githubusercontent.com/tscircuit/tscircuit-autorouter/5d94470d25b505fac0d4749ef497f9ee287c4587/"+path).read().decode() for path in helper_paths}
+          for name in ['ar-previous','ar-latest']:
+            p=Path(name)/'package.json'
+            manifest=json.loads(p.read_text())
+            manifest['devDependencies']['@tscircuit/checks']='0.0.282'
+            p.write_text(json.dumps(manifest,indent=2)+'\n')
           for name in ['ar-latest']:
             root=Path(name)
             p=root/'package.json'
