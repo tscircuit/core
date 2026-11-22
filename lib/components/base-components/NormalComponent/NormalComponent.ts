@@ -1975,6 +1975,29 @@ export class NormalComponent<
     }
   }
 
+  /**
+   * Port arrangement for the schematic box when the user gave none and the
+   * pin numbers are not sparse. Returning undefined keeps the generic layout,
+   * which splits the pins between the left and right sides.
+   */
+  _getDefaultSchematicBoxPortArrangement(
+    _pinCount: number,
+  ): PortArrangement | undefined {
+    return undefined
+  }
+
+  /**
+   * Schematic box width when the user gave no schWidth. Returning undefined
+   * keeps the generic sizing, which leaves room for two facing columns of
+   * pin labels.
+   */
+  _getDefaultSchematicBoxWidth(_params: {
+    pinLabels: Record<string, string | readonly string[]>
+    schPortArrangement: PortArrangement | null | undefined
+  }): number | undefined {
+    return undefined
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     if (this.schematicBoxDimensions) return this.schematicBoxDimensions
     return this._computeSchematicBoxDimensions()
@@ -2014,7 +2037,8 @@ export class NormalComponent<
     }
     const schPortArrangement =
       this._getSchematicPortArrangement() ??
-      this._getImplicitSparseSchematicPortArrangement(pinCount)
+      this._getImplicitSparseSchematicPortArrangement(pinCount) ??
+      this._getDefaultSchematicBoxPortArrangement(pinCount)
 
     // Validate physical aliases against the original package map before its
     // numeric layout representation loses physical-name metadata.
@@ -2030,7 +2054,12 @@ export class NormalComponent<
     }
 
     return getAllDimensionsForSchematicBox({
-      schWidth: props.schWidth,
+      schWidth:
+        props.schWidth ??
+        this._getDefaultSchematicBoxWidth({
+          pinLabels: allPinLabels,
+          schPortArrangement,
+        }),
       schHeight: props.schHeight,
       schPinSpacing: pinSpacing,
       numericSchPinStyle: getNumericSchPinStyle(
