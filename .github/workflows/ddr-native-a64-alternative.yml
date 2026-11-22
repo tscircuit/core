@@ -1,0 +1,76 @@
+name: Test existing alternative plan for native A64 completion
+on:
+  push:
+    branches: [analysis/ddr-3276-completion-20261122]
+    paths: [.github/workflows/ddr-native-a64-alternative.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  completion:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: b7a908eeabef89559c1edb64ffd8652ecbc6af57
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: tscircuit/core
+          run-id: 44992181782
+          name: native-ddr-3276-a64
+          path: captured
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact source and select its existing alternative plan
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          python3 - <<'PY'
+          import pathlib
+          p=pathlib.Path("lib/solvers/PortPointPathingSolver/tinyhypergraph/TinyHypergraphPortPointPathingSolver.ts")
+          s=p.read_text()
+          before="return shouldSelectTraceDensityAlternative(primary, alternative, routeCount)"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,"return true"))
+          PY
+      - name: Probe full routing without changing native input or exporting it
+        run: |
+          cat > inspect-a64.private.ts <<'TS'
+          import {readFileSync,readdirSync,statSync} from "node:fs"
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from "./lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph"
+          function find(dir:string):string|undefined{
+            for(const name of readdirSync(dir)){
+              const p=dir+"/"+name
+              if(statSync(p).isDirectory()){const match=find(p);if(match)return match}
+              else if(name==="phase-5-start.srj.json"&&p.includes("latest"))return p
+            }
+          }
+          const filename=find("captured")
+          if(!filename)throw Error("Missing saved published input")
+          const input=JSON.parse(readFileSync(filename,"utf8"))
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          let prior="",lastNodes=0
+          const start=performance.now()
+          while(!solver.solved&&!solver.failed){
+            solver.step()
+            const phase=solver.getCurrentPhase()
+            if(phase!==prior){console.log("ALTERNATIVE_PHASE="+JSON.stringify({phase,seconds:(performance.now()-start)/1000}));prior=phase}
+            const nodes=Number(solver.highDensityRouteSolver?.stats.solvedNodeCount??0)
+            if(nodes>=lastNodes+50){console.log("ALTERNATIVE_NODES="+JSON.stringify({nodes,seconds:(performance.now()-start)/1000,rssMb:process.memoryUsage().rss/2**20}));lastNodes=nodes}
+            if(solver.iterations%1024===0&&process.memoryUsage().rss>14*2**30)throw Error("Diagnostic memory limit")
+            if(performance.now()-start>1200000)throw Error("Diagnostic time limit")
+          }
+          console.log("ALTERNATIVE_OUTCOME="+JSON.stringify({solved:solver.solved,failed:solver.failed,phase:solver.getCurrentPhase(),seconds:(performance.now()-start)/1000,rssMb:process.memoryUsage().rss/2**20,highDensity:solver.highDensityRouteSolver?.stats,outputTraceCount:solver.solved?solver.getOutputSimplifiedPcbTraces().length:0}))
+          TS
+          status=0
+          bun inspect-a64.private.ts > aggregate.private.log 2>&1 || status=$?
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path("aggregate.private.log").read_text().splitlines():
+            if line.startswith("ALTERNATIVE_"): print(line)
+          PY
+          exit "$status"
