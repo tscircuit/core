@@ -1,0 +1,31 @@
+name: Inspect the exact native-copper source-build stage mapping
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-build-inspection.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-trace-layer-mask-builds
+          run-id: 45035464005
+          github-token: ${{ github.token }}
+          path: compiled
+      - name: Map the observed compiled solver to its source stage
+        run: |
+          node - <<'JS'
+          const fs=require("node:fs")
+          const crypto=require("node:crypto")
+          const filename="compiled/ar-latest/dist/index.js"
+          const source=fs.readFileSync(filename,"utf8")
+          console.log("SOURCE_BUILD_SHA256="+crypto.createHash("sha256").update(source).digest("hex"))
+          for(const marker of ['solverName:"exactRepairSolver"','solverName:"initialBoundedRegionalRepairSolver"','solverName:"regionalB01RepairSolver"','solverName:"boundedRegionalRepairSolver"','this.traceContactRepairSolver=new','Gse=class','class Gse']){
+            const index=source.indexOf(marker)
+            console.log("COMPILED_STAGE_MAPPING="+JSON.stringify({marker,index,excerpt:index<0?null:source.slice(Math.max(0,index-100),index+1800)}))
+          }
+          JS
