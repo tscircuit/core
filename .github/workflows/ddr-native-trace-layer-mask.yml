@@ -50,9 +50,11 @@ jobs:
             root=Path(name)
             p=root/'package.json'
             manifest=json.loads(p.read_text())
+            import shutil
+            shutil.copytree('tiny-integrated',root/'vendor/tiny',ignore=shutil.ignore_patterns('.git','node_modules'))
             manifest['devDependencies']['@tscircuit/checks']='0.0.282'
             for section in ["dependencies","devDependencies"]:
-              if "tiny-hypergraph" in manifest.get(section,{}):manifest[section]["tiny-hypergraph"]="file:../tiny-integrated"
+              if "tiny-hypergraph" in manifest.get(section,{}):manifest[section]["tiny-hypergraph"]="file:./vendor/tiny"
             p.write_text(json.dumps(manifest,indent=2)+'\n')
             for path,source in helpers.items():
               p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
