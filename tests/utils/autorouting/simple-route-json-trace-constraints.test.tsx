@@ -28,20 +28,20 @@ test("SRJ preserves individual trace limits when terminals share a net", () => {
   expect(net.traceConstraints).toEqual([
     {
       sourceTraceId: "source_trace_0",
-      pointIds: [net.pointsToConnect[0]!.pointId],
+      pointIds: [net.pointsToConnect[0]!.pointId!],
       maxLength: 10,
       maxViaCount: 0,
     },
     {
       sourceTraceId: "source_trace_1",
-      pointIds: [net.pointsToConnect[1]!.pointId],
+      pointIds: [net.pointsToConnect[1]!.pointId!],
       maxLength: 3,
     },
   ])
   expect(direct.traceConstraints).toEqual([
     {
       sourceTraceId: "source_trace_3",
-      pointIds: direct.pointsToConnect.map((point) => point.pointId),
+      pointIds: direct.pointsToConnect.map((point) => point.pointId!),
       maxViaCount: 1,
     },
   ])
