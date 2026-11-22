@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fe2b1a735b9a4e46b2c03869e18c4af0e747ef19
+          ref: fix/a13-native-bus-negotiation
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -44,7 +44,7 @@ jobs:
             cached.add(<A13FullDdrBoard />)
             await cached.renderUntilSettled()
             expect(cached.db.pcb_autorouting_error.list()).toEqual([])
-            expect(hits).toBe(5)
+            expect(hits).toBe(1)
             const secondCopper = cached.getCircuitJson().filter(element => element.type === "pcb_trace" || element.type === "pcb_via")
             expect(secondCopper).toEqual(firstCopper)
             console.log("A13_CACHE_REPLAY="+JSON.stringify({hits, entries:entries.size, copperHash:createHash("sha256").update(JSON.stringify(secondCopper)).digest("hex")}))
