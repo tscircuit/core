@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fec68cdfd923964d5b249578bf955d42653166d8
+          ref: e42f08b6c9ae8049c3525f5d4ce3397ae4027d4b
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir runtime-base
           cat > runtime-base/package.json <<'JSON'
-          {"private":true,"dependencies":{"@tscircuit/capacity-autorouter":"0.0.1156"}}
+          {"private":true,"dependencies":{"@tscircuit/capacity-autorouter":"0.0.1156","@tscircuit/bus-lanes-solver":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"}}
           JSON
           (cd runtime-base && bun install --ignore-scripts --backend=copyfile)
       - name: Verify actual built implementation and independent package files
@@ -43,6 +43,15 @@ jobs:
           }
           if(rows[0].filename===rows[1].filename||(rows[0].device===rows[1].device&&rows[0].inode===rows[1].inode))throw Error("Shared writable runtime files")
           if(rows[0].sha256===rows[1].sha256)throw Error("Candidate package does not differ")
-          console.log("NATIVE_3279_RUNTIME_PROOF="+JSON.stringify({coreHead:"fec68cdfd923964d5b249578bf955d42653166d8",preview:"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz",rows}))
+          const busRows=[]
+          for(const prefix of["runtime-base/",""]){
+            const root=prefix+"node_modules/@tscircuit/bus-lanes-solver";const meta=JSON.parse(readFileSync(root+"/package.json","utf8"));const filename=realpathSync(root+"/dist/index.js"),stat=statSync(filename),source=readFileSync(filename,"utf8");
+            if(prefix===""&&!source.includes("setTraceConnectionMetadata"))throw Error("Missing upstream bus metadata");
+            busRows.push({prefix,version:meta.version,filename,inode:stat.ino,device:stat.dev,sha256:createHash("sha256").update(source).digest("hex")});
+          }
+          if(busRows[0].inode===busRows[1].inode&&busRows[0].device===busRows[1].device)throw Error("Shared bus runtime files");
+          if(busRows[0].sha256===busRows[1].sha256)throw Error("Bus implementation unchanged");
+          console.log("BUS_METADATA_RUNTIME_PROOF="+JSON.stringify(busRows));
+          console.log("NATIVE_3279_RUNTIME_PROOF="+JSON.stringify({coreHead:"e42f08b6c9ae8049c3525f5d4ce3397ae4027d4b",preview:"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz",rows}))
           TS
           bun verify.private.ts
