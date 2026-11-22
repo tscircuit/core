@@ -1,0 +1,456 @@
+name: Keep native layer domains during negotiated clearance search
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-domain-completion.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 17cdc65e45269bc4229f891c0cc80cde7245a169
+          path: ar-previous
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 17cdc65e45269bc4229f891c0cc80cde7245a169
+          path: ar-latest
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tiny-hypergraph
+          ref: c5a37f9ce2381233366048de693c4f74e754c108
+          path: tiny-integrated
+          persist-credentials: false
+      - name: Combine the existing segment-filter API with the published prepared-router change
+        working-directory: tiny-integrated
+        run: |
+          git fetch --depth=30 origin 65f8ae48235395439611f862269cfa093bb73cad c5a37f9ce2381233366048de693c4f74e754c108
+          git config user.name "DDR integration analysis"
+          git config user.email "analysis@example.invalid"
+          git merge --no-commit --no-ff 65f8ae48235395439611f862269cfa093bb73cad
+      - name: Port the existing layer filter and isolate native-trace inheritance
+        run: |
+          python3 - <<'PY'
+          import json,re,urllib.request
+          from pathlib import Path
+          patch="@@ -1,3 +1,5 @@\n+import { createAllowedLayerSegmentFilter } from \"./createAllowedLayerSegmentFilter\"\n+import type { AllowedLayersByConnection } from \"lib/utils/getAllowedLayersByConnection\"\n import type { SerializedHyperGraph } from \"@tscircuit/hypergraph\"\n import type { GraphicsObject } from \"graphics-debug\"\n import type { SolverRuntimeExecutor } from \"@tscircuit/solver-utils\"\n@@ -928,13 +930,22 @@ class TinyHyperGraphSectionPipelineWithTerminalNetIds extends TinyHyperGraphSect\n   preloadedFixedSegmentCount = 0\n   readonly crampedPortTraversalPenalty: number\n   readonly useSelectiveReripRouting: boolean\n+  private allowedLayersByConnection: AllowedLayersByConnection\n \n   constructor(\n     inputProblem: TinyHyperGraphSectionPipelineInput,\n-    useSelectiveReripRouting: boolean,\n-    usePreparedPortPointRouting = false,\n+    {\n+      useSelectiveReripRouting,\n+      usePreparedPortPointRouting,\n+      allowedLayersByConnection,\n+    }: {\n+      useSelectiveReripRouting: boolean\n+      usePreparedPortPointRouting: boolean\n+      allowedLayersByConnection: AllowedLayersByConnection\n+    },\n   ) {\n     super(inputProblem)\n+    this.allowedLayersByConnection = allowedLayersByConnection\n     this.useSelectiveReripRouting = useSelectiveReripRouting\n     this.crampedPortTraversalPenalty = DEFAULT_CRAMPED_PORT_TRAVERSAL_PENALTY\n     const preloadedStats = getSerializedPreloadedTraceStats(\n@@ -964,6 +975,10 @@ class TinyHyperGraphSectionPipelineWithTerminalNetIds extends TinyHyperGraphSect\n       loaded,\n       this.inputProblem.serializedHyperGraph,\n     )\n+    loaded.problem.routeSegmentFilter = createAllowedLayerSegmentFilter(\n+      loaded,\n+      this.allowedLayersByConnection,\n+    )\n     const metadataPortPenaltyCount = applyMetadataPortPenalties(loaded)\n     const { duplicatePortPenaltyCount, crampedPortPenaltyCount } =\n       applyPortMetadataPenalties(loaded, this.crampedPortTraversalPenalty)\n@@ -1098,7 +1113,11 @@ export class TinyHypergraphPortPointPathingSolver extends BaseSolver {\n   private statsSnapshotDirty = false\n   private asyncRunning = false\n \n-  constructor(private params: HgPortPointPathingSolverParams) {\n+  constructor(\n+    private params: HgPortPointPathingSolverParams & {\n+      allowedLayersByConnection?: AllowedLayersByConnection\n+    },\n+  ) {\n     super()\n     const tinyRouteConnections = getTinyRouteConnectionsOrThrow(\n       params.connections,\n@@ -1186,11 +1205,14 @@ export class TinyHypergraphPortPointPathingSolver extends BaseSolver {\n       partialRipEligibilityCount,\n     )\n     this.tinyPipelineSolver =\n-      new TinyHyperGraphSectionPipelineWithTerminalNetIds(\n-        tinyPipelineInput,\n-        params.flags.USE_SELECTIVE_RERIP_ROUTING === true,\n-        params.flags.USE_PREPARED_PORT_POINT_ROUTING === true,\n-      )\n+      new TinyHyperGraphSectionPipelineWithTerminalNetIds(tinyPipelineInput, {\n+        useSelectiveReripRouting:\n+          params.flags.USE_SELECTIVE_RERIP_ROUTING === true,\n+        usePreparedPortPointRouting:\n+          params.flags.USE_PREPARED_PORT_POINT_ROUTING === true,\n+        allowedLayersByConnection:\n+          params.allowedLayersByConnection ?? new Map(),\n+      })\n     this.primaryTinyPipelineSolver = this.tinyPipelineSolver\n     if (\n       connections.length >= TRACE_DENSITY_PORTFOLIO_MIN_ROUTE_COUNT &&\n@@ -1539,8 +1561,14 @@ export class TinyHypergraphPortPointPathingSolver extends BaseSolver {\n         this.alternativeTinyPipelineSolver =\n           new TinyHyperGraphSectionPipelineWithTerminalNetIds(\n             this.alternativeTinyPipelineInput!,\n-            this.params.flags.USE_SELECTIVE_RERIP_ROUTING === true,\n-            this.params.flags.USE_PREPARED_PORT_POINT_ROUTING === true,\n+            {\n+              useSelectiveReripRouting:\n+                this.params.flags.USE_SELECTIVE_RERIP_ROUTING === true,\n+              usePreparedPortPointRouting:\n+                this.params.flags.USE_PREPARED_PORT_POINT_ROUTING === true,\n+              allowedLayersByConnection:\n+                this.params.allowedLayersByConnection ?? new Map(),\n+            },\n           )\n         this.tinyPipelineSolver = this.alternativeTinyPipelineSolver\n         this.candidatePortfolioPhase = \"alternative\""
+          helper_paths=["lib/utils/getAllowedLayersByConnection.ts","lib/utils/assertRoutesStayOnAllowedLayers.ts","lib/solvers/PortPointPathingSolver/tinyhypergraph/createAllowedLayerSegmentFilter.ts"]
+          helpers={path:urllib.request.urlopen("https://raw.githubusercontent.com/tscircuit/tscircuit-autorouter/5d94470d25b505fac0d4749ef497f9ee287c4587/"+path).read().decode() for path in helper_paths}
+          for name in ['ar-previous','ar-latest']:
+            root=Path(name)
+            p=root/'package.json'
+            manifest=json.loads(p.read_text())
+            import shutil
+            shutil.copytree('tiny-integrated',root/'vendor/tiny',ignore=shutil.ignore_patterns('.git','node_modules'))
+            manifest['devDependencies']['@tscircuit/checks']='0.0.282'
+            for section in ["dependencies","devDependencies"]:
+              if "tiny-hypergraph" in manifest.get(section,{}):manifest[section]["tiny-hypergraph"]="file:./vendor/tiny"
+            p.write_text(json.dumps(manifest,indent=2)+'\n')
+            for path,source in helpers.items():
+              p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
+            p=root/'lib/solvers/PortPointPathingSolver/tinyhypergraph/TinyHypergraphPortPointPathingSolver.ts'
+            s=p.read_text()
+            for hunk in re.split(r'^@@[^\n]*$',patch,flags=re.M)[1:]:
+              lines=hunk.lstrip('\n').splitlines()
+              before='\n'.join(line[1:] for line in lines if line.startswith((' ','-')))
+              after='\n'.join(line[1:] for line in lines if line.startswith((' ','+')))
+              assert s.count(before)==1,before[:150]
+              s=s.replace(before,after)
+            p.write_text(s)
+            p=root/'lib/types/srj-types.ts';s=p.read_text();before='  isFixed?: boolean';assert s.count(before)==1;p.write_text(s.replace(before,before+'\n  allowedLayers?: string[]'))
+            p=root/'lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/getPipeline9PortPointPathingInput.ts'
+            s='import { getAllowedLayersByConnection } from "lib/utils/getAllowedLayersByConnection"\n'+p.read_text()
+            before="HgPortPointPathingSolverParams & { captureSearchDebug: boolean }";after="HgPortPointPathingSolverParams & { captureSearchDebug: boolean; allowedLayersByConnection: ReturnType<typeof getAllowedLayersByConnection> }";assert s.count(before)==1;s=s.replace(before,after)
+            before="    captureSearchDebug: pipeline.opts.captureSearchDebug ?? false,";after="    captureSearchDebug: pipeline.opts.captureSearchDebug ?? false,\n    allowedLayersByConnection: getAllowedLayersByConnection({ ...pipeline.srjWithPointPairs!, traces: pipeline.originalSrj.traces }),";assert s.count(before)==1;p.write_text(s.replace(before,after))
+            p=root/'lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts'
+            s="import { getAllowedLayersByConnection } from \"lib/utils/getAllowedLayersByConnection\"\nimport { assertRoutesStayOnAllowedLayers } from \"lib/utils/assertRoutesStayOnAllowedLayers\"\n"+p.read_text();before="    if (!pipelineStepDef) {\n      this.solved = true";after="    if (!pipelineStepDef) {\n      assertRoutesStayOnAllowedLayers([\n        ...this.powerTraceExpansionSolver!.getOutput(),\n        ...getPreloadedTraceUpdatesAfterHighDensity(this).updatedPreloadedTraces,\n      ], {\n        allowedLayersByConnection: getAllowedLayersByConnection({ ...this.srjWithPointPairs!, traces: this.originalSrj.traces }),\n        layerCount: this.srj.layerCount,\n      })\n      this.solved = true";assert s.count(before)==1;p.write_text(s.replace(before,after))
+          root=Path("ar-latest")
+          p=root/helper_paths[0];s=p.read_text();before="  return result";assert s.count(before)==1;p.write_text(s.replace(before,"  for (const trace of srj.traces ?? []) {\n    if (trace.isFixed || !trace.allowedLayers) continue\n    const layers = getUniqueValidZLayersFromLayerNames(trace.allowedLayers, srj.layerCount)\n    if (!layers.length) throw new Error(\"Native trace has no allowed signal layer\")\n    result.set(trace.pcb_trace_id, new Set(layers))\n  }\n"+before))
+          p=root/helper_paths[2];s=p.read_text();before="      const connectionId: unknown =\n        problem.routeMetadata?.[routeId]?.connectionId";after="      const metadata = problem.routeMetadata?.[routeId] as { connectionId?: unknown; preloadedTraceSection?: { traceId?: unknown } } | undefined\n      const traceId = metadata?.preloadedTraceSection?.traceId\n      if (typeof traceId === \"string\") return allowedLayersByConnection.get(traceId)\n      const connectionId: unknown = metadata?.connectionId";assert s.count(before)==1;p.write_text(s.replace(before,after))
+          p=root/helper_paths[1];s=p.read_text();before="    const layers = constraints.allowedLayersByConnection.get(\n      trace.connection_name,\n    )";after="    const layers = constraints.allowedLayersByConnection.get(trace.pcb_trace_id) ?? constraints.allowedLayersByConnection.get(trace.connection_name)";assert s.count(before)==1;p.write_text(s.replace(before,after))
+          for root in [Path("ar-previous"),Path("ar-latest")]:
+            p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts"
+            s=p.read_text()
+            before="        pipelineStepDef.onSolved?.(this)"
+            after=before+'''
+                  if (this.portPointPathingSolver?.solved) {
+                    const layerNames = Array.from({ length: this.srj.layerCount }, (_, z) => z === 0 ? "top" : z === this.srj.layerCount - 1 ? "bottom" : "inner" + z)
+                    const masks = new Map<string, Set<number>>()
+                    for (const trace of this.originalSrj.traces ?? []) {
+                      const layers = (trace as typeof trace & { allowedLayers?: string[] }).allowedLayers
+                      if (!layers) continue
+                      const mask = new Set(layers.map(layer => layerNames.indexOf(layer)))
+                      masks.set(trace.pcb_trace_id, mask)
+                      masks.set(trace.connection_name, mask)
+                    }
+                    for (const section of this.portPointPathingSolver.getOutput().changedPreloadedTraceSections) {
+                      const mask = masks.get(section.traceId)
+                      if (mask) masks.set(section.connectionName, mask)
+                    }
+                    const candidates = [
+                      ["nodes", this.portPointPathingSolver.getOutput().nodesWithPortPoints.flatMap(node => node.portPoints.map(point => ({ connectionName: point.connectionName, route: [point, { ...point, x: point.x + 1 }] })))],
+                      ["highDensity", this.highDensityRouteSolver?.routes ?? []],
+                      ["current", this.highDensityStitchSolver?.solved ? this._getOutputHdRoutes() : []],
+                    ] as const
+                    for (const [kind, routes] of candidates) {
+                      const bad = routes.flatMap(route => {
+                        const mask = masks.get(route.connectionName) ?? masks.get((route as { rootConnectionName?: string }).rootConnectionName ?? "")
+                        if (!mask) return []
+                        const layers = new Set<number>()
+                        for (let index = 1; index < route.route.length; index++) {
+                          const a = route.route[index - 1]!, b = route.route[index]!
+                          if (a.z === b.z && (a.x !== b.x || a.y !== b.y) && !mask.has(a.z)) layers.add(a.z)
+                        }
+                        return layers.size ? [{ name: route.connectionName, layers: [...layers] }] : []
+                      })
+                      console.log("NATIVE_LAYER_STAGE_AUDIT=" + JSON.stringify({ stage: pipelineStepDef.solverName, kind, violations: bad.slice(0, 16), total: bad.length }))
+                    }
+                  }'''
+            assert s.count(before)==1
+            p.write_text(s.replace(before,after))
+            p=root/"lib/solvers/PortPointPathingSolver/tinyhypergraph/createAllowedLayerSegmentFilter.ts"
+            s=p.read_text();before="  if (!restrictions.some((layers) => layers !== undefined)) return"
+            assert s.count(before)==1
+            p.write_text(s.replace(before,'  console.log("NATIVE_LAYER_ROUTE_FILTER=" + JSON.stringify({ routes: problem.routeCount, restricted: restrictions.filter(Boolean).length, masks: allowedLayersByConnection.size }))\n'+before))
+          root=Path("ar-latest")
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/convertPreloadedTraceToHdRoutes.ts"
+          s=p.read_text()
+          before="  isFixed?: boolean"
+          assert s.count(before)==1;s=s.replace(before,before+"\n  allowedLayers?: readonly number[]")
+          before="      isFixed: trace.isFixed,"
+          assert s.count(before)==1;s=s.replace(before,before+"\n      allowedLayers: trace.allowedLayers?.map(layer => mapLayerNameToZ(layer, layerCount)),")
+          p.write_text(s)
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensitySolver.ts"
+          s=p.read_text();before="    this.activeFallbackSolver = new Pipeline9RegionalFallbackSolver({"
+          after='''    const allowedLayersByConnection = new Map<string, ReadonlySet<number>>()
+              for (const [connectionName, section] of fallbackProblem.fixedRouteSectionsByConnectionName) {
+                const masks = section.sourceRoutes.flatMap(route => route.allowedLayers ? [route.allowedLayers] : [])
+                if (!masks.length) continue
+                allowedLayersByConnection.set(connectionName, new Set(masks[0]!.filter(z => masks.every(mask => mask.includes(z)))))
+              }
+          '''+before
+          assert s.count(before)==1;s=s.replace(before,after)
+          before="      nodeWithPortPoints: fallbackProblem.nodeWithPortPoints,"
+          assert s.count(before)==1;s=s.replace(before,before+"\n      allowedLayersByConnection,")
+          p.write_text(s)
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9RegionalFallbackSolver.ts"
+          s=p.read_text();before="  nodeWithPortPoints: NodeWithPortPoints"
+          assert s.count(before)==1;s=s.replace(before,before+"\n  allowedLayersByConnection?: ReadonlyMap<string, ReadonlySet<number>>")
+          before="    for (const route of routes) {"
+          after=before+'''
+                const layers = this.params.allowedLayersByConnection?.get(route.connectionName)
+                if (layers) {
+                  for (let index = 1; index < route.route.length; index++) {
+                    const from = route.route[index - 1]!, to = route.route[index]!
+                    if (from.z === to.z && (from.x !== to.x || from.y !== to.y) && !layers.has(from.z)) {
+                      this.stats.nativeLayerCandidateRejections = Number(this.stats.nativeLayerCandidateRejections ?? 0) + 1
+                      return false
+                    }
+                  }
+                }'''
+          assert s.count(before)==1;p.write_text(s.replace(before,after))
+          root=Path("ar-latest")
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9JointDrcRepairSolver.ts"
+          s=p.read_text();before="      if (trace.isFixed) continue"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,"      if (trace.isFixed) continue"))
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph.ts"
+          s=p.read_text();before="        ...getPreloadedTraceUpdatesAfterHighDensity(this).updatedPreloadedTraces,"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,"        ...this.getPowerTraceExpansionFixedTraces(),"))
+          p=root/"lib/utils/getAllowedLayersByConnection.ts"
+          s=p.read_text();before="    result.set(trace.pcb_trace_id, new Set(layers))"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,before+"\n    result.set(trace.connection_name, new Set(layers))"))
+          root=Path("ar-latest")
+          p=root/"lib/types/high-density-types.ts"
+          s=p.read_text();before="  rootConnectionName?: string"
+          assert s.count(before)>=1
+          s=s.replace(before,before+"\n  allowedZLayers?: readonly number[]",1);p.write_text(s)
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9HighDensitySolver.ts"
+          s=p.read_text();before="      nodeWithPortPoints: fallbackProblem.nodeWithPortPoints,"
+          after='''      nodeWithPortPoints: {
+                  ...fallbackProblem.nodeWithPortPoints,
+                  portPoints: fallbackProblem.nodeWithPortPoints.portPoints.map(point => {
+                    const layers = allowedLayersByConnection.get(point.connectionName)
+                    return layers ? { ...point, allowedZLayers: [...layers] } : point
+                  }),
+                },'''
+          assert s.count(before)==1;p.write_text(s.replace(before,after))
+          p=root/"lib/solvers/HyperHighDensitySolver/PortfolioSingleIntraNodeSolver.ts"
+          s=p.read_text()
+          before="      const solver = new HighDensityA03Solver({"
+          after='''      const allowedZLayersByConnectionName = new Map<HighDensityIntraNodeRoute["connectionName"], readonly number[]>()
+                for (const point of this.nodeWithPortPoints.portPoints) {
+                  if (point.allowedZLayers) allowedZLayersByConnectionName.set(point.connectionName, point.allowedZLayers)
+                }
+                if (allowedZLayersByConnectionName.size) {
+                  const copperSegmentValidator = staticSegmentValidator
+                  staticSegmentValidator = (segment): boolean => {
+                    const layers = allowedZLayersByConnectionName.get(segment.connectionName)
+                    if (layers && segment.start.z === segment.end.z && !layers.includes(segment.start.z)) return false
+                    return copperSegmentValidator?.(segment) ?? true
+                  }
+                }
+          '''+before
+          assert s.count(before)==1;p.write_text(s.replace(before,after))
+          root=Path("ar-latest")
+          p=root/"lib/types/high-density-types.ts"
+          s=p.read_text();before='export type HighDensityIntraNodeRoute = {\n  connectionName: string'
+          assert s.count(before)==1;p.write_text(s.replace(before,before+"\n  allowedZLayers?: readonly number[]"))
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/convertPreloadedTraceToHdRoutes.ts"
+          s=p.read_text();before="      allowedLayers: trace.allowedLayers?.map(layer => mapLayerNameToZ(layer, layerCount)),"
+          assert s.count(before)==1;p.write_text(s.replace(before,before+"\n      allowedZLayers: trace.allowedLayers?.map(layer => mapLayerNameToZ(layer, layerCount)),"))
+          p=root/"lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/Pipeline9JointDrcRepairSolver.ts"
+          s=p.read_text();before="    connectionName: syntheticConnectionName,"
+          assert s.count(before)==1;p.write_text(s.replace(before,before+"\n    allowedZLayers: sectionGroup.routes[0]?.allowedLayers,"))
+          p=Path("ar-latest/lib/solvers/PortPointPathingSolver/tinyhypergraph/TinyHypergraphPortPointPathingSolver.ts")
+          s=p.read_text();before="    if (!hasFixedCopperReservations) {"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,"    if (!hasFixedCopperReservations && !hasPreloadedTraceOccupancy) {"))
+          PY
+      - name: Build both exact integration commits
+        run: |
+          python - <<'PYLOCK'
+          from pathlib import Path
+          for root in ['ar-previous','ar-latest']:
+            config=Path(root)/'bunfig.toml'
+            text=config.read_text()
+            assert text.count('save = false')==1
+            config.write_text(text.replace('save = false','save = true'))
+          PYLOCK
+          (cd ar-previous && bun install --save-text-lockfile --backend=copyfile)
+          cp ar-previous/bun.lock ar-latest/bun.lock
+          (cd ar-latest && bun install --frozen-lockfile --backend=copyfile)
+          python - <<'PYREPAIR'
+          from pathlib import Path
+          root=Path("ar-latest/node_modules/high-density-repair03")
+          p=root/"types/high-density-types.ts";s=p.read_text()
+          before="export type HighDensityIntraNodeRoute = {\n  connectionName: string"
+          assert s.count(before)==1;p.write_text(s.replace(before,before+"\n  allowedZLayers?: readonly number[]"))
+          p=root/"lib/solvers/GlobalDrcForceImproveSolver/solverHelpers.ts";s=p.read_text()
+          functions=[
+            ("applySafeTraceLayerMoveForError","  const route = routes[routeIndex]"),
+            ("applyViaInPadLayerMoveForError","  const route = routes[routeIndex]"),
+            ("applyTracePairLayerMoveForError","  const { route, segment } = selection"),
+            ("applyTraceLayerCorridorForError","  const route = routes[routeIndex]"),
+          ]
+          for name,anchor in functions:
+            start=s.index("export const "+name+" =")
+            end=s.find("\nexport ",start+1)
+            if end<0:end=len(s)
+            part=s[start:end]
+            assert part.count(anchor)==1,(name,anchor)
+            part=part.replace(anchor,anchor+"\n  if (route?.allowedZLayers && !route.allowedZLayers.includes(targetZ)) return false",1)
+            s=s[:start]+part+s[end:]
+          p.write_text(s)
+          p=root/"lib/solvers/GlobalDrcForceImproveSolver/getPeerTraceRepairCandidates.ts"
+          s=p.read_text();before="                if (targetZ === z) continue"
+          assert s.count(before)==1;p.write_text(s.replace(before,before+"\n                if (route.allowedZLayers && !route.allowedZLayers.includes(targetZ)) continue"))
+          root=Path("ar-latest/node_modules/@tscircuit/repair04")
+          p=root/"lib/extractRepairRegion.ts";s=p.read_text()
+          before="        connectionName: route.connectionName,"
+          assert s.count(before)==1
+          p.write_text(s.replace(before,before+"\n        allowedZLayers: route.allowedZLayers,"))
+          for filename in ["lib/findClearancePath.ts","lib/FindClearancePathSolver.ts"]:
+            p=root/filename;s=p.read_text()
+            before="const extraCost = (a: Point, b: Point): number => {"
+            assert s.count(before)==1
+            after='''const allowedZLayers = input.routes[input.routeIndex]?.allowedZLayers
+            '''+before+'''
+                if (allowedZLayers && a.z === b.z && (a.x !== b.x || a.y !== b.y) && !allowedZLayers.includes(a.z)) return Infinity'''
+            p.write_text(s.replace(before,after))
+          PYREPAIR
+          (cd ar-previous && bun run build)
+          (cd ar-latest && bun run build)
+          cmp ar-previous/package.json ar-latest/package.json
+          cmp ar-previous/bun.lock ar-latest/bun.lock
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-trace-layer-mask-builds
+          path: |
+            ar-previous/dist
+            ar-latest/dist
+            ar-previous/bun.lock
+          retention-days: 7
+  benchmark:
+    needs: build-integration
+    name: Native ${{ matrix.circuit }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit: [a13, h616, a64, stmp157]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ee7bcfe5d5b36dbc57d3b9b46389c590bea8573e
+          path: core-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ee7bcfe5d5b36dbc57d3b9b46389c590bea8573e
+          path: core-head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Preserve data-stage routing and expose untimed bus copper only to the general router
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("core-head/lib/components/primitive-components/Group/Group.ts")
+          s=p.read_text()
+          before="    const fixedTraceIds = new Set(manualPcbTraceIds)"
+          assert s.count(before)==1;s=s.replace(before,before+'\n    const untimedBusTraceIds = new Set<SimplifiedPcbTrace["pcb_trace_id"]>()')
+          before="        if (localAutorouterStrategy.preserveOutputTraces) {"
+          after='''        const hasMatchingConstraints =
+                    Boolean(simpleRouteJson.differentialPairs?.length) ||
+                    (simpleRouteJson.buses ?? []).some(bus =>
+                      bus.maxLength !== undefined ||
+                      bus.minLength !== undefined ||
+                      bus.maxLengthSkew !== undefined,
+                    )
+                  if (localAutorouterStrategy.name === "bus_lanes" && !hasMatchingConstraints) {
+                    const physical = Array.from({ length: simpleRouteJson.layerCount }, (_, index) => index === 0 ? "top" : index === simpleRouteJson.layerCount - 1 ? "bottom" : "inner" + index)
+                    type PcbTraceId = SimplifiedPcbTrace["pcb_trace_id"]
+                    const terminalIdsByTraceId = new Map<PcbTraceId, string[]>()
+                    for (const trace of traces) {
+                      const connection = simpleRouteJson.connections.find(connection => connection.name === trace.connection_name)
+                      const start = trace.route.find(point => point.route_type === "wire")
+                      if (!connection || connection.pointsToConnect.length !== 2 || !start) continue
+                      const ports = [...connection.pointsToConnect].sort((left, right) =>
+                        Math.hypot(left.x - start.x, left.y - start.y) - Math.hypot(right.x - start.x, right.y - start.y),
+                      )
+                      const ids = ports.map(point => point.pcb_port_id).filter(id => id !== undefined)
+                      if (ids.length === 2) terminalIdsByTraceId.set(trace.pcb_trace_id, ids)
+                    }
+                    traces = traces.map(trace => ({
+                      ...trace,
+                      allowedLayers: physical.filter(layer => (simpleRouteJson.buses ?? []).every(bus => !bus.connectionNames.includes(trace.connection_name!) || !bus.allowedLayers || bus.allowedLayers.includes(layer))),
+                      connectsTo: trace.connectsTo ?? terminalIdsByTraceId.get(trace.pcb_trace_id),
+                    }))
+                    for (const trace of traces) untimedBusTraceIds.add(trace.pcb_trace_id)
+                  }
+          '''+before
+          assert s.count(before)==1;s=s.replace(before,after)
+          before="            autorouter = localAutorouterStrategy.create({"
+          after='''            if (localAutorouterStrategy.name === "tscircuit") {
+                        simpleRouteJson = {
+                          ...simpleRouteJson,
+                          traces: simpleRouteJson.traces?.map(trace => {
+                            if (!untimedBusTraceIds.has(trace.pcb_trace_id)) return trace
+                            fixedTraceIds.delete(trace.pcb_trace_id)
+                            return { ...trace, isFixed: false }
+                          }),
+                        }
+                      }
+          '''+before
+          assert s.count(before)==1
+          p.write_text(s.replace(before,after))
+          PY
+      - name: Install exact latest routing stack in two independent Core checkouts
+        run: |
+          cat > prepare.private.mjs <<'JS'
+          import{readFileSync,writeFileSync}from"node:fs"
+          const response=await fetch("https://registry.npmjs.org/tscircuit/0.0.3278")
+          if(!response.ok)throw Error("Missing exact published metadata")
+          const published=await response.json()
+          for(const revision of["base","head"]){
+            const filename="core-"+revision+"/package.json"
+            const packageJson=JSON.parse(readFileSync(filename,"utf8"))
+            for(const section of["dependencies","devDependencies"])
+              for(const name of Object.keys(packageJson[section]??{}))
+                if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"0.0.1153","@tscircuit/fanout-solver":"0.0.103","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            writeFileSync(filename,JSON.stringify(packageJson,null,2))
+          }
+          JS
+          node prepare.private.mjs
+          for revision in base head;do
+            (cd "core-$revision" && bun install --ignore-scripts --backend=copyfile)
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-trace-layer-mask-builds
+          path: compiled
+      - name: Execute the two actual source builds in separate package files
+        run: |
+          cat > install-actual.private.ts <<'TS'
+          import {readFileSync,realpathSync,rmSync,cpSync,statSync} from "node:fs"
+          import path from "node:path"
+          import {createHash} from "node:crypto"
+          const files=["base","head"].map(revision=>realpathSync(Bun.resolveSync("@tscircuit/capacity-autorouter",path.resolve("core-"+revision))))
+          const stats=files.map(file=>statSync(file))
+          if(files[0]===files[1]||(stats[0].dev===stats[1].dev&&stats[0].ino===stats[1].ino))throw Error("Shared writable package files")
+          for(const [index,revision] of ["previous","latest"].entries()){
+            const destination=path.dirname(files[index])
+            rmSync(destination,{recursive:true,force:true})
+            cpSync(path.resolve("compiled","ar-"+revision,"dist"),destination,{recursive:true})
+          }
+          const hashes=files.map(file=>createHash("sha256").update(readFileSync(file)).digest("hex"))
+          if(hashes[0]===hashes[1])throw Error("Candidate build not executed")
+          console.log("ACTUAL_AR_SOURCE_BUILDS="+JSON.stringify(hashes))
+          TS
+          bun install-actual.private.ts
+      - name: Route identical real boards
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          for revision in base head;do
+            bun "core-$revision/node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts" --core "$GITHUB_WORKSPACE/core-$revision" --out "$GITHUB_WORKSPACE/results-$revision" --circuit "$CIRCUIT" --timeout 1200 > "routing-$revision.private.log" 2>&1
+          done
+      - name: Assess both with the same validator
+        if: always()
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          for revision in base head;do
+            grep -E "NATIVE_LAYER_(STAGE_AUDIT|ROUTE_FILTER)=" "results-$revision/$CIRCUIT/render.log" || true
+            test -f "results-$revision/$CIRCUIT/circuit.json"
+            bun core-head/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core-head" "$CIRCUIT" "$GITHUB_WORKSPACE/results-$revision/$CIRCUIT"
+          done
+          cat > report.private.ts <<'TS'
+          import{readFileSync,readdirSync,writeFileSync,realpathSync}from"node:fs"
+          import{createHash}from"node:crypto"
+          import path from"node:path"
+          const circuit=process.env.CIRCUIT!
+          const rows=[]
+          for(const revision of["base","head"]){
+            const root="results-"+revision
+            const assessment=JSON.parse(readFileSync(root+"/"+circuit+"/assessment.json","utf8"))
+            const report=JSON.parse(readFileSync(root+"/results.json","utf8"))
+            const row=report.cases[0]
+            const dir=root+"/"+circuit
+            const copper=JSON.parse(readFileSync(dir+"/circuit.json","utf8")).filter(e=>e.type==="pcb_trace"||e.type==="pcb_via")
+            const phaseInputs=readdirSync(dir).filter(f=>/^phase-[0-9]+-start[.]srj[.]json$/.test(f)).sort().map(file=>({file,sha256:createHash("sha256").update(JSON.stringify(JSON.parse(readFileSync(dir+"/"+file,"utf8")))).digest("hex"),fixedTraces:JSON.parse(readFileSync(dir+"/"+file,"utf8")).traces?.filter(trace=>trace.isFixed).length}))
+            const entry=realpathSync(Bun.resolveSync("@tscircuit/bus-lanes-solver",path.resolve("core-"+revision)))
+            const expected=readFileSync(entry)
+            const autorouterEntry=realpathSync(Bun.resolveSync("@tscircuit/capacity-autorouter",path.resolve("core-"+revision)))
+            const groupSource=readFileSync("core-"+revision+"/lib/components/primitive-components/Group/Group.ts")
+            const findings=assessment.findings
+            const physicalFindings=Object.entries(findings).filter(([key])=>!["missing_traces","disconnected_ports"].includes(key)).reduce((sum,[,count])=>sum+Number(count),0)
+            const metric={revision,circuit,connected:assessment.connectedNets,requested:assessment.requestedNets,findings,physicalFindings,geometryErrorCount:assessment.geometryErrors.length,geometryErrors:assessment.geometryErrors,unconnectedNets:assessment.unconnectedNets,vias:assessment.vias,status:row.status,seconds:row.wallMs/1000,peakRssMb:row.peakRssMb,errors:row.progress?.errors,phases:row.progress?.phases,phaseInputs,fixtureHash:report.fixtureHashes[circuit],copperSha256:createHash("sha256").update(JSON.stringify(copper)).digest("hex"),executedBusSha256:createHash("sha256").update(expected).digest("hex"),executedAutorouterSha256:createHash("sha256").update(readFileSync(autorouterEntry)).digest("hex"),coreGroupSourceSha256:createHash("sha256").update(groupSource).digest("hex"),dependencies:report.dependencies}
+            rows.push(metric);console.log("NATIVE_TRACE_LAYER_MASK_METRIC="+JSON.stringify(metric))
+          }
+          writeFileSync("comparison.json",JSON.stringify(rows,null,2))
+          TS
+          bun report.private.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-trace-layer-mask-${{ matrix.circuit }}
+          path: |
+            comparison.json
+          if-no-files-found: warn
