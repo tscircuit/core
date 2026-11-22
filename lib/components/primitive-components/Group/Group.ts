@@ -62,7 +62,10 @@ import {
   getLegacyAutorouterPreset,
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
-import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import {
+  getLocalAutoroutingStages,
+  type LocalAutorouterStrategyContext,
+} from "lib/utils/autorouting/local-autorouter-strategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
@@ -111,6 +114,7 @@ import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
+  type LocalAutoroutingCacheSolverOptions,
   getCachedLocalAutoroutingPhaseResult,
   getLocalAutoroutingCacheKey,
 } from "./Group_localAutoroutingCache"
@@ -1409,6 +1413,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         .map((trace) => trace.pcb_trace_id),
     )
     const fixedTraceIds = new Set(manualPcbTraceIds)
+    const renegotiableBusTraceIds = new Set<PcbTraceId>()
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
     const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
@@ -1688,18 +1693,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
-      const localAutoroutingCacheSolverOptions = {
-        autorouterName,
-        solverName,
-        capacityDepth: commonAutorouterOptions.capacityDepth,
-        targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
-        useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
-        useAutoJumperSolver: commonAutorouterOptions.useAutoJumperSolver,
-        useLaserPrefabSolver: commonAutorouterOptions.useLaserPrefabSolver,
-        useTraceSimplificationSolver:
-          phaseAutorouterConfig.preset === "simplify",
-        autorouterVersion: commonAutorouterOptions.autorouterVersion,
-        effort: commonAutorouterOptions.effort,
+      const eligibleBusTraceIds = (simpleRouteJson.traces ?? [])
+        .filter((trace) => renegotiableBusTraceIds.has(trace.pcb_trace_id))
+        .map((trace) => trace.pcb_trace_id)
+        .sort()
+      const localAutoroutingCacheSolverOptions: LocalAutoroutingCacheSolverOptions =
+        {
+          autorouterName,
+          solverName,
+          capacityDepth: commonAutorouterOptions.capacityDepth,
+          targetMinCapacity: commonAutorouterOptions.targetMinCapacity,
+          useAssignableSolver: commonAutorouterOptions.useAssignableSolver,
+          useAutoJumperSolver: commonAutorouterOptions.useAutoJumperSolver,
+          useLaserPrefabSolver: commonAutorouterOptions.useLaserPrefabSolver,
+          useTraceSimplificationSolver:
+            phaseAutorouterConfig.preset === "simplify",
+          autorouterVersion: commonAutorouterOptions.autorouterVersion,
+          effort: commonAutorouterOptions.effort,
+        }
+      if (eligibleBusTraceIds.length > 0) {
+        localAutoroutingCacheSolverOptions.renegotiableBusTraceIds =
+          eligibleBusTraceIds
       }
 
       const cacheEngine =
@@ -1760,6 +1774,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         simpleRouteJson,
       })
       let autorouter: GenericLocalAutorouter | undefined
+      const replacedBusTraceIds = new Set<PcbTraceId>()
 
       try {
         const runAutorouter = async (
@@ -1801,6 +1816,33 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
           activeAutorouter.start()
           return await routingPromise
+        }
+        const strategyContext: LocalAutorouterStrategyContext = {
+          simpleRouteJson,
+          onSolverEnded: (event) =>
+            this.root?.emit("solver:ended", {
+              ...event,
+              type: "solver:ended",
+              componentName: this.getString(),
+            }),
+          commonAutorouterOptions,
+          busFanoutDirections: routingPhasePlan.busFanoutDirections,
+          fanoutBounds: routingPhasePlan.fanoutBounds,
+          fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+          allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
+          componentNamesById: getPcbComponentNamesById(db),
+          onSolverStarted: ({
+            solverName,
+            solverParams,
+            solverConstructorArgs,
+          }) =>
+            this.root?.emit("solver:started", {
+              type: "solver:started",
+              solverName,
+              solverParams,
+              solverConstructorArgs,
+              componentName: this.getString(),
+            }),
         }
         let traces: SimplifiedPcbTrace[]
         let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
@@ -1891,52 +1933,65 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }
           for (const trace of selectedTraces)
             fixedTraceIds.add(trace.pcb_trace_id)
+          renegotiableBusTraceIds.delete(trace.pcb_trace_id)
         } else if (getPrecomputedRoutingResult) {
           const result = getPrecomputedRoutingResult(simpleRouteJson)
           traces = result.traces
           precomputedOutputSimpleRouteJson = result.outputSimpleRouteJson
-          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+          for (const trace of traces) {
+            fixedTraceIds.add(trace.pcb_trace_id)
+            renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+          }
         } else if (cachedResult) {
           debug(`[${this.getString()}] using cached local autorouting result`)
           traces = cachedResult.traces
+          for (const trace of traces) {
+            const replacedId = trace.__replaces_pcb_trace_id
+            if (replacedId && renegotiableBusTraceIds.has(replacedId)) {
+              replacedBusTraceIds.add(replacedId)
+            }
+          }
         } else {
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
           } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
-              busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBounds: routingPhasePlan.fanoutBounds,
-              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
-                  solverName,
-                  solverParams,
-                  solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
-            })
+            autorouter = localAutorouterStrategy.create(strategyContext)
           }
 
           if (!autorouter) {
             throw new Error("Failed to create local autorouter")
           }
-          traces = await runAutorouter(autorouter)
+          try {
+            traces = await runAutorouter(autorouter)
+          } catch (error) {
+            if (
+              !(error instanceof AutorouterError) ||
+              error.failureStage !== "path_planning" ||
+              localAutorouterStrategy.name !== "tscircuit" ||
+              phaseAutorouterConfig.algorithmFn ||
+              eligibleBusTraceIds.length === 0
+            ) {
+              throw error
+            }
+            // A route search could not reach its targets with the automatic bus
+            // fixed. Let the existing router negotiate that copper once.
+            for (const traceId of eligibleBusTraceIds)
+              replacedBusTraceIds.add(traceId)
+            simpleRouteJson = {
+              ...simpleRouteJson,
+              traces: simpleRouteJson.traces?.map((trace) => {
+                if (!replacedBusTraceIds.has(trace.pcb_trace_id)) return trace
+                return { ...trace, isFixed: false }
+              }),
+            }
+            routingError = undefined
+            autorouter = localAutorouterStrategy.create({
+              ...strategyContext,
+              simpleRouteJson,
+            })
+            traces = await runAutorouter(autorouter)
+          }
         }
 
         let transformedSimpleRouteJson =
@@ -1997,8 +2052,36 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
         // A transformed routing problem hands completed copper to the next
         // stage; preserve it instead of treating it as a rerouting seed.
+        const isAutomaticBusOutput =
+          localAutorouterStrategy.name === "bus_lanes" &&
+          !phaseAutorouterConfig.algorithmFn &&
+          !getPrecomputedRoutingResult &&
+          !isTestPointPhase
+        const hasBusTimingConstraints =
+          Boolean(simpleRouteJson.differentialPairs?.length) ||
+          (simpleRouteJson.buses ?? []).some(
+            (bus) =>
+              bus.minLength !== undefined ||
+              bus.maxLength !== undefined ||
+              bus.maxLengthSkew !== undefined,
+          )
+        if (isAutomaticBusOutput && !hasBusTimingConstraints) {
+          for (const trace of traces) {
+            if (
+              !fixedTraceIds.has(trace.pcb_trace_id) &&
+              trace.connectsTo?.length === 2
+            ) {
+              renegotiableBusTraceIds.add(trace.pcb_trace_id)
+            }
+          }
+        }
         if (localAutorouterStrategy.preserveOutputTraces) {
-          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+          for (const trace of traces) {
+            fixedTraceIds.add(trace.pcb_trace_id)
+            if (!isAutomaticBusOutput || hasBusTimingConstraints) {
+              renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+            }
+          }
         }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
@@ -2119,7 +2202,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               // Fixed copper remains unchanged in the database.
               if (
                 !isTestPointPhase &&
-                fixedTraceIds.has(existingTrace.pcb_trace_id)
+                fixedTraceIds.has(existingTrace.pcb_trace_id) &&
+                !replacedBusTraceIds.has(existingTrace.pcb_trace_id)
               )
                 continue
               pcbTraceIdsToDelete.add(existingTrace.pcb_trace_id)

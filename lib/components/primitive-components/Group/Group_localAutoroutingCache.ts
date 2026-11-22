@@ -38,6 +38,7 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
 > & {
   autorouterName: string
   solverName?: string
+  renegotiableBusTraceIds?: SimplifiedPcbTrace["pcb_trace_id"][]
 }
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {

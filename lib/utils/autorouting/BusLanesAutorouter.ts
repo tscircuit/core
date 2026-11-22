@@ -1,4 +1,5 @@
 import { BusLanesPipelineSolver } from "@tscircuit/bus-lanes-solver"
+import { getBusLanesOutputTraces } from "./get-bus-lanes-output-traces"
 import { getBusLanesInputFromSrj } from "./get-bus-lanes-input-from-srj"
 import type {
   GenericLocalAutorouter,
@@ -68,7 +69,13 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         }
         if (this.solver.solved) {
           this.isRouting = false
-          this.emit({ type: "complete", traces: this.solver.traces })
+          this.emit({
+            type: "complete",
+            traces: getBusLanesOutputTraces({
+              input: this.input,
+              traces: this.solver.traces,
+            }),
+          })
           return
         }
         this.emit({
@@ -108,6 +115,9 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     this.solver.solve()
     if (this.solver.failed)
       throw new Error(this.solver.error ?? "Bus lanes routing failed")
-    return this.solver.traces
+    return getBusLanesOutputTraces({
+      input: this.input,
+      traces: this.solver.traces,
+    })
   }
 }
