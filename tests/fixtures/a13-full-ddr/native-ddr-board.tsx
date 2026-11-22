@@ -97,7 +97,6 @@ export function NativeDdrBoard({
       ))}
       {source.traces.map((trace) => (
         <net
-          key={trace.name}
           name={trace.name}
           connectsTo={trace.path}
           nominalTraceWidth={trace.width}
@@ -110,7 +109,6 @@ export function NativeDdrBoard({
       ))}
       {bytes.map((group) => (
         <bus
-          key={group}
           name={`DDR_BUS_${group}`}
           routingPhaseIndex={phases.indexOf(phaseNameByGroup.get(group)!)}
           connections={activeTraces
