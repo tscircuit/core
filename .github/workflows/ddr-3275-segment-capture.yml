@@ -1,0 +1,104 @@
+name: Capture published ButterStick native segment validation
+on:
+  push:
+    branches: [analysis/ddr-3275-next-fix-20261122]
+    paths: [.github/workflows/ddr-3275-segment-capture.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    name: Capture native ButterStick validation proposals
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact published stacks and identical native fixtures
+        run: |
+          cat > prepare-published.private.mjs <<'JS'
+          import {mkdir,writeFile,readFile,symlink} from "node:fs/promises"
+          import path from "node:path"
+          const benchmark="github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+          function exact(declared) {
+           const version=declared.replace(/^[~^]/,"")
+           if(!/^[0-9]+[.][0-9]+[.][0-9]+$/.test(version))throw Error("Expected exact release: "+declared)
+           return version
+          }
+          async function metadata(name,version) {
+           const response=await fetch("https://registry.npmjs.org/"+name+"/"+version)
+           if(!response.ok)throw Error("Registry request failed: "+name+" "+version+" "+response.status)
+           return await response.json()
+          }
+          for(const release of [
+           {label:"previous",tscircuit:"0.0.3273",core:"0.0.2452",autorouter:"0.0.1148",sourceRevision:"published-0.0.3273"},
+           {label:"latest",tscircuit:"0.0.3275",core:"0.0.2456",autorouter:"0.0.1149",sourceRevision:"published-0.0.3275"}
+          ]) {
+           const published=await metadata("tscircuit",release.tscircuit)
+           const core=await metadata("@tscircuit/core",release.core)
+           const dependencies={"tscircuit":release.tscircuit,"@tscircuit/core":release.core,"@tscircuit/capacity-autorouter":release.autorouter,"@tscircuit/core-ddr-benchmark":benchmark}
+           for(const name of ["@tscircuit/checks","@tscircuit/props","circuit-json","@tscircuit/fanout-solver"])
+            dependencies[name]=exact(published.dependencies[name]??core.devDependencies[name])
+           dependencies["@tscircuit/bus-lanes-solver"]=core.devDependencies["@tscircuit/bus-lanes-solver"]
+           await mkdir(release.label,{recursive:true})
+           await writeFile(release.label+"/package.json",JSON.stringify({name:"native-ddr-"+release.label,private:true,type:"module",dependencies},null,2))
+           await writeFile(release.label+"/index.ts",'export { RootCircuit } from "tscircuit"\n')
+           await writeFile(release.label+"/tsconfig.json",await readFile("tsconfig.json"))
+           await symlink(path.resolve("lib"),release.label+"/lib","dir")
+           await writeFile(release.label+"/published-runtime.json",JSON.stringify({...release,benchmark,tscircuitIntegrity:published.dist.integrity,coreIntegrity:core.dist.integrity,sourceTreeExecuted:false,dependencies},null,2))
+          }
+          JS
+          node prepare-published.private.mjs
+          (cd previous && bun install --ignore-scripts --backend=copyfile)
+          (cd latest && bun install --ignore-scripts --backend=copyfile)
+      - name: Capture unchanged native segment proposals and their fixed copper
+        run: |
+          mkdir capture-output
+          python - <<'PYPATCH'
+          import pathlib,hashlib
+          p=pathlib.Path('latest/node_modules/@tscircuit/capacity-autorouter/dist/index.js');s=p.read_text()
+          assert hashlib.sha256(s.encode()).hexdigest()=='190d1c0e689545c6d8b7a5d4ff8ba8c53aca1845da4ec93ca1663132b414db7d'
+          needle='function(e,{index:t,connMap:n,layerCount:o,clearance:i,allowBlindAndBuriedVias:r}){'
+          assert s.count(needle)==1
+          p.write_text(s.replace(needle,needle+'globalThis.__DDR_SEGMENT_CAPTURE?.(e,arguments[1]);'))
+          PYPATCH
+          cat > capture-handler.private.ts <<'TS'
+          import {readFileSync,writeFileSync,readdirSync} from "node:fs"
+          import {gzipSync} from "node:zlib"
+          import {createHash} from "node:crypto"
+          const output=process.env.DDR_CAPTURE_OUTPUT!
+          let chosen: object|undefined,params: unknown,saved=false
+          const proposals: unknown[]=[]
+          function flush(): void {
+            if(saved||!chosen||!proposals.length)return
+            saved=true
+            const phaseInputs=readdirSync(output).filter(file=>/^phase-[0-9]+-start[.]srj[.]json$/.test(file)).map(file=>({file,sha256:createHash("sha256").update(readFileSync(output+"/"+file)).digest("hex")}))
+            const capture={source:{board:"ButterStick",tscircuit:"0.0.3275",core:"0.0.2456",autorouter:"0.0.1149",benchmarkCommit:"24dc44c166d4258c3538f8b1f66953f1b6f58690",phaseInputs},params,proposals}
+            const data=gzipSync(JSON.stringify(capture))
+            writeFileSync("butterstick-native-segment-validation.json.gz",data)
+            const encoded=data.toString("base64")
+            for(let i=0;i<encoded.length;i+=12000)console.log("DDR_SEGMENT_REPRO_GZIP_"+String(i/12000).padStart(3,"0")+"="+encoded.slice(i,i+12000))
+            console.log("DDR_SEGMENT_CAPTURE="+JSON.stringify({proposals:proposals.length,bytes:data.length,sha256:createHash("sha256").update(data).digest("hex"),phaseInputs}))
+          }
+          globalThis.__DDR_SEGMENT_CAPTURE=(segment,context): void=>{
+            if(!chosen&&context.fixedHdRoutes.length>=20){chosen=context;const {index,...input}=context;params=structuredClone({...input,connMap:{netMap:input.connMap.netMap,idToNetMap:input.connMap.idToNetMap}})}
+            if(chosen!==context)return
+            proposals.push(structuredClone(segment))
+            if(proposals.length===8192){flush();process.exit(0)}
+          }
+          process.on("exit",flush)
+          TS
+          DDR_CAPTURE_OUTPUT="$GITHUB_WORKSPACE/capture-output" bun --preload ./capture-handler.private.ts --tsconfig-override "$GITHUB_WORKSPACE/latest/tsconfig.json" "$GITHUB_WORKSPACE/latest/node_modules/@tscircuit/core-ddr-benchmark/scripts/worker.tsx" "$GITHUB_WORKSPACE/latest" butterstick "$GITHUB_WORKSPACE/capture-output" full
+          test -s butterstick-native-segment-validation.json.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published3275-butterstick-native-segment-validation
+          path: |
+            butterstick-native-segment-validation.json.gz
+            capture-output/progress.json
+          retention-days: 7
