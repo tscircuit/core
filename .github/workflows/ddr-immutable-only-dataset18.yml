@@ -1,0 +1,113 @@
+name: Compare immutable copper without frozen provisional neighbors on Dataset18
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-immutable-only-dataset18.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 4c80cfe803046da0e8d989a673b8f2193b1b6851
+          path: same-machine-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 4c80cfe803046da0e8d989a673b8f2193b1b6851
+          path: same-machine-pr
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - uses: actions/download-artifact@v4
+        with:
+          name: immutable-only-builds
+          path: compiled
+          run-id: 45017840389
+          github-token: ${{ github.token }}
+      - name: Prepare identical benchmark helpers and isolated compiled runtimes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,shutil
+          for revision,build in [('base','previous'),('pr','latest')]:
+            root=Path('same-machine-'+revision)
+            manifest=json.loads((root/'package.json').read_text())
+            manifest['devDependencies']['@tscircuit/checks']='0.0.282'
+            (root/'package.json').write_text(json.dumps(manifest,indent=2)+'\n')
+            config=root/'bunfig.toml'
+            config.write_text(config.read_text().replace('save = false','save = true'))
+            shutil.copyfile('compiled/ar-previous/bun.lock',root/'bun.lock')
+            shutil.copytree('compiled/ar-'+build+'/dist',root/'dist',dirs_exist_ok=True)
+            (root/'scripts/benchmark/compiled-runtime.ts').write_text('export * from "../../dist/index.js"\n')
+            worker=root/'scripts/benchmark/benchmark-run-task.ts'
+            text=worker.read_text()
+            before='import * as autorouterModule from "../../lib"'
+            assert text.count(before)==1
+            text=text.replace(before,'import * as autorouterModule from "./compiled-runtime"')
+            before='import { convertSrjToGraphicsObject } from "../../lib"'
+            assert text.count(before)==1
+            worker.write_text(text.replace(before,'import { convertSrjToGraphicsObject } from "./compiled-runtime"'))
+            index=root/'scripts/benchmark/index.ts'
+            text=index.read_text()
+            before='import { AUTOROUTER_VERSION } from "../../lib"'
+            assert text.count(before)==1
+            index.write_text(text.replace(before,'import { AUTOROUTER_VERSION } from "./compiled-runtime"'))
+          PY
+          (cd same-machine-base && bun install --frozen-lockfile --backend=copyfile)
+          (cd same-machine-pr && bun install --frozen-lockfile --backend=copyfile)
+          cmp same-machine-base/package.json same-machine-pr/package.json
+          cmp same-machine-base/bun.lock same-machine-pr/bun.lock
+          mkdir -p same-machine-controller/scripts
+          cp -R same-machine-base/scripts/benchmark same-machine-controller/scripts/benchmark
+          ln -s ../same-machine-base/node_modules same-machine-controller/node_modules
+          cat > verify-compiled.private.ts <<'TS'
+          import {readFileSync,realpathSync,statSync,writeFileSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          import path from "node:path"
+          const records=["base","pr"].map(revision=>{
+            const filename=realpathSync(path.resolve("same-machine-"+revision,"dist/index.js")),stat=statSync(filename)
+            return {revision,filename,device:stat.dev,inode:stat.ino,sha256:createHash("sha256").update(readFileSync(filename)).digest("hex")}
+          })
+          if(records[0].filename===records[1].filename||(records[0].device===records[1].device&&records[0].inode===records[1].inode))throw Error("Shared runtime files")
+          if(records[0].sha256===records[1].sha256)throw Error("Expected different compiled runtimes")
+          writeFileSync("compiled-runtime-verification.json",JSON.stringify(records,null,2));console.log(records)
+          TS
+          bun verify-compiled.private.ts
+      - name: Run the standard same-machine Dataset18 harness
+        working-directory: same-machine-controller
+        env:
+          BENCHMARK_ARGS_JSON: '["--dataset","srj18","--concurrency","1","--threads","1"]'
+          BENCHMARK_DATASET: srj18
+        run: bun scripts/benchmark/runSameMachineBenchmarks.ts
+      - name: Report every result without routing images
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          failures=[]
+          for revision in ['base','pr']:
+            report=json.load(open('same-machine-results/'+revision+'/benchmark-result.json'))
+            print('IMMUTABLE_ONLY_DATASET18_SUMMARY='+json.dumps({'revision':revision,'summary':report['summary'],'runtime':report.get('runtime'),'scenarioCount':report['scenarioCount']}))
+            assert report['scenarioCount']==16
+            for item in report['tests']:
+              row={k:v for k,v in item.items()if k!='benchmarkSnapshot'}
+              print('IMMUTABLE_ONLY_DATASET18_METRIC='+json.dumps({'revision':revision,**row}))
+              if not(row['didSolve']and row['relaxedDrcPassed']and not row['didTimeout']):failures.append((revision,row['scenarioName']))
+          assert not failures,failures
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: immutable-only-dataset18
+          path: |
+            same-machine-results
+            compiled-runtime-verification.json
+          if-no-files-found: warn
