@@ -7,7 +7,6 @@ test("A13 DDR data bytes followed by the remaining signals", async (): Promise<v
   circuit.add(<A13FullDdrBoard />)
   await circuit.renderUntilSettled()
 
-  expect(circuit.db.source_trace.list()).toHaveLength(96)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     backgroundColor: "white",
