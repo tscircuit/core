@@ -1,0 +1,74 @@
+name: Inspect native H3 pending-access failure
+on:
+  push:
+    branches: [analysis/ddr-3276-completion-20261122]
+    paths: [.github/workflows/ddr-native-h3-capture.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  capture:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: b7a908eeabef89559c1edb64ffd8652ecbc6af57
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: tscircuit/core
+          run-id: 45003220924
+          name: native-pending-access-head
+          path: captured
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install exact source implementation
+        run: bun install --ignore-scripts --backend=copyfile
+      - name: Report aggregate stages without exporting fixture records
+        run: |
+          cat > inspect-h3.private.ts <<'TS'
+          import {readFileSync,readdirSync,statSync} from "node:fs"
+          import {AutoroutingPipelineSolver9_PreloadedTraceGraph} from "./lib/autorouter-pipelines/AutoroutingPipeline9_PreloadedTraceGraph/AutoroutingPipelineSolver9_PreloadedTraceGraph"
+          function find(dir:string):string|undefined{
+            for(const name of readdirSync(dir)){
+              const p=dir+"/"+name
+              if(statSync(p).isDirectory()){const match=find(p);if(match)return match}
+              else if(name==="phase-3-start.srj.json")return p
+            }
+          }
+          const filename=find("captured")
+          if(!filename)throw Error("Missing saved phase input")
+          const input=JSON.parse(readFileSync(filename,"utf8"))
+          const solver=new AutoroutingPipelineSolver9_PreloadedTraceGraph(input,{cacheProvider:null})
+          let prior=""
+          const start=performance.now()
+          while(!solver.solved&&!solver.failed){
+            solver.step()
+            const phase=solver.getCurrentPhase()
+            if(phase!==prior){console.log("AGGREGATE_PHASE="+JSON.stringify({phase,seconds:(performance.now()-start)/1000}));prior=phase}
+            if(performance.now()-start>600000)throw Error("Diagnostic time limit")
+          }
+          function numeric(stats:unknown){
+            return Object.fromEntries(Object.entries((stats??{})as object).filter(([,value])=>typeof value==="number"||typeof value==="boolean"))
+          }
+          function describe(item:any,depth=0):any{
+            if(!item||depth>8)return null
+            const children=["activeSubSolver","activeSolver","tinySolver","preparedSolver","sectionSolver","activeSectionSolver","tinyPipelineSolver","primaryTinyPipelineSolver"].map(key=>({key,value:describe(item[key],depth+1)})).filter(child=>child.value)
+            return {name:item.getSolverName?.()??item.constructor.name,solved:item.solved,failed:item.failed,iterations:item.iterations,maxIterations:item.MAX_ITERATIONS,stats:numeric(item.stats),children}
+          }
+          console.log("AGGREGATE_OUTCOME="+JSON.stringify({solved:solver.solved,failed:solver.failed,phase:solver.getCurrentPhase(),seconds:(performance.now()-start)/1000}))
+          for(const key of Object.keys(solver)){
+            const item=(solver as any)[key]
+            if(item&&typeof item.step==="function")console.log("AGGREGATE_SOLVER="+JSON.stringify({key,details:describe(item)}))
+          }
+          TS
+          bun inspect-h3.private.ts > aggregate.private.log 2>&1
+          python3 - <<'PY'
+          import pathlib
+          for line in pathlib.Path("aggregate.private.log").read_text().splitlines():
+            if line.startswith("AGGREGATE_"): print(line)
+          PY
