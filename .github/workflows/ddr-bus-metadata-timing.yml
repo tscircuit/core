@@ -1,0 +1,88 @@
+name: Bus metadata balanced timing control
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-bus-metadata-timing.yml]
+permissions:
+  contents: read
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+jobs:
+  timing:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 250
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 69e2159483e062013728cd8ff256f9343224a90b
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 6f69522e39a913b305d42041811304e9ffe5e1eb
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install independent source dependencies before timing
+        run: |
+          for checkout in base head; do
+            (cd "$checkout" && bun install --ignore-scripts --backend=copyfile)
+          done
+          sha256sum base/lib/bus-lanes-pipeline-solver.ts head/lib/bus-lanes-pipeline-solver.ts
+      - name: Repeat the outlier in balanced base-head-head-base order
+        run: |
+          mkdir -p results
+          cat > base/timing-control.private.ts <<'TS'
+          import { mkdirSync, writeFileSync } from "node:fs"
+          import { resolve } from "node:path"
+          import { runBenchmarkProcess } from "./scripts/pr-benchmark/run-pair"
+          import { summarizeComparison } from "./scripts/pr-benchmark/report"
+          const sample = "inner-layers-complete-ca"
+          const results = []
+          for (const revision of ["base", "head", "head", "base"]) {
+            const run = results.length + 1
+            console.log("CONTROL_START=" + JSON.stringify({run,revision,sample}))
+            const result = await runBenchmarkProcess([
+              resolve("base/scripts/benchmark.ts"),
+              "--worker", sample,
+              "--timeout-seconds", "3600",
+              "--solver", resolve(revision + "/lib/index.ts")
+            ], resolve("base"), 3720000)
+            const { stdout, stderr, ...artifact } = result
+            const report = result.report
+            writeFileSync("results/run-" + run + ".json", JSON.stringify({run,revision,sample,...artifact}, null, 2))
+            writeFileSync("results/run-" + run + ".stdout.log", stdout)
+            writeFileSync("results/run-" + run + ".stderr.log", stderr)
+            if (result.exitCode !== 0 || result.error || result.timedOut || !report) throw Error("Control worker failed")
+            results.push({run,revision,sample,...artifact})
+            console.log("CONTROL_RESULT=" + JSON.stringify({run,revision,sample,wallMilliseconds:result.wallMilliseconds,report}))
+          }
+          for (const [before, after] of [[results[0], results[1]], [results[3], results[2]]]) {
+            const summary = summarizeComparison({
+              samples: [{
+                sample, timeoutSeconds:3600, main:before, pr:after,
+                metadata: {
+                  order:before.run < after.run ? ["main","pr"] : ["pr","main"],
+                  mainSha:"69e2159483e062013728cd8ff256f9343224a90b", prSha:"6f69522e39a913b305d42041811304e9ffe5e1eb", controllerSha:"69e2159483e062013728cd8ff256f9343224a90b",
+                  bunVersion:Bun.version, platform:process.platform, architecture:process.arch,
+                  runnerName:process.env.RUNNER_NAME, runnerOS:process.env.RUNNER_OS
+                }
+              }],
+              mainSha:"69e2159483e062013728cd8ff256f9343224a90b",prSha:"6f69522e39a913b305d42041811304e9ffe5e1eb",controllerSha:"69e2159483e062013728cd8ff256f9343224a90b",
+              prNumber:236, timeoutSeconds:3600,runUrl:"https://github.com/tscircuit/core/actions/runs/" + process.env.GITHUB_RUN_ID
+            })
+            console.log("CONTROL_PAIR=" + JSON.stringify(summary))
+            if(summary.main.accepted!==1 || summary.pr.accepted!==1 || !summary.inputComparable || !summary.metadataComparable) throw Error("Control acceptance failed")
+          }
+          TS
+          bun base/timing-control.private.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bus-236-balanced-complete-ca
+          path: results
