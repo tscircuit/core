@@ -1,3 +1,5 @@
+import type { PcbTraceId } from "lib/utils/circuit-json/circuit-json-id-types"
+import { getRenegotiableBusTraceIds } from "lib/utils/autorouting/get-renegotiable-bus-trace-ids"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -144,7 +146,6 @@ import {
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
 
-type PcbTraceId = PcbTrace["pcb_trace_id"]
 type AutoroutedPcbTrace = (PcbTrace | SimplifiedPcbTrace) &
   Partial<Pick<PcbTrace, "subcircuit_id" | "route_thickness_mode">>
 
@@ -2058,30 +2059,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           !phaseAutorouterConfig.algorithmFn &&
           !getPrecomputedRoutingResult &&
           !isTestPointPhase
-        const hasBusTimingConstraints =
-          Boolean(simpleRouteJson.differentialPairs?.length) ||
-          (simpleRouteJson.buses ?? []).some(
-            (bus) =>
-              bus.minLength !== undefined ||
-              bus.maxLength !== undefined ||
-              bus.maxLengthSkew !== undefined,
-          )
-        if (isAutomaticBusOutput && !hasBusTimingConstraints) {
-          for (const trace of traces) {
-            if (
-              !fixedTraceIds.has(trace.pcb_trace_id) &&
-              trace.connectsTo?.length === 2 &&
-              trace.allowedLayers !== undefined
-            ) {
-              renegotiableBusTraceIds.add(trace.pcb_trace_id)
-            }
-          }
-        }
         if (localAutorouterStrategy.preserveOutputTraces) {
+          const renegotiableOutputTraceIds = getRenegotiableBusTraceIds({
+            input: simpleRouteJson,
+            traces,
+            fixedTraceIds,
+            isAutomaticBusOutput,
+          })
           for (const trace of traces) {
             fixedTraceIds.add(trace.pcb_trace_id)
-            if (!isAutomaticBusOutput || hasBusTimingConstraints) {
+            if (!renegotiableOutputTraceIds) {
               renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+            } else if (renegotiableOutputTraceIds.has(trace.pcb_trace_id)) {
+              renegotiableBusTraceIds.add(trace.pcb_trace_id)
             }
           }
         }

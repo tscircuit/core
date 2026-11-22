@@ -1,3 +1,4 @@
+import type { PcbTraceId } from "lib/utils/circuit-json/circuit-json-id-types"
 import type { AutorouterComputeCostSummary } from "lib/events"
 import type { LocalCacheEngine } from "lib/local-cache-engine"
 import type { AutorouterOptions } from "lib/utils/autorouting/CapacityMeshAutorouter"
@@ -38,7 +39,7 @@ export type LocalAutoroutingCacheSolverOptions = Pick<
 > & {
   autorouterName: string
   solverName?: string
-  renegotiableBusTraceIds?: SimplifiedPcbTrace["pcb_trace_id"][]
+  renegotiableBusTraceIds?: PcbTraceId[]
 }
 
 type CachedAutoroutingPhaseResult = SimpleRouteJson & {
