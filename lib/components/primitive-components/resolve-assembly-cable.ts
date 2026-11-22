@@ -20,15 +20,19 @@ const MIN_TANGENT_LENGTH = 1e-6
 const BEZIER_HANDLE_LENGTH_RATIO = 1 / 3
 const CURVE_SAMPLES_PER_SPAN = 12
 
-type CableObjectSchema<PathSchema> = { shape: { path: PathSchema } }
+type CableSchema<PathSchema> =
+  | { shape: { path: PathSchema } }
+  | { innerType(): CableSchema<PathSchema> }
 
-function getCablePathSchema<PathSchema>(
-  schema:
-    | CableObjectSchema<PathSchema>
-    | { innerType(): CableObjectSchema<PathSchema> },
+export function getCablePathSchema<PathSchema>(
+  schema: CableSchema<PathSchema>,
 ) {
   // Circuit JSON wraps the cable object in a refinement for length tolerance.
-  return ("innerType" in schema ? schema.innerType() : schema).shape.path
+  let cableSchema = schema
+  while ("innerType" in cableSchema) {
+    cableSchema = cableSchema.innerType()
+  }
+  return cableSchema.shape.path
 }
 
 function resolveAuthoredAssemblyCablePath({
