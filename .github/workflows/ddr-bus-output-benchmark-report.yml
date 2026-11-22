@@ -13,15 +13,33 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: am3352-control
+          pattern: am3352-*
           path: upstream-bus
           repository: tscircuit/bus-lanes-solver
-          run-id: 45074048787
+          run-id: 45076702743
           github-token: ${{ github.token }}
-      - name: Inspect public benchmark report structure
+      - name: Retain and display the complete trusted comparison
         run: |
           python - <<'PY'
           import json,pathlib
-          for p in pathlib.Path('upstream-bus').rglob('*.json'):
-            pair=json.load(open(p));print('UPSTREAM_REPORT_KEYS='+json.dumps({'file':str(p),'keys':list(pair),'mainKeys':list(pair.get('main',{})),'prKeys':list(pair.get('pr',{}))}))
+          root=pathlib.Path('upstream-bus')
+          comparisons=list(root.rglob('comparison.md'))
+          assert len(comparisons)==1
+          print('BUS_BENCHMARK_COMPARISON_BEGIN')
+          print(comparisons[0].read_text())
+          print('BUS_BENCHMARK_COMPARISON_END')
+          pairs=[]
+          for p in root.rglob('*.json'):
+            pair=json.load(open(p))
+            if 'main'not in pair or 'pr'not in pair:continue
+            pairs.append(pair)
+            print('BUS_BENCHMARK_REPORT_SHAPE='+json.dumps({'sample':pair['sample'],'metadata':pair['metadata'],'main':pair['main']['wallMilliseconds'],'head':pair['pr']['wallMilliseconds'],'reportKeys':list(pair['pr']['report'])}))
+          assert len(pairs)==11
+          json.dump(pairs,open('all-bus-pairs.json','w'),indent=2)
           PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bus-236-complete-comparison
+          path: |
+            all-bus-pairs.json
+            upstream-bus
