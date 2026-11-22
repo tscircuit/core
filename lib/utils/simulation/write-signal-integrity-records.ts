@@ -61,8 +61,8 @@ export function writeSignalIntegrityRecords(
     bit_rate_bps: props.bitRate,
     duration_ms: durationMs,
     allow_unrouted_traces: props.allowUnroutedTraces,
-    nearby_driver_pattern: props.nearbyDriverPattern,
-    nearby_drivers_disabled: props.nearbyDriversDisabled,
+    aggressor_pattern: props.aggressorPattern,
+    aggressors_disabled: props.aggressorsDisabled,
   }
   const {
     simulation_pcb_transient_channel_simulation_id: previousSimulationId,
