@@ -5,4 +5,5 @@ test("PCB transient simulation preserves an explicit false aggressor flag", asyn
   const run = await renderTransientChannelRun({ aggressorDisabled: false })
 
   expect(run.aggressor_disabled).toBe(false)
+  expect(Object.hasOwn(run, "aggressor_pattern")).toBe(false)
 })
