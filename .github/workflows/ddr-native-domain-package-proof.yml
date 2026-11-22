@@ -1,0 +1,45 @@
+name: Verify the exact native layer package bytes and isolated file identities
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-domain-package-proof.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install independent package copies and verify the actual implementations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          for revision,pin in [('base','0.0.1153'),('head',"https://npm-releases.tscircuit.com/npm-tarballs/45043831146-1/tscircuit-capacity-autorouter-0.0.1153.tgz")]:
+            root=Path(revision)
+            root.mkdir()
+            (root/'package.json').write_text(json.dumps({'name':'native-proof-'+revision,'private':True,'type':'module','dependencies':{'@tscircuit/capacity-autorouter':pin}}))
+          PY
+          (cd base && bun install --ignore-scripts --backend=copyfile)
+          (cd head && bun install --ignore-scripts --backend=copyfile)
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          rows=[]
+          for revision,expected in [('base','dafd4c2ce84f458b915b6884cae1fbacf0408c1401d3e4fadf25454658b685eb'),('head','b6bb4f25ef2aca7c2728db001999300d2d3075dcd536badcec8ec37ca1f1fecc')]:
+            root=Path(revision+'/node_modules/@tscircuit/capacity-autorouter')
+            code=(root/'dist/index.js').read_bytes()
+            stat=(root/'dist/index.js').stat()
+            package=json.loads((root/'package.json').read_text())
+            digest=hashlib.sha256(code).hexdigest()
+            assert digest==expected,(revision,digest)
+            if revision=='head':
+              assert b'preservePreloadedPortCapacity' in code
+              assert b'Native trace routed wire on a forbidden signal layer' in code
+            row={'revision':revision,'sha256':digest,'device':stat.st_dev,'inode':stat.st_ino,'version':package['version'],'repair03':package['devDependencies']['high-density-repair03'],'repair04':package['devDependencies']['@tscircuit/repair04']}
+            rows.append(row)
+            print('NATIVE_PACKAGE_PROOF='+json.dumps(row))
+          assert (rows[0]['device'],rows[0]['inode'])!=(rows[1]['device'],rows[1]['inode'])
+          PY
