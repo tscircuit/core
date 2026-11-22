@@ -23,8 +23,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const old=await github.rest.actions.getWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992362452})
-            if(old.data.status!=="completed")await github.rest.actions.cancelWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992362452})
+            const old=await github.rest.actions.getWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992528634})
+            if(old.data.status!=="completed")await github.rest.actions.cancelWorkflowRun({owner:"tscircuit",repo:"core",run_id:44992528634})
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -106,7 +106,7 @@ jobs:
             const after=this.activeFallbackSolver??this.activeB01Solver??this.activeRegularSolver
             if(capture.previous!==after){capture.previous=after;capture.activeStarted=performance.now()}
             if(after&&this.fixedHdRoutes.length>=16&&this.iterations%4096===0&&performance.now()-capture.activeStarted>30000){
-              const snapshot={detail:describe(this),hdParams:this.params,activeParams:after.params??after.getConstructorParams?.()}
+              const snapshot={detail:describe(this),hdParams:this.params,activeParams:after.params}
               save("blocked-search",snapshot)
               const {gzipSync}=require("node:zlib")
               const zipped=gzipSync(JSON.stringify(snapshot,replace))
@@ -119,7 +119,7 @@ jobs:
             if(before!==after&&before?.failed){
               const detail=describe(before)
               console.log("DDR_CHILD_FAILURE="+JSON.stringify({hd:capture.id,detail}))
-              save("hd-"+capture.id+"-child-failure-"+this.stats.solvedNodeCount+"-"+before.getSolverName(),{detail,params:before.getConstructorParams?.()})
+              save("hd-"+capture.id+"-child-failure-"+this.stats.solvedNodeCount+"-"+before.getSolverName(),{detail,params:before.params})
             }
             if(this.failed){
               const detail=describe(this)
