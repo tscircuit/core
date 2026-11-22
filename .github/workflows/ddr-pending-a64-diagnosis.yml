@@ -1,0 +1,151 @@
+name: Diagnose A64 pending-access certification on latest published stack
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-pending-a64-diagnosis.yml]
+permissions:
+  contents: read
+jobs:
+  completion:
+    name: Native ${{ matrix.circuit }} pending access
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {mode: head, circuit: a64}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ee7bcfe5d5b36dbc57d3b9b46389c590bea8573e
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: matrix.mode == 'head'
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 69e2159483e062013728cd8ff256f9343224a90b
+          path: bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Reapply existing producer without modifying its PR
+        if: matrix.mode == 'head'
+        working-directory: core
+        run: |
+          git fetch --depth=1 origin e0dfe6ff2dfc98e90bfe927384c2f554efd61d42 914daa787936f8a3a7b290de7a37ecc508479080
+          git diff e0dfe6ff2dfc98e90bfe927384c2f554efd61d42 914daa787936f8a3a7b290de7a37ecc508479080 -- lib > ../producer.patch
+          git apply --3way ../producer.patch
+          git diff --stat HEAD
+      - name: Reapply consumer onto current bus main in this runner
+        if: matrix.mode == 'head'
+        working-directory: bus
+        run: |
+          git fetch --depth=1 origin cbd27db2e7de5697d24fc63928c43fb92d3431d1 fa85c5ea2c7357f4c3a0a4f7126b843687e796c2
+          git diff cbd27db2e7de5697d24fc63928c43fb92d3431d1 fa85c5ea2c7357f4c3a0a4f7126b843687e796c2 -- lib > ../bus-consumer.patch
+          git apply --3way ../bus-consumer.patch
+          git diff --stat HEAD
+      - name: Instrument finite access misses without changing search decisions
+        working-directory: bus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('lib/pending-pad-access.ts')
+          s=p.read_text()
+          before='          else this.uncertifiedSearches++'
+          assert s.count(before)==1
+          s=s.replace(before,'''          else {
+            this.uncertifiedSearches++
+            console.warn("PENDING_DIAG_BASELINE="+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId}))
+          }''')
+          before='          blocked.add(terminal.obligation)\\n          if (stopAfterFirst) return [terminal.obligation]'
+          after='          console.warn("PENDING_DIAG_BLOCKED="+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId,baseline:!!terminal.baseline,candidateTraceCount:newTraces.length}))\\n'+before
+          assert s.count(before)>=1
+          p.write_text(s.replace(before,after))
+          PY
+      - name: Build existing bus consumer with drill guard
+        if: matrix.mode == 'head'
+        working-directory: bus
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          mkdir -p dist
+          bun build lib/index.ts --target=node --outfile=dist/index.js
+          sha256sum dist/index.js
+      - name: Pin runtime and one shared validator
+        working-directory: core
+        env:
+          MODE: ${{ matrix.mode }}
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > prepare.private.mjs <<'JS'
+          import {readFileSync,writeFileSync} from "node:fs"
+          const p=JSON.parse(readFileSync("package.json","utf8"))
+          const response=await fetch("https://registry.npmjs.org/tscircuit/0.0.3278")
+          if(!response.ok)throw Error("Missing published metadata")
+          const published=await response.json()
+          for(const section of ["dependencies","devDependencies"]){
+            for(const name of Object.keys(p[section]??{})){
+              if(published.dependencies[name])p[section][name]=published.dependencies[name].replace(/^[~^]/,"")
+            }
+          }
+          p.devDependencies["@tscircuit/checks"]="0.0.282"
+          p.devDependencies["@tscircuit/capacity-autorouter"]="0.0.1153"
+          p.devDependencies["@tscircuit/fanout-solver"]="0.0.103"
+          p.devDependencies["@tscircuit/core-ddr-benchmark"]="github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+          if(process.env.MODE==="head")p.devDependencies["@tscircuit/bus-lanes-solver"]="file:../bus"
+          writeFileSync("package.json",JSON.stringify(p,null,2))
+          JS
+          node prepare.private.mjs
+          bun install --ignore-scripts --backend=copyfile
+      - name: Route unchanged native board through current source Core
+        working-directory: core
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$PWD" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200 > ../routing.private.log 2>&1
+      - name: Print bounded access diagnostics
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          logs=[Path('routing.private.log'),*Path('results').rglob('*.log'),*Path('results').rglob('*.txt')]
+          count=0
+          for path in logs:
+            if not path.is_file():continue
+            for line in path.read_text(errors='replace').splitlines():
+              if 'PENDING_DIAG_' not in line:continue
+              print(line[:1800]);count+=1
+              if count>=200:break
+            if count>=200:break
+          print('PENDING_DIAG_LINE_COUNT='+str(count))
+          print('RESULT_FILES='+str([str(p) for p in Path('results').rglob('*') if p.is_file() and p.suffix not in ['.json','.svg']][:25]))
+          PY
+      - name: Assess completion and physical copper
+        if: always()
+        working-directory: core
+        env:
+          MODE: ${{ matrix.mode }}
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          test -f "../results/$CIRCUIT/circuit.json"
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$PWD" "$CIRCUIT" "$GITHUB_WORKSPACE/results/$CIRCUIT"
+          python3 - <<'PY'
+          import json,pathlib,os
+          p=pathlib.Path("../results")
+          assessment=json.loads((p/os.environ["CIRCUIT"]/"assessment.json").read_text())
+          summary={"circuit":os.environ["CIRCUIT"],"connected":assessment["connectedNets"],"requested":assessment["requestedNets"],"findings":assessment["findings"],"vias":assessment["vias"],"geometryErrorCount":len(assessment["geometryErrors"])}
+          pathlib.Path("../pending-outcome.json").write_text(json.dumps(summary))
+          print("PENDING_NATIVE_ASSESSMENT="+json.dumps(summary))
+          d=json.loads((p/"results.json").read_text())
+          for row in d["cases"]:
+            print("PENDING_NATIVE_PROGRESS="+json.dumps({"mode":os.environ["MODE"],"status":row["status"],"wallMs":row["wallMs"],"peakRssMb":row.get("peakRssMb"),"errors":row.get("progress",{}).get("errors"),"phases":row.get("progress",{}).get("phases")}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pending-access-${{ matrix.circuit }}
+          path: |
+            pending-outcome.json
+          if-no-files-found: warn
