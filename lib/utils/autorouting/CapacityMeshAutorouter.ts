@@ -307,7 +307,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
 
   private getSolverFailure(): AutorouterError {
     const isPathPlanningFailure =
-      "getCurrentPhase" in this.solver &&
+      this.solver instanceof AutoroutingPipelineSolver9_PreloadedTraceGraph &&
       this.solver.getCurrentPhase() === "portPointPathingSolver"
     if (isPathPlanningFailure) {
       return new AutorouterError(this.solver.error || "Routing failed", {
