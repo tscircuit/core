@@ -1931,9 +1931,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               ...result.obstacles.slice(probeInput.obstacles.length),
             ],
           }
-          for (const trace of selectedTraces)
+          for (const trace of selectedTraces) {
             fixedTraceIds.add(trace.pcb_trace_id)
-          renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+            renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+          }
         } else if (getPrecomputedRoutingResult) {
           const result = getPrecomputedRoutingResult(simpleRouteJson)
           traces = result.traces
