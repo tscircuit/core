@@ -1,0 +1,112 @@
+name: Compare native layer recovery PR4116 with published 1153 on Dataset18
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-native-domain-dataset18.yml]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 17cdc65e45269bc4229f891c0cc80cde7245a169
+          path: same-machine-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 17cdc65e45269bc4229f891c0cc80cde7245a169
+          path: same-machine-pr
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Prepare one validator and two exact published implementations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          for revision,version in [('base','0.0.1153'),('pr',"https://npm-releases.tscircuit.com/npm-tarballs/45042119905-1/tscircuit-capacity-autorouter-0.0.1153.tgz")]:
+            root=Path('same-machine-'+revision)
+            manifest=json.loads((root/'package.json').read_text())
+            manifest['devDependencies']['@tscircuit/checks']='0.0.282'
+            (root/'package.json').write_text(json.dumps(manifest,indent=2)+'\n')
+            config=root/'bunfig.toml'
+            content=config.read_text()
+            config.write_text(content.replace('save = false','save = true'))
+            runtime=root/'published-runtime'
+            runtime.mkdir()
+            (runtime/'package.json').write_text(json.dumps({'name':'published-ddr-runtime-'+revision,'private':True,'type':'module','dependencies':{'@tscircuit/capacity-autorouter':version}}))
+            wrapper=root/'scripts/benchmark/published-runtime.ts'
+            wrapper.write_text('export * from "../../published-runtime/node_modules/@tscircuit/capacity-autorouter/dist/index.js"\n')
+            worker=root/'scripts/benchmark/benchmark-run-task.ts'
+            text=worker.read_text()
+            before='import * as autorouterModule from "../../lib"'
+            assert text.count(before)==1
+            worker.write_text(text.replace(before,'import * as autorouterModule from "./published-runtime"'))
+            index=root/'scripts/benchmark/index.ts'
+            text=index.read_text()
+            before='import { AUTOROUTER_VERSION } from "../../lib"'
+            assert text.count(before)==1
+            index.write_text(text.replace(before,'import { AUTOROUTER_VERSION } from "./published-runtime"'))
+          PY
+          (cd same-machine-base && bun install --save-text-lockfile --backend=copyfile)
+          cp same-machine-base/bun.lock same-machine-pr/bun.lock
+          (cd same-machine-pr && bun install --frozen-lockfile --backend=copyfile)
+          (cd same-machine-base/published-runtime && bun install --ignore-scripts --backend=copyfile)
+          (cd same-machine-pr/published-runtime && bun install --ignore-scripts --backend=copyfile)
+          cmp same-machine-base/package.json same-machine-pr/package.json
+          cmp same-machine-base/bun.lock same-machine-pr/bun.lock
+          mkdir -p same-machine-controller/scripts
+          cp -R same-machine-base/scripts/benchmark same-machine-controller/scripts/benchmark
+          ln -s ../same-machine-base/node_modules same-machine-controller/node_modules
+          cat > verify-published.private.ts <<'TS'
+          import {readFileSync,realpathSync,statSync,writeFileSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          import path from "node:path"
+          const records=[]
+          for(const [revision,expected] of [["base","0.0.1153"],["pr","0.0.1153"]]){
+            const root=path.resolve("same-machine-"+revision,"published-runtime/node_modules/@tscircuit/capacity-autorouter")
+            const meta=JSON.parse(readFileSync(root+"/package.json","utf8"))
+            if(meta.version!==expected)throw Error("Unexpected package version")
+            const filename=realpathSync(root+"/dist/index.js"),stat=statSync(filename)
+            records.push({revision,version:meta.version,filename,device:stat.dev,inode:stat.ino,sha256:createHash("sha256").update(readFileSync(filename)).digest("hex")})
+          }
+          if(records[0].filename===records[1].filename||(records[0].device===records[1].device&&records[0].inode===records[1].inode))throw Error("Shared runtime files")
+          writeFileSync("published-runtime-verification.json",JSON.stringify(records,null,2));console.log(records)
+          TS
+          bun verify-published.private.ts
+      - name: Run the standard same-machine Dataset18 harness
+        working-directory: same-machine-controller
+        env:
+          BENCHMARK_ARGS_JSON: '["--dataset","srj18","--concurrency","1","--threads","1"]'
+          BENCHMARK_DATASET: srj18
+        run: bun scripts/benchmark/runSameMachineBenchmarks.ts
+      - name: Report every result without routing images
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          failures=[]
+          for revision in ['base','pr']:
+            report=json.load(open('same-machine-results/'+revision+'/benchmark-result.json'))
+            print('PUBLISHED_DATASET18_SUMMARY='+json.dumps({'revision':revision,'summary':report['summary'],'runtime':report.get('runtime'),'scenarioCount':report['scenarioCount']}))
+            assert report['scenarioCount']==16
+            for item in report['tests']:
+              row={k:v for k,v in item.items()if k!='benchmarkSnapshot'}
+              print('PUBLISHED_DATASET18_METRIC='+json.dumps({'revision':revision,**row}))
+              if not(row['didSolve']and row['relaxedDrcPassed']and not row['didTimeout']):failures.append((revision,row['scenarioName']))
+          assert not failures,failures
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-domain-4116-dataset18
+          path: |
+            same-machine-results
+            published-runtime-verification.json
+          if-no-files-found: warn
