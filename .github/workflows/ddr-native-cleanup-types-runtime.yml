@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: e42f08b6c9ae8049c3525f5d4ce3397ae4027d4b
+          ref: 3e18aea4ad33d66e5703e4332836da07ac136c10
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -52,6 +52,6 @@ jobs:
           if(busRows[0].inode===busRows[1].inode&&busRows[0].device===busRows[1].device)throw Error("Shared bus runtime files");
           if(busRows[0].sha256===busRows[1].sha256)throw Error("Bus implementation unchanged");
           console.log("BUS_METADATA_RUNTIME_PROOF="+JSON.stringify(busRows));
-          console.log("NATIVE_3279_RUNTIME_PROOF="+JSON.stringify({coreHead:"e42f08b6c9ae8049c3525f5d4ce3397ae4027d4b",preview:"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz",rows}))
+          console.log("NATIVE_3279_RUNTIME_PROOF="+JSON.stringify({coreHead:"3e18aea4ad33d66e5703e4332836da07ac136c10",preview:"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz",rows}))
           TS
           bun verify.private.ts

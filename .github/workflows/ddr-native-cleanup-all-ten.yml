@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: e42f08b6c9ae8049c3525f5d4ce3397ae4027d4b
+          ref: 3e18aea4ad33d66e5703e4332836da07ac136c10
           path: core-head
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -42,7 +42,7 @@ jobs:
             for(const section of["dependencies","devDependencies"])
               for(const name of Object.keys(packageJson[section]??{}))
                 if(published.dependencies[name])packageJson[section][name]=published.dependencies[name].replace(/^[~^]/,"")
-            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":revision==="head"?"https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@9b8e69a":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
+            Object.assign(packageJson.devDependencies,{"@tscircuit/checks":"0.0.282","@tscircuit/capacity-autorouter":"https://npm-releases.tscircuit.com/npm-tarballs/45069138665-1/tscircuit-capacity-autorouter-0.0.1156.tgz","@tscircuit/fanout-solver":"0.0.104","@tscircuit/core-ddr-benchmark":"github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690","@tscircuit/bus-lanes-solver":revision==="head"?"https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@85e89a5":"https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz"})
             writeFileSync(filename,JSON.stringify(packageJson,null,2))
           }
           JS
