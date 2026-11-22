@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("decoupling bank grid honors schGridRows and gaps", async () => {
+test("decoupling bank grid honors schGridRows and gaps", async () => {
   const { circuit } = getTestFixture()
   circuit.pcbDisabled = true
   circuit.add(

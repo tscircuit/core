@@ -34,14 +34,14 @@ export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
 
   // 3. Get grid configuration (cols, rows, gap)
   let gridColsOption = props.schGridCols ?? props.gridCols
-  let gridRowsOption: number | undefined = undefined // Not directly supported by old props, but can be via schLayout
+  let gridRowsOption = props.schGridRows
   let gridGapOption = props.schGridGap ?? props.gridGap
-  let gridRowGapOption = props.gridRowGap
-  let gridColumnGapOption = props.gridColumnGap
+  let gridRowGapOption = props.schGridRowGap ?? props.gridRowGap
+  let gridColumnGapOption = props.schGridColumnGap ?? props.gridColumnGap
 
   if (props.schLayout?.grid) {
     gridColsOption = props.schLayout.grid.cols ?? gridColsOption
-    gridRowsOption = props.schLayout.grid.rows // New option from schLayout
+    gridRowsOption = props.schLayout.grid.rows ?? gridRowsOption
     gridGapOption = props.schLayout.gridGap ?? gridGapOption
     gridRowGapOption = props.schLayout.gridRowGap ?? gridRowGapOption
     gridColumnGapOption = props.schLayout.gridColumnGap ?? gridColumnGapOption
