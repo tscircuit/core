@@ -1,0 +1,175 @@
+name: Check native planned-escape clearance before and after carrier finishing
+on:
+  push:
+    branches: [analysis/ddr-3277-completion-20261122-1035]
+    paths: [.github/workflows/ddr-pending-shared-clearance-diagnosis.yml]
+permissions:
+  contents: read
+jobs:
+  completion:
+    name: Native ${{ matrix.circuit }} pending access
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {mode: head, circuit: a64}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ee7bcfe5d5b36dbc57d3b9b46389c590bea8573e
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 69e2159483e062013728cd8ff256f9343224a90b
+          path: bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Reapply existing producer without modifying its PR
+        working-directory: core
+        run: |
+          git fetch --depth=1 origin e0dfe6ff2dfc98e90bfe927384c2f554efd61d42 914daa787936f8a3a7b290de7a37ecc508479080
+          git diff e0dfe6ff2dfc98e90bfe927384c2f554efd61d42 914daa787936f8a3a7b290de7a37ecc508479080 -- lib > ../producer.patch
+          git apply --3way ../producer.patch
+          git diff --stat HEAD
+      - name: Reapply consumer onto current bus main in this runner
+        working-directory: bus
+        run: |
+          git fetch --depth=1 origin cbd27db2e7de5697d24fc63928c43fb92d3431d1 fa85c5ea2c7357f4c3a0a4f7126b843687e796c2
+          git diff cbd27db2e7de5697d24fc63928c43fb92d3431d1 fa85c5ea2c7357f4c3a0a4f7126b843687e796c2 -- lib > ../bus-consumer.patch
+          git apply --3way ../bus-consumer.patch
+          git diff --stat HEAD
+      - name: Permit declared inner carriers in multilayer routing groups
+        if: matrix.mode == 'head'
+        working-directory: bus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('lib/route-surface-bridge.ts')
+          s=p.read_text()
+          before="function innerCarrier(input: SimpleRouteJson) {\n  return input.allowedLayers?.length === 1 &&\n    /^inner\\d+$/.test(input.allowedLayers[0]) &&\n    getCopperLayerNames(input.layerCount).includes(input.allowedLayers[0])\n    ? input.allowedLayers[0]\n    : undefined\n}\n"
+          after="function innerCarrier(\n  input: SimpleRouteJson,\n  connection: Connection,\n): string | undefined {\n  const physicalLayers = getCopperLayerNames(input.layerCount)\n  return signalLayers(input, connection).find(\n    (layer) => /^inner\\d+$/.test(layer) && physicalLayers.includes(layer),\n  )\n}\n"
+          assert s.count(before)==1
+          s=s.replace(before,after)
+          assert s.count('innerCarrier(input)')==4
+          p.write_text(s.replace('innerCarrier(input)','innerCarrier(input, connection)'))
+          PY
+      - name: Instrument finite access misses without changing search decisions
+        working-directory: bus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('lib/pending-pad-access.ts')
+          s=p.read_text()
+          before='          else this.uncertifiedSearches++'
+          assert s.count(before)==1
+          s=s.replace(before,'''          else {
+            this.uncertifiedSearches++
+            console.warn("PENDING_DIAG_BASELINE="+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId}))
+          }''')
+          before="          blocked.add(terminal.obligation)\n          if (stopAfterFirst) return [terminal.obligation]"
+          after="          console.warn(\"PENDING_DIAG_BLOCKED=\"+JSON.stringify({phase:terminal.obligation.phaseIndex,connection:terminal.connection.name,terminal:terminal.connection.pointsToConnect[terminal.terminalIndex].pcb_port_id??terminal.connection.pointsToConnect[terminal.terminalIndex].pointId,baseline:!!terminal.baseline,candidateTraceCount:newTraces.length}))\n          blocked.add(terminal.obligation)\n          if (stopAfterFirst) return [terminal.obligation]"
+          assert s.count(before)>=1
+          p.write_text(s.replace(before,after))
+          p=Path('lib/negotiate-surface-routes.ts')
+          s=p.read_text()
+          before='  const paired = new Set('
+          after='  console.warn("PENDING_DIAG_NEGOTIATION="+JSON.stringify({allowedLayers:native.allowedLayers,buses:native.buses?.map(bus=>({allowedLayers:bus.allowedLayers,connections:bus.connectionNames.length})),eligible:native.connections.map(connection=>surfaceBridgeEligible(native,connection))}))\n'+before
+          assert s.count(before)==1
+          p.write_text(s.replace(before,after))
+          PY
+      - name: Use the existing global dogbone assignment without publishing future copper
+        working-directory: bus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          Path("lib/route-pending-access.ts").write_text("import { validateRoutedCopperDrc } from \"@tscircuit/fanout-solver\"\nimport { BusLanesSolver } from \"./bus-lanes-solver\"\nimport { effectiveCarrierLayers } from \"./effective-carrier-layers\"\nimport { routeAlternateSignalDogbones } from \"./alternate-signal-dogbones\"\nimport { finishGeneratedSurfaceCarriers } from \"./finish-generated-surface-carriers\"\nimport { PendingPadAccess } from \"./pending-pad-access\"\nimport type { Connection, SimpleRouteJson, SolverOptions, Trace } from \"./types\"\n\nexport function* routePendingAccess({\n  input, traces, options, maxSteps, access,\n}: {\n  input: SimpleRouteJson\n  traces: Trace[]\n  options: SolverOptions\n  maxSteps: number\n  access: PendingPadAccess\n}): Generator<void, Trace[] | null> {\n  if (!(yield* access.getBlockedObligations(traces)).length) return traces\n  const current = new Set(input.connections.map((connection) => connection.name))\n  const future = input.pendingRoutingAccess ?? []\n  const connections = [...input.connections, ...future.flatMap((intent) => intent.connections)]\n  if (new Set(connections.map((connection) => connection.name)).size !== connections.length) return access.noSolution()\n  const targets = new Map<string, string>()\n  for (const connection of input.connections) {\n    const layer = effectiveCarrierLayers(input, connection).find((layer) => !connection.pointsToConnect.some((point) => point.layer === layer))\n    if (!layer) return access.noSolution()\n    targets.set(connection.name, layer)\n  }\n  for (const intent of future) {\n    const view = { ...input, ...intent, layerCount: input.layerCount }\n    for (const connection of intent.connections) {\n      const layers = effectiveCarrierLayers(view, connection)\n      const layer = layers.find((layer) => !connection.pointsToConnect.some((point) => point.layer === layer)) ?? layers[0]\n      if (!layer) return access.noSolution()\n      targets.set(connection.name, layer)\n    }\n  }\n  const padCounts = new Map<string, number>()\n  for (const obstacle of input.obstacles) {\n    if (obstacle.componentId) padCounts.set(obstacle.componentId, (padCounts.get(obstacle.componentId) ?? 0) + 1)\n  }\n  const padCount = (point: Connection[\"pointsToConnect\"][number]): number => {\n    const pad = input.obstacles.find((obstacle) => obstacle.componentId && obstacle.layers.includes(point.layer) && Math.hypot(obstacle.center.x - point.x, obstacle.center.y - point.y) < 1e-8)\n    return pad?.componentId ? padCounts.get(pad.componentId)! : 0\n  }\n  const planningConnections = connections.map((connection) => connection.pointsToConnect.length === 2 ? connection : {\n    ...connection,\n    pointsToConnect: [...connection.pointsToConnect].sort((first, second) => padCount(second) - padCount(first)).slice(0, 2),\n  })\n  console.warn(\"PENDING_DIAG_SHARED_PLAN=\"+JSON.stringify({connections:connections.length,terminals:connections.reduce((count,connection)=>count+connection.pointsToConnect.length,0),planningTerminals:planningConnections.reduce((count,connection)=>count+connection.pointsToConnect.length,0)}))\n  const planningInput = { ...input, connections: planningConnections, buses: [...(input.buses ?? []), ...future.flatMap((intent) => intent.buses ?? [])], pendingRoutingAccess: undefined }\n  const passSteps = Math.max(1, Math.floor(maxSteps / 4))\n  for (let attempt = 0; attempt < 4; attempt++) {\n    let generated: ReturnType<typeof routeAlternateSignalDogbones>\n    try {\n      generated = routeAlternateSignalDogbones(planningInput, {\n        targetLayers: targets,\n        viaDiameter: input.minViaPadDiameter ?? 0.3,\n        viaHoleDiameter: input.minViaHoleDiameter ?? 0.15,\n        traceWidth: input.minTraceWidth,\n        clearance: input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075,\n        holeToHoleClearance: input.minViaHoleEdgeToViaHoleEdgeClearance,\n        boardEdgeClearance: input.minBoardEdgeClearance,\n      }, attempt)\n    } catch (error) {\n      console.warn(\"PENDING_DIAG_SHARED_FANOUT=\"+JSON.stringify({attempt,stage:\"allocation\",error:String(error)}))\n      continue\n    }\n    const escapes = (generated.traces as Trace[]).filter((trace) => current.has(trace.connection_name!))\n    const reserved = (generated.traces as Trace[]).filter((trace) => !current.has(trace.connection_name!))\n    const laneInput = {\n      ...input,\n      connections: generated.connections.filter((connection) => current.has(connection.name)),\n      traces: [...(input.traces ?? []), ...escapes, ...reserved],\n    } as SimpleRouteJson\n    const solver = new BusLanesSolver(laneInput, options)\n    let steps = 0\n    try {\n      while (!solver.solved && !solver.failed && steps++ < passSteps) {\n        solver.step()\n        yield\n      }\n      console.warn(\"PENDING_DIAG_SHARED_FANOUT=\"+JSON.stringify({attempt,stage:\"carriers\",solved:solver.solved,error:solver.error,currentEscapes:escapes.length,reservedEscapes:reserved.length,steps}))\n      if (!solver.solved) continue\n      const finished = yield* finishGeneratedSurfaceCarriers({\n        input: { ...input, traces: [...(input.traces ?? []), ...reserved] },\n        carriers: solver.traces,\n        escapes,\n        options,\n        maxSteps: passSteps,\n      })\n      if (finished) {\n        for (const [stage, copper] of [[\"assignment\", generated.traces], [\"finished\", [...reserved, ...finished.traces]]] as const) {\n          const report = validateRoutedCopperDrc({\n            inputSrj: planningInput as never,\n            routedSrj: { ...planningInput, traces: copper } as never,\n            clearance: input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075,\n            allowBlindAndBuriedVias: input.allowBlindAndBuriedVias ?? false,\n          })\n          const counts: Record<string, number> = {}\n          for (const issue of report.issues) counts[issue.code] = (counts[issue.code] ?? 0) + 1\n          console.warn(\"PENDING_DIAG_SHARED_CLEARANCE=\"+JSON.stringify({attempt,stage,valid:report.valid,counts,examples:report.issues.slice(0,10)}))\n        }\n      }\n      if (finished && !(yield* access.getBlockedObligations(finished.traces)).length) return finished.traces\n    } finally {\n      if (!solver.solved && !solver.failed) solver.tryFinalAcceptance()\n    }\n  }\n  return access.noSolution()\n}\n")
+          PY
+      - name: Build existing bus consumer with drill guard
+        working-directory: bus
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          mkdir -p dist
+          bun build lib/index.ts --target=node --outfile=dist/index.js
+          sha256sum dist/index.js
+      - name: Pin runtime and one shared validator
+        working-directory: core
+        env:
+          MODE: ${{ matrix.mode }}
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          cat > prepare.private.mjs <<'JS'
+          import {readFileSync,writeFileSync} from "node:fs"
+          const p=JSON.parse(readFileSync("package.json","utf8"))
+          const response=await fetch("https://registry.npmjs.org/tscircuit/0.0.3278")
+          if(!response.ok)throw Error("Missing published metadata")
+          const published=await response.json()
+          for(const section of ["dependencies","devDependencies"]){
+            for(const name of Object.keys(p[section]??{})){
+              if(published.dependencies[name])p[section][name]=published.dependencies[name].replace(/^[~^]/,"")
+            }
+          }
+          p.devDependencies["@tscircuit/checks"]="0.0.282"
+          p.devDependencies["@tscircuit/capacity-autorouter"]="0.0.1153"
+          p.devDependencies["@tscircuit/fanout-solver"]="0.0.103"
+          p.devDependencies["@tscircuit/core-ddr-benchmark"]="github:ShiboSoftwareDev/core-ddr-benchmark#24dc44c166d4258c3538f8b1f66953f1b6f58690"
+          p.devDependencies["@tscircuit/bus-lanes-solver"]="file:../bus"
+          writeFileSync("package.json",JSON.stringify(p,null,2))
+          JS
+          node prepare.private.mjs
+          bun install --ignore-scripts --backend=copyfile
+      - name: Route unchanged native board through current source Core
+        working-directory: core
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core "$PWD" --out "$GITHUB_WORKSPACE/results" --circuit "$CIRCUIT" --timeout 1200 > ../routing.private.log 2>&1
+      - name: Print bounded access diagnostics
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          logs=[Path('routing.private.log'),*Path('results').rglob('*.log'),*Path('results').rglob('*.txt')]
+          count=0
+          for path in logs:
+            if not path.is_file():continue
+            for line in path.read_text(errors='replace').splitlines():
+              if 'PENDING_DIAG_' not in line:continue
+              print(line[:1800]);count+=1
+              if count>=200:break
+            if count>=200:break
+          print('PENDING_DIAG_LINE_COUNT='+str(count))
+          print('RESULT_FILES='+str([str(p) for p in Path('results').rglob('*') if p.is_file() and p.suffix not in ['.json','.svg']][:25]))
+          PY
+      - name: Assess completion and physical copper
+        if: always()
+        working-directory: core
+        env:
+          MODE: ${{ matrix.mode }}
+          CIRCUIT: ${{ matrix.circuit }}
+        run: |
+          test -f "../results/$CIRCUIT/circuit.json"
+          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$PWD" "$CIRCUIT" "$GITHUB_WORKSPACE/results/$CIRCUIT"
+          python3 - <<'PY'
+          import json,pathlib,os
+          p=pathlib.Path("../results")
+          assessment=json.loads((p/os.environ["CIRCUIT"]/"assessment.json").read_text())
+          summary={"circuit":os.environ["CIRCUIT"],"connected":assessment["connectedNets"],"requested":assessment["requestedNets"],"findings":assessment["findings"],"vias":assessment["vias"],"geometryErrorCount":len(assessment["geometryErrors"])}
+          pathlib.Path("../pending-outcome.json").write_text(json.dumps(summary))
+          print("PENDING_NATIVE_ASSESSMENT="+json.dumps(summary))
+          d=json.loads((p/"results.json").read_text())
+          for row in d["cases"]:
+            print("PENDING_NATIVE_PROGRESS="+json.dumps({"mode":os.environ["MODE"],"status":row["status"],"wallMs":row["wallMs"],"peakRssMb":row.get("peakRssMb"),"errors":row.get("progress",{}).get("errors"),"phases":row.get("progress",{}).get("phases")}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pending-access-${{ matrix.circuit }}-${{ matrix.mode }}
+          path: |
+            pending-outcome.json
+          if-no-files-found: warn
