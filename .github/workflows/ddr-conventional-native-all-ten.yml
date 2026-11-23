@@ -7,33 +7,7 @@ permissions:
   contents: read
   actions: read
 jobs:
-  build-native-runtime:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/tscircuit-autorouter
-          ref: 010a35b38bdb4dfadfef478942d1e9c90c8586b3
-          path: ar-source
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - name: Build the exact existing solver with normal strategy selection
-        working-directory: ar-source
-        run: |
-          bun install --backend=copyfile
-          bun run build
-          npm pack --ignore-scripts --pack-destination ..
-          mv ../tscircuit-capacity-autorouter-*.tgz ../native-runtime.tgz
-          sha256sum dist/index.js
-      - uses: actions/upload-artifact@v4
-        with:
-          name: native-normal-search-runtime
-          path: native-runtime.tgz
   benchmark:
-    needs: build-native-runtime
     name: Native ${{ matrix.circuit }}
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 55
@@ -49,7 +23,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 1e1ede8d95e5f37d7c8cd7a6901e984de83a653f
+          ref: 323cd1672fa6965b5746651cb92f993c83b45f93
           path: core-head
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -59,6 +33,8 @@ jobs:
         with:
           name: native-normal-search-runtime
           path: compiled-native-runtime
+          run-id: 45123694176
+          github-token: ${{ github.token }}
       - name: Install exact latest routing stack in two independent Core checkouts
         run: |
           cat > prepare.private.mjs <<'JS'

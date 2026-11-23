@@ -30,7 +30,7 @@ jobs:
         with:
           name: native-normal-search-runtime
           path: compiled-native-runtime
-          run-id: 45119370198
+          run-id: 45123694176
           github-token: ${{ github.token }}
       - name: Prepare one validator and two exact routing implementations
         run: |
@@ -82,7 +82,7 @@ jobs:
             if(meta.version!==expected)throw Error("Unexpected package version")
             const filename=realpathSync(root+"/dist/index.js"),stat=statSync(filename)
             const sha256=createHash("sha256").update(readFileSync(filename)).digest("hex")
-            const expectedHash=revision==="base"?"c162b127af67d2cbd6cff7abc8aa5abca0e3b87ee835a3c6808eaa91be62ea1d":"45ac5977f83cd068e39b14011c0f28902a005bc8b4881d0a7e1af2e486678b40"
+            const expectedHash=revision==="base"?"c162b127af67d2cbd6cff7abc8aa5abca0e3b87ee835a3c6808eaa91be62ea1d":"ee46c4a5793703f442dc0a198e3d4a879bb8d562f2e09657bf6b2eea68087b2e"
             if(sha256!==expectedHash)throw Error("Wrong executed autorouter implementation")
             records.push({revision,version:meta.version,filename,device:stat.dev,inode:stat.ino,sha256})
           }
