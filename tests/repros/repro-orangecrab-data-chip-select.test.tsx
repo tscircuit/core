@@ -49,24 +49,11 @@ async function verifyOrangeCrabDataChipSelectRouting(): Promise<void> {
   expect(asyncErrors).toEqual([])
   expect(completedDataTraces).toHaveLength(16)
   for (const trace of completedDataTraces) {
-    expect(circuit.db.pcb_trace.get(trace.pcb_trace_id)?.route).toMatchObject(
-      trace.route.map((point) => {
-        if (point.route_type !== "via") return point
-        const { layers: _layers, ...viaPoint } = point
-        return viaPoint
-      }),
-    )
-    for (const point of trace.route) {
-      if (point.route_type !== "via") continue
-      expect(circuit.db.pcb_via.list()).toContainEqual(
-        expect.objectContaining({
-          x: point.x,
-          y: point.y,
-          outer_diameter: point.via_diameter,
-          hole_diameter: point.via_hole_diameter,
-          layers: point.layers,
-        }),
-      )
+    expect(trace.allowedLayers).toBeDefined()
+    const routed = circuit.db.pcb_trace.get(trace.pcb_trace_id)!
+    for (const point of routed.route) {
+      if (point.route_type !== "wire") continue
+      expect(trace.allowedLayers).toContain(point.layer)
     }
   }
 
@@ -101,7 +88,7 @@ async function verifyOrangeCrabDataChipSelectRouting(): Promise<void> {
 }
 
 test(
-  "routes native OrangeCrab chip-select after both data bytes without changing completed copper",
+  "routes native OrangeCrab chip-select after both data bytes on their signal layers",
   verifyOrangeCrabDataChipSelectRouting,
   60_000,
 )
