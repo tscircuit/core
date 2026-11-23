@@ -115,20 +115,16 @@ beforeAll(async () => {
   })
 })
 
-test(
-  "TLV75533 relative paste margins follow a 90 degree placement",
-  () => {
-    const regulator = circuit.selectOne(".U1")!
-    const apertures = circuit.db.pcb_solder_paste
-      .list()
-      .filter((paste) => paste.pcb_component_id === regulator.pcb_component_id)
-    expect(apertures).toHaveLength(5)
-    for (const aperture of apertures) {
-      if (aperture.shape !== "rect")
-        throw new Error("Expected rectangular paste")
-      expect(aperture.width).toBeCloseTo(0.99)
-      expect(aperture.height).toBeCloseTo(0.54)
-      expect(aperture.layer).toBe("top")
-    }
-  },
-)
+test("TLV75533 relative paste margins follow a 90 degree placement", () => {
+  const regulator = circuit.selectOne(".U1")!
+  const apertures = circuit.db.pcb_solder_paste
+    .list()
+    .filter((paste) => paste.pcb_component_id === regulator.pcb_component_id)
+  expect(apertures).toHaveLength(5)
+  for (const aperture of apertures) {
+    if (aperture.shape !== "rect") throw new Error("Expected rectangular paste")
+    expect(aperture.width).toBeCloseTo(0.99)
+    expect(aperture.height).toBeCloseTo(0.54)
+    expect(aperture.layer).toBe("top")
+  }
+})
