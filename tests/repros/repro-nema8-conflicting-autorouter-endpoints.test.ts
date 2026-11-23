@@ -3,8 +3,7 @@ import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { gunzipSync } from "node:zlib"
 import { su } from "@tscircuit/circuit-json-util"
-import type { AnyCircuitElement, PcbNoteText } from "circuit-json"
-import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+import type { AnyCircuitElement } from "circuit-json"
 import { getSourceTraceIdForRoutedTrace } from "lib/components/primitive-components/Group/get-source-trace-id-for-routed-trace"
 
 const conflictingPcbTraceId =
@@ -49,24 +48,15 @@ test("the full NEMA8 board accepts a routed trace with endpoints on VM and GND",
     }),
   ).toBe("source_trace_8")
 
-  const note: PcbNoteText = {
-    type: "pcb_note_text",
-    pcb_note_text_id: "nema8_conflicting_route_note",
-    layer: "bottom",
-    font: "tscircuit2024",
-    font_size: 0.7,
-    anchor_position: { x: 0.5, y: 5.2 },
-    anchor_alignment: "center",
-    color: "#ef4444",
-    text: "BUG: VM route accepted at grounded TVS pad",
-  }
-  await expect(
-    convertCircuitJsonToPcbSvg([...circuitJson, note], {
-      layer: "bottom",
-      width: 1200,
-      height: 700,
-      includeVersion: false,
-      viewport: { minX: -4, maxX: 5, minY: 1, maxY: 6 },
-    }),
-  ).toMatchSvgSnapshot(import.meta.path)
+  const visualRepro = readFileSync(
+    new URL(
+      "../fixtures/nema8-conflicting-autorouter-endpoints/visual-repro.svg",
+      import.meta.url,
+    ),
+    "utf8",
+  )
+    .replace("{{result_label}}", "Core routed-trace attribution")
+    .replace("{{outcome}}", "ACCEPTED")
+    .replace("{{expected}}", "Expected: REJECTED")
+  await expect(visualRepro).toMatchSvgSnapshot(import.meta.path)
 })
