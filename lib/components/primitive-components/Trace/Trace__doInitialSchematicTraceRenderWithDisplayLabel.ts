@@ -6,7 +6,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   trace: Trace,
 ): void {
   if (trace.root?.schematicDisabled) return
-  const { db } = trace.root!
+  const { schematicLayout } = trace.root!
   const { _parsedProps: props, parent } = trace
 
   if (!parent) throw new Error("Trace has no parent")
@@ -58,11 +58,11 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   }
 
   // Handle `from` port label
-  const existingFromNetLabel = db.schematic_net_label
+  const existingFromNetLabel = schematicLayout.netLabel
     .list()
     .find((label) => label.source_net_id === fromPort.source_port_id)
 
-  const existingToNetLabel = db.schematic_net_label
+  const existingToNetLabel = schematicLayout.netLabel
     .list()
     .find((label) => label.source_net_id === toPort.source_port_id)
 
@@ -86,7 +86,8 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   if (!existingToNetLabel) {
     const toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
-    db.schematic_net_label.insert({
+    trace._insertSchematicGeometry({
+      type: "schematic_net_label",
       subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: netLabelText,
       source_net_id: toPort.source_port_id!,
@@ -103,7 +104,8 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   if (!existingFromNetLabel) {
     const fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
-    db.schematic_net_label.insert({
+    trace._insertSchematicGeometry({
+      type: "schematic_net_label",
       subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: netLabelText,
       source_net_id: fromPort.source_port_id!,

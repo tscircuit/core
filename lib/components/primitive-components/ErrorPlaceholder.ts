@@ -117,13 +117,14 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
         this._parsedProps.message
       }`
 
-      this.root.db.source_failed_to_create_component_error.insert({
+      this._insertSchematicGeometry({
+        type: "source_failed_to_create_component_error",
         component_name: this._parsedProps.component_name,
         error_type: "source_failed_to_create_component_error",
         message: `${baseMessage}${messageDetails ? ` Details: ${messageDetails}` : ""}`,
 
         pcb_center: pcbPosition,
-        ...this._getSchematicErrorLocation(),
+        schematic_center: this._getGlobalSchematicPositionBeforeLayout(),
       })
     }
   }

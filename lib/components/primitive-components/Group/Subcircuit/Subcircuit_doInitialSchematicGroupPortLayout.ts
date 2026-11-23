@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import type { SchematicPort } from "circuit-json"
 import {
   getSchematicComponentWithTextBounds,
@@ -31,11 +32,11 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     (child): child is Port => child instanceof Port,
   )
   if (ports.length === 0) return
-  const { db } = root
+  const { db, schematicLayout } = root
   // A schematic group has one coordinate frame. Multi-sheet root interfaces
   // need a sheet-specific public interface declaration; do not mix their frames.
   const schematicSheetIds = new Set(
-    db.schematic_component
+    schematicLayout.component
       .list()
       .map((component) => component.schematic_sheet_id),
   )
@@ -90,7 +91,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     bounds.minY = Math.min(bounds.minY, y)
     bounds.maxY = Math.max(bounds.maxY, y)
   }
-  for (const schematicComponent of db.schematic_component.list()) {
+  for (const schematicComponent of schematicLayout.component.list()) {
     const componentBounds = getSchematicComponentWithTextBounds({
       db,
       schematicComponent,
@@ -103,9 +104,9 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     include(componentBounds.minX, componentBounds.minY)
     include(componentBounds.maxX, componentBounds.maxY)
   }
-  for (const schematicPort of db.schematic_port.list())
+  for (const schematicPort of schematicLayout.port.list())
     include(schematicPort.center.x, schematicPort.center.y)
-  for (const text of db.schematic_text.list()) {
+  for (const text of schematicLayout.text.list()) {
     const textBounds = getSchematicTextBounds({
       text: text.text,
       position: text.position,
@@ -141,7 +142,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     (Math.max(sides.left.length, sides.right.length) + 1) * 0.8,
     subcircuit._parsedProps.schHeight ?? 0,
   )
-  db.schematic_group.update(subcircuit.schematic_group_id!, {
+  schematicLayout.group.update(subcircuit.schematic_group_id!, {
     center,
     width,
     height,
@@ -149,6 +150,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     schematic_sheet_id: schematicSheetId,
     schematic_component_ids: db.schematic_component
       .list()
+      .map(inSchematicDrawingUnits)
       .map((component) => component.schematic_component_id),
   })
   for (const direction of ["left", "right", "up", "down"] as const) {
@@ -212,7 +214,8 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
       }
       if (port.schematic_port_id)
         db.schematic_port.delete(port.schematic_port_id)
-      const schematicPort = db.schematic_port.insert({
+      const schematicPort = subcircuit._insertSchematicGeometry({
+        type: "schematic_port",
         subcircuit_id: subcircuit.getSubcircuit().subcircuit_id ?? undefined,
         source_port_id: port.source_port_id!,
         schematic_group_id: subcircuit.schematic_group_id!,

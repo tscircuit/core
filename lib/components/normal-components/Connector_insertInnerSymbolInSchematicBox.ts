@@ -16,8 +16,8 @@ export function insertInnerSymbolInSchematicBox(
 ): void {
   if (!connector.schematic_component_id || !connector.root) return
 
-  const { db } = connector.root
-  const schematicComponent = db.schematic_component.get(
+  const { schematicLayout } = connector.root
+  const schematicComponent = schematicLayout.component.get(
     connector.schematic_component_id,
   )
   if (!schematicComponent) return
@@ -53,7 +53,8 @@ export function insertInnerSymbolInSchematicBox(
           points.push(first)
         }
       }
-      db.schematic_path.insert({
+      connector._insertSchematicGeometry({
+        type: "schematic_path",
         schematic_component_id: connector.schematic_component_id,
         points,
         is_filled: primitive.fill ?? false,
@@ -66,7 +67,8 @@ export function insertInnerSymbolInSchematicBox(
         schematic_sheet_id: connector._resolveSchematicSheetId(),
       })
     } else if (primitive.type === "circle") {
-      db.schematic_circle.insert({
+      connector._insertSchematicGeometry({
+        type: "schematic_circle",
         schematic_component_id: connector.schematic_component_id,
         center: transformPoint({ x: primitive.x, y: primitive.y }),
         radius: primitive.radius * scaleFactor,
@@ -86,7 +88,8 @@ export function insertInnerSymbolInSchematicBox(
         x: primitive.x + primitive.width,
         y: primitive.y + primitive.height,
       })
-      db.schematic_rect.insert({
+      connector._insertSchematicGeometry({
+        type: "schematic_rect",
         schematic_component_id: connector.schematic_component_id,
         center: {
           x: (topLeft.x + bottomRight.x) / 2,

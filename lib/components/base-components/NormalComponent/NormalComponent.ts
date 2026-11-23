@@ -284,12 +284,13 @@ export class NormalComponent<
       // Create naming conflict error
       const pcbPosition = this._getGlobalPcbPositionBeforeLayout()
 
-      root.db.source_failed_to_create_component_error.insert({
+      this._insertSchematicGeometry({
+        type: "source_failed_to_create_component_error",
         component_name: this.name,
         error_type: "source_failed_to_create_component_error",
         message: `Cannot create component "${this.name}": A component with the same name already exists`,
         pcb_center: pcbPosition,
-        ...this._getSchematicErrorLocation(),
+        schematic_center: this._getGlobalSchematicPositionBeforeLayout(),
       })
 
       // Mark component for removal to prevent downstream issues
@@ -911,7 +912,7 @@ export class NormalComponent<
 
   _doInitialSchematicComponentRenderWithSymbol() {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     const symbol_name = this._getSchematicSymbolNameOrThrow()
@@ -921,8 +922,8 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
     if (symbol) {
-      const schematic_component = db.schematic_component.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      const schematic_component = this._insertSchematicGeometry({
+        type: "schematic_component",
         center,
         size: { ...symbol.size },
         source_component_id: this.source_component_id!,
@@ -940,12 +941,11 @@ export class NormalComponent<
     symbolElement: ReactElement,
   ) {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
 
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
-    const schematic_component = db.schematic_component.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    const schematic_component = this._insertSchematicGeometry({
+      type: "schematic_component",
       center,
       // width/height are computed in the SchematicComponentSizeCalculation phase
       size: { width: 0, height: 0 },
@@ -961,7 +961,7 @@ export class NormalComponent<
     dimensions: SchematicBoxDimensions,
   ) {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
     this.schematicBoxDimensions = dimensions
 
@@ -977,8 +977,8 @@ export class NormalComponent<
     }
     const center = this._getGlobalSchematicPositionBeforeLayout()
     const schPortArrangement = this._getSchematicPortArrangement()
-    const schematic_component = db.schematic_component.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    const schematic_component = this._insertSchematicGeometry({
+      type: "schematic_component",
       center,
       rotation: props.schRotation ?? 0,
       size: dimensions.getSize(),
@@ -1010,26 +1010,27 @@ export class NormalComponent<
       hasTopPins || schPortArrangement?.bottomSide !== undefined
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
-    const manufacturer_part_number_schematic_text = db.schematic_text.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-      text: resolveManufacturerPartNumber(props) ?? "",
-      schematic_component_id: schematic_component.schematic_component_id,
-      anchor: "left",
-      rotation: 0,
-      position: {
-        x: hasTopPins
-          ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
-          : center.x - (schematic_box_width ?? 0) / 2,
-        y: hasTopOrBottomPins
-          ? center.y + (schematic_box_height ?? 0) / 2 + 0.35
-          : center.y - (schematic_box_height ?? 0) / 2 - 0.13,
-      },
-      color: "#006464",
-      font_size: 0.18,
-      schematic_sheet_id: this._resolveSchematicSheetId(),
-    })
-    const component_name_text = db.schematic_text.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    const manufacturer_part_number_schematic_text =
+      this._insertSchematicGeometry({
+        type: "schematic_text",
+        text: resolveManufacturerPartNumber(props) ?? "",
+        schematic_component_id: schematic_component.schematic_component_id,
+        anchor: "left",
+        rotation: 0,
+        position: {
+          x: hasTopPins
+            ? center.x + (schematic_box_width ?? 0) / 2 + 0.1
+            : center.x - (schematic_box_width ?? 0) / 2,
+          y: hasTopOrBottomPins
+            ? center.y + (schematic_box_height ?? 0) / 2 + 0.35
+            : center.y - (schematic_box_height ?? 0) / 2 - 0.13,
+        },
+        color: "#006464",
+        font_size: 0.18,
+        schematic_sheet_id: this._resolveSchematicSheetId(),
+      })
+    const component_name_text = this._insertSchematicGeometry({
+      type: "schematic_text",
       text: props.displayName ?? props.name ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
@@ -1172,8 +1173,8 @@ export class NormalComponent<
     if (this.root?.schematicDisabled) return
     if (!this.schematic_component_id) return
 
-    const { db } = this.root!
-    const schematic_component = db.schematic_component.get(
+    const { schematicLayout } = this.root!
+    const schematic_component = schematicLayout.component.get(
       this.schematic_component_id,
     )
 
@@ -1188,21 +1189,25 @@ export class NormalComponent<
           child.isSchematicPrimitive &&
           child.componentName === "SchematicLine"
         ) {
-          const line = db.schematic_line.get((child as any).schematic_line_id)
+          const line = schematicLayout.line.get(
+            (child as any).schematic_line_id,
+          )
           if (line) schematicElements.push(line)
         }
         if (
           child.isSchematicPrimitive &&
           child.componentName === "SchematicRect"
         ) {
-          const rect = db.schematic_rect.get((child as any).schematic_rect_id)
+          const rect = schematicLayout.rect.get(
+            (child as any).schematic_rect_id,
+          )
           if (rect) schematicElements.push(rect)
         }
         if (
           child.isSchematicPrimitive &&
           child.componentName === "SchematicCircle"
         ) {
-          const circle = db.schematic_circle.get(
+          const circle = schematicLayout.circle.get(
             (child as any).schematic_circle_id,
           )
           if (circle) schematicElements.push(circle)
@@ -1211,7 +1216,7 @@ export class NormalComponent<
           child.isSchematicPrimitive &&
           child.componentName === "SchematicArc"
         ) {
-          const arc = db.schematic_arc.get((child as any).schematic_arc_id)
+          const arc = schematicLayout.arc.get((child as any).schematic_arc_id)
           if (arc) schematicElements.push(arc)
         }
         if (
@@ -1221,7 +1226,7 @@ export class NormalComponent<
           const pathIds = (child as any).schematic_path_ids as string[]
           if (pathIds) {
             for (const pathId of pathIds) {
-              const path = db.schematic_path.get(pathId)
+              const path = schematicLayout.path.get(pathId)
               if (path) schematicElements.push(path)
             }
           }
@@ -1247,7 +1252,7 @@ export class NormalComponent<
     const centerY = (bounds.minY + bounds.maxY) / 2
 
     // Update the schematic component with calculated bounds and center
-    db.schematic_component.update(this.schematic_component_id!, {
+    schematicLayout.component.update(this.schematic_component_id!, {
       center: {
         x: centerX,
         y: centerY,

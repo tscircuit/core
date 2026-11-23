@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import type { SourceNet } from "circuit-json"
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
@@ -43,7 +44,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
   schPortIdToSourcePortId: Map<SchematicPortId, SourcePortId>
   connKeyToSourceNet: Map<string, SourceNet>
 }) => {
-  const { db } = group.root!
+  const { db, schematicLayout } = group.root!
   const sourcePortIdsInSchematicScope = new Set(
     Array.from(schematicPortIdsInScope)
       .map((schematicPortId) => schPortIdToSourcePortId.get(schematicPortId))
@@ -59,7 +60,8 @@ export const insertNetLabelsForPortsMissingTrace = ({
       schematicPortIdsWithExternallyRoutedRepresentations.has(schematicPortId)
     )
       continue
-    const schPort = db.schematic_port.get(schematicPortId)
+    const storedPort = db.schematic_port.get(schematicPortId)
+    const schPort = inSchematicDrawingUnits(storedPort)
     if (!schPort) continue
     if (schPort.is_connected) continue
     const srcPortId = schPortIdToSourcePortId.get(schematicPortId)
@@ -92,7 +94,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     // on - and de-duplicated within - this port's sheet rather than the rendering
     // group's sheet. Falls back to the group's sheet for single-sheet circuits.
     const schComponent = schPort.schematic_component_id
-      ? db.schematic_component.get(schPort.schematic_component_id)
+      ? schematicLayout.component.get(schPort.schematic_component_id)
       : undefined
     const portSchematicSheetId =
       schComponent?.schematic_sheet_id ?? group._resolveSchematicSheetId()
@@ -122,7 +124,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     })
     const directConnectionOutsideScopePortAlsoNeedsNetLabel =
       directConnectionOutsideSchematicScopeSourcePortId
-        ? db.schematic_port
+        ? schematicLayout.port
             .list({
               source_port_id: directConnectionOutsideSchematicScopeSourcePortId,
             })
@@ -176,7 +178,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       text,
     })
 
-    const existingNetLabelForCurrentSourceConnection = db.schematic_net_label
+    const existingNetLabelForCurrentSourceConnection = schematicLayout.netLabel
       .list()
       .find((nl) => {
         if (nl.schematic_sheet_id !== portSchematicSheetId) return false
@@ -193,7 +195,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
       connectedPortCountForKey <= 1 &&
       !shouldPreserveDirectConnectionEndpointLabels
     ) {
-      db.schematic_net_label.update(
+      schematicLayout.netLabel.update(
         existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
         {
           text,
@@ -220,7 +222,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         if (isGndNet) {
           const anchor_side =
             existingNetLabelForCurrentSourceConnection.anchor_side ?? side
-          db.schematic_net_label.update(
+          schematicLayout.netLabel.update(
             existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
             {
               text,
@@ -239,7 +241,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         ) {
           const anchor_side =
             existingNetLabelForCurrentSourceConnection.anchor_side ?? side
-          db.schematic_net_label.update(
+          schematicLayout.netLabel.update(
             existingNetLabelForCurrentSourceConnection.schematic_net_label_id,
             {
               text,
@@ -256,7 +258,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
         continue
       }
 
-      const existingAtPort = db.schematic_net_label.list().some((nl) => {
+      const existingAtPort = schematicLayout.netLabel.list().some((nl) => {
         if (nl.schematic_sheet_id !== portSchematicSheetId) return false
         const dx = nl.anchor_position!.x - schPort.center.x
         const dy = nl.anchor_position!.y - schPort.center.y
@@ -277,7 +279,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     if (!sourceNet && !shouldPreserveDirectConnectionEndpointLabels) {
-      for (const nl of db.schematic_net_label.list()) {
+      for (const nl of schematicLayout.netLabel.list()) {
         if (nl.source_net_id !== connKey) continue
         if (nl.schematic_sheet_id !== portSchematicSheetId) continue
 
@@ -290,7 +292,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
               | ReturnType<typeof db.schematic_port.get>
               | undefined
             if (schPortId) {
-              connectedSchPort = db.schematic_port.get(schPortId)
+              connectedSchPort = schematicLayout.port.get(schPortId)
             }
             if (!connectedSchPort?.center || !nl.anchor_position) return false
 
@@ -309,15 +311,18 @@ export const insertNetLabelsForPortsMissingTrace = ({
       }
     }
 
-    const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
-      subcircuit_id: schPort.subcircuit_id,
-      text,
-      source_net_id: sourceNet?.source_net_id ?? connKey,
-      anchor_position: schPort.center,
-      center,
-      anchor_side: side,
-      schematic_sheet_id: portSchematicSheetId,
-    }
-    db.schematic_net_label.insert(netLabel)
+    group._insertSchematicGeometry(
+      {
+        type: "schematic_net_label",
+        subcircuit_id: schPort.subcircuit_id,
+        text,
+        source_net_id: sourceNet?.source_net_id ?? connKey,
+        anchor_position: schPort.center,
+        center,
+        anchor_side: side,
+        schematic_sheet_id: portSchematicSheetId,
+      },
+      { unit: storedPort?.schematic_length_unit },
+    )
   }
 }

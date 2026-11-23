@@ -1,10 +1,12 @@
-import type { Group } from "./Group"
+import type { SchematicLayoutContext } from "./runSchematicLayout"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { length } from "circuit-json"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
-export function Group_doInitialSchematicLayoutGrid(group: Group<any>) {
-  const { db } = group.root!
+export function Group_doInitialSchematicLayoutGrid({
+  group,
+  db,
+}: SchematicLayoutContext) {
   const props = group._parsedProps
 
   // 1. Identify children with schematic components that are not explicitly positioned

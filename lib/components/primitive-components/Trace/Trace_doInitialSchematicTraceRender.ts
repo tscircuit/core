@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
@@ -34,7 +35,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   if (trace.root?.schematicDisabled) return
   if (trace.getCollapsedSchematicBoxAncestor()) return
   // if (trace.getGroup()?._getSchematicLayoutMode() === "match-adapt") return
-  const { db } = trace.root!
+  const { db, schematicLayout } = trace.root!
   const { _parsedProps: props, parent } = trace
   const schematicNetLabelText = trace._getSchematicNetLabelText()
   const schematicSheetId = trace._resolveSchematicSheetId()
@@ -65,7 +66,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   const resolveSchematicPortForSheet = (port: Port) => {
     if (schematicSheetId && port.source_port_id) {
-      const sheetSchematicPort = db.schematic_port.getWhere({
+      const sheetSchematicPort = schematicLayout.port.getWhere({
         source_port_id: port.source_port_id,
         schematic_sheet_id: schematicSheetId,
       })
@@ -73,11 +74,11 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     }
 
     if (port.schematic_port_id) {
-      return db.schematic_port.get(port.schematic_port_id) ?? null
+      return schematicLayout.port.get(port.schematic_port_id) ?? null
     }
 
     if (!schematicSheetId && port.source_port_id) {
-      const unassignedSchematicPorts = db.schematic_port
+      const unassignedSchematicPorts = schematicLayout.port
         .list({ source_port_id: port.source_port_id })
         .filter((schematicPort) => !schematicPort.schematic_sheet_id)
       if (unassignedSchematicPorts.length === 1) {
@@ -153,9 +154,11 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       // net labels that are just "in the database" connected to our
       // source_trace_id
 
-      const dbNetLabel = db.schematic_net_label.getWhere({
-        source_trace_id: trace.source_trace_id,
-      })
+      const dbNetLabel = inSchematicDrawingUnits(
+        db.schematic_net_label.getWhere({
+          source_trace_id: trace.source_trace_id,
+        }),
+      )
 
       if (dbNetLabel) {
         connectedNetLabel = dbNetLabel as SchematicNetLabel
@@ -180,8 +183,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         source_trace_id: trace.source_trace_id!,
         schematic_sheet_id: schematicSheetId,
       })
-      const dbTrace = db.schematic_trace.insert({
-        subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
+      const dbTrace = trace._insertSchematicGeometry({
+        type: "schematic_trace",
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions,
@@ -196,7 +199,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     if (schematicNetLabelText) {
       const side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
-      db.schematic_net_label.insert({
+      trace._insertSchematicGeometry({
+        type: "schematic_net_label",
         subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
         text: schematicNetLabelText,
         source_net_id: net.source_net_id!,
@@ -214,7 +218,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
     }
 
     const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
-    const netLabel = db.schematic_net_label.insert({
+    const netLabel = trace._insertSchematicGeometry({
+      type: "schematic_net_label",
       subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
       text: net._parsedProps.name,
       source_net_id: net.source_net_id!,
@@ -501,8 +506,8 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   }
 
   // Insert schematic trace
-  const dbTrace = db.schematic_trace.insert({
-    subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
+  const dbTrace = trace._insertSchematicGeometry({
+    type: "schematic_trace",
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,
@@ -513,7 +518,9 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
   trace.schematic_trace_id = dbTrace.schematic_trace_id
 
   for (const { schematic_port_id } of portsWithPosition) {
-    db.schematic_port.update(schematic_port_id, { is_connected: true })
+    schematicLayout.port.update(schematic_port_id, {
+      is_connected: true,
+    })
   }
 
   if (board?._connectedSchematicPortPairs)

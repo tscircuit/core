@@ -22,7 +22,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
     if (props.chipRef) return
 
@@ -112,8 +112,8 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       return
     }
 
-    db.schematic_box.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    this._insertSchematicGeometry({
+      type: "schematic_box",
       height,
       width,
       x,
@@ -164,8 +164,8 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const titleX = anchorPos.x + titleOffsetX
       const titleY = anchorPos.y + titleOffsetY
 
-      db.schematic_text.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      this._insertSchematicGeometry({
+        type: "schematic_text",
         anchor: textAnchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,

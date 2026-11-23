@@ -72,7 +72,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   group: Group<any>,
 ) => {
   if (group.root?.schematicDisabled) return
-  const { db } = group.root!
+  const { db, schematicLayout } = group.root!
   const props = group._parsedProps
 
   if (props.schPinSpacing !== undefined) {
@@ -95,7 +95,8 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const portLabels = group._getPinLabelsFromPorts()
   const schPortArrangement = group._getSchematicPortArrangement()
 
-  const schematicComponent = db.schematic_component.insert({
+  const schematicComponent = group._insertSchematicGeometry({
+    type: "schematic_component",
     center,
     size,
     source_group_id: group.source_group_id!,
@@ -117,7 +118,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   group.schematic_component_id = schematicComponent.schematic_component_id
 
   if (group.schematic_group_id) {
-    db.schematic_group.update(group.schematic_group_id, {
+    schematicLayout.group.update(group.schematic_group_id, {
       center,
       width: size.width,
       height: size.height,
@@ -127,8 +128,8 @@ export const Group_doInitialSchematicBoxComponentRender = (
 
   const title = props.schTitle ?? props.name
   if (title) {
-    db.schematic_text.insert({
-      subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
+    group._insertSchematicGeometry({
+      type: "schematic_text",
       text: title,
       schematic_component_id: schematicComponent.schematic_component_id,
       anchor: "left",

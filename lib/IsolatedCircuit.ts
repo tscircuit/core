@@ -1,5 +1,4 @@
-import { convertSchematicLengthUnit } from "@tscircuit/circuit-json-util"
-import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
+import { createSchematicLayoutTables } from "./utils/schematic/schematic-geometry"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
 import type { SchematicLengthUnit, PlatformConfig } from "@tscircuit/props"
@@ -56,6 +55,7 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
+  readonly schematicLayout: ReturnType<typeof createSchematicLayoutTables>
   inheritedSchematicLengthUnit?: SchematicLengthUnit
   pcbDisabled = false
   pcbRoutingDisabled = false
@@ -109,6 +109,7 @@ export class IsolatedCircuit {
   } = {}) {
     this.children = []
     this.db = createCircuitJsonDatabase()
+    this.schematicLayout = createSchematicLayoutTables(this.db)
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false
@@ -289,24 +290,7 @@ export class IsolatedCircuit {
 
   getCircuitJson(): AnyCircuitElement[] {
     if (!this._hasRenderedAtleastOnce) this.render()
-    const units = new Map<string, SchematicLengthUnit>()
-    for (const record of this.db.source_group.list()) {
-      if (
-        record.is_subcircuit &&
-        record.subcircuit_id &&
-        record.default_schematic_length_unit
-      ) {
-        units.set(record.subcircuit_id, record.default_schematic_length_unit)
-      }
-    }
-    return this.db.toArray().map((record) => {
-      const owner = "subcircuit_id" in record && record.subcircuit_id
-      const unit =
-        (owner && units.get(owner)) ||
-        ("schematic_length_unit" in record && record.schematic_length_unit) ||
-        LEGACY_SCHEMATIC_LENGTH_UNIT
-      return convertSchematicLengthUnit(record, unit)
-    })
+    return this.db.toArray()
   }
 
   toJson(): AnyCircuitElement[] {

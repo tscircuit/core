@@ -20,7 +20,7 @@ export class SchematicPath extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -29,7 +29,6 @@ export class SchematicPath extends PrimitiveComponent<
       this.getPrimitiveContainer()?.parent?.schematic_component_id!
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
-
     const subcircuit_id = this.getSubcircuit().subcircuit_id ?? undefined
 
     this.schematic_path_ids = []
@@ -39,7 +38,8 @@ export class SchematicPath extends PrimitiveComponent<
       const subpaths = svgPathToPoints(props.svgPath)
 
       for (const subpathPoints of subpaths) {
-        const schematic_path = db.schematic_path.insert({
+        const schematic_path = this._insertSchematicGeometry({
+          type: "schematic_path",
           schematic_component_id,
           schematic_symbol_id,
           points: subpathPoints.map((point) => ({
@@ -61,7 +61,8 @@ export class SchematicPath extends PrimitiveComponent<
       }
     } else if (props.points && props.points.length > 0) {
       // Use the provided points directly
-      const schematic_path = db.schematic_path.insert({
+      const schematic_path = this._insertSchematicGeometry({
+        type: "schematic_path",
         schematic_component_id,
         schematic_symbol_id,
         points: props.points.map((point) => ({
@@ -91,10 +92,10 @@ export class SchematicPath extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { db } = this.root!
+    const { schematicLayout } = this.root!
 
     for (const pathId of this.schematic_path_ids) {
-      const path = db.schematic_path.get(pathId)
+      const path = schematicLayout.path.get(pathId)
       if (!path) continue
 
       const newPoints = path.points.map((point) => {
@@ -102,7 +103,7 @@ export class SchematicPath extends PrimitiveComponent<
         return { x: transformed.x, y: transformed.y }
       })
 
-      db.schematic_path.update(pathId, {
+      schematicLayout.path.update(pathId, {
         points: newPoints,
       })
     }

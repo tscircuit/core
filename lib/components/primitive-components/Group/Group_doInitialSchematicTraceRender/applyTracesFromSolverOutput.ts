@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import {
   type Bounds,
@@ -52,7 +53,7 @@ export function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   const { points, schematicPortIds, componentBoundsByPortId } = params
   const centers = schematicPortIds
     .map((id) => {
-      const center = db.schematic_port.get(id)?.center
+      const center = inSchematicDrawingUnits(db.schematic_port.get(id))?.center
       const bounds = componentBoundsByPortId.get(id)
       if (!center || !bounds) return null
       return { center, bounds }
@@ -168,7 +169,7 @@ export function applyTracesFromSolverOutput(args: {
     schematicPortIdsWithPreExistingNetLabels,
     schematicSheetId,
   } = args
-  const { db } = group.root!
+  const { db, schematicLayout } = group.root!
   const routedPinBySchematicPortId = new Map(
     solver.inputProblem.chips.flatMap((chip) =>
       chip.pins.map((pin) => [asSchematicPortId(pin.pinId), pin] as const),
@@ -192,7 +193,7 @@ export function applyTracesFromSolverOutput(args: {
   )
 
   const componentBoundsByPortId = new Map<SchematicPortId, Bounds>()
-  for (const schematicComponent of db.schematic_component.list()) {
+  for (const schematicComponent of schematicLayout.component.list()) {
     const textInclusiveBounds = getSchematicComponentWithTextBounds({
       db,
       schematicComponent,
@@ -202,7 +203,7 @@ export function applyTracesFromSolverOutput(args: {
       width: schematicComponent.size.width,
       height: schematicComponent.size.height,
     })
-    for (const port of db.schematic_port.list({
+    for (const port of schematicLayout.port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })) {
       const isInsideComponentBounds =
@@ -314,7 +315,7 @@ export function applyTracesFromSolverOutput(args: {
         // Mark ports as connected on schematic
         const routedSchematicPortIds = new Set([pA, pB])
         for (const routedSchematicPortId of routedSchematicPortIds) {
-          db.schematic_port.update(routedSchematicPortId, {
+          schematicLayout.port.update(routedSchematicPortId, {
             is_connected: true,
           })
         }
@@ -332,7 +333,7 @@ export function applyTracesFromSolverOutput(args: {
     if (!subcircuit_connectivity_map_key) {
       const sourcePortConnKeys = solvedTraceSchematicPortIds
         .map((schematicPortId) => {
-          const schematicPort = db.schematic_port.get(schematicPortId)
+          const schematicPort = schematicLayout.port.get(schematicPortId)
           const sourcePortId = schematicPort?.source_port_id
           if (!sourcePortId) return undefined
           return db.source_port.get(sourcePortId)
@@ -347,7 +348,7 @@ export function applyTracesFromSolverOutput(args: {
 
     if (subcircuit_connectivity_map_key) {
       for (const schematicPortId of solvedTraceSchematicPortIds) {
-        const schematicPort = db.schematic_port.get(schematicPortId)
+        const schematicPort = schematicLayout.port.get(schematicPortId)
         if (!schematicPort) continue
         const portTerminal = {
           position: schematicPort.center,
@@ -377,7 +378,7 @@ export function applyTracesFromSolverOutput(args: {
       solvedTraceSchematicPortIds
         .map(
           (schematicPortId) =>
-            db.schematic_port.get(schematicPortId)?.schematic_sheet_id,
+            schematicLayout.port.get(schematicPortId)?.schematic_sheet_id,
         )
         .filter((sheetId): sheetId is string => Boolean(sheetId)),
     )
@@ -389,7 +390,7 @@ export function applyTracesFromSolverOutput(args: {
     }
 
     const boundarySourceTraceId = solvedTraceSchematicPortIds.some(
-      (id) => db.schematic_port.get(id)?.boundary_position,
+      (id) => schematicLayout.port.get(id)?.boundary_position,
     )
       ? args.sourceTraceIdByPinPairKey?.get(
           [...solvedTraceSchematicPortIds].sort().join("::"),
@@ -408,7 +409,7 @@ export function applyTracesFromSolverOutput(args: {
     `Applying ${pendingTraces.length} traces from SchematicTraceSolver output`,
   )
 
-  const existingTraces = db.schematic_trace
+  const existingTraces = schematicLayout.trace
     .list()
     .filter((trace) => trace.schematic_sheet_id === schematicSheetId)
   // Preserve solver label connectors that will still be rendered. Placements
@@ -502,7 +503,7 @@ export function applyTracesFromSolverOutput(args: {
 
   for (const trace of visibleExistingTraces) {
     if (!trace.schematic_trace_id) continue
-    db.schematic_trace.update(trace.schematic_trace_id, {
+    schematicLayout.trace.update(trace.schematic_trace_id, {
       edges: trace.edges,
     })
   }
@@ -520,8 +521,8 @@ export function applyTracesFromSolverOutput(args: {
     if (pendingTrace?.schematic_sheet_id) {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
-    db.schematic_trace.insert({
-      subcircuit_id: group.getSubcircuit().subcircuit_id ?? undefined,
+    group._insertSchematicGeometry({
+      type: "schematic_trace",
       source_trace_id: pendingTrace?.boundarySourceTraceId ?? t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],

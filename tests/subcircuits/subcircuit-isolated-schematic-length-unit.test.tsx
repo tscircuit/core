@@ -22,14 +22,16 @@ test("cached subcircuits inherit and override the board placement unit", async (
     </board>,
   )
   await circuit.renderUntilSettled()
-  const centers = circuit.db.schematic_component
-    .list()
-    .map((component) => component.center.x)
-    .sort((a, b) => a - b)
-  for (const component of circuit.db.schematic_component.list()) {
-    expect(component.center.y).toBeCloseTo(1.1, 10)
+  const components = circuit.db.schematic_component.list()
+  expect(components).toHaveLength(2)
+  for (const unit of ["mm", "in"] as const) {
+    const component = components.find((c) => c.schematic_length_unit === unit)
+    expect(component?.center.x).toBeCloseTo(0.4, 10)
   }
-  expect(centers).toHaveLength(2)
-  expect(centers[0]).toBeCloseTo(0.4 / (10.16 / 1.1), 10)
-  expect(centers[1]).toBeCloseTo(1.1, 10)
+  expect(
+    components.find((c) => c.schematic_length_unit === "in")?.center.y,
+  ).toBeCloseTo(0.4, 10)
+  expect(
+    components.find((c) => c.schematic_length_unit === "mm")?.center.y,
+  ).toBeCloseTo(10.16, 10)
 })

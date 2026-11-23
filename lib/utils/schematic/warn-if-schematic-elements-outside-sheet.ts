@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import {
   type CircuitJsonUtilObjects,
   type SchematicElementWithBounds,
@@ -62,9 +63,9 @@ export const warnIfSchematicElementsOutsideSheet = ({
       SCHEMATIC_SHEET_INNER_MARGIN,
   }
   const checkedElements: CheckedSchematicElement[] = [
-    ...db.schematic_component.list(),
-    ...db.schematic_net_label.list(),
-    ...db.schematic_trace.list(),
+    ...db.schematic_component.list().map(inSchematicDrawingUnits),
+    ...db.schematic_net_label.list().map(inSchematicDrawingUnits),
+    ...db.schematic_trace.list().map(inSchematicDrawingUnits),
   ].filter(
     (schematicElement) =>
       schematicElement.schematic_sheet_id === schematicSheetId,

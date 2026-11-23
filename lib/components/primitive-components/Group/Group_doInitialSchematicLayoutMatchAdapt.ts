@@ -1,18 +1,16 @@
+import type { SchematicLayoutContext } from "./runSchematicLayout"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
 import { getGraphicsForBpcGraph, layoutSchematicGraphVariants } from "bpc-graph"
 import Debug from "debug"
-import type { Group } from "./Group"
-import type { z } from "zod"
 import { buildSubtree } from "@tscircuit/circuit-json-util"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
 
 const debug = Debug("Group_doInitialSchematicLayoutMatchAdapt")
 
-export function Group_doInitialSchematicLayoutMatchAdapt<
-  Props extends z.ZodType<any, any, any>,
->(group: Group<Props>): void {
-  const { db } = group.root!
-
+export function Group_doInitialSchematicLayoutMatchAdapt({
+  group,
+  db,
+}: SchematicLayoutContext): void {
   const subtreeCircuitJson = buildSubtree(db.toArray(), {
     source_group_id: group.source_group_id!,
   })

@@ -1,3 +1,4 @@
+import { runSchematicLayout } from "./runSchematicLayout"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -749,7 +750,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialCreateTraceHintsFromProps(): void {
     const { _parsedProps: props } = this
-    const { db } = this.root!
 
     const groupProps = props as SubcircuitGroupProps
 
@@ -2687,9 +2687,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicComponentRender() {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+    const { schematicLayout } = this.root!
     const { _parsedProps: props } = this
-    const schematic_group = db.schematic_group.insert({
+    const schematic_group = this._insertSchematicGeometry({
+      type: "schematic_group",
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       name: this.name,
@@ -2711,7 +2712,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (child.getGroup()?.source_group_id !== this.source_group_id) continue
       if ((child as any)._parsedProps?.showAsSchematicBox) continue
       if (child.schematic_component_id) {
-        db.schematic_component.update(child.schematic_component_id, {
+        schematicLayout.component.update(child.schematic_component_id, {
           schematic_group_id: schematic_group.schematic_group_id,
         })
       }
@@ -2797,23 +2798,23 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _doInitialSchematicLayoutSections(): void {
-    Group_doInitialSchematicLayoutSections(this as any)
+    runSchematicLayout(this, Group_doInitialSchematicLayoutSections)
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
-    Group_doInitialSchematicLayoutMatchAdapt(this as any)
+    runSchematicLayout(this, Group_doInitialSchematicLayoutMatchAdapt)
   }
 
   _doInitialSchematicLayoutMatchpack(): void {
-    Group_doInitialSchematicLayoutMatchPack(this as any)
+    runSchematicLayout(this, Group_doInitialSchematicLayoutMatchPack)
   }
 
   _doInitialSchematicLayoutGrid(): void {
-    Group_doInitialSchematicLayoutGrid(this)
+    runSchematicLayout(this, Group_doInitialSchematicLayoutGrid)
   }
 
   _doInitialSchematicLayoutFlex(): void {
-    Group_doInitialSchematicLayoutFlex(this as any)
+    runSchematicLayout(this, Group_doInitialSchematicLayoutFlex)
   }
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {
@@ -2937,7 +2938,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   _insertSchematicBorder() {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+    const { schematicLayout } = this.root!
     const props = this._parsedProps as SubcircuitGroupProps
 
     if (!props.border) return
@@ -2967,7 +2968,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         : paddingGeneral
 
     const schematicGroup = this.schematic_group_id
-      ? db.schematic_group.get(this.schematic_group_id)
+      ? schematicLayout.group.get(this.schematic_group_id)
       : null
     if (schematicGroup) {
       if (width === undefined && typeof schematicGroup.width === "number") {
@@ -2989,8 +2990,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const finalWidth = width + paddingLeft + paddingRight
     const finalHeight = height + paddingTop + paddingBottom
 
-    db.schematic_box.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    this._insertSchematicGeometry({
+      type: "schematic_box",
       width: finalWidth,
       height: finalHeight,
       x: left,

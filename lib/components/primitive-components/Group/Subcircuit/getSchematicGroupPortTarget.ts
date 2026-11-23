@@ -10,7 +10,7 @@ export function getSchematicGroupPortTarget(
   port: Port,
   facingDirection: SchematicPort["facing_direction"],
 ): SchematicPort | undefined {
-  const { db } = port.root!
+  const { db, schematicLayout } = port.root!
   const key = port._getSubcircuitConnectivityKey()
   if (!key) return
   const directSourcePortIds = new Set(
@@ -21,7 +21,7 @@ export function getSchematicGroupPortTarget(
       )
       .flatMap((trace) => trace.connected_source_port_ids),
   )
-  const candidates = db.schematic_port
+  const candidates = schematicLayout.port
     .list()
     .filter(
       (candidate) =>

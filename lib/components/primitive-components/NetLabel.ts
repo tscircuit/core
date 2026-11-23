@@ -108,7 +108,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     // Inline labels are placed by the schematic trace solver. If it cannot
@@ -134,7 +134,8 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       text: props.net!,
     })
 
-    const netLabel = db.schematic_net_label.insert({
+    const netLabel = this._insertSchematicGeometry({
+      type: "schematic_net_label",
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       text: props.net!,
       source_net_id: net.source_net_id!,
@@ -201,7 +202,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     const { schX, schY } = this._parsedProps
     if (schX === undefined && schY === undefined) return
 
-    const { db } = this.root!
+    const { db, schematicLayout } = this.root!
     const connectsTo = this._resolveConnectsTo()
     if (!connectsTo || connectsTo.length === 0) return
 
@@ -241,7 +242,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
               st.connected_source_port_ids?.includes(port.source_port_id ?? ""),
           )
         if (candidateSourceTrace) {
-          existingTraceForThisConnection = db.schematic_trace
+          existingTraceForThisConnection = schematicLayout.trace
             .list()
             .some(
               (t) => t.source_trace_id === candidateSourceTrace.source_trace_id,
@@ -296,8 +297,8 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
           db.source_net.get(net.source_net_id!)?.subcircuit_connectivity_map_key
       }
 
-      db.schematic_trace.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      this._insertSchematicGeometry({
+        type: "schematic_trace",
         source_trace_id: source_trace_id!,
         edges,
         junctions: [],
@@ -306,7 +307,9 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       })
 
       // Mark the schematic port as connected
-      db.schematic_port.update(port.schematic_port_id, { is_connected: true })
+      schematicLayout.port.update(port.schematic_port_id, {
+        is_connected: true,
+      })
     }
   }
 }

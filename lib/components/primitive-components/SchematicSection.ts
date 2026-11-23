@@ -28,7 +28,7 @@ export class SchematicSection extends PrimitiveComponent<
     sectionName: string | null,
     schematicSheetId: SchematicSheetId | undefined,
   ): Bounds | null {
-    const { db } = this.root!
+    const { schematicLayout } = this.root!
 
     const members = schematicRoot
       .getDescendants()
@@ -41,7 +41,7 @@ export class SchematicSection extends PrimitiveComponent<
     for (const member of members) {
       const schematicComponentId = (member as any).schematic_component_id
       if (!schematicComponentId) continue
-      const schComp = db.schematic_component.get(schematicComponentId)
+      const schComp = schematicLayout.component.get(schematicComponentId)
       if (!schComp) continue
       if (schComp.schematic_sheet_id !== schematicSheetId) continue
 
@@ -54,7 +54,7 @@ export class SchematicSection extends PrimitiveComponent<
         maxY: schComp.center.y + hh,
       })
       // Chip and schematic-box reference/value labels extend outside the body.
-      for (const text of db.schematic_text.list({
+      for (const text of schematicLayout.text.list({
         schematic_component_id: schematicComponentId,
       })) {
         positions.push(
@@ -96,7 +96,6 @@ export class SchematicSection extends PrimitiveComponent<
 
     if (allSections[0] !== this) return
 
-    const { db } = this.root!
     const PADDING = 0.5
     const LABEL_PADDING = 0.2
     const STROKE_WIDTH = 0.02
@@ -155,8 +154,8 @@ export class SchematicSection extends PrimitiveComponent<
       { cellMargin: 1 },
     )
     for (const line of dividers) {
-      db.schematic_line.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      this._insertSchematicGeometry({
+        type: "schematic_line",
         x1: line.start.x,
         y1: line.start.y,
         x2: line.end.x,
@@ -204,8 +203,8 @@ export class SchematicSection extends PrimitiveComponent<
       }
 
       const fontSize = sectionTitleFontSize ?? 0.18
-      db.schematic_text.insert({
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      this._insertSchematicGeometry({
+        type: "schematic_text",
         anchor: "top_left",
         text: displayName,
         font_size: fontSize,

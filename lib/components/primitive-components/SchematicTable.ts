@@ -19,7 +19,7 @@ export class SchematicTable extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     const rows = this.children.filter(
@@ -87,7 +87,8 @@ export class SchematicTable extends PrimitiveComponent<
 
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
-    const table = db.schematic_table.insert({
+    const table = this._insertSchematicGeometry({
+      type: "schematic_table",
       anchor_position: anchorPos,
       column_widths: colWidths,
       row_heights: rowHeights,
@@ -122,7 +123,8 @@ export class SchematicTable extends PrimitiveComponent<
             cellHeight += rowHeights[i + r]
           }
 
-          db.schematic_table_cell.insert({
+          this._insertSchematicGeometry({
+            type: "schematic_table_cell",
             schematic_table_id: this.schematic_table_id,
             start_row_index: i,
             end_row_index: i + rowSpan - 1,

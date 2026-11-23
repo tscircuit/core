@@ -19,7 +19,7 @@ export class SchematicSheet extends PrimitiveComponent<
 
   doInitialSourceRender(): void {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+    const { db, schematicLayout } = this.root!
     const { _parsedProps: props } = this
     const explicitlyReservedSheetIndices = new Set(
       this.root!.children.flatMap((component) => [
@@ -32,7 +32,7 @@ export class SchematicSheet extends PrimitiveComponent<
     )
     const occupiedSheetIndices = new Set([
       ...explicitlyReservedSheetIndices,
-      ...db.schematic_sheet
+      ...schematicLayout.sheet
         .list()
         .map((schematicSheet) => schematicSheet.sheet_index)
         .filter((sheetIndex): sheetIndex is number => sheetIndex !== undefined),
@@ -48,7 +48,8 @@ export class SchematicSheet extends PrimitiveComponent<
     const resolvedSheetProperties =
       resolveCircuitJsonSchematicSheetProperties(props)
 
-    const schematicSheet = db.schematic_sheet.insert({
+    const sheet = {
+      type: "schematic_sheet" as const,
       name,
       display_name: displayName,
       sheet_index: sheetIndex,
@@ -56,9 +57,9 @@ export class SchematicSheet extends PrimitiveComponent<
       sheet_width: resolvedSheetProperties.sheetWidth,
       sheet_height: resolvedSheetProperties.sheetHeight,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-    } as any)
-
-    this.schematic_sheet_id = schematicSheet.schematic_sheet_id
+    }
+    this.schematic_sheet_id =
+      this._insertSchematicGeometry(sheet).schematic_sheet_id
 
     const defaultSheetProperties = resolveCircuitJsonSchematicSheetProperties({
       sheetSize: "A4",
@@ -73,7 +74,7 @@ export class SchematicSheet extends PrimitiveComponent<
         warning_type: "schematic_sheet_styling_warning",
         styling_issue_type: "non_default_sheet_size",
         schematic_sheet_id: this.schematic_sheet_id,
-        subcircuit_id: schematicSheet.subcircuit_id,
+        subcircuit_id: sheet.subcircuit_id,
         message: `Schematic sheet "${displayName}" uses a non-default size (${resolvedSheetProperties.sheetWidth} × ${resolvedSheetProperties.sheetHeight} mm). Prefer the default A4 sheet size (297 × 210 mm) for consistent schematic styling.`,
       })
     }
@@ -83,7 +84,7 @@ export class SchematicSheet extends PrimitiveComponent<
     if (this.root?.schematicDisabled) return
     if (!this.schematic_sheet_id) return
 
-    const { db } = this.root!
+    const { db, schematicLayout } = this.root!
     const resolvedSheetProperties = resolveCircuitJsonSchematicSheetProperties(
       this._parsedProps,
     )
@@ -104,14 +105,14 @@ export class SchematicSheet extends PrimitiveComponent<
     }
 
     const schematicElements = [
-      ...db.schematic_component.list(),
-      ...db.schematic_port.list(),
-      ...db.schematic_text.list(),
-      ...db.schematic_line.list(),
-      ...db.schematic_rect.list(),
-      ...db.schematic_circle.list(),
-      ...db.schematic_arc.list(),
-      ...db.schematic_path.list(),
+      ...schematicLayout.component.list(),
+      ...schematicLayout.port.list(),
+      ...schematicLayout.text.list(),
+      ...schematicLayout.line.list(),
+      ...schematicLayout.rect.list(),
+      ...schematicLayout.circle.list(),
+      ...schematicLayout.arc.list(),
+      ...schematicLayout.path.list(),
     ].filter(
       (element) =>
         (element as any).schematic_sheet_id === this.schematic_sheet_id,
@@ -131,7 +132,7 @@ export class SchematicSheet extends PrimitiveComponent<
           y: (bounds.minY + bounds.maxY) / 2,
         }
 
-        db.schematic_sheet.update(this.schematic_sheet_id, {
+        schematicLayout.sheet.update(this.schematic_sheet_id, {
           center: schematicSheetCenter,
         } as any)
       }

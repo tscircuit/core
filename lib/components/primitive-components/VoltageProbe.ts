@@ -1,8 +1,5 @@
 import { commonComponentProps, voltageProbeProps } from "@tscircuit/props"
-import type {
-  SchematicVoltageProbe,
-  SimulationOscilloscopeTraceInput,
-} from "circuit-json"
+import type { SimulationOscilloscopeTraceInput } from "circuit-json"
 import { selectBestLabelAlignment } from "lib/utils/schematic/selectBestLabelAlignment"
 import { getSimulationColorForId } from "lib/utils/simulation/getSimulationColorForId"
 import { parseSimulationGraphValue } from "lib/utils/simulation/parseSimulationGraphValue"
@@ -171,7 +168,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
 
   doInitialSchematicReplaceNetLabelsWithSymbols() {
     if (this.root?.schematicDisabled) return
-    const { db } = this.root!
+    const { schematicLayout } = this.root!
     const { connectsTo, name } = this._parsedProps
 
     const subcircuit = this.getSubcircuit()
@@ -195,7 +192,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     const position = port._getGlobalSchematicPositionAfterLayout()
 
     let targetTraceId: string | null = null
-    for (const trace of db.schematic_trace.list()) {
+    for (const trace of schematicLayout.trace.list()) {
       for (const edge of trace.edges) {
         if (
           (Math.abs(edge.from.x - position.x) < 1e-6 &&
@@ -221,20 +218,21 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
       probePosition: position,
       labelText: probeName,
       schematicElements: [
-        ...db.schematic_component.list(),
-        ...db.schematic_text.list(),
+        ...schematicLayout.component.list(),
+        ...schematicLayout.text.list(),
       ],
       defaultAlignment: "top_right",
     })
 
-    const schematic_voltage_probe = db.schematic_voltage_probe.insert({
+    const schematic_voltage_probe = this._insertSchematicGeometry({
+      type: "schematic_voltage_probe",
       name: probeName,
       position,
       schematic_trace_id: targetTraceId,
       subcircuit_id: subcircuit.subcircuit_id || undefined,
       color: this.color ?? undefined,
       label_alignment: labelAlignment,
-    } as Omit<SchematicVoltageProbe, "type" | "schematic_voltage_probe_id">)
+    })
 
     this.schematic_voltage_probe_id =
       schematic_voltage_probe.schematic_voltage_probe_id

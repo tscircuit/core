@@ -23,7 +23,7 @@ export class SchematicRect extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -33,7 +33,8 @@ export class SchematicRect extends PrimitiveComponent<
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
-    const schematic_rect = db.schematic_rect.insert({
+    const schematic_rect = this._insertSchematicGeometry({
+      type: "schematic_rect",
       schematic_symbol_id,
       center: {
         x: globalPos.x,
@@ -63,8 +64,8 @@ export class SchematicRect extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { db } = this.root!
-    const rect = db.schematic_rect.get(this.schematic_rect_id)
+    const { schematicLayout } = this.root!
+    const rect = schematicLayout.rect.get(this.schematic_rect_id)
     if (!rect) return
 
     // Symbol applies rotation after resizing. Column lengths preserve the
@@ -73,7 +74,7 @@ export class SchematicRect extends PrimitiveComponent<
     const scaleY = Math.hypot(transform.c, transform.d)
     const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 
-    db.schematic_rect.update(this.schematic_rect_id, {
+    schematicLayout.rect.update(this.schematic_rect_id, {
       center: applyToPoint(transform, rect.center),
       width: rect.width * scaleX,
       height: rect.height * scaleY,

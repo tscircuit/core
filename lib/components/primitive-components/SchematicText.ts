@@ -20,7 +20,7 @@ export class SchematicText extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-    const { db } = this.root!
+
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -31,8 +31,8 @@ export class SchematicText extends PrimitiveComponent<
 
     const text = this._resolveText()
 
-    const schematic_text = db.schematic_text.insert({
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+    const schematic_text = this._insertSchematicGeometry({
+      type: "schematic_text",
       schematic_symbol_id,
       schematic_component_id,
       anchor: props.anchor ?? "center",
@@ -58,13 +58,13 @@ export class SchematicText extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { db } = this.root!
-    const text = db.schematic_text.get(this.schematic_text_id)
+    const { schematicLayout } = this.root!
+    const text = schematicLayout.text.get(this.schematic_text_id)
     if (!text) return
 
     const newPosition = applyToPoint(transform, text.position)
 
-    db.schematic_text.update(this.schematic_text_id, {
+    schematicLayout.text.update(this.schematic_text_id, {
       position: { x: newPosition.x, y: newPosition.y },
       rotation:
         (text.rotation ?? 0) +

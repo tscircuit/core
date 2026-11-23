@@ -1,8 +1,16 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
-import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
+import type {
+  SchematicGeometryRecord,
+  SchematicGeometryInput,
+} from "lib/utils/schematic/schematic-geometry"
+import {
+  convertSchematicLengthUnit,
+  getSchematicLengthUnitScale,
+} from "@tscircuit/circuit-json-util"
 import {
   DEFAULT_SCHEMATIC_LENGTH_UNIT,
   LEGACY_SCHEMATIC_LENGTH_UNIT,
@@ -825,18 +833,21 @@ export abstract class PrimitiveComponent<
     )
   }
 
-  // Name validation can report a location before the subcircuit has an ID.
-  _getSchematicErrorLocation() {
-    const center = this._getGlobalSchematicPositionBeforeLayout()
-    const unit = this._getSchematicLengthUnit()
-    const scale = getSchematicLengthUnitScale(
-      LEGACY_SCHEMATIC_LENGTH_UNIT,
+  /** Write schematic-world geometry (+X right, +Y up) from layout drawing units into the component's declared unit. */
+  _insertSchematicGeometry<K extends SchematicGeometryRecord["type"]>(
+    geometry: SchematicGeometryInput<K>,
+    {
+      unit = this._getSchematicLengthUnit(),
+    }: { unit?: SchematicLengthUnit } = {},
+  ): Extract<SchematicGeometryRecord, { type: K }> {
+    const record = convertSchematicLengthUnit(
+      geometry as unknown as SchematicGeometryRecord,
       unit,
     )
-    return {
-      schematic_center: { x: center.x * scale, y: center.y * scale },
-      schematic_length_unit: unit,
-    }
+    return this.root!.db.insert(record) as Extract<
+      SchematicGeometryRecord,
+      { type: K }
+    >
   }
 
   /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */
@@ -1297,6 +1308,7 @@ export abstract class PrimitiveComponent<
     if (schSheetName) {
       const matchingSheet = this.root?.db.schematic_sheet
         .list()
+        .map(inSchematicDrawingUnits)
         .find((sheet) => sheet.name === schSheetName)
       if (matchingSheet) return matchingSheet.schematic_sheet_id
     }

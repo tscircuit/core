@@ -1,3 +1,4 @@
+import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SchematicTrace } from "circuit-json"
 
@@ -19,7 +20,9 @@ export const getOtherSchematicTraces = ({
   }
   const mySourceTrace = db.source_trace.get(source_trace_id)!
   const traces: SchematicTrace[] = []
-  for (const otherSchematicTrace of db.schematic_trace.list()) {
+  for (const otherSchematicTrace of db.schematic_trace
+    .list()
+    .map(inSchematicDrawingUnits)) {
     if (otherSchematicTrace.source_trace_id === source_trace_id) continue
     if (
       schematic_sheet_id !== undefined &&
