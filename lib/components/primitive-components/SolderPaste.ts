@@ -4,25 +4,32 @@ import type {
   PcbSolderPaste,
   PcbSolderPasteCircle,
   PcbSolderPasteRect,
+  PcbSolderPastePill,
+  PcbSolderPasteRotatedPill,
   PcbSolderPasteRotatedRect,
 } from "circuit-json"
 import { applyToPoint, decomposeTSR } from "transformation-matrix"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { SmtPad } from "./SmtPad"
 
 type PcbSolderPasteId = PcbSolderPaste["pcb_solder_paste_id"]
-type StandalonePcbSolderPaste =
+type PcbSolderPasteWithCenter =
   | PcbSolderPasteCircle
   | PcbSolderPasteRect
   | PcbSolderPasteRotatedRect
+  | PcbSolderPastePill
+  | PcbSolderPasteRotatedPill
 
 export const isStandalonePcbSolderPaste = (
   element: AnyCircuitElement,
-): element is StandalonePcbSolderPaste =>
+): element is PcbSolderPasteWithCenter =>
   element.type === "pcb_solder_paste" &&
   !element.pcb_smtpad_id &&
   (element.shape === "circle" ||
     element.shape === "rect" ||
-    element.shape === "rotated_rect")
+    element.shape === "rotated_rect" ||
+    element.shape === "pill" ||
+    element.shape === "rotated_pill")
 
 /**
  * Emits independent paste apertures in the right-handed board-world PCB frame:
@@ -32,13 +39,17 @@ export const isStandalonePcbSolderPaste = (
 export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   pcb_solder_paste_id: PcbSolderPasteId | null = null
   isPcbPrimitive = true
+  private smtPad?: Pick<SmtPad, "pcb_smtpad_id">
 
   /**
    * Reconstruct an aperture already in its parent's local PCB frame (+X right,
    * +Y top, +Z above, right-handed, mm). Its center is a point and its rotation
    * is in CCW degrees; coordinate transforms happen before this import.
    */
-  static fromCircuitJson(aperture: StandalonePcbSolderPaste): SolderPaste {
+  static fromCircuitJson(
+    aperture: PcbSolderPasteWithCenter,
+    smtPad?: Pick<SmtPad, "pcb_smtpad_id">,
+  ): SolderPaste {
     const placement = {
       pcbX: aperture.x,
       pcbY: aperture.y,
@@ -47,6 +58,16 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     let props: SolderPasteProps
     if (aperture.shape === "circle") {
       props = { ...placement, shape: "circle", radius: aperture.radius }
+    } else if (aperture.shape === "pill" || aperture.shape === "rotated_pill") {
+      props = {
+        ...placement,
+        shape: "pill",
+        width: aperture.width,
+        height: aperture.height,
+        radius: aperture.radius,
+        pcbRotation:
+          aperture.shape === "rotated_pill" ? aperture.ccw_rotation : undefined,
+      }
     } else {
       props = {
         ...placement,
@@ -57,7 +78,9 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
           aperture.shape === "rotated_rect" ? aperture.ccw_rotation : undefined,
       }
     }
-    return new SolderPaste(props)
+    const paste = new SolderPaste(props)
+    paste.smtPad = smtPad
+    return paste
   }
 
   get config() {
@@ -94,6 +117,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
       (decomposeTSR(transform, false, isFlipped).rotation.angle * 180) / Math.PI
     const base = {
       ...center,
+      pcb_smtpad_id: this.smtPad?.pcb_smtpad_id ?? undefined,
       layer: maybeFlipLayer(authoredLayer) as "top" | "bottom",
       pcb_component_id:
         this.parent?.pcb_component_id ??
@@ -109,6 +133,22 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
         shape: "circle",
         radius: props.radius,
       })
+    } else if (props.shape === "pill") {
+      const geometry = {
+        ...base,
+        width: props.width,
+        height: props.height,
+        radius: props.radius,
+      }
+      if (Math.abs(rotation) < 1e-8) {
+        aperture = db.pcb_solder_paste.insert({ ...geometry, shape: "pill" })
+      } else {
+        aperture = db.pcb_solder_paste.insert({
+          ...geometry,
+          shape: "rotated_pill",
+          ccw_rotation: rotation,
+        })
+      }
     } else if (Math.abs(rotation) < 1e-8) {
       aperture = db.pcb_solder_paste.insert({
         ...base,
@@ -134,10 +174,9 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   }: { deltaX: number; deltaY: number }): void {
     if (!this.pcb_solder_paste_id) return
     const { db } = this.root!
-    // This primitive only emits centered circle/rectangle records.
     const aperture = db.pcb_solder_paste.get(
       this.pcb_solder_paste_id,
-    )! as StandalonePcbSolderPaste
+    )! as PcbSolderPasteWithCenter
     db.pcb_solder_paste.update(this.pcb_solder_paste_id, {
       x: aperture.x + deltaX,
       y: aperture.y + deltaY,

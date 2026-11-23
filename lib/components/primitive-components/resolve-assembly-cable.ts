@@ -20,21 +20,6 @@ const MIN_TANGENT_LENGTH = 1e-6
 const BEZIER_HANDLE_LENGTH_RATIO = 1 / 3
 const CURVE_SAMPLES_PER_SPAN = 12
 
-type CableSchema<PathSchema> =
-  | { shape: { path: PathSchema } }
-  | { innerType(): CableSchema<PathSchema> }
-
-export function getCablePathSchema<PathSchema>(
-  schema: CableSchema<PathSchema>,
-) {
-  // Circuit JSON wraps the cable object in a refinement for length tolerance.
-  let cableSchema = schema
-  while ("innerType" in cableSchema) {
-    cableSchema = cableSchema.innerType()
-  }
-  return cableSchema.shape.path
-}
-
 function resolveAuthoredAssemblyCablePath({
   cable,
   from,
@@ -173,7 +158,7 @@ function resolveAuthoredAssemblyCablePath({
     smoothPath.push(end)
   }
   smoothPath.push(path.at(-1)!)
-  const validatedPath = getCablePathSchema(cad_cable).safeParse(smoothPath)
+  const validatedPath = cad_cable.innerType().shape.path.safeParse(smoothPath)
   if (!validatedPath.success) {
     throw new Error(
       `assembly.cable "${cable.name}" waypoints produce invalid curve points; adjust their positions or spacing`,
