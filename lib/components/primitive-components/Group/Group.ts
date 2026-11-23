@@ -96,8 +96,11 @@ import {
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
-import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
-import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
+import { getSchematicLayoutChildren } from "./getSchematicLayoutChildren"
+import {
+  layoutSchematicGroupBySheet,
+  hasSchematicSections,
+} from "./layoutSchematicGroupBySheet"
 import {
   Group_doInitialSchematicSheetRender,
   Group_updateSchematicSheetRender,
@@ -2717,7 +2720,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
+  _getSchematicLayoutMode(
+    layoutChildren = getSchematicLayoutChildren(this.children),
+  ): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
     const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"
@@ -2737,11 +2742,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // unless any direct layout child defines schX or schY.
     // Schematic primitives (e.g. schematictext) can have explicit coordinates
     // without opting the entire group out of auto layout.
-    const anyLayoutChildHasSchCoords = this.children.some((child) => {
-      const cProps = (child as any)._parsedProps
+    const anyLayoutChildHasSchCoords = layoutChildren.some((child) => {
+      const cProps = child._parsedProps
       const participatesInAutoLayout =
-        (child as any).source_component_id !== null ||
-        (child as any).source_group_id !== null
+        child.source_component_id !== null || child.source_group_id !== null
       return (
         participatesInAutoLayout &&
         (cProps?.schX !== undefined || cProps?.schY !== undefined)
@@ -2763,48 +2767,36 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    if (this._parsedProps.showAsSchematicBox) {
+    const explicitMode = this._parsedProps.schLayout?.layoutMode
+    if (
+      this._parsedProps.showAsSchematicBox ||
+      explicitMode === "none" ||
+      explicitMode === "relative"
+    ) {
       this._insertSchematicBorder()
       return
     }
 
-    const hasAnySectionName = this.children.some(
-      (c) =>
-        c.source_component_id !== null &&
-        c._parsedProps?.schSectionName !== undefined,
-    )
-    const hasSections = hasAnySectionName
-    if (hasSections) {
-      this._doInitialSchematicLayoutSections()
-      this._insertSchematicBorder()
-      return
-    }
-
-    const schematicLayoutMode = this._getSchematicLayoutMode()
-
-    if (schematicLayoutMode === "match-adapt") {
-      this._doInitialSchematicLayoutMatchpack()
-    }
-    if (schematicLayoutMode === "grid") {
+    const layoutChildren = getSchematicLayoutChildren(this.children)
+    const hasSections = hasSchematicSections(layoutChildren)
+    const mode = this._getSchematicLayoutMode(layoutChildren)
+    if (!hasSections && mode === "grid") {
       this._doInitialSchematicLayoutGrid()
-    }
-    if (schematicLayoutMode === "flex") {
+    } else if (!hasSections && mode === "flex") {
       this._doInitialSchematicLayoutFlex()
+    } else if (
+      hasSections ||
+      mode === "match-adapt" ||
+      this.root!.db.schematic_sheet.list().length > 1
+    ) {
+      layoutSchematicGroupBySheet(this, layoutChildren)
     }
 
     this._insertSchematicBorder()
   }
 
-  _doInitialSchematicLayoutSections(): void {
-    Group_doInitialSchematicLayoutSections(this as any)
-  }
-
   _doInitialSchematicLayoutMatchAdapt(): void {
     Group_doInitialSchematicLayoutMatchAdapt(this as any)
-  }
-
-  _doInitialSchematicLayoutMatchpack(): void {
-    Group_doInitialSchematicLayoutMatchPack(this as any)
   }
 
   _doInitialSchematicLayoutGrid(): void {
