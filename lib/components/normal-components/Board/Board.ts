@@ -190,11 +190,16 @@ export class Board
    * Get all available layers for the board
    */
   get allLayers(): ReadonlyArray<LayerRef> {
-    return getBoardAvailableLayers(this._parsedProps.layers ?? 2)
+    return getBoardAvailableLayers(this._getSubcircuitLayerCount())
   }
 
   _getSubcircuitLayerCount(): number {
-    return this._parsedProps.layers ?? 2
+    const importedBoard = this._parsedProps.circuitJson?.find(
+      (element) => element.type === "pcb_board",
+    )
+    return (
+      this.props.layers ?? importedBoard?.num_layers ?? this._parsedProps.layers
+    )
   }
 
   override _computePcbGlobalTransformBeforeLayout(): Matrix {
@@ -509,6 +514,13 @@ export class Board
     const resolvedAllowBlindAndBuriedVias =
       rawProps.allowBlindAndBuriedVias ??
       pcbBoardFromCircuitJson?.allow_blind_and_buried_vias
+    const routingLayers: LayerRef[] | undefined =
+      props.routingLayers ?? pcbBoardFromCircuitJson?.routing_layers
+    if (routingLayers?.some((layer) => !this.allLayers.includes(layer))) {
+      throw new Error(
+        `Board routingLayers must be chosen from ${this.allLayers.join(", ")}`,
+      )
+    }
 
     // Initialize with minimal dimensions if not provided
     // They will be updated in PcbBoardAutoSize phase
@@ -638,6 +650,7 @@ export class Board
       ...(resolvedAllowBlindAndBuriedVias !== undefined && {
         allow_blind_and_buried_vias: resolvedAllowBlindAndBuriedVias,
       }),
+      ...(routingLayers && { routing_layers: routingLayers }),
       ...(props.solderMaskColor !== undefined && {
         solder_mask_color: props.solderMaskColor,
       }),

@@ -162,6 +162,8 @@ export type SimpleRouteJson = Omit<
   | "buses"
 > & {
   layerCount: number
+  /** Physical layers on which the board permits planar traces. */
+  routingLayers?: string[]
   /** Whether autorouters may use vias that do not span the full board stack. */
   allowBlindAndBuriedVias?: boolean
   minTraceWidth: number

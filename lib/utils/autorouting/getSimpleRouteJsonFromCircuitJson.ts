@@ -1129,6 +1129,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const srjBuses = getBusesForSimpleRouteJson({
     srjConnections: allConns,
     buses,
+    routingLayers: board?.routing_layers,
     sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,
     planeTerminatedSourceTraceLayers,
@@ -1202,6 +1203,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           : undefined,
       layerCount: board?.num_layers ?? 2,
       allowBlindAndBuriedVias: board?.allow_blind_and_buried_vias ?? false,
+      ...(board?.routing_layers && { routingLayers: board.routing_layers }),
       allowViaInPad: allowViaInPad ?? board?.is_via_in_pad_allowed ?? false,
       minTraceWidth: Math.min(
         defaultTraceWidth,

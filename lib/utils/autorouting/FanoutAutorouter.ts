@@ -1,3 +1,4 @@
+import { getAllowedRoutingLayers } from "./get-allowed-routing-layers"
 import {
   type FanoutBorderTarget,
   type FanoutDirection,
@@ -442,7 +443,11 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
   }
 
   private getFanoutSolverOptions(): FanoutSolverOptions {
-    const commonOptions: FanoutSolverOptions = {
+    const singleLayer = this.options.mode === "single_layer_fanout"
+    const requestedLayers = singleLayer
+      ? ["top"]
+      : this.options.fanoutRoutingLayers
+    return {
       buses: getFanoutSolverBuses(
         this.input.buses,
         this.options.busFanoutDirections,
@@ -451,19 +456,15 @@ export class FanoutAutorouter implements GenericLocalAutorouter {
       compactBusTracks: true,
       busDirections: this.getPlaneBusDirections(),
       busExitPreferences: this.getLegacyBusExitPreferences(),
-      escapeLayers: this.options.fanoutRoutingLayers,
+      escapeLayers: getAllowedRoutingLayers(
+        this.input.routingLayers,
+        requestedLayers,
+      ),
+      ...(singleLayer && { singleLayerPushAndShove: true }),
       allowBlindAndBuriedVias:
         this.options.allowBlindAndBuriedVias ??
         this.input.allowBlindAndBuriedVias,
     }
-    if (this.options.mode === "single_layer_fanout") {
-      return {
-        ...commonOptions,
-        escapeLayers: ["top"],
-        singleLayerPushAndShove: true,
-      }
-    }
-    return commonOptions
   }
 
   static resolveFanoutBounds(
