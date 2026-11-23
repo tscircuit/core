@@ -80,7 +80,10 @@ export class Crystal extends NormalComponent<
       frequency: props.frequency,
       load_capacitance: props.loadCapacitance,
       display_frequency: `${formatSiUnit(props.frequency)}Hz`,
-      display_load_capacitance: `${formatSiUnit(props.loadCapacitance)}F`,
+      display_load_capacitance:
+        props.loadCapacitance === undefined
+          ? undefined
+          : `${formatSiUnit(props.loadCapacitance)}F`,
       pin_variant: props.pinVariant || "two_pin",
       are_pins_interchangeable: (props.pinVariant || "two_pin") === "two_pin",
       display_name: props.displayName,
