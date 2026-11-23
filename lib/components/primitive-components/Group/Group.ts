@@ -1,3 +1,4 @@
+import { getRoutingLayerError } from "lib/utils/autorouting/get-routing-layer-error"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -870,6 +871,27 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return false
   }
 
+  private _acceptRemoteAutoroutingResult(
+    input: SimpleRouteJson,
+    result: GroupAutoroutingResult,
+  ) {
+    const error = getRoutingLayerError(
+      input,
+      result.output_simple_route_json?.traces ?? result.output_pcb_traces,
+    )
+    if (error) {
+      this.root!.db.pcb_autorouting_error.insert({
+        pcb_error_id: `pcb_autorouter_error_subcircuit_${this.subcircuit_id}`,
+        error_type: "pcb_autorouting_error",
+        message: error,
+        subcircuit_id: this.subcircuit_id ?? undefined,
+      })
+      throw new AutorouterError(error)
+    }
+    this._asyncAutoroutingResult = result
+    this._markDirty("PcbTraceRender")
+  }
+
   async _runEffectMakeHttpAutoroutingRequest() {
     const { db } = this.root!
     const debug = Debug("tscircuit:core:_runEffectMakeHttpAutoroutingRequest")
@@ -914,11 +936,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       subcircuit_id: this.subcircuit_id,
       subcircuitComponent: this,
     })
-    const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
-      (obstacle) => obstacle.isCopperPour,
-    )
-      ? simpleRouteJson
-      : undefined
+    const constrainedRouteJson =
+      simpleRouteJson.routingLayers ||
+      simpleRouteJson.obstacles.some((obstacle) => obstacle.isCopperPour)
+        ? simpleRouteJson
+        : undefined
 
     if (serverMode === "solve-endpoint") {
       const simplifiedInput =
@@ -933,7 +955,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               : pcbAndSourceCircuitJson,
             input_simple_route_json: simplifiedInput
               ? simpleRouteJson
-              : unbrokenPlaneRouteJson,
+              : constrainedRouteJson,
             subcircuit_id: this.subcircuit_id!,
           }),
           headers: {
@@ -941,8 +963,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         },
       ).then((r) => r.json())
-      this._asyncAutoroutingResult = autorouting_result
-      this._markDirty("PcbTraceRender")
+      this._acceptRemoteAutoroutingResult(simpleRouteJson, autorouting_result)
       return
     }
 
@@ -952,7 +973,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         method: "POST",
         body: JSON.stringify({
           input_circuit_json: pcbAndSourceCircuitJson,
-          input_simple_route_json: unbrokenPlaneRouteJson,
+          input_simple_route_json: constrainedRouteJson,
           provider: "freerouting",
           autostart: true,
           display_name: this.root?.name,
@@ -1002,10 +1023,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         ).then((r) => r.json())
 
-        this._asyncAutoroutingResult = {
+        this._acceptRemoteAutoroutingResult(simpleRouteJson, {
           output_pcb_traces: autorouting_job_output.output_pcb_traces,
-        }
-        this._markDirty("PcbTraceRender")
+        })
         break
       }
 
@@ -2010,6 +2030,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               stageOutputPcbTraces: traces,
             })
         }
+        const layerError = getRoutingLayerError(
+          simpleRouteJson,
+          stageOutputTraces,
+        )
+        if (layerError) throw new AutorouterError(layerError)
         let eventOutputPcbTraces = stageOutputTraces
         if (
           !transformedSimpleRouteJson &&

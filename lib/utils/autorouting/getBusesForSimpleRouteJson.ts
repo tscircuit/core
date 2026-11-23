@@ -1,3 +1,4 @@
+import { getAllowedRoutingLayers } from "./get-allowed-routing-layers"
 import { getBusSourceTraceIdOrThrow } from "./getBusSourceTraceIdOrThrow"
 import { getBusTargetLengthBounds } from "./getBusTargetLengthBounds"
 import type { SourceNet, SourceTrace } from "circuit-json"
@@ -12,6 +13,7 @@ type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
   buses: Bus[]
+  routingLayers?: string[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
   preservedSourceTraceIds?: ReadonlySet<SourceTrace["source_trace_id"]>
@@ -140,6 +142,7 @@ export const getBusesForSimpleRouteJson = ({
   subcircuitId,
   planeTerminatedSourceTraceLayers,
   preservedSourceTraceIds,
+  routingLayers,
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
   for (const bus of buses) {
@@ -227,5 +230,13 @@ export const getBusesForSimpleRouteJson = ({
   }
 
   const srjBuses = [...planeSrjBuses, ...declaredSrjBuses]
+  if (routingLayers) {
+    for (const bus of srjBuses) {
+      bus.allowedLayers = getAllowedRoutingLayers(
+        routingLayers,
+        bus.allowedLayers,
+      )
+    }
+  }
   return srjBuses.length > 0 ? srjBuses : undefined
 }

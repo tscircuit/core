@@ -1,3 +1,4 @@
+import { getRoutingLayerError } from "lib/utils/autorouting/get-routing-layer-error"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { jlcMinTolerances } from "@tscircuit/jlcpcb-manufacturing-specs"
@@ -330,12 +331,16 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   // Hints can indicate where there should be a via, but the layer is allowed
   // to be unspecified, therefore we need to find possible layer combinations
   // to go to each hint and still route to the start and end points
+  const boardId = trace._getBoard()?.pcb_board_id
+  const routingLayers = boardId
+    ? db.pcb_board.get(boardId)?.routing_layers
+    : undefined
   const candidateLayerCombinations = findPossibleTraceLayerCombinations(
     orderedRouteObjectives,
     {
-      layerSelectionPreference: getBoardAvailableLayers(
-        subcircuit._getSubcircuitLayerCount(),
-      ),
+      layerSelectionPreference:
+        routingLayers ??
+        getBoardAvailableLayers(subcircuit._getSubcircuitLayerCount()),
     },
   )
 
@@ -518,6 +523,19 @@ export function Trace_doInitialPcbTraceRender(trace: Trace) {
   }
   const mergedRoute = mergeRoutes(routes)
 
+  if (routingLayers) {
+    const error = getRoutingLayerError({ routingLayers }, [
+      {
+        type: "pcb_trace",
+        pcb_trace_id: trace.source_trace_id!,
+        route: mergedRoute,
+      },
+    ])
+    if (error) {
+      trace.renderError(error)
+      return
+    }
+  }
   const traceLength = getTraceLength(mergedRoute)
   const pcbStyle = trace.getInheritedMergedProperty("pcbStyle")
   const { holeDiameter, padDiameter } = getViaDiameterDefaults(pcbStyle)
