@@ -212,6 +212,10 @@ export function applyNetLabelPlacements(args: {
     // Solver labels belong to the same sheet as their connected port.
     let schematicSheetId = group._resolveSchematicSheetId()
     const schematicPort = db.schematic_port.get(schPortIds[0])
+    const subcircuit_id =
+      schematicPort?.subcircuit_id ??
+      group.getSubcircuit().subcircuit_id ??
+      undefined
     if (schematicPort?.schematic_sheet_id) {
       schematicSheetId = schematicPort.schematic_sheet_id
     }
@@ -316,6 +320,7 @@ export function applyNetLabelPlacements(args: {
       }
 
       const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+        subcircuit_id,
         text,
         source_net_id: sourceNet.source_net_id,
         anchor_position,
@@ -356,6 +361,7 @@ export function applyNetLabelPlacements(args: {
     })
 
     const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+      subcircuit_id,
       text,
       source_net_id:
         placementConnKey ?? placement.netId ?? placement.globalConnNetId,

@@ -1,17 +1,27 @@
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
+import { distance } from "circuit-json"
 import { z } from "zod"
 
 class ErrorPlaceholderComponent extends PrimitiveComponent {
   constructor(props: any, error: any) {
     super(props)
-    const resolveCoordinate = (value: unknown, axis: "pcbX" | "pcbY") => {
+    const resolveCoordinate = (
+      value: unknown,
+      axis: "pcbX" | "pcbY" | "schX" | "schY",
+    ) => {
+      if (value === undefined && (axis === "schX" || axis === "schY"))
+        return undefined
       if (typeof value === "number") return value
       if (typeof value === "string") {
         try {
+          if (axis === "schX" || axis === "schY") {
+            const parsed = distance.parse(value)
+            return Number.isFinite(parsed) ? parsed : 0
+          }
           return this._resolvePcbCoordinate(value, axis, {
             allowBoardVariables: false,
           })
-        } catch (err) {
+        } catch {
           return 0
         }
       }
@@ -26,8 +36,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
       message: error instanceof Error ? error.message : String(error),
       pcbX: resolveCoordinate(props.pcbX, "pcbX"),
       pcbY: resolveCoordinate(props.pcbY, "pcbY"),
-      schX: props.schX,
-      schY: props.schY,
+      schX: resolveCoordinate(props.schX, "schX"),
+      schY: resolveCoordinate(props.schY, "schY"),
     }
   }
 

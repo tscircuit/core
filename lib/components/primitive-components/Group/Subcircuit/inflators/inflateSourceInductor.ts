@@ -6,7 +6,6 @@ import type {
 import { Inductor } from "lib/components/normal-components/Inductor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceInductor(
@@ -31,7 +30,7 @@ export function inflateSourceInductor(
 
   const inductor = new Inductor({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     inductance: (sourceElm as any).inductance,
     layer: pcbElm?.layer,
     pcbX,

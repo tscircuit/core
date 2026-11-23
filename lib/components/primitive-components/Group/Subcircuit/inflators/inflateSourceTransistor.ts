@@ -6,7 +6,6 @@ import type {
 import { Transistor } from "lib/components/normal-components/Transistor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceTransistor(
@@ -31,7 +30,7 @@ export function inflateSourceTransistor(
 
   const transistor = new Transistor({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     type: sourceElm.transistor_type,
     layer: pcbElm?.layer,
     pcbX,

@@ -6,7 +6,6 @@ import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
 import {
   DEFAULT_SCHEMATIC_LENGTH_UNIT,
   LEGACY_SCHEMATIC_LENGTH_UNIT,
-  MM_PER_SCHEMATIC_UNIT,
 } from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
@@ -112,15 +111,11 @@ export abstract class PrimitiveComponent<
     return this.config.componentName
   }
 
-  getInheritedProperty(
-    propertyName: string,
-    { skipUndefined = false }: { skipUndefined?: boolean } = {},
-  ) {
+  getInheritedProperty(propertyName: string) {
     let current: PrimitiveComponent<ZodProps> | null = this
     while (current) {
       if (current._parsedProps && propertyName in current._parsedProps) {
-        const value = current._parsedProps[propertyName]
-        if (!skipUndefined || value !== undefined) return value
+        return current._parsedProps[propertyName]
       }
       current = current.parent as PrimitiveComponent<ZodProps> | null // Move up to the parent
     }
@@ -823,9 +818,8 @@ export abstract class PrimitiveComponent<
 
   _getSchematicLengthUnit(): SchematicLengthUnit {
     return (
-      this.getInheritedProperty("defaultSchematicLengthUnit", {
-        skipUndefined: true,
-      }) ??
+      this._parsedProps?.defaultSchematicLengthUnit ??
+      this.parent?._getSchematicLengthUnit?.() ??
       this.root?.inheritedSchematicLengthUnit ??
       DEFAULT_SCHEMATIC_LENGTH_UNIT
     )
@@ -847,27 +841,28 @@ export abstract class PrimitiveComponent<
 
   /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */
   _getSchematicPropsPosition() {
-    const { schX, schY } = this._parsedProps
-    const x = schX ?? 0
-    const y = schY ?? 0
+    const { schX: x = 0, schY: y = 0 } = this._parsedProps
     if ((!x && !y) || this._schematicPositionFromCircuitJson) return { x, y }
     const unit = this._getSchematicLengthUnit()
-    if (unit === "mm" || unit === "in") {
-      // The distance parser already converts suffixed strings to mm. Only
-      // bare coordinates take their unit from the nearest subcircuit.
-      const toSchematicUnits = (parsed: number, raw: unknown) => {
-        const bare =
-          typeof raw === "number" ||
-          (typeof raw === "string" && Number.isFinite(Number(raw)))
-        const mm = unit === "in" && bare ? parsed * 25.4 : parsed
-        return mm / MM_PER_SCHEMATIC_UNIT
-      }
-      return {
-        x: toSchematicUnits(x, this.props.schX),
-        y: toSchematicUnits(y, this.props.schY),
-      }
+    if (unit === LEGACY_SCHEMATIC_LENGTH_UNIT) return { x, y }
+
+    // The distance parser returns mm for suffixed strings. Bare values use the subcircuit's unit.
+    const toDrawingUnits = (parsed: number, raw: unknown) => {
+      const bare =
+        typeof raw === "number" ||
+        (typeof raw === "string" && Number.isFinite(Number(raw)))
+      return (
+        parsed *
+        getSchematicLengthUnitScale(
+          bare ? unit : "mm",
+          LEGACY_SCHEMATIC_LENGTH_UNIT,
+        )
+      )
     }
-    return { x, y }
+    return {
+      x: toDrawingUnits(x, this.props.schX),
+      y: toDrawingUnits(y, this.props.schY),
+    }
   }
 
   /**

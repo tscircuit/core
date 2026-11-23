@@ -2,7 +2,6 @@ import type { SourceSimpleFuse } from "circuit-json"
 import { Fuse } from "lib/components/normal-components/Fuse"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceFuse(
@@ -23,7 +22,7 @@ export function inflateSourceFuse(
 
   const fuse = new Fuse({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     currentRating: sourceElm.current_rating_amps,
     voltageRating: sourceElm.voltage_rating_volts,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,

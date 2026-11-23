@@ -1,7 +1,4 @@
-import {
-  convertSchematicLengthUnit,
-  convertSchematicLengthUnits,
-} from "@tscircuit/circuit-json-util"
+import { convertSchematicLengthUnit } from "@tscircuit/circuit-json-util"
 import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
@@ -303,11 +300,6 @@ export class IsolatedCircuit {
       }
     }
     return this.db.toArray().map((record) => {
-      if (
-        !record.type.startsWith("schematic_") &&
-        record.type !== "source_failed_to_create_component_error"
-      )
-        return record
       const owner = "subcircuit_id" in record && record.subcircuit_id
       const unit =
         (owner && units.get(owner)) ||
@@ -336,10 +328,7 @@ export class IsolatedCircuit {
     }
     if (options.view === "schematic") {
       return circuitToSvg.convertCircuitJsonToSchematicSvg(
-        convertSchematicLengthUnits(
-          this.getCircuitJson(),
-          LEGACY_SCHEMATIC_LENGTH_UNIT,
-        ),
+        this.getCircuitJson(),
       )
     }
     throw new Error(`Invalid view: ${options.view}`)

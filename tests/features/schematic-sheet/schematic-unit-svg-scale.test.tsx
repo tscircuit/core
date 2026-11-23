@@ -15,10 +15,12 @@ test("an inch of authored placement spans one quarter of a four-inch sheet in SV
   await circuit.renderUntilSettled()
   const json = circuit.getCircuitJson()
   expect(
-    json.find(
-      (record) => record.type === "source_group" && record.is_subcircuit,
-    ),
-  ).toMatchObject({ default_schematic_length_unit: "mm" })
+    json.find((record) => record.type === "schematic_sheet"),
+  ).toMatchObject({
+    schematic_length_unit: "mm",
+    sheet_width: 101.6,
+    sheet_height: 50.8,
+  })
   expect(
     json.find(
       (record) =>

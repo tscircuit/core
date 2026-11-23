@@ -6,7 +6,6 @@ import type {
 import { Capacitor } from "lib/components/normal-components/Capacitor"
 import type { InflatorContext } from "../InflatorFn"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 
 export function inflateSourceCapacitor(
@@ -31,7 +30,7 @@ export function inflateSourceCapacitor(
 
   const capacitor = new Capacitor({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     capacitance: sourceElm.capacitance,
     layer: pcbElm?.layer,
     pcbX,

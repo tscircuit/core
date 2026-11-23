@@ -769,6 +769,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           : props.schPinLabelFontSize
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
+      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,

@@ -1,4 +1,3 @@
-import type { SchematicLengthUnit } from "@tscircuit/props"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type { SourceComponentBase } from "circuit-json"
 import type { SubcircuitI } from "./SubcircuitI"
@@ -9,10 +8,10 @@ export type SourceGroupId = string
 
 export interface InflatorContext {
   injectionDb: CircuitJsonUtilObjects
-  subcircuit: SubcircuitI
+  subcircuit: SubcircuitI & Pick<Group<any>, "_getSchematicLengthUnit">
   fromIsolatedCache: boolean
-  defaultSchematicLengthUnit?: SchematicLengthUnit
 
+  schematicPlacement?: { schX: number; schY: number }
   normalComponent?: NormalComponent
   groupsMap?: Map<SourceGroupId, Group<any>>
 }

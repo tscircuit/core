@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
 
@@ -83,6 +84,21 @@ function getHashableProps(props: Record<string, any>): Record<string, any> {
 }
 
 /**
+ * Recursively collect hashable data from children.
+ */
+function getChildrenHashData(children: PrimitiveComponent[]): any[] {
+  return children.map((child) => ({
+    componentName: child.componentName,
+    props: getHashableProps(child.props ?? {}),
+    ...(child._getSchematicLengthUnit() !== LEGACY_SCHEMATIC_LENGTH_UNIT && {
+      schX: child.props.schX,
+      schY: child.props.schY,
+    }),
+    children: getChildrenHashData(child.children),
+  }))
+}
+
+/**
  * FNV-1a hash function - better distribution than djb2 for similar strings.
  * Uses 32-bit FNV-1a which provides good collision resistance for our use case.
  */
@@ -123,23 +139,10 @@ export function Subcircuit_getSubcircuitPropHash(
   subcircuit: ISubcircuit,
 ): string {
   const defaultSchematicLengthUnit = subcircuit._getSchematicLengthUnit()
-  const physicalPlacement =
-    defaultSchematicLengthUnit === "mm" || defaultSchematicLengthUnit === "in"
-
-  function getChildrenHashData(children: PrimitiveComponent[]): any[] {
-    return children.map((child) => ({
-      componentName: child.componentName,
-      props: getHashableProps(child.props ?? {}),
-      ...(physicalPlacement && {
-        schX: child.props.schX,
-        schY: child.props.schY,
-      }),
-      children: getChildrenHashData(child.children),
-    }))
-  }
-
   const hashableData = {
-    ...(physicalPlacement && { defaultSchematicLengthUnit }),
+    ...(defaultSchematicLengthUnit !== LEGACY_SCHEMATIC_LENGTH_UNIT && {
+      defaultSchematicLengthUnit,
+    }),
     props: getHashableProps(subcircuit.props ?? {}),
     children: getChildrenHashData(subcircuit.children),
   }

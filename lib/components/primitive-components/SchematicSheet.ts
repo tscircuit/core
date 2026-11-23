@@ -17,7 +17,7 @@ export class SchematicSheet extends PrimitiveComponent<
     }
   }
 
-  doInitialSourceGroupRender(): void {
+  doInitialSourceRender(): void {
     if (this.root?.schematicDisabled) return
     const { db } = this.root!
     const { _parsedProps: props } = this

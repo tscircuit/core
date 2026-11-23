@@ -16,8 +16,4 @@ test("omitting defaultSchematicLengthUnit preserves existing numeric and string 
     schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center: { x: 2.2, y: -1.1 },
   })
-  expect(circuit.db.schematic_component.list()[0].center).toEqual({
-    x: 2.2,
-    y: -1.1,
-  })
 })

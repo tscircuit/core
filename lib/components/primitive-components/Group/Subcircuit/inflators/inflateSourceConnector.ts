@@ -121,8 +121,7 @@ export function inflateSourceConnector(
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
     schPinSpacing: schematicElm?.pin_spacing,
-    schX: schematicElm?.center?.x,
-    schY: schematicElm?.center?.y,
+    ...inflatorContext.schematicPlacement,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
@@ -131,7 +130,6 @@ export function inflateSourceConnector(
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
   }
   const connector = new Connector(connectorProps)
-  connector._schematicPositionFromCircuitJson = true
 
   if (cadElm?.footprinter_string) {
     Object.assign(connector.props, { footprint: cadElm.footprinter_string })

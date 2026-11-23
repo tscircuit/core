@@ -310,6 +310,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+      subcircuit_id: schPort.subcircuit_id,
       text,
       source_net_id: sourceNet?.source_net_id ?? connKey,
       anchor_position: schPort.center,

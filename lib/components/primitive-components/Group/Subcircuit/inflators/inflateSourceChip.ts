@@ -79,8 +79,7 @@ export const inflateSourceChip = (
     schWidth: schematicElm?.size?.width,
     schHeight: schematicElm?.size?.height,
     schPinSpacing: schematicElm?.pin_spacing,
-    schX: schematicElm?.center?.x,
-    schY: schematicElm?.center?.y,
+    ...inflatorContext.schematicPlacement,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,
@@ -89,8 +88,6 @@ export const inflateSourceChip = (
     obstructsWithinBounds: pcbElm?.obstructs_within_bounds,
     internallyConnectedPins,
   })
-
-  chip._schematicPositionFromCircuitJson = true
 
   // Store the footprinter string in props for reference (used by cad_component generation)
   if (footprinterString) {

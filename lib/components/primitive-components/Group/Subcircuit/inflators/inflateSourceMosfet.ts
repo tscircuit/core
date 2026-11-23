@@ -1,7 +1,6 @@
 import type { PcbComponent, SourceSimpleMosfet } from "circuit-json"
 import { Mosfet } from "lib/components/normal-components/Mosfet"
 import type { InflatorContext } from "../InflatorFn"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
@@ -23,7 +22,7 @@ export function inflateSourceMosfet(
 
   const mosfet = new Mosfet({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     channelType: sourceElm.channel_type,
     mosfetMode: sourceElm.mosfet_mode,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,

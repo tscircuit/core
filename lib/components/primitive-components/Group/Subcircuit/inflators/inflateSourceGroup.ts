@@ -18,7 +18,7 @@ export function inflateSourceGroup(
       groupsMap
         ?.get(sourceGroup.parent_source_group_id)
         ?._getSchematicLengthUnit()) ||
-    inflatorContext.defaultSchematicLengthUnit
+    subcircuit._getSchematicLengthUnit()
   const preserveScope =
     !inflatorContext.fromIsolatedCache ||
     sourceGroup.default_schematic_length_unit !== parentUnit

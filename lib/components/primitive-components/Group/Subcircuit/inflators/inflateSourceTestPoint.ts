@@ -1,7 +1,6 @@
 import type { SourceSimpleTestPoint } from "circuit-json"
 import { TestPoint } from "lib/components/normal-components/TestPoint"
 import type { InflatorContext } from "../InflatorFn"
-import { getInflatedSchematicPlacement } from "./getInflatedSchematicPlacement"
 import { getInflatedPcbPlacement } from "./getInflatedPcbPlacement"
 import { inflateFootprintComponent } from "./inflateFootprintComponent"
 
@@ -21,7 +20,7 @@ export function inflateSourceTestPoint(
 
   const testPoint = new TestPoint({
     name: sourceElm.name,
-    ...getInflatedSchematicPlacement(sourceElm, inflatorContext),
+    ...inflatorContext.schematicPlacement,
     // Saved primitives are attached below instead of generating an implied footprint.
     footprint: [],
     displayName: sourceElm.display_name,
