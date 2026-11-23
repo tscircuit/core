@@ -1,4 +1,9 @@
 import { expect, test } from "bun:test"
+import {
+  doSegmentsIntersect,
+  pointToSegmentDistance,
+} from "@tscircuit/math-utils"
+import type { Port } from "lib/components/primitive-components/Port"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("reference divider reproduces a backtracking schematic wire", async () => {
@@ -84,4 +89,50 @@ test("reference divider reproduces a backtracking schematic wire", async () => {
     width: 800,
     height: 1000,
   })
+
+  const referencePorts = [
+    ".R_DRV_REF_TOP > .pin2",
+    ".R_DRV_REF_BOTTOM > .pin1",
+    ".C_DRV_REF > .pin1",
+  ].map((selector) => {
+    const port = circuit.selectOne(selector) as Port
+    return circuit.db.schematic_port.get(port.schematic_port_id!)!
+  })
+  const referenceNet = circuit.db.source_port.get(
+    referencePorts[0]!.source_port_id!,
+  )!.subcircuit_connectivity_map_key
+  const referenceEdges = circuit.db.schematic_trace
+    .list({ subcircuit_connectivity_map_key: referenceNet })
+    .flatMap((trace) => trace.edges)
+  const connectedEdges = new Set(
+    referenceEdges.filter(
+      (edge) =>
+        pointToSegmentDistance(referencePorts[0]!.center, edge.from, edge.to) <
+        1e-6,
+    ),
+  )
+  // Follow touching wires; Set iteration also visits newly reached edges.
+  for (const { from, to } of connectedEdges) {
+    for (const edge of referenceEdges) {
+      if (!doSegmentsIntersect(edge.from, edge.to, from, to)) continue
+      connectedEdges.add(edge)
+    }
+  }
+  for (const port of referencePorts) {
+    expect(
+      [...connectedEdges].some(
+        (edge) =>
+          pointToSegmentDistance(port.center, edge.from, edge.to) < 1e-6,
+      ),
+    ).toBe(true)
+  }
+  const groundPort = circuit.selectOne(".R_DRV_REF_BOTTOM > .pin2") as Port
+  const groundCenter = circuit.db.schematic_port.get(
+    groundPort.schematic_port_id!,
+  )!.center
+  expect(
+    referenceEdges.some(
+      (edge) => pointToSegmentDistance(groundCenter, edge.from, edge.to) < 1e-6,
+    ),
+  ).toBe(false)
 })

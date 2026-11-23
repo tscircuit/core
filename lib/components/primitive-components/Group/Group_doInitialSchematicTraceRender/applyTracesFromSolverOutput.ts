@@ -3,6 +3,7 @@ import {
   type Bounds,
   getBoundFromCenteredRect,
   pointToBoundsDistance,
+  pointToSegmentDistance,
 } from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
 import type { SchematicTrace } from "circuit-json"
@@ -15,8 +16,10 @@ import type { SolverInputContext } from "./createSchematicTraceSolverInputProble
 import { Group } from "../Group"
 import { computeCrossings } from "./compute-crossings"
 import { computeJunctions } from "./compute-junctions"
+import { getConnectedSchematicTracePaths } from "./get-connected-schematic-trace-paths"
 import { type SchematicPortId, asSchematicPortId } from "./port-id-types"
 import { removeOverlappingSameNetCrossingSegments } from "./remove-overlapping-same-net-crossing-segments"
+import type { Point } from "./segment-intersection"
 import {
   removeRedundantTracesToNetLabels,
   type SchematicRoutingTerminal,
@@ -25,6 +28,8 @@ import {
 const debug = Debug("Group_doInitialSchematicTraceRender")
 
 const MAX_PIN_SNAP_GAP = 1.5
+const COLLINEARITY_AREA_TOLERANCE = 1e-12
+const PIN_CONNECTION_DISTANCE_TOLERANCE = 1e-6
 
 /**
  * Adds the internal pin stub omitted by the schematic trace solver.
@@ -35,11 +40,12 @@ const MAX_PIN_SNAP_GAP = 1.5
  * larger gaps, only do so when the projected endpoint lies within the
  * component's routing bounds.
  */
-function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
+export function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
   params: {
     points: Array<{ x: number; y: number }>
     schematicPortIds: SchematicPortId[]
     componentBoundsByPortId: Map<SchematicPortId, Bounds>
+    connectedTracePaths: Point[][]
   },
   db: CircuitJsonUtilObjects,
 ): Array<{ x: number; y: number }> {
@@ -97,6 +103,37 @@ function extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
         pointToBoundsDistance(endpointPoint, bounds) > ALIGN_EPS
       ) {
         continue
+      }
+      const neighbor =
+        endpoint === "start" ? result[1]! : result[result.length - 2]!
+      const towardNeighborX = neighbor.x - endpointPoint.x
+      const towardNeighborY = neighbor.y - endpointPoint.y
+      const extensionX = center.x - endpointPoint.x
+      const extensionY = center.y - endpointPoint.y
+      // The cross product checks collinearity (mm²); the dot product checks
+      // whether the extension goes back toward the neighboring trace point.
+      const doublesBack =
+        Math.abs(towardNeighborX * extensionY - towardNeighborY * extensionX) <=
+          COLLINEARITY_AREA_TOLERANCE &&
+        towardNeighborX * extensionX + towardNeighborY * extensionY > 0
+      // Keep ordinary pin stubs. Only omit a reverse extension when a
+      // physically connected solver path already reaches the pin.
+      if (doublesBack) {
+        const pinAlreadyConnected = params.connectedTracePaths.some((path) =>
+          path.some((point, pointIndex) => {
+            const nextPoint = path[pointIndex + 1] ?? point
+            // Pin-to-wire distance is measured in mm.
+            return (
+              pointToSegmentDistance(center, point, nextPoint) <=
+              PIN_CONNECTION_DISTANCE_TOLERANCE
+            )
+          }),
+        )
+        if (pinAlreadyConnected) {
+          // Neither endpoint should claim this pin, including queued candidates.
+          usedCenters.add(i)
+          continue
+        }
       }
       candidates.push({ endpoint, centerIndex: i, dist })
     }
@@ -213,6 +250,7 @@ export function applyTracesFromSolverOutput(args: {
 
   debug(`Traces inside SchematicTraceSolver output: ${(traces ?? []).length}`)
 
+  const connectedPathsByTracePath = new Map<Point[], Point[][]>()
   for (const solvedTracePath of traces ?? []) {
     const uniquePinIds = Array.from(new Set(solvedTracePath.pinIds ?? []))
     const solvedTraceSchematicPortIds = uniquePinIds.map(asSchematicPortId)
@@ -227,12 +265,29 @@ export function applyTracesFromSolverOutput(args: {
       continue
     }
 
+    let connectedTracePaths = connectedPathsByTracePath.get(points)
+    if (!connectedTracePaths) {
+      connectedTracePaths = getConnectedSchematicTracePaths({
+        tracePath: points,
+        sameNetTracePaths: (traces ?? [])
+          .filter(
+            (trace) =>
+              trace.globalConnNetId === solvedTracePath.globalConnNetId,
+          )
+          .map((trace) => trace.tracePath),
+      })
+      for (const path of connectedTracePaths) {
+        connectedPathsByTracePath.set(path, connectedTracePaths)
+      }
+    }
+
     const snappedPoints =
       extendTraceEndpointsToReachPinsInsideExpandedBoundingBox(
         {
           points,
           schematicPortIds: solvedTraceSchematicPortIds,
           componentBoundsByPortId,
+          connectedTracePaths,
         },
         db,
       )

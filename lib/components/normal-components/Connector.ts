@@ -19,6 +19,7 @@ import { inferCableInsertionCenterForComponent } from "lib/utils/pcb/infer-cable
 import {
   type SchematicBoxDimensions,
   getAllDimensionsForSchematicBox,
+  type PortArrangement,
 } from "lib/utils/schematic/getAllDimensionsForSchematicBox"
 import { getNumericSchPinStyle } from "lib/utils/schematic/getNumericSchPinStyle"
 import { symbols } from "schematic-symbols"
@@ -306,6 +307,19 @@ export class Connector<
     }
 
     return canonicalArrangement
+  }
+
+  /**
+   * Draw a two-pin connector with both pins on one side, like a pin header or
+   * a JST connector with a `standard`. The generic layout would put one pin on
+   * each side, which reads as a horizontal two-terminal part rather than a
+   * connector.
+   */
+  _getDefaultSchematicBoxPortArrangement(
+    pinCount: number,
+  ): PortArrangement | undefined {
+    if (pinCount !== 2) return undefined
+    return { rightSide: { direction: "top-to-bottom", pins: [1, 2] } }
   }
 
   _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
