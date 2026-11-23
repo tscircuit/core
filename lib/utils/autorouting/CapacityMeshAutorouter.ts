@@ -305,18 +305,6 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
     }
   }
 
-  private getSolverFailure(): AutorouterError {
-    const isPathPlanningFailure =
-      this.solver instanceof AutoroutingPipelineSolver9_PreloadedTraceGraph &&
-      this.solver.getCurrentPhase() === "portPointPathingSolver"
-    if (isPathPlanningFailure) {
-      return new AutorouterError(this.solver.error || "Routing failed", {
-        failureStage: "path_planning",
-      })
-    }
-    return new AutorouterError(this.solver.error || "Routing failed")
-  }
-
   private async stepSolver(): Promise<void> {
     if (
       "stepAsync" in this.solver &&
@@ -341,7 +329,7 @@ export class TscircuitAutorouter implements GenericLocalAutorouter {
         if (this.solver.failed) {
           this.emitEvent({
             type: "error",
-            error: this.getSolverFailure(),
+            error: new AutorouterError(this.solver.error || "Routing failed"),
           })
         } else {
           this.emitEvent({
