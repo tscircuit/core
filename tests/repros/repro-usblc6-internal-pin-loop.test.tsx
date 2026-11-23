@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("USBLC6 internally connected pins receive redundant PCB copper", async () => {
+test("USBLC6 internal pin links do not need redundant PCB copper", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={18} height={18} autorouter="auto_local">

@@ -1074,6 +1074,34 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     conn.width ??= connectionDefaultWidth
   }
 
+  // Internal pin links are existing electrical connections, not copper that
+  // the router still needs to create. Keep these separate from the shared
+  // net map: belonging to the same net does not mean two pads are connected.
+  const internallyConnectedSourcePorts = new ConnectivityMap({})
+  internallyConnectedSourcePorts.addConnections(
+    internalConnections.map((connection) => connection.source_port_ids),
+  )
+  for (const sourcePortIds of Object.values(
+    internallyConnectedSourcePorts.netMap,
+  )) {
+    const internalSourcePortIds = new Set(sourcePortIds)
+    for (const connection of allConns) {
+      const pointIds = connection.pointsToConnect.flatMap((point) => {
+        // A breakout endpoint is not the physical pin: its connecting copper
+        // may still need routing within the child subcircuit.
+        if (!point.pcb_port_id || !point.pointId) return []
+        const pcbPort = db.pcb_port.get(point.pcb_port_id)
+        if (!pcbPort || !internalSourcePortIds.has(pcbPort.source_port_id)) {
+          return []
+        }
+        return [point.pointId]
+      })
+      if (pointIds.length < 2) continue
+      connection.externallyConnectedPointIds ??= []
+      connection.externallyConnectedPointIds.push(pointIds)
+    }
+  }
+
   // Count only copper retained in this routing problem. In particular, a
   // discarded imported route must not join otherwise disconnected pours.
   const retainedCopperElements = subcircuitElements.filter((element) => {
