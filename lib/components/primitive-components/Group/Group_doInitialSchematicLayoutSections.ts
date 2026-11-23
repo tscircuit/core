@@ -1,12 +1,15 @@
-import { getCircuitJsonTree } from "@tscircuit/circuit-json-util"
+import type { CircuitJsonTreeNode } from "@tscircuit/circuit-json-util"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
+import type { SchematicSheet } from "circuit-json"
 import Debug from "debug"
 import type { z } from "zod"
 import type { Group } from "./Group"
 
-const debug = Debug("Group_doInitialSchematicLayoutSections")
-import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
+import { applySchematicMatchPackLayoutToTree } from "./applySchematicMatchPackLayoutToTree"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
+
+const debug = Debug("Group_doInitialSchematicLayoutSections")
 
 type SectionBoundsWithChildren = {
   sectionName: string | null
@@ -17,12 +20,29 @@ type SectionBoundsWithChildren = {
 
 export function Group_doInitialSchematicLayoutSections<
   Props extends z.ZodType<any, any, any>,
->(group: Group<Props>): void {
+>(
+  group: Group<Props>,
+  tree: CircuitJsonTreeNode,
+  layoutChildren: PrimitiveComponent[],
+  schematicSheetId?: SchematicSheet["schematic_sheet_id"],
+): void {
   const { db } = group.root!
+
+  // Fully positioned sections already have their final symbol and section bounds.
+  if (
+    layoutChildren.every(
+      (child) =>
+        !child.source_component_id ||
+        child._parsedProps.schX !== undefined ||
+        child._parsedProps.schY !== undefined,
+    )
+  ) {
+    return
+  }
 
   const sectionNamesUsedByChildren = new Set<string>()
   let hasChildrenWithoutSection = false
-  for (const child of group.children) {
+  for (const child of layoutChildren) {
     if (!child.source_component_id) continue
     const sectionName = child.getSchematicSectionName()
     if (sectionName !== null) {
@@ -41,19 +61,20 @@ export function Group_doInitialSchematicLayoutSections<
 
   // Phase 1: lay out components within each section independently
   for (const sectionName of sectionNamesToLayout) {
-    const sectionTree = getCircuitJsonTree(db.toArray(), {
-      source_group_id: group.source_group_id!,
-    })
-    sectionTree.childNodes = sectionTree.childNodes.filter((child) => {
+    const childNodes = tree.childNodes.filter((child) => {
       if (child.nodeType !== "component" || !child.sourceComponent) return false
-      const component = group.children.find(
+      const component = layoutChildren.find(
         (c) =>
           c.source_component_id === child.sourceComponent?.source_component_id,
       )
       const compSection = component?.getSchematicSectionName() ?? null
       return compSection === sectionName
     })
-    applySchematicMatchPackLayoutToTree(group, sectionTree)
+    applySchematicMatchPackLayoutToTree(
+      group,
+      { ...tree, childNodes },
+      { schematicSheetId, layoutChildren },
+    )
   }
 
   if (sectionNamesToLayout.length <= 1) return
@@ -71,7 +92,7 @@ export function Group_doInitialSchematicLayoutSections<
     let maxY = -Infinity
     const sourceCompIds = new Set<string>()
 
-    for (const child of group.children) {
+    for (const child of layoutChildren) {
       const sourceComponentId = child.source_component_id
       if (!sourceComponentId) continue
 
@@ -80,6 +101,7 @@ export function Group_doInitialSchematicLayoutSections<
 
       const schComp = db.schematic_component.getWhere({
         source_component_id: sourceComponentId,
+        ...(schematicSheetId && { schematic_sheet_id: schematicSheetId }),
       })
       if (!schComp) continue
 
@@ -107,7 +129,7 @@ export function Group_doInitialSchematicLayoutSections<
   // Sections containing a manually positioned component are anchored — their
   // position is already set by phase 1 and must not be overridden by row packing.
   const anchoredSections = new Set<string | null>()
-  for (const child of group.children) {
+  for (const child of layoutChildren) {
     if (!child.source_component_id) continue
     const props = (child as any)._parsedProps
     if (props?.schX !== undefined || props?.schY !== undefined) {
@@ -147,6 +169,7 @@ export function Group_doInitialSchematicLayoutSections<
     for (const sourceComponentId of boundsWithChildren.sourceCompIds) {
       const schComp = db.schematic_component.getWhere({
         source_component_id: sourceComponentId,
+        ...(schematicSheetId && { schematic_sheet_id: schematicSheetId }),
       })
       if (!schComp) continue
 
