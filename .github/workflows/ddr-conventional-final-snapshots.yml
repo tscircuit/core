@@ -1,0 +1,42 @@
+name: Update only verified conventional Core snapshots
+on:
+  push:
+    branches: [analysis/conventional-native-negotiation-20261123]
+    paths: [.github/workflows/ddr-conventional-final-snapshots.yml]
+permissions:
+  contents: write
+jobs:
+  snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/native-bus-normal-search-20261123
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Require the reviewed integration head
+        run: test "$(git rev-parse HEAD)" = "a84e16934f05b8d1703bdea21896d2712c1d69db"
+      - run: bun install --backend=copyfile
+      - name: Regenerate and verify the five affected public tests
+        run: |
+          tests=(tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx tests/repros/repro-watchy-duplicate-ground-label-path-export.test.tsx tests/repros/usb-c-breakout-net-pair.test.tsx tests/repros/repro-orangecrab-data-chip-select.test.tsx)
+          BUN_UPDATE_SNAPSHOTS=1 bun test "${tests[@]}" --timeout 120000
+          bun test "${tests[@]}" --timeout 120000
+      - name: Commit only those SVG snapshots without rewriting history
+        run: |
+          python - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          for filename in changed:
+            assert filename.endswith('.snap.svg') and '/__snapshots__/' in filename, filename
+          print('Verified public snapshot changes:',changed)
+          PY
+          git diff --check
+          git add 'tests/components/normal-components/__snapshots__/*.snap.svg' 'tests/repros/__snapshots__/*.snap.svg'
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update snapshots for conventional native routing"
+          git push origin HEAD:refs/heads/fix/native-bus-normal-search-20261123
