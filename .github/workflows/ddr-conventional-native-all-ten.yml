@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/tscircuit-autorouter
-          ref: 6a63e4e58eb3cb3e3667b9452e2ad66941ce19f9
+          ref: 010a35b38bdb4dfadfef478942d1e9c90c8586b3
           path: ar-source
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
