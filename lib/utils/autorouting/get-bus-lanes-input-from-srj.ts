@@ -90,25 +90,26 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
         const spans = (normalized.traces ?? [])
           .filter((trace) => trace.connection_name === connection.name)
           .flatMap((trace) => trace.route)
-          .filter(
-            (routePoint) =>
-              routePoint.route_type === "via" &&
-              Math.hypot(routePoint.x - point.x, routePoint.y - point.y) < 1e-8,
-          )
-          .map(
-            (via) =>
+          .flatMap((via) => {
+            if (
+              via.route_type !== "via" ||
+              !(Math.hypot(via.x - point.x, via.y - point.y) < 1e-8)
+            )
+              return []
+            return [
               via.layers ??
-              boardLayers.slice(
-                Math.min(
-                  boardLayers.indexOf(via.from_layer),
-                  boardLayers.indexOf(via.to_layer),
+                boardLayers.slice(
+                  Math.min(
+                    boardLayers.indexOf(via.from_layer),
+                    boardLayers.indexOf(via.to_layer),
+                  ),
+                  Math.max(
+                    boardLayers.indexOf(via.from_layer),
+                    boardLayers.indexOf(via.to_layer),
+                  ) + 1,
                 ),
-                Math.max(
-                  boardLayers.indexOf(via.from_layer),
-                  boardLayers.indexOf(via.to_layer),
-                ) + 1,
-              ),
-          )
+            ]
+          })
         // Stacked barrels conduct only through a shared physical copper layer.
         const reachable = new Set([point.layer])
         let expanded = true
