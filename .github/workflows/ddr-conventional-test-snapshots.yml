@@ -19,7 +19,7 @@ jobs:
             name: autorouter
           - repository: tscircuit/core
             ref: 70dec82328767172a9eb5184575fdc4d6c6d5fe8
-            tests: tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx
+            tests: tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx tests/repros/repro-watchy-duplicate-ground-label-path-export.test.tsx tests/repros/usb-c-breakout-net-pair.test.tsx
             name: core
     steps:
       - uses: actions/checkout@v4

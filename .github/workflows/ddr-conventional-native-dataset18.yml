@@ -76,7 +76,7 @@ jobs:
           import {createHash} from "node:crypto"
           import path from "node:path"
           const records=[]
-          for(const [revision,expected] of [["base","0.0.1156"],["pr","0.0.1156"]]){
+          for(const [revision,expected] of [["base","0.0.1156"],["pr","0.0.1159"]]){
             const root=path.resolve("same-machine-"+revision,"published-runtime/node_modules/@tscircuit/capacity-autorouter")
             const meta=JSON.parse(readFileSync(root+"/package.json","utf8"))
             if(meta.version!==expected)throw Error("Unexpected package version")
