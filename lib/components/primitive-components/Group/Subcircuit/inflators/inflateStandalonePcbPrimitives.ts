@@ -76,7 +76,6 @@ export function inflateStandalonePcbPrimitives(
   const components = createComponentsFromCircuitJson(
     {
       componentName: "",
-      componentRotation: "0deg",
     },
     standalonePrimitives,
   )

@@ -21,23 +21,20 @@ test("PCB vias emit per-side tenting and migrate legacy imports across footprint
             })
             footprint.add(directVia)
             footprint.add(
-              createComponentsFromCircuitJson(
-                { componentName: "U1", componentRotation: "0" },
-                [
-                  {
-                    type: "pcb_via",
-                    pcb_via_id: "imported_via",
-                    x: 1,
-                    y: 0,
-                    hole_diameter: 0.3,
-                    outer_diameter: 0.6,
-                    layers: ["top", "bottom"],
-                    ...{ is_tented: legacy },
-                    tented_on_top: top,
-                    tented_on_bottom: bottom,
-                  },
-                ],
-              )[0],
+              createComponentsFromCircuitJson({ componentName: "U1" }, [
+                {
+                  type: "pcb_via",
+                  pcb_via_id: "imported_via",
+                  x: 1,
+                  y: 0,
+                  hole_diameter: 0.3,
+                  outer_diameter: 0.6,
+                  layers: ["top", "bottom"],
+                  ...{ is_tented: legacy },
+                  tented_on_top: top,
+                  tented_on_bottom: bottom,
+                },
+              ])[0],
             )
             circuit.add(
               <board width={10} height={10}>

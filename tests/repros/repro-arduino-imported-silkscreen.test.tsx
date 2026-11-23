@@ -48,7 +48,7 @@ beforeAll(async () => {
   })
 }, 30_000)
 
-test.failing("Arduino Uno retains native KiCad front-silkscreen angles", () => {
+test("Arduino Uno retains native KiCad front-silkscreen angles", () => {
   expect(
     circuit.db.pcb_silkscreen_text
       .list()

@@ -26,10 +26,9 @@ test("Circuit JSON fabrication path flags survive component reconstruction", asy
     is_filled: true,
     has_stroke: false,
   }
-  const primitives = createComponentsFromCircuitJson(
-    { componentName: "U1", componentRotation: "0deg" },
-    [path],
-  )
+  const primitives = createComponentsFromCircuitJson({ componentName: "U1" }, [
+    path,
+  ])
   const footprint = new Footprint({})
   for (const primitive of primitives) footprint.add(primitive)
   footprint.add(

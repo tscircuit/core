@@ -37,7 +37,6 @@ export const createErOled096ConnectorFootprint = (
     createComponentsFromCircuitJson(
       {
         componentName: "ER_OLED096_1_3W_FPC",
-        componentRotation: "0",
         footprinterString: ER_OLED096_1_3W_CONNECTOR_FOOTPRINT,
       },
       circuitJson,

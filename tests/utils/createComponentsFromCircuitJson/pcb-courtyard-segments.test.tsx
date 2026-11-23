@@ -33,7 +33,7 @@ test("legacy courtyard segments join into closed polygons without changing layer
   }
   const interleaved = [0, 4, 1, 5, 2, 6, 3, 7].map((index) => records[index])
   const original = structuredClone(interleaved)
-  const options = { componentName: "U1", componentRotation: "0" }
+  const options = { componentName: "U1" }
   const footprint = new Footprint({})
   footprint.addAll(createComponentsFromCircuitJson(options, interleaved))
   expect(interleaved).toEqual(original)

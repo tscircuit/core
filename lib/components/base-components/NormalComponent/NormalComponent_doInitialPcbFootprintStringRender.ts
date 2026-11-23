@@ -94,7 +94,7 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
 
   if (!footprint) return
 
-  const { pcbRotation, pcbPinLabels } = component.props
+  const { pcbPinLabels } = component.props
   const pinLabels = component._resolvePinLabels()
   const fileExtension = getFileExtension(String(footprint))
   const footprintParser = fileExtension
@@ -120,7 +120,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             sourcePortOwner: component,
             componentName: component.name,
-            componentRotation: pcbRotation,
             footprinterString: footprintUrl,
             pinLabels,
             pcbPinLabels,
@@ -174,7 +173,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             sourcePortOwner: component,
             componentName: component.name,
-            componentRotation: pcbRotation,
             footprinterString: url,
             pinLabels,
             pcbPinLabels,
@@ -257,7 +255,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
           {
             sourcePortOwner: component,
             componentName: component.name,
-            componentRotation: pcbRotation,
             footprinterString: footprint,
             pinLabels,
             pcbPinLabels,
@@ -330,7 +327,6 @@ export function NormalComponent_doInitialPcbFootprintStringRender(
         {
           sourcePortOwner: component,
           componentName: component.name,
-          componentRotation: pcbRotation,
           footprinterString: "",
           pinLabels,
           pcbPinLabels,

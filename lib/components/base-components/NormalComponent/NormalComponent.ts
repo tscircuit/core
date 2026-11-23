@@ -688,7 +688,7 @@ export class NormalComponent<
   }
 
   _addChildrenFromStringFootprint() {
-    const { pcbRotation, pcbPinLabels } = this.props
+    const { pcbPinLabels } = this.props
     const pinLabels = this._resolvePinLabels()
     const footprint = this.resolveFootprint()
     if (!footprint) return
@@ -709,7 +709,6 @@ export class NormalComponent<
         {
           sourcePortOwner: this,
           componentName: this.name ?? this.componentName,
-          componentRotation: pcbRotation,
           footprinterString: footprint,
           pinLabels,
           pcbPinLabels,
@@ -743,7 +742,6 @@ export class NormalComponent<
       {
         sourcePortOwner: this,
         componentName: this.name ?? this.componentName,
-        componentRotation: String(this.props.schRotation ?? 0),
       },
       symbolCircuitJson,
     )

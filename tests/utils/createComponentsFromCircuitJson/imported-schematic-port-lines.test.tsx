@@ -12,7 +12,6 @@ test("createComponentsFromCircuitJson draws imported schematic port stems toward
   const components = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
     },
     [
       {
@@ -61,7 +60,6 @@ test("createComponentsFromCircuitJson preserves body-edge-centered imported sche
   const components = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
     },
     [
       {
@@ -109,7 +107,6 @@ test("createComponentsFromCircuitJson uses imported symbol stroke width for sche
   const components = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
     },
     [
       {

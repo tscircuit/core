@@ -11,7 +11,6 @@ test("createComponentsFromCircuitJson preserves imported pcb_courtyard_rect rota
   const importedComponents = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
     },
     [
       {

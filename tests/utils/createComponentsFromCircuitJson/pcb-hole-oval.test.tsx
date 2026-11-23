@@ -7,7 +7,6 @@ test("createComponentsFromCircuitJson handles oval pcb_hole elements", () => {
   const components = createComponentsFromCircuitJson(
     {
       componentName: "test_component",
-      componentRotation: "0",
     },
     [
       {

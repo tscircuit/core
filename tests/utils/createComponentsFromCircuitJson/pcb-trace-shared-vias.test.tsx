@@ -53,7 +53,7 @@ test("imported traces reuse unassociated and shared vias at the same position an
       outer_diameter: 0.8,
     } satisfies PcbVia
     for (const primitive of createComponentsFromCircuitJson(
-      { componentName: "", componentRotation: "0" },
+      { componentName: "" },
       [...traces, via],
     )) {
       board.add(primitive)

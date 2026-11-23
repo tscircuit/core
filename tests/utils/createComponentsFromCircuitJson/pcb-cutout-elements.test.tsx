@@ -19,7 +19,6 @@ test("createComponentsFromCircuitJson handles pcb_cutout elements", () => {
   const components = createComponentsFromCircuitJson(
     {
       componentName: "m2host",
-      componentRotation: "0",
       footprinterString: "m2host",
       pinLabels: {},
     },
