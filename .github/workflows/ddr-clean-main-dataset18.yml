@@ -23,15 +23,16 @@ jobs:
           test "$(git rev-parse HEAD)" = "ed52af82d5a58845bd199f14777475e7c0e054ed"
           bun install --backend=copyfile
           bun run build
-          npm pack --ignore-scripts --pack-destination ..
-          mv ../tscircuit-capacity-autorouter-*.tgz ../native-runtime.tgz
-          sha256sum dist/index.js > ../main-runtime.sha256
+          mkdir -p main-runtime
+          npm pack --ignore-scripts --pack-destination main-runtime
+          mv main-runtime/tscircuit-capacity-autorouter-*.tgz main-runtime/native-runtime.tgz
+          sha256sum dist/index.js > main-runtime/main-runtime.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: clean-comparison-main-runtime
           path: |
-            ../native-runtime.tgz
-            ../main-runtime.sha256
+            main-runtime/native-runtime.tgz
+            main-runtime/main-runtime.sha256
   benchmark:
     needs: build-main-runtime
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm

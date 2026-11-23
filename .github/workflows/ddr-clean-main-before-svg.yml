@@ -1,0 +1,79 @@
+name: Capture A13 before the fix on current Core main
+on:
+  push:
+    branches: [analysis/conventional-native-negotiation-20261123]
+    paths: [.github/workflows/ddr-clean-main-before-svg.yml]
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fb593ed8491b36c3cd80c818d0824668a5ba11e0
+          path: core-main
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d90319f29d71133225a9027b5c64132e3cc726af
+          path: repro-fixture
+          sparse-checkout: tests/fixtures/a13-full-ddr
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Use the unchanged public repro with main product code
+        run: |
+          cp -R repro-fixture/tests/fixtures/a13-full-ddr core-main/tests/fixtures/
+          python - <<'PY'
+          import json,pathlib,urllib.request
+          response=urllib.request.urlopen('https://registry.npmjs.org/tscircuit/0.0.3279')
+          published=json.load(response)
+          p=pathlib.Path('core-main/package.json');package=json.loads(p.read_text())
+          for section in ['dependencies','devDependencies']:
+            for name in package.get(section,{}):
+              if name in published['dependencies']:package[section][name]=published['dependencies'][name].lstrip('^~')
+          package['devDependencies'].update({'@tscircuit/checks':'0.0.282','@tscircuit/capacity-autorouter':'0.0.1156','@tscircuit/fanout-solver':'0.0.104','@tscircuit/bus-lanes-solver':'https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.65.tgz'})
+          p.write_text(json.dumps(package,indent=2)+'\n')
+          PY
+          cat > core-main/tests/repros/a13-current-main-before.private.test.tsx <<'TS'
+          import { expect, test } from "bun:test"
+          import { A13FullDdrBoard } from "tests/fixtures/a13-full-ddr/board"
+          import { getTestFixture } from "tests/fixtures/get-test-fixture"
+
+          test("capture the unchanged A13 repro on current main", async (): Promise<void> => {
+            const { circuit } = getTestFixture()
+            circuit.add(<A13FullDdrBoard />)
+            await circuit.renderUntilSettled()
+            console.log("A13_MAIN_SVG_RESULT="+JSON.stringify({autoroutingErrors:circuit.db.pcb_autorouting_error.list().length,traceCount:circuit.db.pcb_trace.list().length}))
+            await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+              backgroundColor: "white", width: 1400, height: 1000,
+              shouldDrawErrors: false, shouldDrawRatsNest: false,
+              showPcbGroups: false, showDebugObjects: false,
+            })
+          }, 600_000)
+          TS
+      - run: bun install --backend=copyfile
+        working-directory: core-main
+      - run: BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/a13-current-main-before.private.test.tsx --timeout 120000
+        working-directory: core-main
+      - name: Publish only the generated public test SVG to the analysis branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import pathlib,json,base64,subprocess
+          source=pathlib.Path('core-main/tests/repros/__snapshots__/a13-current-main-before.private-pcb.snap.svg')
+          assert source.exists()
+          filename='tests/repros/__snapshots__/a13-main-fb593ed8-before.snap.svg'
+          branch='analysis/conventional-native-negotiation-20261123'
+          data={'message':'Capture unchanged A13 board on current main','content':base64.b64encode(source.read_bytes()).decode(),'branch':branch}
+          current=subprocess.run(['gh','api','repos/tscircuit/core/contents/'+filename+'?ref='+branch],capture_output=True,text=True)
+          if current.returncode==0:data['sha']=json.loads(current.stdout)['sha']
+          pathlib.Path('publish-svg.private.json').write_text(json.dumps(data))
+          result=subprocess.run(['gh','api','--method','PUT','repos/tscircuit/core/contents/'+filename,'--input','publish-svg.private.json'],capture_output=True,text=True,check=True)
+          response=json.loads(result.stdout)
+          print('MAIN_BEFORE_SVG='+json.dumps({'path':filename,'commit':response['commit']['sha'],'blob':response['content']['sha'],'main':'fb593ed8491b36c3cd80c818d0824668a5ba11e0'}))
+          PY
