@@ -1,3 +1,4 @@
+import { PcbNoteText } from "lib/components"
 import { getTestFixture } from "./get-test-fixture"
 import supplierFootprint from "./parts/C916374.circuit.json"
 import type { AnyCircuitElement } from "circuit-json"
@@ -35,12 +36,12 @@ export const getCanonicalSupplierOrientationBoard = async () => {
   for (const pcb of circuit.db.pcb_component.list()) {
     const source = circuit.db.source_component.get(pcb.source_component_id)!
     board.add(
-      <pcbnotetext
-        text={`${source.name}: ${pcb.layer} ${pcb.rotation}deg\n${pcb.pin1_location}`}
-        pcbX={pcb.center.x}
-        pcbY={pcb.center.y - 3.5}
-        fontSize={0.65}
-      />,
+      new PcbNoteText({
+        text: `${source.name}: ${pcb.layer} ${pcb.rotation}deg\n${pcb.pin1_location}`,
+        pcbX: pcb.center.x,
+        pcbY: pcb.center.y - 3.5,
+        fontSize: 0.65,
+      }),
     )
   }
   await circuit.renderUntilSettled()

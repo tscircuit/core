@@ -35,7 +35,6 @@ test.failing(
                   <footprint originalLayer={originalLayer}>
                     {pads.map((pad) => (
                       <smtpad
-                        key={pad.pcb_smtpad_id}
                         portHints={pad.port_hints}
                         // A native-bottom source already contains the physical
                         // X reflection. Both sources describe identical pads.
