@@ -4,7 +4,7 @@ import { getTestFixture } from "tests/fixtures/get-test-fixture"
 const { circuit } = getTestFixture()
 const pasteMargin = {
   solderPasteMargin: 0,
-  solderPasteMarginRatio: { x: -0.05, y: -0.1 },
+  solderPasteMarginRatio: -0.05,
 }
 
 beforeAll(async () => {
@@ -101,7 +101,7 @@ beforeAll(async () => {
       />
       <pcbnotetext text="TLV75533 3.3 V regulator" pcbY={3.8} fontSize={0.45} />
       <pcbnotetext
-        text="U1 paste: local X -5%, Y -10% per side; 0.54 x 0.88 mm"
+        text="U1 paste: -5% per edge; local aperture 0.54 x 0.99 mm"
         pcbY={-3.6}
         fontSize={0.3}
       />
@@ -116,7 +116,7 @@ beforeAll(async () => {
 })
 
 test.failing(
-  "TLV75533 paste ratios follow the pad axes through a 90 degree placement",
+  "TLV75533 relative paste margins follow a 90 degree placement",
   () => {
     const regulator = circuit.selectOne(".U1")!
     const apertures = circuit.db.pcb_solder_paste
@@ -126,7 +126,7 @@ test.failing(
     for (const aperture of apertures) {
       if (aperture.shape !== "rect")
         throw new Error("Expected rectangular paste")
-      expect(aperture.width).toBeCloseTo(0.88)
+      expect(aperture.width).toBeCloseTo(0.99)
       expect(aperture.height).toBeCloseTo(0.54)
       expect(aperture.layer).toBe("top")
     }
