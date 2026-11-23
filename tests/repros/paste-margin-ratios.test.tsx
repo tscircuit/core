@@ -115,7 +115,7 @@ beforeAll(async () => {
   })
 })
 
-test.failing(
+test(
   "TLV75533 relative paste margins follow a 90 degree placement",
   () => {
     const regulator = circuit.selectOne(".U1")!

@@ -136,15 +136,23 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste =
       !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
-    // solderPasteMargin is absolute per side. A pad without one uses its
-    // board's defaultSolderPasteMargin, else the aperture keeps the default
-    // 0.7 scale
+    // Margins apply per side in mm; ratios use the pad's local width/height.
+    // Without either margin, preserve the existing 0.7 aperture scale.
     const solderPasteMargin =
       props.solderPasteMargin ??
       this._getBoard()?._parsedProps.defaultSolderPasteMargin
-    const getSolderPasteSize = (padSize: number, marginScale = 2): number =>
-      solderPasteMargin !== undefined
-        ? Math.max(padSize + marginScale * solderPasteMargin, 0)
+    const getSolderPasteSize = (
+      padSize: number,
+      marginScale = 2,
+      marginRatio?: number,
+    ): number =>
+      solderPasteMargin !== undefined || marginRatio !== undefined
+        ? Math.max(
+            padSize +
+              marginScale *
+                ((solderPasteMargin ?? 0) + padSize * (marginRatio ?? 0)),
+            0,
+          )
         : padSize * 0.7
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
@@ -251,8 +259,20 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRect) as PcbSmtPadRect
       }
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const localPasteWidth = getSolderPasteSize(
+        props.width,
+        2,
+        props.solderPasteMarginRatio?.x,
+      )
+      const localPasteHeight = getSolderPasteSize(
+        props.height,
+        2,
+        props.solderPasteMarginRatio?.y,
+      )
+      const pasteWidth = isRotated90Degrees ? localPasteHeight : localPasteWidth
+      const pasteHeight = isRotated90Degrees
+        ? localPasteWidth
+        : localPasteHeight
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0) {
         if (pcb_smtpad.shape === "rect") {
           db.pcb_solder_paste.insert({
@@ -310,8 +330,16 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
 
-      const pasteWidth = getSolderPasteSize(pcb_smtpad.width)
-      const pasteHeight = getSolderPasteSize(pcb_smtpad.height)
+      const pasteWidth = getSolderPasteSize(
+        pcb_smtpad.width,
+        2,
+        props.solderPasteMarginRatio?.x,
+      )
+      const pasteHeight = getSolderPasteSize(
+        pcb_smtpad.height,
+        2,
+        props.solderPasteMarginRatio?.y,
+      )
       if (shouldCreateSolderPaste && pasteWidth > 0 && pasteHeight > 0)
         db.pcb_solder_paste.insert({
           layer: pcbLayer,
