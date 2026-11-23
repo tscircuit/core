@@ -1,0 +1,68 @@
+name: Accept the final all-ten cleanup with matching hash formats
+on:
+  push:
+    branches: [analysis/conventional-native-negotiation-20261123]
+    paths: [.github/workflows/ddr-conventional-final-acceptance.yml]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for all existing board measurements
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,time,urllib.request
+          url='https://api.github.com/repos/tscircuit/core/actions/runs/45134115769'
+          for attempt in range(140):
+            request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(request)as response:run=json.load(response)
+            if run['status']=='completed':break
+            time.sleep(10)
+          else:raise RuntimeError('Measurements did not complete')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-trace-layer-mask-*
+          path: measured
+          run-id: 45134115769
+          github-token: ${{ github.token }}
+      - name: Verify every unchanged input and complete copper record
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          controls=json.loads("{\"h616\":{\"connected\":53,\"requested\":53,\"raw\":\"1dfe5e2cd1b6dc6709a6277ac8f807000973a2ed9cf189c5ea6bb9114f00f98e\",\"fixture\":\"64aacd287e030ccced3c4351d7db984d0df0a23c4f59a335a4289ee8dc377b82\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"db8e42f76e1b20b51df68f3fc45173734a7087d20cf6ab735bdaf2e6db6b5bc5\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"07a62db0f254af3610389471c25c1b6f329a471f076bd902e68334c15c3c218a\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"521e7931df2d0f30342ac5e6687419c395224fb84000d394904e559d81e78afa\",\"fixed\":0,\"editable\":16,\"layerDomains\":16}]},\"orangecrab\":{\"connected\":50,\"requested\":50,\"raw\":\"5d8e0038ea47cee149b2e7a3d29b2210029c2583b36b9ae4f4e4e8b10bfa1e62\",\"fixture\":\"d4b802885c286637ea8d7166c49ba0c8d14056d8e86eb95c483abb5fe82c5e31\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"057052f56372248e2e32d055e85ce9c3c1ccaf306ebadbf8f0022175975b9238\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"0f4ae164987445090b3ac669be45b6295f5ab5db6ab17acbd79c9ef789a060e3\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"e849e298c165a776c6361a946a8e8b705a047fdbb002127f4b0e7c7391dbd135\",\"fixed\":0,\"editable\":16,\"layerDomains\":16}]},\"icepi\":{\"connected\":50,\"requested\":50,\"raw\":\"82d26472cc2b4f642da75b859af16b4263e0ad2db39397d829ea945a003410c0\",\"fixture\":\"b57d74e13dce25c63176a709ec9943be3d6c56188e65f6f05acec0622b54072d\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"51e21417dbd56c1164836d00bd0c9e2cfd025f8dd10cc946eb87d119a5b82efe\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"7648ba83f5953b0f0061bad34dc4f1b8989bf15118299f492e612b6d6cd4562c\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"cde2c652fff3d94882f9c74fe68cd6d3a3f20e1231aa605d4524d50979b7d8b1\",\"fixed\":0,\"editable\":16,\"layerDomains\":16}]},\"glider\":{\"connected\":49,\"requested\":49,\"raw\":\"c8e400d12ffe7f0150dc23f4e784a73e6eff609d197ba14a353840128cf3442e\",\"fixture\":\"fc9a6ee9257dbbc3007eb0e5c779d2396a54592a0c1cfd2c63e466c9ccb053d0\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"34f1b01184e51be169783d85f59e0f7867cc2e7b124aac8c6859c9d2f4078806\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"800b7db78c970d38cd1319cdc60cb2a8e457f42cc63c48457779ccf2b65772f6\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"f5a5bbd065dd8d65021e7584aa0c993ea66e3ce7ea2fa5e38d5ccbdfea43c08a\",\"fixed\":0,\"editable\":16,\"layerDomains\":16}]},\"imx6\":{\"connected\":53,\"requested\":53,\"raw\":\"aca2cf778d47ecd662702c8274b899a5ed6c27d8db409c8b43fc96cfa8c4c3dd\",\"fixture\":\"285fb424a345174cf4da3da44726d47a212bb0e59e8850d40a5ff14f254b1c3d\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"69588479112d5b8111afd918430e1995c0feeb3eaa3cea632866af55d1b9c8c5\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"6fdb097c8c6b38d2da18f89fd6b99505b246364fd17fe8f233d06b64ac91d086\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"8ff1dcab862ac6813589ac94ff60d6b6b9c4b55755278354c0dc93928841072b\",\"fixed\":2,\"editable\":15,\"layerDomains\":15}]},\"a64\":{\"connected\":75,\"requested\":75,\"raw\":\"6e0a8847e3bd8a3226cf98f8dd30f0cf6dc7840cbdab4c82173e16520bc438e3\",\"fixture\":\"17a66f8fd13ade81aa3b504928ffd77451e50968934ade42671d74b9009b965f\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"81a5ecd1e6a20f7e4e4906d81210219455cf57166ec255df396e7795bbb4bb61\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"8af9a48f9d541419fce64d52207582d8e27374a0502a36ea67117790ca13f73e\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"4da7b941a5417a047c816ba65bff0486f470808f93cdbdcbc84089ab56c74cd5\",\"fixed\":16,\"editable\":0,\"layerDomains\":16},{\"file\":\"actual-solver-5.srj.json\",\"sha256\":\"ca66239884885ae32f018e3e8bc24aa8434671a5a6aff936d7eced9b23ea9e03\",\"fixed\":24,\"editable\":0,\"layerDomains\":24},{\"file\":\"actual-solver-6.srj.json\",\"sha256\":\"e2196adefc542752ffe9cc37800dbf683be346eee2200540e3250c60ceedaf46\",\"fixed\":0,\"editable\":32,\"layerDomains\":32}]},\"stmp157\":{\"connected\":72,\"requested\":72,\"raw\":\"7000e5be299354960eda4ca20d9194f53053a89d0ec114cb89051b9dcde8320b\",\"fixture\":\"f1ec2b8820d0a2cc68c2e92fd092f17f268548d15d8a6ffca9489dd8ebfc87e1\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"9f875de4eac1445fbb83036631d4e24458739b259c1a61dcd1fbc1ef12958da5\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"547108a0777b558c06b348c46496e703e48b6c99e5db71244971840319a04ce0\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"d72d3f4c79f774141c627048f5499c01eba2e16d831c28ea64e467a90641386c\",\"fixed\":16,\"editable\":0,\"layerDomains\":16},{\"file\":\"actual-solver-5.srj.json\",\"sha256\":\"70c63b0c0ab4279de57b7e02fdf15f884d172f481509b4118cc1faf58be2bdef\",\"fixed\":24,\"editable\":0,\"layerDomains\":24},{\"file\":\"actual-solver-6.srj.json\",\"sha256\":\"136801923aed5de252b4ca8a49ffad3dc965c01791e8e8c8cd5f6770b6002ef6\",\"fixed\":0,\"editable\":32,\"layerDomains\":32}]},\"h3\":{\"connected\":16,\"requested\":53,\"raw\":\"6c6ac8010ec82a7299b32d6aac2413caf8bab9b079016d014a5dd0bb0f4aeb1b\",\"fixture\":\"5eb3790b04c95ea93001e979bc8d4823b43573532d899a94588a946a5176a209\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"369d2050bf26ea9aa98a9b8dd4c7fb0df26d3dc85b1324a1f6c0af2a23b4bab7\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"1d7319b6ef852c5ecd6f085fc70043ac6e9fad1350165445f4a3271a594540a4\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"4a939696c8bb46213b3944ad2ada3b8fef6117743df3dae4f8f69532a98ba2aa\",\"fixed\":0,\"editable\":16,\"layerDomains\":16}]},\"a13\":{\"connected\":96,\"requested\":96,\"raw\":\"63b837a4f13ec4d2cd958c688e2527fd39de185b651a262bc69b5da641c07a9d\",\"fixture\":\"1d2f7904d70200afa2827079a2f5c82463bea147b5917354c0c0cecdb1f7e011\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"4b11f950a5bd421ca025bd5b98a61a9a36e44c7a0cc672250ea5f49e6f1efb04\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"e8159454b43a0161cb9c7ab909e3e9e3508a8ede4bacaa05b7b3e202eb0a4359\",\"fixed\":8,\"editable\":0,\"layerDomains\":8},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"13523e74948df55f90f76a6c4d0ba012f88840f9684af208994998d658089e28\",\"fixed\":16,\"editable\":0,\"layerDomains\":16},{\"file\":\"actual-solver-5.srj.json\",\"sha256\":\"fd0d19af4e7e18fb2633b39924db3636aa90bdd4f7cb0d212de96f7133a11d86\",\"fixed\":24,\"editable\":0,\"layerDomains\":24},{\"file\":\"actual-solver-6.srj.json\",\"sha256\":\"017f37fd84a7cc2647acb48978f4cc0c92bf0b76882955333200918364aad299\",\"fixed\":0,\"editable\":32,\"layerDomains\":32}]},\"butterstick\":{\"connected\":55,\"requested\":55,\"raw\":\"056fddfadfa5411d69b40db9ec92139bf49df32f77859ee766873f3d9c496c85\",\"fixture\":\"3d3b3eed75a4638259c4d139f61be5ad9140fd13ec401bf6e2d17d2940aaee59\",\"inputs\":[{\"file\":\"actual-solver-2.srj.json\",\"sha256\":\"2b93532bb5fff7a30292a9b15620b063e93509ddd52d73949e3caa19bd81f2ef\",\"fixed\":0,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-3.srj.json\",\"sha256\":\"3f006c20fe9904db7b9032cd145c4d7dd90d34d53255ff67a71c2bf4d9c6f909\",\"fixed\":16,\"editable\":0,\"layerDomains\":0},{\"file\":\"actual-solver-4.srj.json\",\"sha256\":\"30f47a4702887d95e4af4bbe4a59ec1ed8511bcf4bb61b0bae463c80c6625829\",\"fixed\":32,\"editable\":0,\"layerDomains\":0}]}}")
+          rows=[]
+          for filename in pathlib.Path('measured').rglob('comparison.json'):
+            rows.extend(json.loads(filename.read_text()))
+          assert len(rows)==10,len(rows)
+          assert set(row['circuit']for row in rows)==set(controls)
+          for row in rows:
+            expected=controls[row['circuit']]
+            assert row['connected']==expected['connected'],row['circuit']
+            assert row['requested']==expected['requested'],row['circuit']
+            assert row['physicalFindings']==0 and row['geometryErrorCount']==0,row['circuit']
+            assert row['fixtureHash']==expected['fixture'],row['circuit']
+            assert row['actualSolverInputs']==expected['inputs'],row['circuit']
+            assert row['copperSha256']==expected['raw'],row['circuit']
+            assert row['executedAutorouterSha256']=='5bd4f9e8c3ebb7eae122b512ebe3d279153a2613896c170471999e093151f1f1'
+            assert row['coreGroupSourceSha256']=='8ad729180c05fdd8405fa2c4e781f0e092f2388c0105248f94c45d906bfa16c1'
+          assert sum(row['connected']for row in rows)==569
+          result={'connected':569,'requested':606,'complete':sum(row['connected']==row['requested']for row in rows),'identicalCompleteCopperRecords':10,'physicalFindings':0,'layerFindings':0,'rows':rows}
+          pathlib.Path('accepted-cleanup.json').write_text(json.dumps(result,indent=2))
+          print('ACCEPTED_FINAL_NATIVE_CLEANUP='+json.dumps({key:value for key,value in result.items()if key!='rows'}))
+          for row in rows:print('ACCEPTED_FINAL_BOARD='+json.dumps(row))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accepted-conventional-cleanup
+          path: accepted-cleanup.json
+      - name: Stop the now redundant replay benchmark
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST repos/tscircuit/core/actions/runs/45134702557/cancel || true
