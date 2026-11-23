@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicCircleProps } from "@tscircuit/props"
 import {
@@ -23,7 +24,7 @@ export class SchematicCircle extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -33,8 +34,8 @@ export class SchematicCircle extends PrimitiveComponent<
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
-    const schematic_circle = this._insertSchematicGeometry({
-      type: "schematic_circle",
+    const schematic_circle = db.schematic_circle.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id,
       schematic_symbol_id,
       center: {
@@ -63,8 +64,8 @@ export class SchematicCircle extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { schematicLayout } = this.root!
-    const circle = schematicLayout.circle.get(this.schematic_circle_id)
+    const { db } = this.root!
+    const circle = db.schematic_circle.get(this.schematic_circle_id)
     if (!circle) return
 
     const newCenter = applyToPoint(transform, circle.center)
@@ -78,7 +79,7 @@ export class SchematicCircle extends PrimitiveComponent<
       edgePoint.y - newCenter.y,
     )
 
-    schematicLayout.circle.update(this.schematic_circle_id, {
+    db.schematic_circle.update(this.schematic_circle_id, {
       center: { x: newCenter.x, y: newCenter.y },
       radius: newRadius,
     })

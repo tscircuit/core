@@ -2,14 +2,7 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
-import type {
-  SchematicGeometryRecord,
-  SchematicGeometryInput,
-} from "lib/utils/schematic/schematic-geometry"
-import {
-  convertSchematicLengthUnit,
-  getSchematicLengthUnitScale,
-} from "@tscircuit/circuit-json-util"
+import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
 import {
   DEFAULT_SCHEMATIC_LENGTH_UNIT,
   LEGACY_SCHEMATIC_LENGTH_UNIT,
@@ -827,26 +820,8 @@ export abstract class PrimitiveComponent<
     return (
       this._parsedProps?.defaultSchematicLengthUnit ??
       this.parent?._getSchematicLengthUnit?.() ??
-      this.root?.inheritedSchematicLengthUnit ??
       DEFAULT_SCHEMATIC_LENGTH_UNIT
     )
-  }
-
-  /** Write schematic-world geometry (+X right, +Y up) from layout drawing units into the component's declared unit. */
-  _insertSchematicGeometry<K extends SchematicGeometryRecord["type"]>(
-    geometry: SchematicGeometryInput<K>,
-    {
-      unit = this._getSchematicLengthUnit(),
-    }: { unit?: SchematicLengthUnit } = {},
-  ): Extract<SchematicGeometryRecord, { type: K }> {
-    const record = convertSchematicLengthUnit(
-      geometry as unknown as SchematicGeometryRecord,
-      unit,
-    )
-    return this.root!.db.insert(record) as Extract<
-      SchematicGeometryRecord,
-      { type: K }
-    >
   }
 
   /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */

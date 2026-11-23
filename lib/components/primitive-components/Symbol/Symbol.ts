@@ -96,7 +96,7 @@ export class SymbolComponent
   private _computeSchematicSymbolBounds(): void {
     if (this.root?.schematicDisabled) return
 
-    const { schematicLayout } = this.root!
+    const { db } = this.root!
     const { viewbox } = this._parsedProps
     if (viewbox) {
       // viewbox defines the local symbol coordinate space (+X right, +Y up, mm).
@@ -122,7 +122,7 @@ export class SymbolComponent
       if (child.componentName === "Port") {
         const portId = (child as Port).schematic_port_id
         if (portId) {
-          const port = schematicLayout.port.get(portId)
+          const port = db.schematic_port.get(portId)
           if (port) schematicElements.push(port)
         }
         continue
@@ -131,27 +131,27 @@ export class SymbolComponent
       if (!child.isSchematicPrimitive) continue
 
       if (child.componentName === "SchematicLine") {
-        const line = schematicLayout.line.get((child as any).schematic_line_id)
+        const line = db.schematic_line.get((child as any).schematic_line_id)
         if (line) schematicElements.push(line)
       } else if (child.componentName === "SchematicRect") {
-        const rect = schematicLayout.rect.get((child as any).schematic_rect_id)
+        const rect = db.schematic_rect.get((child as any).schematic_rect_id)
         if (rect) schematicElements.push(rect)
       } else if (child.componentName === "SchematicCircle") {
-        const circle = schematicLayout.circle.get(
+        const circle = db.schematic_circle.get(
           (child as any).schematic_circle_id,
         )
         if (circle) schematicElements.push(circle)
       } else if (child.componentName === "SchematicArc") {
-        const arc = schematicLayout.arc.get((child as any).schematic_arc_id)
+        const arc = db.schematic_arc.get((child as any).schematic_arc_id)
         if (arc) schematicElements.push(arc)
       } else if (child.componentName === "SchematicText") {
-        const text = schematicLayout.text.get((child as any).schematic_text_id)
+        const text = db.schematic_text.get((child as any).schematic_text_id)
         if (text) schematicElements.push(text)
       } else if (child.componentName === "SchematicPath") {
         const pathIds = (child as any).schematic_path_ids as string[]
         if (pathIds) {
           for (const pathId of pathIds) {
-            const path = schematicLayout.path.get(pathId)
+            const path = db.schematic_path.get(pathId)
             if (path) schematicElements.push(path)
           }
         }

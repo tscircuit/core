@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type {
@@ -290,13 +291,13 @@ export class Port extends PrimitiveComponent<typeof portProps> {
   }
 
   _getGlobalSchematicPositionAfterLayout(): { x: number; y: number } {
-    const { schematicLayout } = this.root!
+    const { db } = this.root!
     if (!this.schematic_port_id) {
       throw new Error(
         `Can't get schematic port position after layout for "${this.getString()}", no schematic_port_id`,
       )
     }
-    const schematic_port = schematicLayout.port.get(this.schematic_port_id)!
+    const schematic_port = db.schematic_port.get(this.schematic_port_id)!
     if (!schematic_port)
       throw new Error(
         `Schematic port not found when trying to get post-layout position: ${this.schematic_port_id}`,
@@ -694,6 +695,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const collapsedAncestor = this.getCollapsedSchematicBoxAncestor()
     if (collapsedAncestor && this.parent !== collapsedAncestor) return
 
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const { schX, schY } = props
@@ -716,15 +718,16 @@ export class Port extends PrimitiveComponent<typeof portProps> {
 
     // For each obstacle, create a schematic_debug_object
     if (this.getSubcircuit().props._schDebugObjectsEnabled) {
-      const obstacle = {
-        type: "schematic_debug_object" as const,
-        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
-        shape: "rect" as const,
+      db.schematic_debug_object.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+        shape: "rect",
         center: portCenter,
-        size: { width: 0.1, height: 0.1 },
+        size: {
+          width: 0.1,
+          height: 0.1,
+        },
         label: "obstacle",
-      }
-      this._insertSchematicGeometry(obstacle)
+      } as any) // TODO issue with discriminated union
     }
 
     const isExplicitCustomSymbolPort =
@@ -767,7 +770,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           : props.schPinLabelFontSize
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
-      subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,
@@ -792,9 +795,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       }
     }
 
-    const schematic_port = this._insertSchematicGeometry(
-      schematicPortInsertProps,
-    )
+    const schematic_port = db.schematic_port.insert(schematicPortInsertProps)
 
     this.schematic_port_id = schematic_port.schematic_port_id
 
@@ -810,8 +811,8 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       else if (direction === "up") y2 -= schStemLength
       else if (direction === "down") y2 += schStemLength
 
-      const stemLine = this._insertSchematicGeometry({
-        type: "schematic_line",
+      const stemLine = db.schematic_line.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: parentNormalComponent?.schematic_component_id!,
         x1: portCenter.x,
         y1: portCenter.y,
@@ -834,10 +835,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { schematicLayout } = this.root!
+    const { db } = this.root!
 
     // Transform the schematic_port center
-    const schPort = schematicLayout.port.get(this.schematic_port_id)
+    const schPort = db.schematic_port.get(this.schematic_port_id)
     if (schPort) {
       const newCenter = applyToPoint(transform, schPort.center)
       const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
@@ -848,7 +849,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           schPort.facing_direction,
           rotation,
         )
-        schematicLayout.port.update(this.schematic_port_id, {
+        db.schematic_port.update(this.schematic_port_id, {
           facing_direction: this.facingDirection,
           side_of_component:
             this.facingDirection === "up"
@@ -858,17 +859,17 @@ export class Port extends PrimitiveComponent<typeof portProps> {
                 : this.facingDirection,
         })
       }
-      schematicLayout.port.update(this.schematic_port_id, {
+      db.schematic_port.update(this.schematic_port_id, {
         center: newCenter,
       })
 
       // Transform the stem line endpoints
       if (this.schematic_stem_line_id) {
-        const line = schematicLayout.line.get(this.schematic_stem_line_id)
+        const line = db.schematic_line.get(this.schematic_stem_line_id)
         if (line) {
           const p1 = applyToPoint(transform, { x: line.x1, y: line.y1 })
           const p2 = applyToPoint(transform, { x: line.x2, y: line.y2 })
-          schematicLayout.line.update(this.schematic_stem_line_id, {
+          db.schematic_line.update(this.schematic_stem_line_id, {
             x1: p1.x,
             y1: p1.y,
             x2: p2.x,
@@ -877,7 +878,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           const scaledStemLength = Math.sqrt(
             (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2,
           )
-          schematicLayout.port.update(this.schematic_port_id!, {
+          db.schematic_port.update(this.schematic_port_id!, {
             distance_from_component_edge: scaledStemLength,
           })
         }

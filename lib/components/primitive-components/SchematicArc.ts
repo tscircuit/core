@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicArcProps } from "@tscircuit/props"
 import {
@@ -21,7 +22,7 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -31,8 +32,8 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
-    const schematic_arc = this._insertSchematicGeometry({
-      type: "schematic_arc",
+    const schematic_arc = db.schematic_arc.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id,
       schematic_symbol_id,
       center: {
@@ -62,8 +63,8 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { schematicLayout } = this.root!
-    const arc = schematicLayout.arc.get(this.schematic_arc_id)
+    const { db } = this.root!
+    const arc = db.schematic_arc.get(this.schematic_arc_id)
     if (!arc) return
 
     const newCenter = applyToPoint(transform, arc.center)
@@ -78,7 +79,7 @@ export class SchematicArc extends PrimitiveComponent<typeof schematicArcProps> {
     )
     const rotation = (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 
-    schematicLayout.arc.update(this.schematic_arc_id, {
+    db.schematic_arc.update(this.schematic_arc_id, {
       center: { x: newCenter.x, y: newCenter.y },
       radius: newRadius,
       start_angle_degrees: arc.start_angle_degrees + rotation,

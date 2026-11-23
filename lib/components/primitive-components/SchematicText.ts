@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
@@ -20,7 +21,7 @@ export class SchematicText extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -31,8 +32,8 @@ export class SchematicText extends PrimitiveComponent<
 
     const text = this._resolveText()
 
-    const schematic_text = this._insertSchematicGeometry({
-      type: "schematic_text",
+    const schematic_text = db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_symbol_id,
       schematic_component_id,
       anchor: props.anchor ?? "center",
@@ -58,13 +59,13 @@ export class SchematicText extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { schematicLayout } = this.root!
-    const text = schematicLayout.text.get(this.schematic_text_id)
+    const { db } = this.root!
+    const text = db.schematic_text.get(this.schematic_text_id)
     if (!text) return
 
     const newPosition = applyToPoint(transform, text.position)
 
-    schematicLayout.text.update(this.schematic_text_id, {
+    db.schematic_text.update(this.schematic_text_id, {
       position: { x: newPosition.x, y: newPosition.y },
       rotation:
         (text.rotation ?? 0) +

@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { SVG_MIMETYPE, loadImageSource } from "@tscircuit/image-utils"
 import { schematicGraphicProps } from "@tscircuit/props"
 import type {
@@ -25,6 +26,7 @@ export class SchematicGraphic extends PrimitiveComponent<
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
 
+    const { db } = this.root!
     const { imageUrl, svgContent, width, height } = this._parsedProps
 
     if (imageUrl !== undefined) {
@@ -55,8 +57,8 @@ export class SchematicGraphic extends PrimitiveComponent<
             url: resolvedImageUrl,
             mimetype: SVG_MIMETYPE,
           } satisfies Asset
-          const schematicGraphic = this._insertSchematicGeometry({
-            type: "schematic_graphic",
+          const schematicGraphic = this.root!.db.schematic_graphic.insert({
+            schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
             asset,
             schematic_sheet_id: this._resolveSchematicSheetId(),
             svg_content: svgContent,
@@ -84,8 +86,8 @@ export class SchematicGraphic extends PrimitiveComponent<
         const fallbackSvgContent = sourceImage.dataUrl.startsWith("data:")
           ? svgContent
           : sourceImage.text
-        const schematicGraphic = this._insertSchematicGeometry({
-          type: "schematic_graphic",
+        const schematicGraphic = this.root!.db.schematic_graphic.insert({
+          schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
           asset,
           schematic_sheet_id: this._resolveSchematicSheetId(),
           ...(fallbackSvgContent === undefined
@@ -106,8 +108,8 @@ export class SchematicGraphic extends PrimitiveComponent<
         url: `data:image/svg+xml,${encodeURIComponent(svgContent)}`,
         mimetype: SVG_MIMETYPE,
       } satisfies Asset
-      const schematicGraphic = this._insertSchematicGeometry({
-        type: "schematic_graphic",
+      const schematicGraphic = db.schematic_graphic.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         asset,
         schematic_sheet_id: this._resolveSchematicSheetId(),
         ...(width === undefined ? {} : { width }),

@@ -1,8 +1,9 @@
-import { expect, test } from "bun:test"
 import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import { expect, test } from "bun:test"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("mm and inch subcircuits serialize and re-import physical component geometry", async () => {
+test("mm and inch subcircuits round-trip placements in explicitly tagged legacy geometry", async () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(
     <board name="Main" defaultSchematicLengthUnit="mm">
@@ -17,7 +18,7 @@ test("mm and inch subcircuits serialize and re-import physical component geometr
   const imported = getTestFixture({ platform: { pcbDisabled: true } }).circuit
   imported.add(
     <board>
-      <subcircuit circuitJson={stored} />
+      <subcircuit circuitJson={convertSchematicLengthUnits(stored, "in")} />
     </board>,
   )
   await imported.renderUntilSettled()
@@ -29,16 +30,11 @@ test("mm and inch subcircuits serialize and re-import physical component geometr
     })
     const components = json.filter((e) => e.type === "schematic_component")
     expect(components).toHaveLength(2)
-    expect(
-      components.find((c) => c.schematic_length_unit === "mm")?.center.x,
-    ).toBeCloseTo(25.4, 10)
-    expect(
-      components.find((c) => c.schematic_length_unit === "in")?.center.x,
-    ).toBeCloseTo(-1, 10)
-    const [first, second] = convertSchematicLengthUnits(
-      components,
-      "mm",
-    ).filter((e) => e.type === "schematic_component")
-    expect(first.size.width).toBeCloseTo(second.size.width, 10)
+    for (const component of components)
+      expect(component.schematic_length_unit).toBe(LEGACY_SCHEMATIC_LENGTH_UNIT)
+    const [left, right] = components.sort((a, b) => a.center.x - b.center.x)
+    expect(left.center.x).toBeCloseTo(-2.75, 10)
+    expect(right.center.x).toBeCloseTo(2.75, 10)
+    expect(left.size).toEqual(right.size)
   }
 })

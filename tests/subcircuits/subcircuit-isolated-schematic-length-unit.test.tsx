@@ -1,3 +1,4 @@
+import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -24,14 +25,9 @@ test("cached subcircuits inherit and override the board placement unit", async (
   await circuit.renderUntilSettled()
   const components = circuit.db.schematic_component.list()
   expect(components).toHaveLength(2)
-  for (const unit of ["mm", "in"] as const) {
-    const component = components.find((c) => c.schematic_length_unit === unit)
-    expect(component?.center.x).toBeCloseTo(0.4, 10)
-  }
-  expect(
-    components.find((c) => c.schematic_length_unit === "in")?.center.y,
-  ).toBeCloseTo(0.4, 10)
-  expect(
-    components.find((c) => c.schematic_length_unit === "mm")?.center.y,
-  ).toBeCloseTo(10.16, 10)
+  const centers = components.map((c) => c.center).sort((a, b) => a.x - b.x)
+  expect(centers[0].x * MM_PER_SCHEMATIC_UNIT).toBeCloseTo(0.4, 10)
+  expect(centers[1].x * MM_PER_SCHEMATIC_UNIT).toBeCloseTo(10.16, 10)
+  for (const center of centers)
+    expect(center.y * MM_PER_SCHEMATIC_UNIT).toBeCloseTo(10.16, 10)
 })

@@ -1,7 +1,8 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("solver labels, debug geometry and construction errors use their subcircuit's unit", () => {
+test("solver labels, debug geometry and construction errors carry the legacy geometry unit", () => {
   const { circuit } = getTestFixture({ platform: { pcbDisabled: true } })
   circuit.add(
     <board defaultSchematicLengthUnit="mm">
@@ -23,8 +24,8 @@ test("solver labels, debug geometry and construction errors use their subcircuit
   expect(
     json.find((e) => e.type === "source_failed_to_create_component_error"),
   ).toMatchObject({
-    schematic_length_unit: "in",
-    schematic_center: { x: 2, y: -1 },
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+    schematic_center: { x: 5.5, y: -2.75 },
     pcb_center: { x: 3, y: 0 },
   })
   for (const type of [
@@ -35,6 +36,9 @@ test("solver labels, debug geometry and construction errors use their subcircuit
     const records = json.filter((e) => e.type === type)
     expect(records.length).toBeGreaterThan(0)
     for (const record of records)
-      expect(record).toHaveProperty("schematic_length_unit", "in")
+      expect(record).toHaveProperty(
+        "schematic_length_unit",
+        LEGACY_SCHEMATIC_LENGTH_UNIT,
+      )
   }
 })

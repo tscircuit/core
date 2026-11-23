@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent/PrimitiveComponent"
 import { distance } from "circuit-json"
 import { z } from "zod"
@@ -117,8 +118,8 @@ class ErrorPlaceholderComponent extends PrimitiveComponent {
         this._parsedProps.message
       }`
 
-      this._insertSchematicGeometry({
-        type: "source_failed_to_create_component_error",
+      this.root.db.source_failed_to_create_component_error.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         component_name: this._parsedProps.component_name,
         error_type: "source_failed_to_create_component_error",
         message: `${baseMessage}${messageDetails ? ` Details: ${messageDetails}` : ""}`,

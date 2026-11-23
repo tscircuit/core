@@ -88,12 +88,14 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
         pendingSubcircuitRenders,
       })
 
-      isolatedCircuit.inheritedSchematicLengthUnit =
-        subcircuit._getSchematicLengthUnit()
-
       for (const child of childrenToRender) {
         isolatedCircuit.add(child)
       }
+
+      isolatedCircuit._guessRootComponent()
+      const root = isolatedCircuit.firstChild!
+      root._parsedProps.defaultSchematicLengthUnit ??=
+        subcircuit._getSchematicLengthUnit()
 
       // Render until all async effects complete (including nested isolated subcircuits)
       await isolatedCircuit.renderUntilSettled()

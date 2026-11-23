@@ -113,7 +113,7 @@ export function createSchematicTraceSolverInputProblem(
   group: Group<any>,
   opts: { schematicSheetId?: string; netLabels?: NetLabel[] } = {},
 ): SolverInputContext {
-  const { db, schematicLayout } = group.root!
+  const { db } = group.root!
   const routedSchematicPortIdBySchematicPortId =
     createRoutedSchematicPortIdMap(group)
   const resolveRoutedSchematicPortId = (schematicPortId: SchematicPortId) =>
@@ -189,7 +189,7 @@ export function createSchematicTraceSolverInputProblem(
     ...childGroups.map((a) => a.schematic_group_id),
   ]
 
-  const schematicComponents = schematicLayout.component
+  const schematicComponents = db.schematic_component
     .list()
     .filter((component) =>
       allSchematicGroupIds.includes(component.schematic_group_id!),
@@ -199,7 +199,7 @@ export function createSchematicTraceSolverInputProblem(
         opts.schematicSheetId === undefined ||
         component.schematic_sheet_id === opts.schematicSheetId,
     )
-  const schematicGroupPorts = schematicLayout.port
+  const schematicGroupPorts = db.schematic_port
     .list()
     .filter(
       (port) =>
@@ -217,7 +217,7 @@ export function createSchematicTraceSolverInputProblem(
       component,
     ]),
   )
-  const textBoxes = schematicLayout.text
+  const textBoxes = db.schematic_text
     .list()
     .filter(
       (text) =>
@@ -260,7 +260,7 @@ export function createSchematicTraceSolverInputProblem(
   for (const schematicComponent of schematicComponents) {
     const chipId = schematicComponent.schematic_component_id
 
-    const schematicPorts = schematicLayout.port.list({
+    const schematicPorts = db.schematic_port.list({
       schematic_component_id: schematicComponent.schematic_component_id,
     })
 
@@ -379,7 +379,7 @@ export function createSchematicTraceSolverInputProblem(
   const resolveCanonicalNetLabelText =
     createCanonicalSchematicNetLabelTextResolver(group)
   for (const sc of schematicComponents) {
-    const ports = schematicLayout.port.list({
+    const ports = db.schematic_port.list({
       schematic_component_id: sc.schematic_component_id,
     })
     for (const sp of ports) {
@@ -487,12 +487,12 @@ export function createSchematicTraceSolverInputProblem(
       if (!schematicPortId) continue
       if (solverManagedNetLabelSchematicPortIds.has(schematicPortId)) continue
 
-      const hasAnotherRepresentationOnSheet = schematicLayout.port
+      const hasAnotherRepresentationOnSheet = db.schematic_port
         .list({ source_port_id: sourcePortId })
         .some((port) => {
           if (port.schematic_port_id === schematicPortId) return false
           const component = port.schematic_component_id
-            ? schematicLayout.component.get(port.schematic_component_id)
+            ? db.schematic_component.get(port.schematic_component_id)
             : undefined
           return component?.schematic_sheet_id === opts.schematicSheetId
         })
@@ -671,8 +671,8 @@ export function createSchematicTraceSolverInputProblem(
     firstSchematicPortId: SchematicPortId,
     secondSchematicPortId: SchematicPortId,
   ) => {
-    const firstSchematicPort = schematicLayout.port.get(firstSchematicPortId)
-    const secondSchematicPort = schematicLayout.port.get(secondSchematicPortId)
+    const firstSchematicPort = db.schematic_port.get(firstSchematicPortId)
+    const secondSchematicPort = db.schematic_port.get(secondSchematicPortId)
     if (!firstSchematicPort || !secondSchematicPort) return false
 
     const sharesSheet =
@@ -704,7 +704,7 @@ export function createSchematicTraceSolverInputProblem(
     schematicPortId: SchematicPortId
     otherSourcePortId: SourcePortId
   }) =>
-    schematicLayout.port
+    db.schematic_port
       .list({ source_port_id: otherSourcePortId })
       .some((otherSchematicPort) =>
         areSchematicPortsInDifferentSectionsOnSameSheet(
@@ -870,8 +870,8 @@ export function createSchematicTraceSolverInputProblem(
         : getNetNameFromPorts(portsForConnection).name || traceLabel
       const shouldRenderNetLabels = connected.slice(1).some((b, index) => {
         const a = connected[index]
-        const portA = schematicLayout.port.get(a)
-        const portB = schematicLayout.port.get(b)
+        const portA = db.schematic_port.get(a)
+        const portB = db.schematic_port.get(b)
         if (!portA || !portB) return false
         return (
           Math.sqrt(
@@ -1029,7 +1029,7 @@ export function createSchematicTraceSolverInputProblem(
     areSchematicPortsOnDifferentComponents: (schematicPortIds) => {
       const componentIds = schematicPortIds.map(
         (schematicPortId) =>
-          schematicLayout.port.get(schematicPortId)?.schematic_component_id,
+          db.schematic_port.get(schematicPortId)?.schematic_component_id,
       )
       return (
         componentIds.every((componentId): componentId is string =>

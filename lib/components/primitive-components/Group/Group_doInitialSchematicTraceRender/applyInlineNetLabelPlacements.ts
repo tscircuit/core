@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type {
   NetId,
   SchematicTracePipelineSolver,
@@ -53,7 +54,7 @@ export function applyInlineNetLabelPlacements(args: {
     sourceTraceIdByPinPairKey,
     crossScopeSourceTraceIdBySchematicPortIdAndNetId,
   } = args
-  const { db, schematicLayout } = group.root!
+  const { db } = group.root!
 
   const inlineNetLabelPlacements =
     solver.inlineNetLabelSolver?.getOutput().inlineNetLabelPlacements ?? []
@@ -105,7 +106,7 @@ export function applyInlineNetLabelPlacements(args: {
     if (!sourceTraceId && connKey) {
       const sourcePortIds = schematicPortIds.flatMap((schematicPortId) => {
         const sourcePortId =
-          schematicLayout.port.get(schematicPortId)?.source_port_id
+          db.schematic_port.get(schematicPortId)?.source_port_id
         return sourcePortId ? [sourcePortId] : []
       })
       sourceTraceId = db.source_trace
@@ -121,7 +122,7 @@ export function applyInlineNetLabelPlacements(args: {
 
     // Inline labels belong to the same sheet as the trace they annotate.
     let schematicSheetId = group._resolveSchematicSheetId()
-    const schematicPort = schematicLayout.port.get(schematicPortIds[0]!)
+    const schematicPort = db.schematic_port.get(schematicPortIds[0]!)
     if (schematicPort?.schematic_sheet_id) {
       schematicSheetId = schematicPort.schematic_sheet_id
     }
@@ -132,7 +133,7 @@ export function applyInlineNetLabelPlacements(args: {
     let placementOffset = { x: 0, y: 0 }
     let stubTracePath = placement.stubTracePath?.map((point) => ({ ...point }))
     if (stubTracePath && schematicPortIds.length === 1) {
-      const portCenter = schematicLayout.port.get(schematicPortIds[0]!)?.center
+      const portCenter = db.schematic_port.get(schematicPortIds[0]!)?.center
       if (portCenter) {
         placementOffset = {
           x: portCenter.x - stubTracePath[0]!.x,
@@ -171,21 +172,21 @@ export function applyInlineNetLabelPlacements(args: {
     }
 
     if (stubTracePath && stubTracePath.length === 2) {
-      group._insertSchematicGeometry({
-        type: "schematic_trace",
+      db.schematic_trace.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         source_trace_id: sourceTraceId,
         edges: [{ from: stubTracePath[0]!, to: stubTracePath[1]! }],
         junctions: [],
         subcircuit_connectivity_map_key: connKey,
         schematic_sheet_id: schematicSheetId,
       })
-      schematicLayout.port.update(schematicPortIds[0]!, {
+      db.schematic_port.update(schematicPortIds[0]!, {
         is_connected: true,
       })
     }
 
-    group._insertSchematicGeometry({
-      type: "schematic_text",
+    db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text,
       // Links the label back to the trace it names, so a consumer can tell an
       // inline net label apart from free-standing schematic text.

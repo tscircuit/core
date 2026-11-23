@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicLineProps } from "@tscircuit/props"
 import {
@@ -23,7 +24,7 @@ export class SchematicLine extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const globalPos = this._getGlobalSchematicPositionBeforeLayout()
@@ -33,8 +34,8 @@ export class SchematicLine extends PrimitiveComponent<
 
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
-    const schematic_line = this._insertSchematicGeometry({
-      type: "schematic_line",
+    const schematic_line = db.schematic_line.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id,
       schematic_symbol_id,
       x1: props.x1 + globalPos.x,
@@ -65,14 +66,14 @@ export class SchematicLine extends PrimitiveComponent<
     const transform = symbol?.getUserCoordinateToResizedSymbolTransform()
     if (!transform) return
 
-    const { schematicLayout } = this.root!
-    const line = schematicLayout.line.get(this.schematic_line_id)
+    const { db } = this.root!
+    const line = db.schematic_line.get(this.schematic_line_id)
     if (!line) return
 
     const p1 = applyToPoint(transform, { x: line.x1, y: line.y1 })
     const p2 = applyToPoint(transform, { x: line.x2, y: line.y2 })
 
-    schematicLayout.line.update(this.schematic_line_id, {
+    db.schematic_line.update(this.schematic_line_id, {
       x1: p1.x,
       y1: p1.y,
       x2: p2.x,

@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -18,9 +19,9 @@ test("millimeter placement composes group and component offsets in sheet units",
   )
   circuit.render()
   const [resistor] = circuit.db.schematic_component.list()
-  expect(resistor.schematic_length_unit).toBe("mm")
-  expect(resistor.center.x).toBeCloseTo(20.32, 10)
-  expect(resistor.center.y).toBeCloseTo(-10.16, 10)
+  expect(resistor.schematic_length_unit).toBe(LEGACY_SCHEMATIC_LENGTH_UNIT)
+  expect(resistor.center.x).toBeCloseTo(2.2, 10)
+  expect(resistor.center.y).toBeCloseTo(-1.1, 10)
   expect(circuit.db.pcb_component.list()[0].center.x).toBeCloseTo(10.16, 10)
   expect(circuit.getCircuitJson()).toBe(circuit.db.toArray())
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)

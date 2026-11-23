@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type { SchSymbol } from "schematic-symbols"
 import type { Connector } from "./Connector"
@@ -16,8 +17,8 @@ export function insertInnerSymbolInSchematicBox(
 ): void {
   if (!connector.schematic_component_id || !connector.root) return
 
-  const { schematicLayout } = connector.root
-  const schematicComponent = schematicLayout.component.get(
+  const { db } = connector.root
+  const schematicComponent = db.schematic_component.get(
     connector.schematic_component_id,
   )
   if (!schematicComponent) return
@@ -53,8 +54,8 @@ export function insertInnerSymbolInSchematicBox(
           points.push(first)
         }
       }
-      connector._insertSchematicGeometry({
-        type: "schematic_path",
+      db.schematic_path.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         points,
         is_filled: primitive.fill ?? false,
@@ -67,8 +68,8 @@ export function insertInnerSymbolInSchematicBox(
         schematic_sheet_id: connector._resolveSchematicSheetId(),
       })
     } else if (primitive.type === "circle") {
-      connector._insertSchematicGeometry({
-        type: "schematic_circle",
+      db.schematic_circle.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         center: transformPoint({ x: primitive.x, y: primitive.y }),
         radius: primitive.radius * scaleFactor,
@@ -88,8 +89,8 @@ export function insertInnerSymbolInSchematicBox(
         x: primitive.x + primitive.width,
         y: primitive.y + primitive.height,
       })
-      connector._insertSchematicGeometry({
-        type: "schematic_rect",
+      db.schematic_rect.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         center: {
           x: (topLeft.x + bottomRight.x) / 2,

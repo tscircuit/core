@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { SchematicPort } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { symbols } from "schematic-symbols"
@@ -9,6 +10,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
   if (schematicSymbol.root?.schematicDisabled) return
   if (schematicSymbol.getCollapsedSchematicBoxAncestor()) return
 
+  const { db } = schematicSymbol.root!
   const symbolName = schematicSymbol._getSchematicSymbolNameOrThrow()
   const symbol = symbols[symbolName]
   if (!symbol) {
@@ -19,8 +21,8 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
   const schematicSheetId = schematicSymbol._resolveSchematicSheetId()
   const subcircuitId =
     schematicSymbol.getSubcircuit().subcircuit_id ?? undefined
-  const schematicComponent = schematicSymbol._insertSchematicGeometry({
-    type: "schematic_component",
+  const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size: { ...symbol.size },
     is_box_with_pins: true,
@@ -44,8 +46,8 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
       y: center.y + symbolPort.y - symbol.center.y,
     }
 
-    const schematicPort = schematicSymbol._insertSchematicGeometry({
-      type: "schematic_port",
+    const schematicPort = db.schematic_port.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id: schematicComponent.schematic_component_id,
       center: portCenter,
       source_port_id: port.source_port_id,

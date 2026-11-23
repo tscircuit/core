@@ -1,16 +1,14 @@
-import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import {
   type CircuitJsonUtilObjects,
   type SchematicElementWithBounds,
   getSchematicElementBounds,
 } from "@tscircuit/circuit-json-util"
-import { MM_PER_SCHEMATIC_UNIT } from "circuit-json"
-
 type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
-const SCHEMATIC_SHEET_INNER_MARGIN = 5 / MM_PER_SCHEMATIC_UNIT
+const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
+const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
 
 const BOUNDS_EPSILON = 1e-6
 
@@ -42,8 +40,8 @@ export const warnIfSchematicElementsOutsideSheet = ({
   sheetWidth: number
   sheetHeight: number
 }): void => {
-  const sheetWidthInSchematicUnits = sheetWidth / MM_PER_SCHEMATIC_UNIT
-  const sheetHeightInSchematicUnits = sheetHeight / MM_PER_SCHEMATIC_UNIT
+  const sheetWidthInSchematicUnits = sheetWidth / SCHEMATIC_UNIT_TO_MM
+  const sheetHeightInSchematicUnits = sheetHeight / SCHEMATIC_UNIT_TO_MM
   const sheetContentBounds = {
     minX:
       schematicSheetCenter.x -
@@ -63,9 +61,9 @@ export const warnIfSchematicElementsOutsideSheet = ({
       SCHEMATIC_SHEET_INNER_MARGIN,
   }
   const checkedElements: CheckedSchematicElement[] = [
-    ...db.schematic_component.list().map(inSchematicDrawingUnits),
-    ...db.schematic_net_label.list().map(inSchematicDrawingUnits),
-    ...db.schematic_trace.list().map(inSchematicDrawingUnits),
+    ...db.schematic_component.list(),
+    ...db.schematic_net_label.list(),
+    ...db.schematic_trace.list(),
   ].filter(
     (schematicElement) =>
       schematicElement.schematic_sheet_id === schematicSheetId,

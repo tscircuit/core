@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { Group } from "./Group"
@@ -72,7 +73,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   group: Group<any>,
 ) => {
   if (group.root?.schematicDisabled) return
-  const { db, schematicLayout } = group.root!
+  const { db } = group.root!
   const props = group._parsedProps
 
   if (props.schPinSpacing !== undefined) {
@@ -95,8 +96,8 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const portLabels = group._getPinLabelsFromPorts()
   const schPortArrangement = group._getSchematicPortArrangement()
 
-  const schematicComponent = group._insertSchematicGeometry({
-    type: "schematic_component",
+  const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size,
     source_group_id: group.source_group_id!,
@@ -118,7 +119,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   group.schematic_component_id = schematicComponent.schematic_component_id
 
   if (group.schematic_group_id) {
-    schematicLayout.group.update(group.schematic_group_id, {
+    db.schematic_group.update(group.schematic_group_id, {
       center,
       width: size.width,
       height: size.height,
@@ -128,8 +129,8 @@ export const Group_doInitialSchematicBoxComponentRender = (
 
   const title = props.schTitle ?? props.name
   if (title) {
-    group._insertSchematicGeometry({
-      type: "schematic_text",
+    db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: title,
       schematic_component_id: schematicComponent.schematic_component_id,
       anchor: "left",

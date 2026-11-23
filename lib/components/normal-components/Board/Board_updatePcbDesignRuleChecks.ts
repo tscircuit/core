@@ -7,11 +7,7 @@ import {
   runAllRoutingChecks,
   runAllSchematicChecks,
 } from "@tscircuit/checks"
-import {
-  LEGACY_SCHEMATIC_LENGTH_UNIT,
-  type AnyCircuitElement,
-} from "circuit-json"
-import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import type { AnyCircuitElement } from "circuit-json"
 import type { DrcCheck } from "../../primitive-components/DrcCheck"
 import type { Board } from "./Board"
 
@@ -172,12 +168,7 @@ export const Board_updatePcbDesignRuleChecks = (board: Board) => {
       queueCheck(
         "schematic",
         () =>
-          runAllSchematicChecks(
-            convertSchematicLengthUnits(
-              circuitJson,
-              LEGACY_SCHEMATIC_LENGTH_UNIT,
-            ),
-          ) as Promise<AnyCircuitElement[]>,
+          runAllSchematicChecks(circuitJson) as Promise<AnyCircuitElement[]>,
       )
     }
 

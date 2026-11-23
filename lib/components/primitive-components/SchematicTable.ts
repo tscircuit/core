@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { schematicTableProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { SchematicCell } from "./SchematicCell"
@@ -19,7 +20,7 @@ export class SchematicTable extends PrimitiveComponent<
   doInitialSchematicPrimitiveRender(): void {
     if (this.root?.schematicDisabled) return
     if (this.getCollapsedSchematicBoxAncestor()) return
-
+    const { db } = this.root!
     const { _parsedProps: props } = this
 
     const rows = this.children.filter(
@@ -87,8 +88,8 @@ export class SchematicTable extends PrimitiveComponent<
 
     const anchorPos = this._getGlobalSchematicPositionBeforeLayout()
 
-    const table = this._insertSchematicGeometry({
-      type: "schematic_table",
+    const table = db.schematic_table.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       anchor_position: anchorPos,
       column_widths: colWidths,
       row_heights: rowHeights,
@@ -123,8 +124,8 @@ export class SchematicTable extends PrimitiveComponent<
             cellHeight += rowHeights[i + r]
           }
 
-          this._insertSchematicGeometry({
-            type: "schematic_table_cell",
+          db.schematic_table_cell.insert({
+            schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
             schematic_table_id: this.schematic_table_id,
             start_row_index: i,
             end_row_index: i + rowSpan - 1,

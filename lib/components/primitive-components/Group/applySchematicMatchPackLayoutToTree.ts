@@ -1,4 +1,3 @@
-import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import {
   type CircuitJsonTreeNode,
   type CircuitJsonUtilObjects,
@@ -22,6 +21,7 @@ import {
   shouldSwapOrientation,
 } from "lib/utils/schematic/getRotatedSymbolName"
 import { getSchematicComponentWithTextBounds } from "lib/utils/schematic/getSchematicComponentWithTextBounds"
+import type { z } from "zod"
 import type { Group } from "./Group"
 import type { AxisDirection } from "./Group_doInitialSchematicTraceRender/getSide"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
@@ -804,11 +804,15 @@ function convertTreeToMatchPackInputProblem(
   return { inputProblem: problem, nestedGroupMatchpackProxyMap }
 }
 
-export function applySchematicMatchPackLayoutToTree(
-  { group, db }: SchematicLayoutContext,
+export function applySchematicMatchPackLayoutToTree<
+  Props extends z.ZodType<any, any, any>,
+>(
+  group: Group<Props>,
   tree: CircuitJsonTreeNode,
   opts: SchematicMatchPackLayoutOptions = {},
 ): void {
+  const { db } = group.root!
+
   debug(
     `[${group.name}] Starting matchpack layout with ${tree.childNodes.length} children`,
   )
@@ -869,7 +873,7 @@ export function applySchematicMatchPackLayoutToTree(
   if (solver.failed) {
     const solverError = solver.error ?? "Unknown Matchpack failure"
     debug(`Solver failed with error: ${solverError}`)
-    group.root!.db.schematic_layout_error.insert({
+    db.schematic_layout_error.insert({
       error_type: "schematic_layout_error",
       message: `Matchpack layout solver failed: ${solverError}`,
       is_fatal: false,

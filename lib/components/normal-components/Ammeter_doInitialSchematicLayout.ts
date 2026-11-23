@@ -1,4 +1,3 @@
-import { runSchematicLayout } from "lib/utils/schematic/run-schematic-layout"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type {
   Point,
@@ -153,15 +152,9 @@ export const Ammeter_doInitialSchematicLayout = (ammeter: Ammeter) => {
   }
   if (ammeter.getGroup()?._getSchematicLayoutMode() !== "relative") return
 
-  runSchematicLayout({ db: root.db, ammeter }, placeAmmeter)
-}
-
-function placeAmmeter({
-  db,
-  ammeter,
-}: { db: CircuitJsonUtilObjects; ammeter: Ammeter }) {
+  const { db } = root
   const schematicComponent = db.schematic_component.get(
-    ammeter.schematic_component_id!,
+    ammeter.schematic_component_id,
   )
   if (!schematicComponent) return
 

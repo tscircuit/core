@@ -1,4 +1,4 @@
-import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import {
   type NetId,
@@ -90,7 +90,7 @@ export function applyNetLabelPlacements(args: {
     schematicPortIdsWithRoutedTraces,
     netLabels,
   } = args
-  const { db, schematicLayout } = group.root!
+  const { db } = group.root!
   const resolveCanonicalNetLabelText =
     createCanonicalSchematicNetLabelTextResolver(group)
 
@@ -144,7 +144,7 @@ export function applyNetLabelPlacements(args: {
   const userDefinedNetLabels: UserDefinedNetLabel[] = netLabels
     .map((label) => {
       if (!label.schematic_net_label_id) return null
-      const dbLabel = schematicLayout.netLabel.get(label.schematic_net_label_id)
+      const dbLabel = db.schematic_net_label.get(label.schematic_net_label_id)
       if (!dbLabel) return null
       return {
         schematicNetLabel: dbLabel,
@@ -212,12 +212,7 @@ export function applyNetLabelPlacements(args: {
 
     // Solver labels belong to the same sheet as their connected port.
     let schematicSheetId = group._resolveSchematicSheetId()
-    const storedPort = db.schematic_port.get(schPortIds[0])
-    const schematicPort = inSchematicDrawingUnits(storedPort)
-    const subcircuit_id =
-      schematicPort?.subcircuit_id ??
-      group.getSubcircuit().subcircuit_id ??
-      undefined
+    const schematicPort = db.schematic_port.get(schPortIds[0])
     if (schematicPort?.schematic_sheet_id) {
       schematicSheetId = schematicPort.schematic_sheet_id
     }
@@ -237,7 +232,7 @@ export function applyNetLabelPlacements(args: {
     // connections keep the solver's intentional edge placement.
     let anchor_position = placement.anchorPoint
     if (schPortIds.length === 1 && schPortIds[0]) {
-      const anchorSchPort = schematicLayout.port.get(schPortIds[0])
+      const anchorSchPort = db.schematic_port.get(schPortIds[0])
       if (anchorSchPort?.center && !anchorSchPort.is_connected) {
         anchor_position = anchorSchPort.center
       }
@@ -292,7 +287,7 @@ export function applyNetLabelPlacements(args: {
           label.schematicPortIds.some((id) => schPortIds.includes(id)),
       )
       if (solverManagedUserNetLabel) {
-        schematicLayout.netLabel.update(
+        db.schematic_net_label.update(
           solverManagedUserNetLabel.schematicNetLabel.schematic_net_label_id,
           {
             anchor_position,
@@ -321,20 +316,17 @@ export function applyNetLabelPlacements(args: {
         }
       }
 
-      group._insertSchematicGeometry(
-        {
-          type: "schematic_net_label",
-          subcircuit_id,
-          text,
-          source_net_id: sourceNet.source_net_id,
-          anchor_position,
-          center,
-          anchor_side,
-          schematic_sheet_id: schematicSheetId,
-          source_trace_id: placementSourceTraceId,
-        },
-        { unit: storedPort?.schematic_length_unit },
-      )
+      const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+        text,
+        source_net_id: sourceNet.source_net_id,
+        anchor_position,
+        center,
+        anchor_side,
+        schematic_sheet_id: schematicSheetId,
+        source_trace_id: placementSourceTraceId,
+      }
+      db.schematic_net_label.insert(netLabel)
       continue
     }
 
@@ -365,20 +357,17 @@ export function applyNetLabelPlacements(args: {
       text,
     })
 
-    group._insertSchematicGeometry(
-      {
-        type: "schematic_net_label",
-        subcircuit_id,
-        text,
-        source_net_id:
-          placementConnKey ?? placement.netId ?? placement.globalConnNetId,
-        anchor_position,
-        center,
-        anchor_side,
-        schematic_sheet_id: schematicSheetId,
-        source_trace_id: placementSourceTraceId,
-      },
-      { unit: storedPort?.schematic_length_unit },
-    )
+    const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+      text,
+      source_net_id:
+        placementConnKey ?? placement.netId ?? placement.globalConnNetId,
+      anchor_position,
+      center,
+      anchor_side,
+      schematic_sheet_id: schematicSheetId,
+      source_trace_id: placementSourceTraceId,
+    }
+    db.schematic_net_label.insert(netLabel)
   }
 }

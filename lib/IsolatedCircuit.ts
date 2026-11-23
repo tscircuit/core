@@ -1,7 +1,6 @@
-import { createSchematicLayoutTables } from "./utils/schematic/schematic-geometry"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { createCircuitJsonDatabase } from "./utils/circuit-json/create-circuit-json-database"
-import type { SchematicLengthUnit, PlatformConfig } from "@tscircuit/props"
+import type { PlatformConfig } from "@tscircuit/props"
 import type { AnyCircuitElement } from "circuit-json"
 import Debug from "debug"
 import { type ReactElement, isValidElement } from "react"
@@ -55,8 +54,6 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
-  readonly schematicLayout: ReturnType<typeof createSchematicLayoutTables>
-  inheritedSchematicLengthUnit?: SchematicLengthUnit
   pcbDisabled = false
   pcbRoutingDisabled = false
 
@@ -109,7 +106,6 @@ export class IsolatedCircuit {
   } = {}) {
     this.children = []
     this.db = createCircuitJsonDatabase()
-    this.schematicLayout = createSchematicLayoutTables(this.db)
     this.platform = platform
     this.projectUrl = projectUrl
     this.pcbDisabled = platform?.pcbDisabled ?? false

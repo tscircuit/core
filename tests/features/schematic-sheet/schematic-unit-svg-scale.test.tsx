@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { expect, test } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -17,7 +18,7 @@ test("an inch of authored placement spans one quarter of a four-inch sheet in SV
   expect(
     json.find((record) => record.type === "schematic_sheet"),
   ).toMatchObject({
-    schematic_length_unit: "mm",
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     sheet_width: 101.6,
     sheet_height: 50.8,
   })
@@ -27,8 +28,8 @@ test("an inch of authored placement spans one quarter of a four-inch sheet in SV
         record.type === "schematic_text" && record.text === "One inch",
     ),
   ).toMatchObject({
-    schematic_length_unit: "mm",
-    position: { x: 25.4, y: 12.7 },
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+    position: { x: 2.75, y: 1.375 },
   })
   const svg = convertCircuitJsonToSchematicSvg(json)
   expect(await circuit.getSvg({ view: "schematic" })).toBe(svg)

@@ -1,5 +1,3 @@
-import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
-import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type {
   Obstacle,
   SimpleRouteConnection,
@@ -26,13 +24,8 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
 
   const obstacles: Obstacle[] = []
 
-  const drawing = convertSchematicLengthUnits(
-    db.toArray(),
-    LEGACY_SCHEMATIC_LENGTH_UNIT,
-  )
-
   // Add obstacles from components and ports
-  for (const elm of drawing) {
+  for (const elm of db.toArray()) {
     if (elm.type === "schematic_component") {
       // TODO HACK we have to have special handling for components because of
       // a bug in circuit-to-svg where it uses the schematic_component size to
@@ -99,7 +92,7 @@ export const getSchematicObstaclesForTrace = (trace: Trace): Obstacle[] => {
   }
 
   // Add schematic border as four thin rect obstacles (with padding)
-  const bounds = getBoundsForSchematic(drawing)
+  const bounds = getBoundsForSchematic(db.toArray())
   obstacles.push(...getObstaclesFromBounds(bounds, { padding: 1 }))
 
   return obstacles

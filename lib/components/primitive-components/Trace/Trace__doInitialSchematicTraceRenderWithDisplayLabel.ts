@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { Trace } from "./Trace"
@@ -6,7 +7,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   trace: Trace,
 ): void {
   if (trace.root?.schematicDisabled) return
-  const { schematicLayout } = trace.root!
+  const { db } = trace.root!
   const { _parsedProps: props, parent } = trace
 
   if (!parent) throw new Error("Trace has no parent")
@@ -58,11 +59,11 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   }
 
   // Handle `from` port label
-  const existingFromNetLabel = schematicLayout.netLabel
+  const existingFromNetLabel = db.schematic_net_label
     .list()
     .find((label) => label.source_net_id === fromPort.source_port_id)
 
-  const existingToNetLabel = schematicLayout.netLabel
+  const existingToNetLabel = db.schematic_net_label
     .list()
     .find((label) => label.source_net_id === toPort.source_port_id)
 
@@ -86,9 +87,8 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   if (!existingToNetLabel) {
     const toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
-    trace._insertSchematicGeometry({
-      type: "schematic_net_label",
-      subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
+    db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: netLabelText,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
@@ -104,9 +104,8 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
   if (!existingFromNetLabel) {
     const fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
-    trace._insertSchematicGeometry({
-      type: "schematic_net_label",
-      subcircuit_id: trace.getSubcircuit().subcircuit_id ?? undefined,
+    db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: netLabelText,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,

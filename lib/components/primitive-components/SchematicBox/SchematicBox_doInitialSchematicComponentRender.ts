@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getNumericPinLabels } from "lib/utils/schematic/resolvePinLabels"
 import type { PinLabelsProp, SchematicPinStyle } from "@tscircuit/props"
 import type {
@@ -166,8 +167,8 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     ]),
   )
 
-  const schematicComponent = schematicBox._insertSchematicGeometry({
-    type: "schematic_component",
+  const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size,
     source_component_id: referencedChip.source_component_id,
@@ -202,9 +203,8 @@ export const SchematicBox_doInitialSchematicComponentRender = (
       bottom: "down",
     }[portPosition.side] as SchematicPort["facing_direction"]
 
-    schematicBox._insertSchematicGeometry({
-      type: "schematic_port",
-      subcircuit_id: schematicBox.getSubcircuit().subcircuit_id ?? undefined,
+    db.schematic_port.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id: schematicComponent.schematic_component_id,
       center: {
         x: center.x + portPosition.x,
@@ -223,8 +223,8 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   }
 
   const sectionName = props.name ?? props.chipRef
-  schematicBox._insertSchematicGeometry({
-    type: "schematic_text",
+  db.schematic_text.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     text: sectionName,
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",
@@ -241,8 +241,8 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   const referencedSourceComponent = db.source_component.get(
     referencedChip.source_component_id,
   )
-  schematicBox._insertSchematicGeometry({
-    type: "schematic_text",
+  db.schematic_text.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     text: referencedSourceComponent?.manufacturer_part_number ?? "",
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",

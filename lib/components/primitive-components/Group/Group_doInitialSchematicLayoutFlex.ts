@@ -1,4 +1,3 @@
-import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import { Group } from "./Group"
 import { SchematicText } from "../SchematicText"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
@@ -79,11 +78,9 @@ const getSizeOfTreeNodeChild = (
   return null
 }
 
-export const Group_doInitialSchematicLayoutFlex = ({
-  group,
-  db,
-}: SchematicLayoutContext) => {
-  const props: Group["_parsedProps"] = group._parsedProps
+export const Group_doInitialSchematicLayoutFlex = (group: Group) => {
+  const { db } = group.root!
+  const props = group._parsedProps
 
   const tree = getCircuitJsonTree(db.toArray(), {
     source_group_id: group.source_group_id!,

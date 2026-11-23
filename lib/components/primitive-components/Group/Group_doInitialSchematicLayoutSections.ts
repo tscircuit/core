@@ -1,6 +1,7 @@
-import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import { getCircuitJsonTree } from "@tscircuit/circuit-json-util"
 import Debug from "debug"
+import type { z } from "zod"
+import type { Group } from "./Group"
 
 const debug = Debug("Group_doInitialSchematicLayoutSections")
 import { applySchematicMatchPackLayoutToTree } from "./Group_doInitialSchematicLayoutMatchPack"
@@ -14,10 +15,11 @@ type SectionBoundsWithChildren = {
   sourceCompIds: Set<string>
 }
 
-export function Group_doInitialSchematicLayoutSections({
-  group,
-  db,
-}: SchematicLayoutContext): void {
+export function Group_doInitialSchematicLayoutSections<
+  Props extends z.ZodType<any, any, any>,
+>(group: Group<Props>): void {
+  const { db } = group.root!
+
   const sectionNamesUsedByChildren = new Set<string>()
   let hasChildrenWithoutSection = false
   for (const child of group.children) {
@@ -51,7 +53,7 @@ export function Group_doInitialSchematicLayoutSections({
       const compSection = component?.getSchematicSectionName() ?? null
       return compSection === sectionName
     })
-    applySchematicMatchPackLayoutToTree({ group, db }, sectionTree)
+    applySchematicMatchPackLayoutToTree(group, sectionTree)
   }
 
   if (sectionNamesToLayout.length <= 1) return
