@@ -19,12 +19,16 @@ export const parseSimulationGraphValue = (
 
   const trimmed = value.trim()
   const match = trimmed.match(
-    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([pnumµkKMG]?)/,
+    /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([pnumµkKMG]?)/,
   )
   if (!match) return undefined
 
   const numericValue = Number(match[1])
   if (!Number.isFinite(numericValue)) return undefined
 
-  return numericValue * (SI_PREFIX_MULTIPLIERS[match[2] ?? ""] ?? 1)
+  const scaledValue =
+    numericValue * (SI_PREFIX_MULTIPLIERS[match[2] ?? ""] ?? 1)
+  if (!Number.isFinite(scaledValue)) return undefined
+
+  return scaledValue
 }
