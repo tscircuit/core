@@ -44,6 +44,7 @@ beforeAll(async () => {
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     cameraPreset: "top_down_orthographic",
     gltf: { boardTextureResolution: 2048 },
+    poppygl: { grid: false, up: "z+" },
   })
 }, 30_000)
 
