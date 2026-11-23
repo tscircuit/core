@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("status LED subcircuit bounds include pcbPadding", async () => {
+test("status LED subcircuit bounds include pcbPadding", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="18mm" height="14mm" routingDisabled schematicDisabled>
