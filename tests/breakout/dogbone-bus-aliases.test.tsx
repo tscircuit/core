@@ -143,7 +143,7 @@ test("dogbone handoff aliases route as one owned bus lane", async () => {
       />
       <bus
         name="DATA_BUS"
-        connections={["FORWARD"]}
+        connections={["FORWARD", "REVERSE"]}
         pcbAllowedLayers={["bottom"]}
         routingPhaseIndex={0}
       />

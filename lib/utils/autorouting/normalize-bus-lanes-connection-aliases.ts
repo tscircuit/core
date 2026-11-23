@@ -109,9 +109,11 @@ export function normalizeBusLanesConnectionAliases(
     connections,
     buses: input.buses?.map((bus) => ({
       ...bus,
-      connectionNames: bus.connectionNames.map(
-        (name) => canonicalByName.get(name) ?? name,
-      ),
+      connectionNames: [
+        ...new Set(
+          bus.connectionNames.map((name) => canonicalByName.get(name) ?? name),
+        ),
+      ],
     })),
     differentialPairs: input.differentialPairs?.map((pair) => ({
       ...pair,

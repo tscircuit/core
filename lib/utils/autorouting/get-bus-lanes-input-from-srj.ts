@@ -87,28 +87,43 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     connections: normalized.connections.map((connection) => ({
       ...connection,
       pointsToConnect: connection.pointsToConnect.map((point) => {
-        const via = normalized.traces
-          ?.filter((trace) => trace.connection_name === connection.name)
+        const spans = (normalized.traces ?? [])
+          .filter((trace) => trace.connection_name === connection.name)
           .flatMap((trace) => trace.route)
-          .find(
+          .filter(
             (routePoint) =>
               routePoint.route_type === "via" &&
               Math.hypot(routePoint.x - point.x, routePoint.y - point.y) < 1e-8,
           )
-        if (!via || via.route_type !== "via") return point
-        const span =
-          via.layers ??
-          boardLayers.slice(
-            Math.min(
-              boardLayers.indexOf(via.from_layer),
-              boardLayers.indexOf(via.to_layer),
-            ),
-            Math.max(
-              boardLayers.indexOf(via.from_layer),
-              boardLayers.indexOf(via.to_layer),
-            ) + 1,
+          .map(
+            (via) =>
+              via.layers ??
+              boardLayers.slice(
+                Math.min(
+                  boardLayers.indexOf(via.from_layer),
+                  boardLayers.indexOf(via.to_layer),
+                ),
+                Math.max(
+                  boardLayers.indexOf(via.from_layer),
+                  boardLayers.indexOf(via.to_layer),
+                ) + 1,
+              ),
           )
-        if (!span.includes(point.layer)) return point
+        // Stacked barrels conduct only through a shared physical copper layer.
+        const reachable = new Set([point.layer])
+        let expanded = true
+        while (expanded) {
+          expanded = false
+          for (const span of spans) {
+            if (!span.some((layer) => reachable.has(layer))) continue
+            for (const layer of span) {
+              if (reachable.has(layer)) continue
+              reachable.add(layer)
+              expanded = true
+            }
+          }
+        }
+        const span = boardLayers.filter((layer) => reachable.has(layer))
         const layers = span.filter((layer) =>
           (normalized.buses ?? []).every(
             (bus) =>
