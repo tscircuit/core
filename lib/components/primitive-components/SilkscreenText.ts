@@ -1,4 +1,4 @@
-import { silkscreenTextProps, type PcbStyle } from "@tscircuit/props"
+import { type PcbStyle, silkscreenTextProps } from "@tscircuit/props"
 import type { LayerRef } from "circuit-json"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
 import { resolvePcbProperty } from "lib/utils/pcbSx/resolve-pcb-property"
@@ -33,22 +33,11 @@ export class SilkscreenText extends PrimitiveComponent<
     const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
     const subcircuit = this.getSubcircuit()
 
-    // Calculate rotation for silkscreen text
-    let rotation = 0
-
-    // If the component has an explicit rotation, use that
-    if (props.pcbRotation !== undefined && props.pcbRotation !== 0) {
-      rotation = props.pcbRotation
-    } else {
-      // Otherwise, check for parent group rotations
-      const globalTransform = this._computePcbGlobalTransformBeforeLayout()
-      const decomposedTransform = decomposeTSR(globalTransform)
-      rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
-    }
-    // When text is on bottom layer, adjust rotation to keep text readable
-    if (isFlipped) {
-      rotation = (rotation + 180) % 360
-    }
+    // Use the footprint-to-board transform and reflection handling from PcbSoldermaskOpening.
+    const transform = this._computePcbGlobalTransformBeforeLayout()
+    const rotationDegrees =
+      (decomposeTSR(transform, false, isFlipped).rotation.angle * 180) / Math.PI
+    const rotation = ((rotationDegrees % 360) + 360) % 360
 
     const uniqueLayers = new Set(props.layers)
     if (props.layer) uniqueLayers.add(props.layer)

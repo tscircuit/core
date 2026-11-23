@@ -65,7 +65,7 @@ const calculateCcwRotation = (
   if (elementCcwRotation !== undefined && elementCcwRotation !== null) {
     totalRotation = elementCcwRotation - componentAngle
   } else {
-    totalRotation = componentAngle
+    totalRotation = 0
   }
 
   const normalizedRotation = ((totalRotation % 360) + 360) % 360
