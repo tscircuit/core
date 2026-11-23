@@ -1787,6 +1787,46 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       let autorouter: GenericLocalAutorouter | undefined
 
       try {
+        const runAutorouter = async (
+          activeAutorouter: GenericLocalAutorouter,
+        ): Promise<SimplifiedPcbTrace[]> => {
+          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
+            (resolve, reject) => {
+              activeAutorouter.on("complete", (event) => {
+                debug(`[${this.getString()}] local autorouting complete`)
+                resolve(event.traces)
+              })
+
+              activeAutorouter.on("error", (event) => {
+                debug(
+                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
+                )
+                routingError = event.error
+                reject(event.error)
+              })
+            },
+          )
+
+          activeAutorouter.on("progress", (event) => {
+            this.root?.emit("autorouting:progress", {
+              subcircuit_id: this.subcircuit_id,
+              componentDisplayName: this.getString(),
+              ...(routingPhasePlan.phaseName !== undefined
+                ? {
+                    phaseName: routingPhasePlan.phaseName,
+                    phaseStageIndex,
+                    phaseStageCount,
+                  }
+                : {}),
+              ...autoroutingMetadata,
+              ...event,
+              type: "autorouting:progress",
+            })
+          })
+
+          activeAutorouter.start()
+          return await routingPromise
+        }
         let traces: SimplifiedPcbTrace[]
         let precomputedOutputSimpleRouteJson: SimpleRouteJson | undefined
         if (isTestPointPhase) {
@@ -1932,42 +1972,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (!autorouter) {
             throw new Error("Failed to create local autorouter")
           }
-          const routingPromise = new Promise<SimplifiedPcbTrace[]>(
-            (resolve, reject) => {
-              autorouter.on("complete", (event) => {
-                debug(`[${this.getString()}] local autorouting complete`)
-                resolve(event.traces)
-              })
-
-              autorouter.on("error", (event) => {
-                debug(
-                  `[${this.getString()}] local autorouting error: ${event.error.message}`,
-                )
-                routingError = event.error
-                reject(event.error)
-              })
-            },
-          )
-
-          autorouter.on("progress", (event) => {
-            this.root?.emit("autorouting:progress", {
-              subcircuit_id: this.subcircuit_id,
-              componentDisplayName: this.getString(),
-              ...(routingPhasePlan.phaseName !== undefined
-                ? {
-                    phaseName: routingPhasePlan.phaseName,
-                    phaseStageIndex,
-                    phaseStageCount,
-                  }
-                : {}),
-              ...autoroutingMetadata,
-              ...event,
-              type: "autorouting:progress",
-            })
-          })
-
-          autorouter.start()
-          traces = await routingPromise
+          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =
