@@ -31,6 +31,7 @@ test("group schematic box", () => {
           "schematic_component_0",
         ],
         "schematic_group_id": "schematic_group_0",
+        "schematic_length_unit": "9.236363636363636mm",
         "show_as_schematic_box": true,
         "source_group_id": "source_group_0",
         "subcircuit_id": "subcircuit_source_group_1",
