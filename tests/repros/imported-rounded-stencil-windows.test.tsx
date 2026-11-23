@@ -5,7 +5,7 @@ import { stackSvgsHorizontally, stackSvgsVertically } from "stack-svgs"
 import type { PcbSolderPastePill } from "circuit-json"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reproduce the loss of rounded stencil windows on footprint import", async () => {
+test("footprint import preserves all nine rounded stencil windows", async () => {
   const { circuit } = getTestFixture()
 
   // ESP32-C3FH4X exposed pad and standalone apertures from its converted footprint.
@@ -50,10 +50,10 @@ test("reproduce the loss of rounded stencil windows on footprint import", async 
   await circuit.renderUntilSettled()
   expect(circuit.db.pcb_smtpad.list()).toHaveLength(1)
   const renderedPaste = circuit.db.pcb_solder_paste.list()
-  expect(windows).toHaveLength(9)
-  // Current output: the nine input windows are replaced by one square.
-  expect(renderedPaste).toHaveLength(1)
-  expect(renderedPaste[0]).toMatchObject({ shape: "rect", x: 0, y: 0 })
+  expect(renderedPaste).toHaveLength(9)
+  for (const { pcb_solder_paste_id, ...geometry } of windows) {
+    expect(renderedPaste).toContainEqual(expect.objectContaining(geometry))
+  }
   const board = circuit.db.pcb_board.list()
   const panels = [
     { title: "Input", paste: windows },
