@@ -106,6 +106,11 @@ const getSchematicSymbolId = (elm: AnyCircuitElement): string | undefined => {
   return undefined
 }
 
+/**
+ * PCB positions are points in the container-local, right-handed mm frame
+ * (+X right, +Y top, +Z above). PCB angles are local CCW degrees.
+ * Primitive placement composes the parent transform and layer reflection.
+ */
 export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
