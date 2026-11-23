@@ -83,6 +83,8 @@ export function Subcircuit_doInitialRenderIsolatedSubcircuits(
           ...parentRoot.platform,
           pcbDisabled: parentRoot.pcbDisabled,
           schematicDisabled: parentRoot.schematicDisabled,
+          schematicTraceRoutingDisabled:
+            parentRoot.schematicTraceRoutingDisabled,
         },
         cachedSubcircuits,
         pendingSubcircuitRenders,

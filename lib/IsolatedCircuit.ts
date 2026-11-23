@@ -54,6 +54,34 @@ export class IsolatedCircuit {
   set schematicDisabled(value: boolean) {
     this._schematicDisabledOverride = value
   }
+
+  private _schematicTraceRoutingDisabledOverride: boolean | undefined
+  get schematicTraceRoutingDisabled(): boolean {
+    if (this._schematicTraceRoutingDisabledOverride !== undefined) {
+      return this._schematicTraceRoutingDisabledOverride
+    }
+
+    if (this.platform?.schematicTraceRoutingDisabled !== undefined) {
+      return this.platform.schematicTraceRoutingDisabled
+    }
+
+    const board = this._getBoard() as
+      | {
+          props?: { schematicTraceRoutingDisabled?: boolean }
+          _parsedProps?: { schematicTraceRoutingDisabled?: boolean }
+        }
+      | undefined
+
+    return (
+      board?._parsedProps?.schematicTraceRoutingDisabled ??
+      board?.props?.schematicTraceRoutingDisabled ??
+      false
+    )
+  }
+
+  set schematicTraceRoutingDisabled(value: boolean) {
+    this._schematicTraceRoutingDisabledOverride = value
+  }
   pcbDisabled = false
   pcbRoutingDisabled = false
 
@@ -68,7 +96,7 @@ export class IsolatedCircuit {
    */
   name?: string
 
-  platform?: PlatformConfig
+  platform?: PlatformConfig & { schematicTraceRoutingDisabled?: boolean }
 
   /**
    * Optional URL pointing to where this project is hosted or documented.
@@ -99,7 +127,7 @@ export class IsolatedCircuit {
     cachedSubcircuits,
     pendingSubcircuitRenders,
   }: {
-    platform?: PlatformConfig
+    platform?: PlatformConfig & { schematicTraceRoutingDisabled?: boolean }
     projectUrl?: string
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
@@ -126,7 +154,11 @@ export class IsolatedCircuit {
     this.children.push(component)
   }
 
-  setPlatform(platform: Partial<PlatformConfig>) {
+  setPlatform(
+    platform: Partial<
+      PlatformConfig & { schematicTraceRoutingDisabled?: boolean }
+    >,
+  ) {
     this.platform = {
       ...this.platform,
       ...platform,
