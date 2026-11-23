@@ -158,7 +158,6 @@ function resolveAuthoredAssemblyCablePath({
     smoothPath.push(end)
   }
   smoothPath.push(path.at(-1)!)
-  // cad_cable is a refined schema; the path rule lives on its inner object.
   const validatedPath = cad_cable.innerType().shape.path.safeParse(smoothPath)
   if (!validatedPath.success) {
     throw new Error(
