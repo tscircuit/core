@@ -121,7 +121,7 @@ import {
   Group_filterSimpleRouteJsonForPhase,
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
-  prepareRoutingPhaseTraces,
+  unlockRenegotiableBusTraces,
   preserveRoutingPhaseTraces,
 } from "./Group_phasedAutoroutingUtils"
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
@@ -1692,12 +1692,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
-      const preparedTraces = prepareRoutingPhaseTraces(
+      const busTraceInput = unlockRenegotiableBusTraces(
         { simpleRouteJson, solverName },
         { renegotiableBusTraceIds },
       )
-      simpleRouteJson = preparedTraces.simpleRouteJson
-      const { eligibleBusTraceIds, replacedBusTraceIds } = preparedTraces
+      simpleRouteJson = busTraceInput.simpleRouteJson
+      const { eligibleBusTraceIds, replacedBusTraceIds } = busTraceInput
       const localAutoroutingCacheSolverOptions: LocalAutoroutingCacheSolverOptions =
         {
           autorouterName,

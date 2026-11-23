@@ -20,8 +20,9 @@ type RoutingTracePermissions = {
   renegotiableBusTraceIds: Set<PcbTraceId>
 }
 
-/** Prepare native trace permissions without changing board-world route geometry. */
-export function prepareRoutingPhaseTraces(
+/** Unlock eligible bus traces for native routing and track their replacement IDs.
+ * Route points stay in board-world mm: +X right, +Y up, +Z above, right-handed. */
+export function unlockRenegotiableBusTraces(
   {
     simpleRouteJson,
     solverName,
