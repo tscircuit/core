@@ -22,27 +22,29 @@ test("SRJ preserves individual trace limits when terminals share a net", () => {
   const net = simpleRouteJson.connections.find(
     (c) => c.pointsToConnect.length === 3,
   )!
+  expect(net.maxLength).toBeUndefined()
+  expect(net.maxViaCount).toBeUndefined()
+  const branches = simpleRouteJson.connections.filter(
+    (c) => c.netConnectionName === net.name,
+  )
+  expect(
+    branches.map((c) => ({
+      terminals: c.pointsToConnect.map((p) => p.pointId),
+      length: c.maxLength,
+      vias: c.maxViaCount,
+    })),
+  ).toEqual([
+    { terminals: [net.pointsToConnect[0]!.pointId], length: 10, vias: 0 },
+    {
+      terminals: [net.pointsToConnect[1]!.pointId],
+      length: 3,
+      vias: undefined,
+    },
+  ])
   const direct = simpleRouteJson.connections.find(
-    (c) => c.pointsToConnect.length === 2,
+    (c) => c.source_trace_id === "source_trace_3",
   )!
-  expect(net.traceConstraints).toEqual([
-    {
-      sourceTraceId: "source_trace_0",
-      pointIds: [net.pointsToConnect[0]!.pointId!],
-      maxLength: 10,
-      maxViaCount: 0,
-    },
-    {
-      sourceTraceId: "source_trace_1",
-      pointIds: [net.pointsToConnect[1]!.pointId!],
-      maxLength: 3,
-    },
-  ])
-  expect(direct.traceConstraints).toEqual([
-    {
-      sourceTraceId: "source_trace_3",
-      pointIds: direct.pointsToConnect.map((point) => point.pointId!),
-      maxViaCount: 1,
-    },
-  ])
+  expect(direct.pointsToConnect).toHaveLength(2)
+  expect(direct.maxViaCount).toBe(1)
+  expect(direct.maxLength).toBeUndefined()
 })

@@ -630,8 +630,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     ...sourceTraces
       .filter(
         (trace) =>
-          differentialPairSourceTraceIds.has(trace.source_trace_id) &&
-          trace.connected_source_port_ids.length === 2,
+          (differentialPairSourceTraceIds.has(trace.source_trace_id) &&
+            trace.connected_source_port_ids.length === 2) ||
+          ((trace.max_length !== undefined ||
+            trace.max_via_count !== undefined) &&
+            trace.connected_source_port_ids.length >= 2),
       )
       .map((trace) => trace.source_trace_id),
     ...orderedPathsBySourceTraceId.keys(),
@@ -707,6 +710,10 @@ export const getSimpleRouteJsonFromCircuitJson = ({
           sharedConnMap.getNetConnectedToId(trace.source_trace_id) ??
           "",
         source_trace_id: trace.source_trace_id,
+        ...(trace.max_length !== undefined && { maxLength: trace.max_length }),
+        ...(trace.max_via_count !== undefined && {
+          maxViaCount: trace.max_via_count,
+        }),
         nominalTraceWidth: trace.min_trace_thickness,
         width: trace.min_trace_thickness,
         // Simple Route JSON connections are multi-terminal, so retain every
@@ -740,10 +747,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const connectionsFromNets: SimpleRouteConnection[] = []
   const connectionFromNetId = new Map<string, SimpleRouteConnection>()
-  const constrainedTracesByNetConnection = new Map<
-    SimpleRouteConnection,
-    SourceTrace[]
-  >()
+  const pinToNetConnections: SimpleRouteConnection[] = []
   const handledNetConnectivityKeys = new Set<string>()
 
   // The scoped DB includes descendants so their routed copper can be preserved
@@ -898,15 +902,31 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     if (pointsToConnect.length === 0) continue
 
-    const constrainedTraces = connectedSourceTraces.filter(
-      (trace) =>
-        (trace.max_length !== undefined || trace.max_via_count !== undefined) &&
-        trace.connected_source_net_ids.length > 0 &&
-        !explicitPathSourceTraceIds.has(trace.source_trace_id) &&
-        !sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id),
-    )
-    if (constrainedTraces.length) {
-      constrainedTracesByNetConnection.set(connection, constrainedTraces)
+    for (const trace of connectedSourceTraces) {
+      if (
+        (trace.max_length === undefined && trace.max_via_count === undefined) ||
+        trace.connected_source_port_ids.length !== 1 ||
+        !trace.connected_source_net_ids.length ||
+        sourceTraceIdsAlreadyPreservedAsSrjTraces.has(trace.source_trace_id)
+      )
+        continue
+      const port = db.pcb_port.getWhere({
+        source_port_id: trace.connected_source_port_ids[0]!,
+      })
+      if (!port) continue
+      const terminal = getPcbPortRoutePoint(port)
+      pinToNetConnections.push({
+        name: trace.source_trace_id,
+        source_trace_id: trace.source_trace_id,
+        netConnectionName: connection.name,
+        pointsToConnect: [terminal],
+        nominalTraceWidth: connection.nominalTraceWidth,
+        width: connection.width,
+        ...(trace.max_length !== undefined && { maxLength: trace.max_length }),
+        ...(trace.max_via_count !== undefined && {
+          maxViaCount: trace.max_via_count,
+        }),
+      })
     }
     connectionsFromNets.push(connection)
     for (const sourceNetId of connectedSourceNetIds) {
@@ -1004,44 +1024,19 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   const allConns: SimpleRouteConnection[] = [
     ...directTraceConnections,
     ...routableConnectionsFromNets,
+    // Retain each constrained pin-to-net branch alongside the full net so
+    // its budget follows that physical pin through net decomposition.
+    ...pinToNetConnections.filter(
+      (branch) =>
+        routableConnectionsFromNets.some(
+          (net) => net.name === branch.netConnectionName,
+        ) ||
+        explicitPathConnections.some(
+          (path) => path.netConnectionName === branch.netConnectionName,
+        ),
+    ),
     ...connectionsFromBreakoutPoints,
   ]
-  // Net reduction may combine separately constrained branches. Retain each
-  // declaration and its surviving routing endpoints, including breakout IDs.
-  for (const connection of allConns) {
-    const directTrace = connection.source_trace_id
-      ? sourceTraceById.get(connection.source_trace_id)
-      : undefined
-    const traces = directTrace
-      ? [directTrace]
-      : constrainedTracesByNetConnection.get(connection)
-    if (!traces) continue
-    for (const trace of traces) {
-      if (trace.max_length === undefined && trace.max_via_count === undefined) {
-        continue
-      }
-      const pointIds = trace.connected_source_port_ids.flatMap((id) => {
-        const port = db.pcb_port.getWhere({ source_port_id: id })
-        if (!port) return []
-        const routePointId = getPcbPortRoutePoint(port).pointId
-        const point = connection.pointsToConnect.find(
-          (p) =>
-            p.pcb_port_id === port.pcb_port_id || p.pointId === routePointId,
-        )
-        return point?.pointId ? [point.pointId] : []
-      })
-      if (!pointIds.length) continue
-      connection.traceConstraints ??= []
-      connection.traceConstraints.push({
-        sourceTraceId: trace.source_trace_id,
-        pointIds,
-        ...(trace.max_length !== undefined && { maxLength: trace.max_length }),
-        ...(trace.max_via_count !== undefined && {
-          maxViaCount: trace.max_via_count,
-        }),
-      })
-    }
-  }
   const defaultTraceWidth = minTraceWidth ?? board?.min_trace_width ?? 0.1
   const preferredTraceWidth =
     nominalTraceWidth ?? board?.default_nominal_trace_width
