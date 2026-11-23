@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640">
+  <title>NEMA8: a VM-owned route ends on the grounded TVS pad</title>
+  <style>text { font-family: Arial, sans-serif; fill: #172033; } .small { font-size: 15px; } .label { font-size: 18px; font-weight: 600; }</style>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#b91c1c"/></marker></defs>
+  <rect width="1200" height="640" fill="#f1f5f9"/>
+  <text x="28" y="43" font-size="25" font-weight="700">NEMA8: a VM-owned route ends on the grounded TVS pad</text>
+  <text x="28" y="73" class="small">Actual pads and copper from the full board capture. Unrelated components are hidden for clarity.</text>
+  <rect x="24" y="98" width="720" height="460" rx="12" fill="#fff" stroke="#cbd5e1"/>
+  <rect x="768" y="98" width="408" height="460" rx="12" fill="#fff" stroke="#cbd5e1"/>
+  <text x="48" y="134" font-size="20" font-weight="700">The conflicting copper (unchanged)</text>
+  <text x="48" y="160" class="small">Blue = VM source intent. Orange = GND source intent.</text>
+  <!-- Copper uses the fixture's board frame in mm: +X right, +Y up.
+       This top-down overlay preserves positions and trace widths on both layers. -->
+  <g transform="translate(333.75 570) scale(75 -75)">
+    <rect x="-3.4923482000000003" y="2.6899940000000004" width="2.0463764" height="1.620012" fill="#dbeafe" stroke="#2563eb" stroke-width="0.035"/>
+    <rect x="0.8459718" y="2.6899939999999996" width="2.0463764" height="1.620012" fill="#ffedd5" stroke="#ea580c" stroke-width="0.035"/>
+    <rect x="3.725" y="2.1750000000000003" width="0.95" height="0.8" fill="#dbeafe" stroke="#2563eb" stroke-width="0.035"/>
+    <line x1="4.2" y1="2.575" x2="3.8991850591425066" y2="2.98125" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="3.8991850591425066" y1="2.98125" x2="3.598370118285013" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="3.598370118285013" y1="3.3874999999999997" x2="2.8" y2="4.200000000000001" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="2.8" y1="4.200000000000001" x2="1.9600000000000002" y2="4.200000000000001" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="1.9600000000000002" y1="4.200000000000001" x2="1.4983701182850133" y2="3.912499999999999" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="1.4983701182850133" y1="3.912499999999999" x2="0.9733701182850139" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.9733701182850139" y1="3.3874999999999997" x2="0.7483701182850133" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.56" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.7483701182850133" y1="3.3874999999999997" x2="0.5233701182850128" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.55" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.5233701182850128" y1="3.3874999999999997" x2="0.4483701182850135" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.525" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.4483701182850135" y1="3.3874999999999997" x2="0.3733701182850133" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.525" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.3733701182850133" y1="3.3874999999999997" x2="0.22337011828501296" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.525" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="0.22337011828501296" y1="3.3874999999999997" x2="-0.07662988171498686" y2="3.3874999999999997" stroke="#2563eb" stroke-width="0.55" stroke-linecap="butt" opacity="0.4" stroke-dasharray="0.18 0.12"/>
+    <line x1="-0.07662988171498686" y1="3.3874999999999997" x2="-0.5074724112862401" y2="3.415625" stroke="#2563eb" stroke-width="0.55" stroke-linecap="round"/>
+    <line x1="-0.5074724112862401" y1="3.415625" x2="-0.9383149408574935" y2="3.4437499999999996" stroke="#2563eb" stroke-width="0.55" stroke-linecap="round"/>
+    <line x1="-0.9383149408574935" y1="3.4437499999999996" x2="-1.7437499999999997" y2="3.4437499999999996" stroke="#2563eb" stroke-width="0.56" stroke-linecap="round"/>
+    <line x1="-1.7437499999999997" y1="3.4437499999999996" x2="1.8691600000000002" y2="3.4999999999999996" stroke="#2563eb" stroke-width="0.56" stroke-linecap="round"/>
+    <circle cx="-0.07662988171498686" cy="3.3874999999999997" r="0.225" fill="#2563eb"/>
+    <circle cx="-0.07662988171498686" cy="3.3874999999999997" r="0.15" fill="#fff"/>
+    <circle cx="1.8691600000000002" cy="3.4999999999999996" r="0.31" fill="none" stroke="#b91c1c" stroke-width="0.055"/>
+  </g>
+  <text x="474" y="203" text-anchor="middle" class="label" style="fill:#b91c1c">Wrong endpoint</text>
+  <path d="M474 216 L474 276" fill="none" stroke="#b91c1c" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="149" y="399" text-anchor="middle" class="label">D_VM_TVS.1</text>
+  <text x="149" y="424" text-anchor="middle" class="label" style="fill:#2563eb">VM (cathode)</text>
+  <text x="474" y="399" text-anchor="middle" class="label">D_VM_TVS.2</text>
+  <text x="474" y="424" text-anchor="middle" class="label" style="fill:#ea580c">GND (anode)</text>
+  <text x="648" y="450" text-anchor="middle" class="small">C_VM_HF1.1</text>
+  <text x="648" y="472" text-anchor="middle" class="label" style="fill:#2563eb">VM</text>
+  <text x="48" y="491" class="small">The bottom copper crosses the TVS gap and reaches its GND pad.</text>
+  <line x1="48" y1="527" x2="86" y2="527" stroke="#2563eb" stroke-width="7"/>
+  <text x="99" y="532" class="small">Bottom copper</text>
+  <line x1="285" y1="527" x2="323" y2="527" stroke="#2563eb" opacity="0.4" stroke-width="7" stroke-dasharray="6 5"/>
+  <text x="336" y="532" class="small">Top copper (overlay)</text>
+  <text x="792" y="137" font-size="20" font-weight="700">Intended source connectivity</text>
+  <circle cx="838" cy="183" r="10" fill="#2563eb"/>
+  <text x="859" y="190" class="label">VM</text>
+  <circle cx="1035" cy="183" r="10" fill="#ea580c"/>
+  <text x="1056" y="190" class="label">GND</text>
+  <text x="792" y="231" class="small">These remain two separate intended nets.</text>
+  <line x1="792" y1="254" x2="1152" y2="254" stroke="#cbd5e1"/>
+  <text x="792" y="291" font-size="19" font-weight="700">{{result_label}}</text>
+  <rect x="792" y="314" width="360" height="66" rx="8" fill="#e2e8f0"/>
+  <text x="810" y="355" font-size="21" font-weight="700">{{outcome}}</text>
+  <text x="792" y="415" font-size="17" font-weight="700">{{expected}}</text>
+  <text x="792" y="452" class="small">Source owner: VM. Declared end pad: GND.</text>
+  <text x="792" y="511" class="small">Physical contact must not redefine intent.</text>
+  <text x="28" y="596" class="small">From NEMA8 v1.0.48. Both tests still load all 2,469 original Circuit JSON records.</text>
+  <text x="28" y="620" class="small">The fix changes the software result shown at right; it does not alter the copper pictured at left.</text>
+</svg>
