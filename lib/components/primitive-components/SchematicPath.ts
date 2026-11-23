@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicPathProps } from "@tscircuit/props"
 import { svgPathToPoints } from "lib/utils/schematic/svgPathToPoints"
@@ -40,6 +41,7 @@ export class SchematicPath extends PrimitiveComponent<
 
       for (const subpathPoints of subpaths) {
         const schematic_path = db.schematic_path.insert({
+          schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
           schematic_component_id,
           schematic_symbol_id,
           points: subpathPoints.map((point) => ({
@@ -62,6 +64,7 @@ export class SchematicPath extends PrimitiveComponent<
     } else if (props.points && props.points.length > 0) {
       // Use the provided points directly
       const schematic_path = db.schematic_path.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id,
         schematic_symbol_id,
         points: props.points.map((point) => ({

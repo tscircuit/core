@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { netLabelProps } from "@tscircuit/props"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { Port } from "./Port"
@@ -135,6 +136,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
     })
 
     const netLabel = db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: props.net!,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
@@ -296,6 +298,7 @@ export class NetLabel extends PrimitiveComponent<typeof netLabelProps> {
       }
 
       db.schematic_trace.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         source_trace_id: source_trace_id!,
         edges,
         junctions: [],

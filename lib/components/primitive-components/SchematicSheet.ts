@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { schematicSheetProps } from "@tscircuit/props"
 import { getBoundsForSchematic } from "lib/utils/autorouting/getBoundsForSchematic"
 import { resolveCircuitJsonSchematicSheetProperties } from "lib/utils/schematic/get-circuit-json-schematic-sheet-size"
@@ -49,6 +50,7 @@ export class SchematicSheet extends PrimitiveComponent<
       resolveCircuitJsonSchematicSheetProperties(props)
 
     const schematicSheet = db.schematic_sheet.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       name,
       display_name: displayName,
       sheet_index: sheetIndex,

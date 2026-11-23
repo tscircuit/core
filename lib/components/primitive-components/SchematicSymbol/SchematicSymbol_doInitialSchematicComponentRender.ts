@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { SchematicPort } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { symbols } from "schematic-symbols"
@@ -21,6 +22,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
   const subcircuitId =
     schematicSymbol.getSubcircuit().subcircuit_id ?? undefined
   const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size: { ...symbol.size },
     is_box_with_pins: true,
@@ -45,6 +47,7 @@ export const SchematicSymbol_doInitialSchematicComponentRender = (
     }
 
     const schematicPort = db.schematic_port.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id: schematicComponent.schematic_component_id,
       center: portCenter,
       source_port_id: port.source_port_id,

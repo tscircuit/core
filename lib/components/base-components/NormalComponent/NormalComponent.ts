@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { NormalComponent_doInitialSourcePinSpecificationChecks } from "./NormalComponent_doInitialSourcePinSpecificationChecks"
 import {
@@ -286,6 +287,7 @@ export class NormalComponent<
       const schematicPosition = this._getGlobalSchematicPositionBeforeLayout()
 
       root.db.source_failed_to_create_component_error.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         component_name: this.name,
         error_type: "source_failed_to_create_component_error",
         message: `Cannot create component "${this.name}": A component with the same name already exists`,
@@ -923,6 +925,7 @@ export class NormalComponent<
 
     if (symbol) {
       const schematic_component = db.schematic_component.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         center,
         size: { ...symbol.size },
         source_component_id: this.source_component_id!,
@@ -945,6 +948,7 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
 
     const schematic_component = db.schematic_component.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       center,
       // width/height are computed in the SchematicComponentSizeCalculation phase
       size: { width: 0, height: 0 },
@@ -977,6 +981,7 @@ export class NormalComponent<
     const center = this._getGlobalSchematicPositionBeforeLayout()
     const schPortArrangement = this._getSchematicPortArrangement()
     const schematic_component = db.schematic_component.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       center,
       rotation: props.schRotation ?? 0,
       size: dimensions.getSize(),
@@ -1009,6 +1014,7 @@ export class NormalComponent<
     const schematic_box_width = dimensions?.getSize().width
     const schematic_box_height = dimensions?.getSize().height
     const manufacturer_part_number_schematic_text = db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: resolveManufacturerPartNumber(props) ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",
@@ -1026,6 +1032,7 @@ export class NormalComponent<
       schematic_sheet_id: this._resolveSchematicSheetId(),
     })
     const component_name_text = db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: props.displayName ?? props.name ?? "",
       schematic_component_id: schematic_component.schematic_component_id,
       anchor: "left",

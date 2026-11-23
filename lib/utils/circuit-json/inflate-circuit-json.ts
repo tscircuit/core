@@ -1,4 +1,9 @@
-import { cju } from "@tscircuit/circuit-json-util"
+import {
+  cju,
+  convertSchematicLengthUnits,
+  getSchematicLengthUnitScale,
+} from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { CircuitJson } from "circuit-json"
 import type { Group } from "../../components/primitive-components/Group/Group"
 import type {
@@ -27,31 +32,35 @@ import { inflateSourceTrace } from "../../components/primitive-components/Group/
 import { inflateSourceTransistor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceTransistor"
 import { inflateStandalonePcbPrimitives } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateStandalonePcbPrimitives"
 
-export const inflateCircuitJson = (
-  target: SubcircuitI & Group<any>,
-  circuitJson: CircuitJson | undefined,
-  children: any[],
-) => {
+export const inflateCircuitJson = (target: SubcircuitI & Group<any>) => {
+  const cachedJson = target._isolatedCircuitJson
+  const circuitJson: CircuitJson | undefined =
+    cachedJson ?? target._parsedProps.circuitJson
   if (!circuitJson) return
-  const injectionDb = cju(circuitJson)
 
-  if (circuitJson && children?.length > 0) {
+  target._isInflatedFromCircuitJson = true
+  target._isolatedCircuitJson = null
+  if (!cachedJson && target._parsedProps.children?.length > 0) {
     throw new Error("Component cannot have both circuitJson and children")
   }
 
+  const injectionDb = cju(
+    convertSchematicLengthUnits(circuitJson, LEGACY_SCHEMATIC_LENGTH_UNIT),
+  )
+
   const groupsMap = new Map<SourceGroupId, Group<any>>()
 
-  const inflationCtx: InflatorContext = {
+  const context: InflatorContext = {
     injectionDb,
     subcircuit: target,
+    fromIsolatedCache: !!cachedJson,
     groupsMap,
   }
 
   // Inflate source_groups in dependency order (parents before children)
   // Using explicit dependency tracking to detect cycles
-  const sourceGroups = injectionDb.source_group.list()
   const renderedGroupIds = new Set<string>()
-  const groupsToRender = [...sourceGroups]
+  const groupsToRender = [...injectionDb.source_group.list()]
 
   while (groupsToRender.length > 0) {
     // Find a group whose parent has already been rendered (or has no parent)
@@ -71,18 +80,33 @@ export const inflateCircuitJson = (
     }
 
     const groupToRender = groupsToRender[groupIndex]
-    inflateSourceGroup(groupToRender, inflationCtx)
+    inflateSourceGroup(groupToRender, context)
     renderedGroupIds.add(groupToRender.source_group_id)
     groupsToRender.splice(groupIndex, 1)
   }
 
   const pcbBoards = injectionDb.pcb_board.list()
   for (const pcbBoard of pcbBoards) {
-    inflatePcbBoard(pcbBoard, inflationCtx)
+    inflatePcbBoard(pcbBoard, context)
   }
 
   const sourceComponents = injectionDb.source_component.list()
   for (const sourceComponent of sourceComponents) {
+    const group = groupsMap.get(sourceComponent.source_group_id ?? "") ?? target
+    const scale = getSchematicLengthUnitScale(
+      LEGACY_SCHEMATIC_LENGTH_UNIT,
+      group._getSchematicLengthUnit(),
+    )
+    const center = injectionDb.schematic_component.getWhere({
+      source_component_id: sourceComponent.source_component_id,
+    })?.center
+    const inflationCtx = {
+      ...context,
+      schematicPlacement: center && {
+        schX: center.x * scale,
+        schY: center.y * scale,
+      },
+    }
     switch (sourceComponent.ftype) {
       case "simple_resistor":
         inflateSourceResistor(sourceComponent, inflationCtx)
@@ -135,16 +159,16 @@ export const inflateCircuitJson = (
 
   const sourcePorts = injectionDb.source_port.list()
   for (const sourcePort of sourcePorts) {
-    inflateSourcePort(sourcePort, inflationCtx)
+    inflateSourcePort(sourcePort, context)
   }
 
   const sourceTraces = injectionDb.source_trace.list()
   for (const sourceTrace of sourceTraces) {
-    inflateSourceTrace(sourceTrace, inflationCtx)
+    inflateSourceTrace(sourceTrace, context)
   }
 
   // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)
   // These are elements placed directly on the board without a component association
-  inflateStandalonePcbPrimitives(inflationCtx)
-  inflateSimulation(inflationCtx)
+  inflateStandalonePcbPrimitives(context)
+  inflateSimulation(context)
 }

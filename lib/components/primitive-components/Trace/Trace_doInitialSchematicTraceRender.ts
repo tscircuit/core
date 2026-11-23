@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { MultilayerIjump } from "@tscircuit/infgrid-ijump-astar"
 import { type Point, doesLineIntersectLine } from "@tscircuit/math-utils"
@@ -181,6 +182,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
         schematic_sheet_id: schematicSheetId,
       })
       const dbTrace = db.schematic_trace.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         source_trace_id: trace.source_trace_id!,
         edges,
         junctions,
@@ -196,6 +198,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
       const side =
         getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
       db.schematic_net_label.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         text: schematicNetLabelText,
         source_net_id: net.source_net_id!,
         anchor_position: anchorPos,
@@ -213,6 +216,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
     const side = getEnteringEdgeFromDirection(port.facingDirection!) ?? "bottom"
     const netLabel = db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: net._parsedProps.name,
       source_net_id: net.source_net_id!,
       anchor_position: anchorPos,
@@ -499,6 +503,7 @@ export const Trace_doInitialSchematicTraceRender = (trace: Trace) => {
 
   // Insert schematic trace
   const dbTrace = db.schematic_trace.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     source_trace_id: trace.source_trace_id!,
     edges,
     junctions,

@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../../base-components/PrimitiveComponent"
 import { schematicBoxProps } from "@tscircuit/props"
 import type { Port } from "../Port"
@@ -95,8 +96,9 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
 
       width = right - left
       height = bottom - top
-      x = left + (props.schX ?? 0)
-      y = top + (props.schY ?? 0)
+      const offset = this._getSchematicPropsPosition()
+      x = left + offset.x
+      y = top + offset.y
       centerX = x + width / 2
       centerY = y + height / 2
     } else if (hasFixedSize) {
@@ -112,6 +114,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
     }
 
     db.schematic_box.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       height,
       width,
       x,
@@ -163,6 +166,7 @@ export class SchematicBox extends PrimitiveComponent<typeof schematicBoxProps> {
       const titleY = anchorPos.y + titleOffsetY
 
       db.schematic_text.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         anchor: textAnchor,
         text: props.title,
         font_size: props.titleFontSize ?? 0.18,

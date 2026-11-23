@@ -30,6 +30,7 @@ export function inflateSourceTransistor(
 
   const transistor = new Transistor({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     type: sourceElm.transistor_type,
     layer: pcbElm?.layer,
     pcbX,

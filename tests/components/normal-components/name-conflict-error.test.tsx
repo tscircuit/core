@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { test, expect } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
@@ -5,9 +6,15 @@ test("should create source_failed_to_create_component_error for same-name naming
   const { circuit } = getTestFixture()
 
   circuit.add(
-    <board width="10mm" height="10mm">
+    <board width="10mm" height="10mm" defaultSchematicLengthUnit="in">
       <resistor name="R1" resistance="1k" footprint="0402" />
-      <resistor name="R1" resistance="2k" footprint="0402" />
+      <resistor
+        name="R1"
+        resistance="2k"
+        footprint="0402"
+        schX="25.4mm"
+        pcbX={2}
+      />
     </board>,
   )
 
@@ -23,6 +30,9 @@ test("should create source_failed_to_create_component_error for same-name naming
   expect(errors).toHaveLength(1)
   expect(errors[0]).toMatchObject({
     component_name: "R1",
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
+    schematic_center: { x: 2.75, y: 0 },
+    pcb_center: { x: 2, y: 0 },
     error_type: "source_failed_to_create_component_error",
     message: `Cannot create component "R1": A component with the same name already exists`,
     type: "source_failed_to_create_component_error",

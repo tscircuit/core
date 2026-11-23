@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getEnteringEdgeFromDirection } from "lib/utils/schematic/getEnteringEdgeFromDirection"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
 import type { Trace } from "./Trace"
@@ -87,6 +88,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const toSide =
       getEnteringEdgeFromDirection(toPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: netLabelText,
       source_net_id: toPort.source_port_id!,
       anchor_position: toAnchorPos,
@@ -103,6 +105,7 @@ export function Trace__doInitialSchematicTraceRenderWithDisplayLabel(
     const fromSide =
       getEnteringEdgeFromDirection(fromPort.facingDirection!) ?? "bottom"
     db.schematic_net_label.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: netLabelText,
       source_net_id: fromPort.source_port_id!,
       anchor_position: fromAnchorPos,

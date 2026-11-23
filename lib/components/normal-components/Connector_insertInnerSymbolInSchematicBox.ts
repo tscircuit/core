@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type { SchSymbol } from "schematic-symbols"
 import type { Connector } from "./Connector"
@@ -54,6 +55,7 @@ export function insertInnerSymbolInSchematicBox(
         }
       }
       db.schematic_path.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         points,
         is_filled: primitive.fill ?? false,
@@ -67,6 +69,7 @@ export function insertInnerSymbolInSchematicBox(
       })
     } else if (primitive.type === "circle") {
       db.schematic_circle.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         center: transformPoint({ x: primitive.x, y: primitive.y }),
         radius: primitive.radius * scaleFactor,
@@ -87,6 +90,7 @@ export function insertInnerSymbolInSchematicBox(
         y: primitive.y + primitive.height,
       })
       db.schematic_rect.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: connector.schematic_component_id,
         center: {
           x: (topLeft.x + bottomRight.x) / 2,

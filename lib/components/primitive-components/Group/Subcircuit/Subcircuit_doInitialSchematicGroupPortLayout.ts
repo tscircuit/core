@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { SchematicPort } from "circuit-json"
 import {
   getSchematicComponentWithTextBounds,
@@ -213,6 +214,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
       if (port.schematic_port_id)
         db.schematic_port.delete(port.schematic_port_id)
       const schematicPort = db.schematic_port.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         source_port_id: port.source_port_id!,
         schematic_group_id: subcircuit.schematic_group_id!,
         schematic_sheet_id: schematicSheetId,

@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicRectProps } from "@tscircuit/props"
 import {
@@ -34,6 +35,7 @@ export class SchematicRect extends PrimitiveComponent<
     const schematic_symbol_id = this._getSymbolAncestor()?.schematic_symbol_id
 
     const schematic_rect = db.schematic_rect.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_symbol_id,
       center: {
         x: globalPos.x,

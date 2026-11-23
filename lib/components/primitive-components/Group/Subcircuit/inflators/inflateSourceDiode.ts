@@ -60,6 +60,7 @@ export function inflateSourceDiode(
 
   const diodeProps = {
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,
     supplierPartNumbers: sourceElm.supplier_part_numbers ?? undefined,
     pinLabels: importedPinLabels,

@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import {
   type NetId,
@@ -316,6 +317,7 @@ export function applyNetLabelPlacements(args: {
       }
 
       const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         text,
         source_net_id: sourceNet.source_net_id,
         anchor_position,
@@ -356,6 +358,7 @@ export function applyNetLabelPlacements(args: {
     })
 
     const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text,
       source_net_id:
         placementConnKey ?? placement.netId ?? placement.globalConnNetId,

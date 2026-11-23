@@ -26,6 +26,7 @@ export function inflateSourceLed(
 
   const led = new Led({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     color: sourceElm.color,
     wavelength: sourceElm.wavelength ?? (sourceElm as any).wave_length,
     layer: pcbElm?.layer,

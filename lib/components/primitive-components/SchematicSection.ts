@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { type Bounds, doBoundsOverlap } from "@tscircuit/math-utils"
 import { schematicSectionProps } from "@tscircuit/props"
 import {
@@ -156,6 +157,7 @@ export class SchematicSection extends PrimitiveComponent<
     )
     for (const line of dividers) {
       db.schematic_line.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         x1: line.start.x,
         y1: line.start.y,
         x2: line.end.x,
@@ -204,6 +206,7 @@ export class SchematicSection extends PrimitiveComponent<
 
       const fontSize = sectionTitleFontSize ?? 0.18
       db.schematic_text.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         anchor: "top_left",
         text: displayName,
         font_size: fontSize,

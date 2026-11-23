@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { underscorifyPinStyles } from "lib/soup/underscorifyPinStyles"
 import { underscorifyPortArrangement } from "lib/soup/underscorifyPortArrangement"
 import type { Group } from "./Group"
@@ -96,6 +97,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const schPortArrangement = group._getSchematicPortArrangement()
 
   const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size,
     source_group_id: group.source_group_id!,
@@ -128,6 +130,7 @@ export const Group_doInitialSchematicBoxComponentRender = (
   const title = props.schTitle ?? props.name
   if (title) {
     db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text: title,
       schematic_component_id: schematicComponent.schematic_component_id,
       anchor: "left",

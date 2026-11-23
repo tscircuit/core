@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { commonComponentProps, voltageProbeProps } from "@tscircuit/props"
 import type {
   SchematicVoltageProbe,
@@ -228,6 +229,7 @@ export class VoltageProbe extends PrimitiveComponent<typeof voltageProbeProps> {
     })
 
     const schematic_voltage_probe = db.schematic_voltage_probe.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       name: probeName,
       position,
       schematic_trace_id: targetTraceId,

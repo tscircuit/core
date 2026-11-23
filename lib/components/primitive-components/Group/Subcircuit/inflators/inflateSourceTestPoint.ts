@@ -20,6 +20,7 @@ export function inflateSourceTestPoint(
 
   const testPoint = new TestPoint({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     // Saved primitives are attached below instead of generating an implied footprint.
     footprint: [],
     displayName: sourceElm.display_name,

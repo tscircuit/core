@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { SourceNet } from "circuit-json"
 import type { Group } from "lib/components"
 import { computeSchematicNetLabelCenter } from "lib/utils/schematic/computeSchematicNetLabelCenter"
@@ -310,6 +311,7 @@ export const insertNetLabelsForPortsMissingTrace = ({
     }
 
     const netLabel: Parameters<typeof db.schematic_net_label.insert>[0] = {
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text,
       source_net_id: sourceNet?.source_net_id ?? connKey,
       anchor_position: schPort.center,

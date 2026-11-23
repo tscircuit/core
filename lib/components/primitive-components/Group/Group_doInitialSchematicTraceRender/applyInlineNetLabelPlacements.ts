@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type {
   NetId,
   SchematicTracePipelineSolver,
@@ -172,6 +173,7 @@ export function applyInlineNetLabelPlacements(args: {
 
     if (stubTracePath && stubTracePath.length === 2) {
       db.schematic_trace.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         source_trace_id: sourceTraceId,
         edges: [{ from: stubTracePath[0]!, to: stubTracePath[1]! }],
         junctions: [],
@@ -184,6 +186,7 @@ export function applyInlineNetLabelPlacements(args: {
     }
 
     db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       text,
       // Links the label back to the trace it names, so a consumer can tell an
       // inline net label apart from free-standing schematic text.

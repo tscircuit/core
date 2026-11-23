@@ -2,6 +2,11 @@ import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
 } from "./PrimitiveComponent_doInitialCadExplosionCollisionCheck"
+import { getSchematicLengthUnitScale } from "@tscircuit/circuit-json-util"
+import {
+  DEFAULT_SCHEMATIC_LENGTH_UNIT,
+  LEGACY_SCHEMATIC_LENGTH_UNIT,
+} from "circuit-json"
 import type { Port } from "lib/components/primitive-components/Port"
 import { assertUnambiguousPhysicalPortSelection } from "lib/components/primitive-components/Port/assertUnambiguousPhysicalPortSelection"
 import { getConstructionPropsSchema } from "./get-construction-props-schema"
@@ -10,7 +15,7 @@ import {
   type NetSelector,
 } from "./select-net-by-literal-selector"
 import type { Net } from "lib/components/primitive-components/Net"
-import type { PcbSx } from "@tscircuit/props"
+import type { PcbSx, SchematicLengthUnit } from "@tscircuit/props"
 import type { AnySourceComponent, LayerRef } from "circuit-json"
 import { type Options, selectAll, selectOne } from "css-select"
 import Debug from "debug"
@@ -808,13 +813,50 @@ export abstract class PrimitiveComponent<
     )
   }
 
+  /** Imported Circuit JSON positions already use the schematic renderer’s units. */
+  _schematicPositionFromCircuitJson = false
+
+  _getSchematicLengthUnit(): SchematicLengthUnit {
+    return (
+      this._parsedProps?.defaultSchematicLengthUnit ??
+      this.parent?._getSchematicLengthUnit?.() ??
+      DEFAULT_SCHEMATIC_LENGTH_UNIT
+    )
+  }
+
+  /** Local placement point in Circuit JSON schematic units (right +X, up +Y). */
+  _getSchematicPropsPosition() {
+    const { schX: x = 0, schY: y = 0 } = this._parsedProps
+    if ((!x && !y) || this._schematicPositionFromCircuitJson) return { x, y }
+    const unit = this._getSchematicLengthUnit()
+    if (unit === LEGACY_SCHEMATIC_LENGTH_UNIT) return { x, y }
+
+    // The distance parser returns mm for suffixed strings. Bare values use the subcircuit's unit.
+    const toDrawingUnits = (parsed: number, raw: unknown) => {
+      const bare =
+        typeof raw === "number" ||
+        (typeof raw === "string" && Number.isFinite(Number(raw)))
+      return (
+        parsed *
+        getSchematicLengthUnitScale(
+          bare ? unit : "mm",
+          LEGACY_SCHEMATIC_LENGTH_UNIT,
+        )
+      )
+    }
+    return {
+      x: toDrawingUnits(x, this.props.schX),
+      y: toDrawingUnits(y, this.props.schY),
+    }
+  }
+
   /**
    * Computes a transformation matrix from the props of this component for
    * schematic components
    */
   computeSchematicPropsTransform(): Matrix {
-    const { _parsedProps: props } = this
-    return compose(translate(props.schX ?? 0, props.schY ?? 0))
+    const { x, y } = this._getSchematicPropsPosition()
+    return translate(x, y)
   }
 
   /**
@@ -1240,6 +1282,7 @@ export abstract class PrimitiveComponent<
     if (schSheetName) {
       const matchingSheet = this.root?.db.schematic_sheet
         .list()
+
         .find((sheet) => sheet.name === schSheetName)
       if (matchingSheet) return matchingSheet.schematic_sheet_id
     }

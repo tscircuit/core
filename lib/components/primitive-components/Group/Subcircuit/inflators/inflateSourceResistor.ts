@@ -30,6 +30,7 @@ export function inflateSourceResistor(
 
   const resistor = new Resistor({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     resistance: sourceElm.resistance,
     layer: pcbElm?.layer,
     pcbX,

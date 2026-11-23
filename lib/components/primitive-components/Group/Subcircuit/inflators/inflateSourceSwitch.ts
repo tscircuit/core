@@ -70,6 +70,7 @@ export function inflateSourceSwitch(
   const importedSwitchProps = getImportedSwitchProps(sourceElm, inflatorContext)
   const switchComponent = new Switch({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     displayName: sourceElm.display_name,
     ...importedSwitchProps,
     layer: pcbElm?.layer,

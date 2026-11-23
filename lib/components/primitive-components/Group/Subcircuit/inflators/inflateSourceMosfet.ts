@@ -22,6 +22,7 @@ export function inflateSourceMosfet(
 
   const mosfet = new Mosfet({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     channelType: sourceElm.channel_type,
     mosfetMode: sourceElm.mosfet_mode,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,

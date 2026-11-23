@@ -30,6 +30,7 @@ export function inflateSourceInductor(
 
   const inductor = new Inductor({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     inductance: (sourceElm as any).inductance,
     layer: pcbElm?.layer,
     pcbX,

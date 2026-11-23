@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { SVG_MIMETYPE, loadImageSource } from "@tscircuit/image-utils"
 import { schematicGraphicProps } from "@tscircuit/props"
 import type {
@@ -57,6 +58,7 @@ export class SchematicGraphic extends PrimitiveComponent<
             mimetype: SVG_MIMETYPE,
           } satisfies Asset
           const schematicGraphic = this.root!.db.schematic_graphic.insert({
+            schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
             asset,
             schematic_sheet_id: this._resolveSchematicSheetId(),
             svg_content: svgContent,
@@ -85,6 +87,7 @@ export class SchematicGraphic extends PrimitiveComponent<
           ? svgContent
           : sourceImage.text
         const schematicGraphic = this.root!.db.schematic_graphic.insert({
+          schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
           asset,
           schematic_sheet_id: this._resolveSchematicSheetId(),
           ...(fallbackSvgContent === undefined
@@ -106,6 +109,7 @@ export class SchematicGraphic extends PrimitiveComponent<
         mimetype: SVG_MIMETYPE,
       } satisfies Asset
       const schematicGraphic = db.schematic_graphic.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         asset,
         schematic_sheet_id: this._resolveSchematicSheetId(),
         ...(width === undefined ? {} : { width }),

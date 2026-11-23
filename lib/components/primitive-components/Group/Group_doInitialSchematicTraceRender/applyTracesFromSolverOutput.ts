@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import {
   type Bounds,
@@ -521,6 +522,7 @@ export function applyTracesFromSolverOutput(args: {
       traceSchematicSheetId = pendingTrace.schematic_sheet_id
     }
     db.schematic_trace.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       source_trace_id: pendingTrace?.boundarySourceTraceId ?? t.source_trace_id,
       edges: t.edges,
       junctions: junctionsById[t.source_trace_id] ?? [],

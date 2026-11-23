@@ -1,3 +1,5 @@
+import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getImportedInternallyConnectedPinNames } from "./get-imported-internally-connected-pin-names"
 import { joinImportedCourtyardOutlines } from "./join-imported-courtyard-outlines"
 import { getUnitVectorFromDirection } from "@tscircuit/math-utils"
@@ -143,6 +145,10 @@ export const createComponentsFromCircuitJson = (
   },
   circuitJson: AnyCircuitElement[],
 ): PrimitiveComponent[] => {
+  circuitJson = convertSchematicLengthUnits(
+    circuitJson,
+    LEGACY_SCHEMATIC_LENGTH_UNIT,
+  )
   const joinedCourtyards = joinImportedCourtyardOutlines(
     circuitJson.filter((elm) => elm.type === "pcb_courtyard_outline"),
     componentName,
@@ -276,6 +282,7 @@ export const createComponentsFromCircuitJson = (
     elm: AnyCircuitElement,
     primitive: PrimitiveComponent,
   ) => {
+    primitive._schematicPositionFromCircuitJson = true
     let schematicSymbolId = getSchematicSymbolId(elm)
     if (
       schematicSymbolId === undefined &&
@@ -1084,16 +1091,16 @@ export const createComponentsFromCircuitJson = (
         }
         const portName = aliases[0] ?? elm.source_port_id ?? fallbackPortName
 
-        parentSymbol.add(
-          new Port({
-            pinNumber: elm.pin_number,
-            name: portName,
-            aliases,
-            schX: elm.center.x,
-            schY: elm.center.y,
-            direction: facingDirection,
-          }),
-        )
+        const port = new Port({
+          pinNumber: elm.pin_number,
+          name: portName,
+          aliases,
+          schX: elm.center.x,
+          schY: elm.center.y,
+          direction: facingDirection,
+        })
+        port._schematicPositionFromCircuitJson = true
+        parentSymbol.add(port)
 
         let strokeWidth: number | undefined
         if (typeof schematicSymbolId === "string") {

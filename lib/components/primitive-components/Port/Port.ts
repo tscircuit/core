@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getRelativeDirection } from "lib/utils/get-relative-direction"
 import { SCHEMATIC_COMPONENT_OUTLINE_COLOR } from "lib/utils/constants"
 import type {
@@ -240,7 +241,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
         })
       }
 
-      return { x: schX, y: schY }
+      return this._getSchematicPropsPosition()
     }
 
     const parentNormalComponent = this.getParentNormalComponent()
@@ -718,6 +719,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
     // For each obstacle, create a schematic_debug_object
     if (this.getSubcircuit().props._schDebugObjectsEnabled) {
       db.schematic_debug_object.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         shape: "rect",
         center: portCenter,
         size: {
@@ -768,6 +770,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
           : props.schPinLabelFontSize
 
     const schematicPortInsertProps: Omit<SchematicPort, "schematic_port_id"> = {
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       type: "schematic_port",
       schematic_component_id: parentNormalComponent?.schematic_component_id!,
       center: portCenter,
@@ -809,6 +812,7 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       else if (direction === "down") y2 += schStemLength
 
       const stemLine = db.schematic_line.insert({
+        schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
         schematic_component_id: parentNormalComponent?.schematic_component_id!,
         x1: portCenter.x,
         y1: portCenter.y,

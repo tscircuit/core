@@ -30,6 +30,7 @@ export function inflateSourcePushButton(
 
   const pushButton = new PushButton({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     layer: pcbElm?.layer,
     pcbX,
     pcbY,

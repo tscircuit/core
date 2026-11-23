@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { schematicTextProps } from "@tscircuit/props"
 import { normalizeTextForCircuitJson } from "lib/utils/normalizeTextForCircuitJson"
@@ -32,6 +33,7 @@ export class SchematicText extends PrimitiveComponent<
     const text = this._resolveText()
 
     const schematic_text = db.schematic_text.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_symbol_id,
       schematic_component_id,
       anchor: props.anchor ?? "center",

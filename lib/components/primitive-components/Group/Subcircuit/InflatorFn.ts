@@ -8,8 +8,10 @@ export type SourceGroupId = string
 
 export interface InflatorContext {
   injectionDb: CircuitJsonUtilObjects
-  subcircuit: SubcircuitI
+  subcircuit: SubcircuitI & Pick<Group<any>, "_getSchematicLengthUnit">
+  fromIsolatedCache: boolean
 
+  schematicPlacement?: { schX: number; schY: number }
   normalComponent?: NormalComponent
   groupsMap?: Map<SourceGroupId, Group<any>>
 }

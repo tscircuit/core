@@ -30,6 +30,7 @@ export function inflateSourceCapacitor(
 
   const capacitor = new Capacitor({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     capacitance: sourceElm.capacitance,
     layer: pcbElm?.layer,
     pcbX,

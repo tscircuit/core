@@ -1,3 +1,5 @@
+import { convertSchematicLengthUnits } from "@tscircuit/circuit-json-util"
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import type { AnyCircuitElement } from "circuit-json"
 import { getBoundsForSchematic } from "../autorouting/getBoundsForSchematic"
 
@@ -127,6 +129,10 @@ const translateSchematicElement = (
 export const normalizeSchematicSymbolCircuitJson = (
   symbolCircuitJson: readonly AnyCircuitElement[],
 ): AnyCircuitElement[] => {
+  symbolCircuitJson = convertSchematicLengthUnits(
+    [...symbolCircuitJson],
+    LEGACY_SCHEMATIC_LENGTH_UNIT,
+  )
   const origin = getNormalizationOrigin(symbolCircuitJson)
   if (!origin) return [...symbolCircuitJson]
 

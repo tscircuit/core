@@ -22,6 +22,7 @@ export function inflateSourceFuse(
 
   const fuse = new Fuse({
     name: sourceElm.name,
+    ...inflatorContext.schematicPlacement,
     currentRating: sourceElm.current_rating_amps,
     voltageRating: sourceElm.voltage_rating_volts,
     manufacturerPartNumber: sourceElm.manufacturer_part_number,

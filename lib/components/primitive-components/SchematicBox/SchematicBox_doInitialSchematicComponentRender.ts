@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { getNumericPinLabels } from "lib/utils/schematic/resolvePinLabels"
 import type { PinLabelsProp, SchematicPinStyle } from "@tscircuit/props"
 import type {
@@ -167,6 +168,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
   )
 
   const schematicComponent = db.schematic_component.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     center,
     size,
     source_component_id: referencedChip.source_component_id,
@@ -202,6 +204,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     }[portPosition.side] as SchematicPort["facing_direction"]
 
     db.schematic_port.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       schematic_component_id: schematicComponent.schematic_component_id,
       center: {
         x: center.x + portPosition.x,
@@ -221,6 +224,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
 
   const sectionName = props.name ?? props.chipRef
   db.schematic_text.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     text: sectionName,
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",
@@ -238,6 +242,7 @@ export const SchematicBox_doInitialSchematicComponentRender = (
     referencedChip.source_component_id,
   )
   db.schematic_text.insert({
+    schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
     text: referencedSourceComponent?.manufacturer_part_number ?? "",
     schematic_component_id: schematicComponent.schematic_component_id,
     anchor: "left",

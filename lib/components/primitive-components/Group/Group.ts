@@ -1,3 +1,4 @@
+import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -480,6 +481,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     if (this.isSubcircuit) {
       this.subcircuit_id = `subcircuit_${source_group.source_group_id}` as any
       db.source_group.update(source_group.source_group_id, {
+        default_schematic_length_unit: this._getSchematicLengthUnit(),
         subcircuit_id: this.subcircuit_id!,
       })
     }
@@ -2689,6 +2691,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { db } = this.root!
     const { _parsedProps: props } = this
     const schematic_group = db.schematic_group.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       is_subcircuit: this.isSubcircuit,
       subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
       name: this.name,
@@ -2989,6 +2992,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const finalHeight = height + paddingTop + paddingBottom
 
     db.schematic_box.insert({
+      schematic_length_unit: LEGACY_SCHEMATIC_LENGTH_UNIT,
       width: finalWidth,
       height: finalHeight,
       x: left,

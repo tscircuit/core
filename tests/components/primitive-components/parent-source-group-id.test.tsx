@@ -38,6 +38,7 @@ test("nested group has parent_source_group_id", async () => {
         "was_automatically_named": false,
       },
       {
+        "default_schematic_length_unit": "9.236363636363636mm",
         "is_subcircuit": true,
         "name": undefined,
         "source_group_id": "source_group_2",
