@@ -121,6 +121,8 @@ import {
   Group_filterSimpleRouteJsonForPhase,
   Group_hasPhasedAutorouting,
   connectionIsInRoutingPhase,
+  prepareRoutingPhaseTraces,
+  preserveRoutingPhaseTraces,
 } from "./Group_phasedAutoroutingUtils"
 import { Group_syncFanoutExitsWithGlobalConnections } from "./Group_syncFanoutExitsWithGlobalConnections"
 import type { ISubcircuit } from "./Subcircuit/ISubcircuit"
@@ -1690,24 +1692,12 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseAutorouterConfig.algorithmFn
           ? undefined
           : localAutorouterStrategy.getSolverName(commonAutorouterOptions)
-      const eligibleBusTraceIds = (simpleRouteJson.traces ?? [])
-        .filter((trace) => renegotiableBusTraceIds.has(trace.pcb_trace_id))
-        .map((trace) => trace.pcb_trace_id)
-        .sort()
-      const replacedBusTraceIds = new Set<PcbTraceId>()
-      if (
-        solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph" &&
-        eligibleBusTraceIds.length > 0
-      ) {
-        simpleRouteJson = {
-          ...simpleRouteJson,
-          traces: simpleRouteJson.traces?.map((trace) => {
-            if (!renegotiableBusTraceIds.has(trace.pcb_trace_id)) return trace
-            replacedBusTraceIds.add(trace.pcb_trace_id)
-            return { ...trace, isFixed: false }
-          }),
-        }
-      }
+      const preparedTraces = prepareRoutingPhaseTraces(
+        { simpleRouteJson, solverName },
+        { renegotiableBusTraceIds },
+      )
+      simpleRouteJson = preparedTraces.simpleRouteJson
+      const { eligibleBusTraceIds, replacedBusTraceIds } = preparedTraces
       const localAutoroutingCacheSolverOptions: LocalAutoroutingCacheSolverOptions =
         {
           autorouterName,
@@ -2033,34 +2023,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
         // A transformed routing problem hands completed copper to the next
         // stage; preserve it instead of treating it as a rerouting seed.
-        const isAutomaticBusOutput =
-          localAutorouterStrategy.name === "bus_lanes" &&
-          !phaseAutorouterConfig.algorithmFn &&
-          !getPrecomputedRoutingResult &&
-          !isTestPointPhase
         if (localAutorouterStrategy.preserveOutputTraces) {
-          const hasTimingConstraints =
-            Boolean(simpleRouteJson.differentialPairs?.length) ||
-            (simpleRouteJson.buses ?? []).some(
-              (bus) =>
-                bus.minLength !== undefined ||
-                bus.maxLength !== undefined ||
-                bus.maxLengthSkew !== undefined,
-            )
-          const canRenegotiateBusOutput =
-            isAutomaticBusOutput && !hasTimingConstraints
-          for (const trace of traces) {
-            if (!canRenegotiateBusOutput) {
-              renegotiableBusTraceIds.delete(trace.pcb_trace_id)
-            } else if (
-              !fixedTraceIds.has(trace.pcb_trace_id) &&
-              trace.connectsTo?.length === 2 &&
-              trace.allowedLayers !== undefined
-            ) {
-              renegotiableBusTraceIds.add(trace.pcb_trace_id)
-            }
-            fixedTraceIds.add(trace.pcb_trace_id)
-          }
+          preserveRoutingPhaseTraces(
+            { autorouterName, simpleRouteJson, traces },
+            { fixedTraceIds, renegotiableBusTraceIds },
+          )
         }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {

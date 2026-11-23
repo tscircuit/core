@@ -2,7 +2,10 @@ import type {
   SimpleRouteConnection,
   SimpleRouteDifferentialPair,
   SimpleRouteJson,
+  SimplifiedPcbTrace,
 } from "lib/utils/autorouting/SimpleRouteJson"
+import type { PcbTraceId } from "lib/utils/circuit-json/circuit-json-id-types"
+import type { SolverName } from "lib/solvers"
 import { getSrjOutlineForRoutingBounds } from "lib/utils/autorouting/get-srj-outline-for-routing-bounds"
 import { expandSrjBoundsToIncludeConnectionPoints } from "lib/utils/autorouting/expand-srj-bounds-to-include-connection-points"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
@@ -11,6 +14,85 @@ import type {
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
 import { getPairedBreakoutExitTarget } from "./getPairedBreakoutExitTarget"
+
+type RoutingTracePermissions = {
+  fixedTraceIds: Set<PcbTraceId>
+  renegotiableBusTraceIds: Set<PcbTraceId>
+}
+
+/** Prepare native trace permissions without changing board-world route geometry. */
+export function prepareRoutingPhaseTraces(
+  {
+    simpleRouteJson,
+    solverName,
+  }: {
+    simpleRouteJson: SimpleRouteJson
+    solverName?: SolverName
+  },
+  {
+    renegotiableBusTraceIds,
+  }: Pick<RoutingTracePermissions, "renegotiableBusTraceIds">,
+): {
+  simpleRouteJson: SimpleRouteJson
+  eligibleBusTraceIds: PcbTraceId[]
+  replacedBusTraceIds: Set<PcbTraceId>
+} {
+  const eligibleBusTraceIds = (simpleRouteJson.traces ?? [])
+    .filter((trace) => renegotiableBusTraceIds.has(trace.pcb_trace_id))
+    .map((trace) => trace.pcb_trace_id)
+    .sort()
+  const replacedBusTraceIds = new Set<PcbTraceId>()
+  if (
+    solverName === "AutoroutingPipelineSolver9_PreloadedTraceGraph" &&
+    eligibleBusTraceIds.length > 0
+  ) {
+    simpleRouteJson = {
+      ...simpleRouteJson,
+      traces: simpleRouteJson.traces?.map((trace) => {
+        if (!renegotiableBusTraceIds.has(trace.pcb_trace_id)) return trace
+        replacedBusTraceIds.add(trace.pcb_trace_id)
+        return { ...trace, isFixed: false }
+      }),
+    }
+  }
+  return { simpleRouteJson, eligibleBusTraceIds, replacedBusTraceIds }
+}
+
+export function preserveRoutingPhaseTraces(
+  {
+    autorouterName,
+    simpleRouteJson,
+    traces,
+  }: {
+    autorouterName: string
+    simpleRouteJson: SimpleRouteJson
+    traces: SimplifiedPcbTrace[]
+  },
+  { fixedTraceIds, renegotiableBusTraceIds }: RoutingTracePermissions,
+): void {
+  const hasTimingConstraints =
+    Boolean(simpleRouteJson.differentialPairs?.length) ||
+    (simpleRouteJson.buses ?? []).some(
+      (bus) =>
+        bus.minLength !== undefined ||
+        bus.maxLength !== undefined ||
+        bus.maxLengthSkew !== undefined,
+    )
+  const canRenegotiateBusOutput =
+    autorouterName === "bus_lanes" && !hasTimingConstraints
+  for (const trace of traces) {
+    if (!canRenegotiateBusOutput) {
+      renegotiableBusTraceIds.delete(trace.pcb_trace_id)
+    } else if (
+      !fixedTraceIds.has(trace.pcb_trace_id) &&
+      trace.connectsTo?.length === 2 &&
+      trace.allowedLayers !== undefined
+    ) {
+      renegotiableBusTraceIds.add(trace.pcb_trace_id)
+    }
+    fixedTraceIds.add(trace.pcb_trace_id)
+  }
+}
 
 export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
