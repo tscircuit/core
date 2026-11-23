@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test.failing("silkscreencircle isFilled draws a solid circle", async () => {
+test("silkscreencircle isFilled draws a solid circle", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width="10mm" height="8mm">
