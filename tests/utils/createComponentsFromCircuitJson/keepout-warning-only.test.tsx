@@ -33,7 +33,7 @@ test("imported keepouts preserve advisory behavior, permissions, and layers for 
     ],
   )
   const components = createComponentsFromCircuitJson(
-    { componentName: "keepouts", componentRotation: "0", pinLabels: {} },
+    { componentName: "keepouts", pinLabels: {} },
     keepouts,
   )
   expect(components).toHaveLength(keepouts.length)

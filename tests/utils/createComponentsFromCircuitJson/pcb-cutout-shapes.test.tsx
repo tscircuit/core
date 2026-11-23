@@ -39,7 +39,6 @@ test("createComponentsFromCircuitJson handles different cutout shapes", () => {
   const components = createComponentsFromCircuitJson(
     {
       componentName: "test_component",
-      componentRotation: "0",
       footprinterString: "test",
       pinLabels: {},
     },

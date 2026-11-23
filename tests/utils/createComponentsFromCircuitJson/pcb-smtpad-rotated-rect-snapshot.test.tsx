@@ -11,7 +11,6 @@ test("createComponentsFromCircuitJson renders imported rotated_rect smtpads", ()
   const importedComponents = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
     },
     [
       {

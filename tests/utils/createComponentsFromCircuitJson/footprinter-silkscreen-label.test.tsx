@@ -43,7 +43,6 @@ const getImportedText = (text: string) => {
   const component = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
       footprinterString: HEADER_MODULE_FOOTPRINT,
       pcbPinLabels: XIAO_PCB_PIN_LABELS,
     },
@@ -63,7 +62,6 @@ test("preserves literal footprinter silkscreen labels", async () => {
   const importedComponents = createComponentsFromCircuitJson(
     {
       componentName: "U1",
-      componentRotation: "0",
       footprinterString: HEADER_MODULE_FOOTPRINT,
       pcbPinLabels: XIAO_PCB_PIN_LABELS,
     },

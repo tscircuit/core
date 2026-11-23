@@ -7,7 +7,6 @@ test("createComponentsFromCircuitJson handles pcb_via elements", () => {
   const components = createComponentsFromCircuitJson(
     {
       componentName: "test_component",
-      componentRotation: "0",
     },
     [
       {

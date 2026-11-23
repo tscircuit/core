@@ -95,10 +95,7 @@ test("polygon plated holes retain rotation", () => {
   const { circuit: importedCircuit } = getTestFixture()
   const importedFootprint = new Footprint({})
   importedFootprint.addAll(
-    createComponentsFromCircuitJson(
-      { componentName: "Imported", componentRotation: "0deg" },
-      polygonPads,
-    ),
+    createComponentsFromCircuitJson({ componentName: "Imported" }, polygonPads),
   )
   const importedChip = new Chip({ name: "Imported" })
   importedChip.add(importedFootprint)

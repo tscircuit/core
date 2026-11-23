@@ -56,23 +56,6 @@ type SchematicPrimitiveWithStrokeWidth = Extract<
   { type: (typeof schematicPrimitiveTypesWithStrokeWidth)[number] }
 >
 
-const calculateCcwRotation = (
-  componentRotationStr: string | undefined | null,
-  elementCcwRotation: number | undefined | null,
-): number => {
-  const componentAngle = parseInt(componentRotationStr || "0", 10)
-  let totalRotation: number
-  if (elementCcwRotation !== undefined && elementCcwRotation !== null) {
-    totalRotation = elementCcwRotation - componentAngle
-  } else {
-    totalRotation = 0
-  }
-
-  const normalizedRotation = ((totalRotation % 360) + 360) % 360
-
-  return normalizedRotation
-}
-
 const optional = <T>(value: T | null | undefined): T | undefined =>
   value ?? undefined
 
@@ -127,7 +110,6 @@ export const createComponentsFromCircuitJson = (
   {
     sourcePortOwner,
     componentName,
-    componentRotation,
     footprinterString,
     pinLabels,
     pcbPinLabels,
@@ -135,7 +117,6 @@ export const createComponentsFromCircuitJson = (
   }: {
     sourcePortOwner?: NormalComponent
     componentName: string
-    componentRotation: string
     footprinterString?: string
     pinLabels?: PinLabelsProp
     pcbPinLabels?: PinLabelsProp
@@ -682,10 +663,6 @@ export const createComponentsFromCircuitJson = (
         )
       }
     } else if (elm.type === "pcb_silkscreen_text") {
-      const ccwRotation = calculateCcwRotation(
-        componentRotation,
-        elm.ccw_rotation,
-      )
       if (
         (footprinterString?.includes("pinrow") ||
           footprinterString?.includes("headermodule")) &&
@@ -696,7 +673,6 @@ export const createComponentsFromCircuitJson = (
             elm,
             pinLabels: pcbPinLabels ?? pinLabels ?? {},
             layer: elm.layer,
-            readableRotation: ccwRotation,
             anchorAlignment: elm.anchor_alignment,
           }),
         )
@@ -724,7 +700,7 @@ export const createComponentsFromCircuitJson = (
           text,
           pcbX,
           pcbY: elm.anchor_position.y,
-          pcbRotation: ccwRotation ?? 0,
+          pcbRotation: elm.ccw_rotation ?? 0,
         })
         silkscreenText._footprinterFontSize = elm.font_size + 0.2
         components.push(silkscreenText)

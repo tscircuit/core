@@ -6,13 +6,11 @@ export const createPinrowSilkscreenText = ({
   elm,
   pinLabels,
   layer,
-  readableRotation,
   anchorAlignment,
 }: {
   elm: PcbSilkscreenText
   pinLabels: PinLabelsProp
   layer?: LayerRef
-  readableRotation: number
   anchorAlignment?: PcbSilkscreenText["anchor_alignment"]
 }) => {
   const pinNum = elm.text.replace(/[{}]/g, "").toLowerCase()
@@ -30,7 +28,7 @@ export const createPinrowSilkscreenText = ({
     layer: layer || "top",
     pcbX: isNaN(elm.anchor_position.x) ? 0 : elm.anchor_position.x,
     pcbY: elm.anchor_position.y,
-    pcbRotation: readableRotation ?? 0,
+    pcbRotation: elm.ccw_rotation ?? 0,
   })
   silkscreenText._footprinterFontSize = elm.font_size + 0.2
   return silkscreenText

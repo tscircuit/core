@@ -225,7 +225,6 @@ export class Connector<
       {
         sourcePortOwner: this,
         componentName: this.name,
-        componentRotation: String(props.pcbRotation ?? 0),
         footprinterString: `standard:${standard}`,
         pinLabels: props.pinLabels,
         pcbPinLabels: props.pcbPinLabels,
