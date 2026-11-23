@@ -94,7 +94,7 @@ export type SimpleRouteConnection = {
   netConnectionName?: string
   /** Maximum routed length of this connection, in mm. */
   maxLength?: number
-  /** Maximum number of layer transitions using vias on this connection. */
+  /** Maximum number of vias on this connection. */
   maxViaCount?: number
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
