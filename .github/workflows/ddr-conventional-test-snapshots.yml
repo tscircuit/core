@@ -1,0 +1,52 @@
+name: Inspect changed public test SVGs for the conventional alternative
+on:
+  push:
+    branches: [analysis/conventional-native-negotiation-20261123]
+    paths: [.github/workflows/ddr-conventional-test-snapshots.yml]
+permissions:
+  contents: read
+jobs:
+  snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repository: tscircuit/tscircuit-autorouter
+            ref: 010a35b38bdb4dfadfef478942d1e9c90c8586b3
+            tests: tests/repro/pipeline9-h616-native-fixed-trace-force.test.ts tests/repro/pipeline9-imx6-ddr-fixed-copper.test.ts
+            name: autorouter
+          - repository: tscircuit/core
+            ref: 70dec82328767172a9eb5184575fdc4d6c6d5fe8
+            tests: tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx
+            name: core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --backend=copyfile
+      - name: Regenerate only the failing public snapshots
+        env:
+          TEST_FILES: ${{ matrix.tests }}
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test $TEST_FILES --timeout 120000
+          bun test $TEST_FILES --timeout 120000
+      - name: Export public test SVGs for visual review
+        if: always()
+        env:
+          REPOSITORY: ${{ matrix.repository }}
+        run: |
+          python - <<'PY'
+          import subprocess,pathlib,json,base64,os
+          paths=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          for filename in paths:
+            if not filename.endswith('.snap.svg'):continue
+            content=pathlib.Path(filename).read_bytes()
+            print('APPROVED_PUBLIC_TEST_SVG='+json.dumps({'repo':os.environ['REPOSITORY'],'path':filename,'base64':base64.b64encode(content).decode()}))
+          PY
