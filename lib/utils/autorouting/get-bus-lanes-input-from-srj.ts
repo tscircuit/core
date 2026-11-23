@@ -1,3 +1,4 @@
+import { normalizeBusLanesConnectionAliases } from "./normalize-bus-lanes-connection-aliases"
 import type {
   SimpleRouteJson as BusLanesInput,
   Trace as BusLanesTrace,
@@ -11,6 +12,13 @@ import type { SimpleRouteJson } from "./SimpleRouteJson"
  * These fragments are input to the solver only, never replacement PCB traces.
  */
 export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
+  const boardLayers = Array.from({ length: input.layerCount }, (_, layer) =>
+    layer === 0
+      ? "top"
+      : layer === input.layerCount - 1
+        ? "bottom"
+        : `inner${layer}`,
+  )
   const traces: BusLanesTrace[] = []
   const occupiedTraceIds = new Set(
     input.traces?.map((trace) => trace.pcb_trace_id),
@@ -37,6 +45,13 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
         throw new Error(
           "Bus lanes routing does not support supplied jumper copper",
         )
+      }
+      if (
+        segment.route_type === "via" &&
+        input.allowBlindAndBuriedVias === false
+      ) {
+        route.push({ ...segment, layers: segment.layers ?? boardLayers })
+        continue
       }
       if (segment.route_type !== "through_obstacle") {
         route.push(segment)
@@ -66,5 +81,47 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     }
     flushFragment()
   }
-  return { ...input, traces }
+  const normalized = normalizeBusLanesConnectionAliases({ ...input, traces })
+  return {
+    ...normalized,
+    connections: normalized.connections.map((connection) => ({
+      ...connection,
+      pointsToConnect: connection.pointsToConnect.map((point) => {
+        const via = normalized.traces
+          ?.filter((trace) => trace.connection_name === connection.name)
+          .flatMap((trace) => trace.route)
+          .find(
+            (routePoint) =>
+              routePoint.route_type === "via" &&
+              Math.hypot(routePoint.x - point.x, routePoint.y - point.y) < 1e-8,
+          )
+        if (!via || via.route_type !== "via") return point
+        const span =
+          via.layers ??
+          boardLayers.slice(
+            Math.min(
+              boardLayers.indexOf(via.from_layer),
+              boardLayers.indexOf(via.to_layer),
+            ),
+            Math.max(
+              boardLayers.indexOf(via.from_layer),
+              boardLayers.indexOf(via.to_layer),
+            ) + 1,
+          )
+        if (!span.includes(point.layer)) return point
+        const layers = span.filter((layer) =>
+          (normalized.buses ?? []).every(
+            (bus) =>
+              !bus.connectionNames.includes(connection.name) ||
+              !bus.allowedLayers ||
+              bus.allowedLayers.includes(layer),
+          ),
+        )
+        return layers.length > 1 ||
+          layers.some((layer) => layer !== point.layer)
+          ? { ...point, layers }
+          : point
+      }),
+    })),
+  } as BusLanesInput
 }

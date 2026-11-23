@@ -1,4 +1,7 @@
-import { BusLanesPipelineSolver } from "@tscircuit/bus-lanes-solver"
+import {
+  BusLanesPipelineSolver,
+  type BusLanesPipelineOptions,
+} from "@tscircuit/bus-lanes-solver"
 import { getBusLanesInputFromSrj } from "./get-bus-lanes-input-from-srj"
 import type {
   GenericLocalAutorouter,
@@ -18,8 +21,14 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
     event: AutorouterEvent["type"]
     callback: (event: AutorouterEvent) => void
   }> = []
-  constructor(public input: SimpleRouteJson) {
-    this.solver = new BusLanesPipelineSolver(getBusLanesInputFromSrj(input))
+  constructor(
+    public input: SimpleRouteJson,
+    options: BusLanesPipelineOptions = {},
+  ) {
+    this.solver = new BusLanesPipelineSolver(
+      getBusLanesInputFromSrj(input),
+      options,
+    )
   }
   on(
     event: "complete",
