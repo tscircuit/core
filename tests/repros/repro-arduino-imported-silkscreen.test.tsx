@@ -41,6 +41,10 @@ beforeAll(async () => {
     height: 960,
     viewport: { minX: -40, maxX: 40, minY: -33, maxY: 31 },
   })
+  await expect(circuit).toMatch3dSnapshot(import.meta.path, {
+    cameraPreset: "top_down_orthographic",
+    gltf: { boardTextureResolution: 2048 },
+  })
 }, 30_000)
 
 test.failing("Arduino Uno retains native KiCad front-silkscreen angles", () => {
