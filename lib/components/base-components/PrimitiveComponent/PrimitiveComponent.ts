@@ -1,4 +1,3 @@
-import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import {
   PrimitiveComponent_doInitialCadExplosionCollisionCheck,
   PrimitiveComponent_removeCadExplosionCollisionCheck,
@@ -1308,7 +1307,7 @@ export abstract class PrimitiveComponent<
     if (schSheetName) {
       const matchingSheet = this.root?.db.schematic_sheet
         .list()
-        .map(inSchematicDrawingUnits)
+
         .find((sheet) => sheet.name === schSheetName)
       if (matchingSheet) return matchingSheet.schematic_sheet_id
     }

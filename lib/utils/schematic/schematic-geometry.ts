@@ -28,7 +28,7 @@ export function inSchematicDrawingUnits<
   return convertSchematicLengthUnit(record, LEGACY_SCHEMATIC_LENGTH_UNIT) as T
 }
 
-export function updateSchematicGeometry<T extends SchematicGeometryRecord>(
+function updateSchematicGeometry<T extends SchematicGeometryRecord>(
   table: {
     get(id: string): T | null
     update(id: string, changes: Partial<T>): T

@@ -1,4 +1,4 @@
-import type { SchematicLayoutContext } from "./runSchematicLayout"
+import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import { convertCircuitJsonToBpc } from "circuit-json-to-bpc"
 import { getGraphicsForBpcGraph, layoutSchematicGraphVariants } from "bpc-graph"
 import Debug from "debug"

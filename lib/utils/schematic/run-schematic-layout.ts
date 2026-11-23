@@ -5,27 +5,26 @@ import {
   type CircuitJsonUtilObjects,
 } from "@tscircuit/circuit-json-util"
 import { LEGACY_SCHEMATIC_LENGTH_UNIT } from "circuit-json"
-import type { Group } from "./Group"
+import type { Group } from "lib/components/primitive-components/Group"
 
 export interface SchematicLayoutContext {
   group: Group<any>
   db: CircuitJsonUtilObjects
 }
 
-/** Group layout solvers edit geometry in place in their right-handed drawing frame (+X right, +Y up). */
-export function runSchematicLayout(
-  group: Group<any>,
-  layout: (ctx: SchematicLayoutContext) => void,
-) {
-  const { db } = group.root!
+/** Schematic layout solvers edit geometry in place in their right-handed drawing frame (+X right, +Y up). */
+export function runSchematicLayout<
+  Context extends { db: CircuitJsonUtilObjects },
+>(context: Context, layout: (ctx: Context) => void) {
+  const { db } = context
   const stored = db.toArray()
   const drawing = convertSchematicLengthUnits(
     stored,
     LEGACY_SCHEMATIC_LENGTH_UNIT,
   )
-  if (drawing === stored) return layout({ group, db })
+  if (drawing === stored) return layout(context)
   layout({
-    group,
+    ...context,
     db: cjuIndexed(drawing, { indexConfig: { byId: true, byType: true } }),
   })
 

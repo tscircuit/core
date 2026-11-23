@@ -1,4 +1,3 @@
-import { inSchematicDrawingUnits } from "lib/utils/schematic/schematic-geometry"
 import type { SchematicPort } from "circuit-json"
 import {
   getSchematicComponentWithTextBounds,
@@ -36,7 +35,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
   // A schematic group has one coordinate frame. Multi-sheet root interfaces
   // need a sheet-specific public interface declaration; do not mix their frames.
   const schematicSheetIds = new Set(
-    schematicLayout.component
+    db.schematic_component
       .list()
       .map((component) => component.schematic_sheet_id),
   )
@@ -150,7 +149,7 @@ export function Subcircuit_doInitialSchematicGroupPortLayout(
     schematic_sheet_id: schematicSheetId,
     schematic_component_ids: db.schematic_component
       .list()
-      .map(inSchematicDrawingUnits)
+
       .map((component) => component.schematic_component_id),
   })
   for (const direction of ["left", "right", "up", "down"] as const) {

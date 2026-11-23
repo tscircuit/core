@@ -1,4 +1,4 @@
-import type { SchematicLayoutContext } from "./runSchematicLayout"
+import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import { applySchematicMatchPackLayoutToTree } from "./applySchematicMatchPackLayoutToTree"
 import { getSchematicCircuitJsonTrees } from "./getSchematicCircuitJsonTrees"
 

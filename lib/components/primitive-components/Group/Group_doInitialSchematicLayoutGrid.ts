@@ -1,4 +1,4 @@
-import type { SchematicLayoutContext } from "./runSchematicLayout"
+import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import { length } from "circuit-json"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"

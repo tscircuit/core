@@ -1,4 +1,4 @@
-import type { SchematicLayoutContext } from "./runSchematicLayout"
+import type { SchematicLayoutContext } from "lib/utils/schematic/run-schematic-layout"
 import { Group } from "./Group"
 import { SchematicText } from "../SchematicText"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"

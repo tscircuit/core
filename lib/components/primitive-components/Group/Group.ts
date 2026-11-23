@@ -1,4 +1,4 @@
-import { runSchematicLayout } from "./runSchematicLayout"
+import { runSchematicLayout } from "lib/utils/schematic/run-schematic-layout"
 import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
@@ -2798,23 +2798,38 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _doInitialSchematicLayoutSections(): void {
-    runSchematicLayout(this, Group_doInitialSchematicLayoutSections)
+    runSchematicLayout(
+      { group: this, db: this.root!.db },
+      Group_doInitialSchematicLayoutSections,
+    )
   }
 
   _doInitialSchematicLayoutMatchAdapt(): void {
-    runSchematicLayout(this, Group_doInitialSchematicLayoutMatchAdapt)
+    runSchematicLayout(
+      { group: this, db: this.root!.db },
+      Group_doInitialSchematicLayoutMatchAdapt,
+    )
   }
 
   _doInitialSchematicLayoutMatchpack(): void {
-    runSchematicLayout(this, Group_doInitialSchematicLayoutMatchPack)
+    runSchematicLayout(
+      { group: this, db: this.root!.db },
+      Group_doInitialSchematicLayoutMatchPack,
+    )
   }
 
   _doInitialSchematicLayoutGrid(): void {
-    runSchematicLayout(this, Group_doInitialSchematicLayoutGrid)
+    runSchematicLayout(
+      { group: this, db: this.root!.db },
+      Group_doInitialSchematicLayoutGrid,
+    )
   }
 
   _doInitialSchematicLayoutFlex(): void {
-    runSchematicLayout(this, Group_doInitialSchematicLayoutFlex)
+    runSchematicLayout(
+      { group: this, db: this.root!.db },
+      Group_doInitialSchematicLayoutFlex,
+    )
   }
 
   _getPcbLayoutMode(): "grid" | "flex" | "match-adapt" | "pack" | "none" {

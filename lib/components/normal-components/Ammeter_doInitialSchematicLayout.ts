@@ -1,7 +1,4 @@
-import {
-  updateSchematicGeometry,
-  inSchematicDrawingUnits,
-} from "lib/utils/schematic/schematic-geometry"
+import { runSchematicLayout } from "lib/utils/schematic/run-schematic-layout"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import type {
   Point,
@@ -110,16 +107,14 @@ const shiftAmmeterSchematicElements = ({
   const deltaY = newCenter.y - oldCenter.y
   if (deltaX === 0 && deltaY === 0) return
 
-  updateSchematicGeometry(db.schematic_component, schematicComponentId, {
+  db.schematic_component.update(schematicComponentId, {
     center: newCenter,
   })
 
-  for (const port of db.schematic_port
-    .list({
-      schematic_component_id: schematicComponentId,
-    })
-    .map(inSchematicDrawingUnits)) {
-    updateSchematicGeometry(db.schematic_port, port.schematic_port_id, {
+  for (const port of db.schematic_port.list({
+    schematic_component_id: schematicComponentId,
+  })) {
+    db.schematic_port.update(port.schematic_port_id, {
       center: {
         x: port.center.x + deltaX,
         y: port.center.y + deltaY,
@@ -127,12 +122,10 @@ const shiftAmmeterSchematicElements = ({
     })
   }
 
-  for (const text of db.schematic_text
-    .list({
-      schematic_component_id: schematicComponentId,
-    })
-    .map(inSchematicDrawingUnits)) {
-    updateSchematicGeometry(db.schematic_text, text.schematic_text_id, {
+  for (const text of db.schematic_text.list({
+    schematic_component_id: schematicComponentId,
+  })) {
+    db.schematic_text.update(text.schematic_text_id, {
       position: {
         x: text.position.x + deltaX,
         y: text.position.y + deltaY,
@@ -160,9 +153,15 @@ export const Ammeter_doInitialSchematicLayout = (ammeter: Ammeter) => {
   }
   if (ammeter.getGroup()?._getSchematicLayoutMode() !== "relative") return
 
-  const { db, schematicLayout } = root
-  const schematicComponent = schematicLayout.component.get(
-    ammeter.schematic_component_id,
+  runSchematicLayout({ db: root.db, ammeter }, placeAmmeter)
+}
+
+function placeAmmeter({
+  db,
+  ammeter,
+}: { db: CircuitJsonUtilObjects; ammeter: Ammeter }) {
+  const schematicComponent = db.schematic_component.get(
+    ammeter.schematic_component_id!,
   )
   if (!schematicComponent) return
 
@@ -174,7 +173,7 @@ export const Ammeter_doInitialSchematicLayout = (ammeter: Ammeter) => {
   )
   if (ammeterSourcePortIds.length === 0) return
 
-  const schematicPorts = schematicLayout.port.list()
+  const schematicPorts = db.schematic_port.list()
   const sourceTraces = db.source_trace.list()
   const connectedSchematicPorts = ammeterSourcePortIds
     .map((ammeterSourcePortId) =>
@@ -188,7 +187,7 @@ export const Ammeter_doInitialSchematicLayout = (ammeter: Ammeter) => {
   if (connectedSchematicPorts.length === 0) return
 
   const baseCenter = midpoint(connectedSchematicPorts)
-  const obstacles = schematicLayout.component
+  const obstacles = db.schematic_component
     .list()
     .filter(
       (component) =>
