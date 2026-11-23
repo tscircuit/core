@@ -59,11 +59,13 @@ test("bottom-side group flips mixed-side components, positions and rotations", (
 
   const pads = circuit.db.pcb_smtpad.list()
   expect(
-    pads.filter((pad) => pad.pcb_component_id === components.C1.pcb_component_id)
+    pads
+      .filter((pad) => pad.pcb_component_id === components.C1.pcb_component_id)
       .map((pad) => pad.layer),
   ).toEqual(["bottom", "bottom"])
   expect(
-    pads.filter((pad) => pad.pcb_component_id === components.C2.pcb_component_id)
+    pads
+      .filter((pad) => pad.pcb_component_id === components.C2.pcb_component_id)
       .map((pad) => pad.layer),
   ).toEqual(["top", "top"])
 })

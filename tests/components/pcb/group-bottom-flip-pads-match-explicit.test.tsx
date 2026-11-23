@@ -31,10 +31,12 @@ test("group flip puts numbered pads where an explicit component flip does", () =
   circuit.render()
 
   const pcbByName = Object.fromEntries(
-    circuit.db.pcb_component.list().map((pcb) => [
-      circuit.db.source_component.get(pcb.source_component_id)?.name,
-      pcb,
-    ]),
+    circuit.db.pcb_component
+      .list()
+      .map((pcb) => [
+        circuit.db.source_component.get(pcb.source_component_id)?.name,
+        pcb,
+      ]),
   )
   const getPads = (componentId: string) =>
     circuit.db.pcb_smtpad

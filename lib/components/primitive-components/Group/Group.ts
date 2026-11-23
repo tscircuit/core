@@ -1,3 +1,4 @@
+import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -96,8 +97,11 @@ import {
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
-import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
-import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
+import { getSchematicLayoutChildren } from "./getSchematicLayoutChildren"
+import {
+  layoutSchematicGroupBySheet,
+  hasSchematicSections,
+} from "./layoutSchematicGroupBySheet"
 import {
   Group_doInitialSchematicSheetRender,
   Group_updateSchematicSheetRender,
@@ -498,6 +502,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id!,
       })
     }
+  }
+
+  override doInitialSourceComponentPropertyValidation(): void {
+    super.doInitialSourceComponentPropertyValidation()
+    warnIfAutorouterTraceClearanceIsSet(this, this._parsedProps.autorouter)
   }
 
   doInitialSourceRender() {
@@ -1504,8 +1513,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        // Preserve routed geometry as SRJ traces. The autorouter owns
-        // converting traces to obstacles and approximating diagonal segments.
+        // Preserve routed geometry as SRJ traces for hypergraph preloading.
         simpleRouteJson = {
           ...phaseInput,
           traces: [
@@ -1554,28 +1562,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
         }
       }
-      // bus_lanes preserves prior traces verbatim and checks their exact copper
-      // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
-      // an enlarged rectangular obstacle before the lane search even starts.
-      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {
-        // FanoutSolver preserves supplied trace routes and checks their exact
-        // copper geometry (build-output.ts / get-routed-trace-copper.ts).
-        // Keep manual copper in that representation: rectangular approximations
-        // can change fanout via placement even though the path itself is fixed.
-        const preservesManualTraceGeometry =
-          !phaseAutorouterConfig.algorithmFn &&
-          (phaseAutorouterConfig.preset === "fanout" ||
-            phaseAutorouterConfig.preset === "single_layer_fanout")
-        simpleRouteJson = withFixedTraces(
-          simpleRouteJson,
-          preservesManualTraceGeometry
-            ? new Set(
-                [...fixedTraceIds].filter(
-                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
-                ),
-              )
-            : fixedTraceIds,
-        )
+      // Keep completed phases and manual paths immutable without losing
+      // their trace topology in subsequent routing phases.
+      if (!isTestPointPhase) {
+        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
@@ -2145,8 +2135,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         } else {
           if (preservesExistingTraceInput) {
             for (const existingTrace of existingRerouteSeedTraces) {
-              // Fixed copper was excluded from the simplifier's input traces,
-              // so it has no replacement in the solver output.
+              // Fixed copper remains unchanged in the database.
               if (
                 !isTestPointPhase &&
                 fixedTraceIds.has(existingTrace.pcb_trace_id)
@@ -2747,7 +2736,9 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
+  _getSchematicLayoutMode(
+    layoutChildren = getSchematicLayoutChildren(this.children),
+  ): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
     const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"
@@ -2767,11 +2758,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // unless any direct layout child defines schX or schY.
     // Schematic primitives (e.g. schematictext) can have explicit coordinates
     // without opting the entire group out of auto layout.
-    const anyLayoutChildHasSchCoords = this.children.some((child) => {
-      const cProps = (child as any)._parsedProps
+    const anyLayoutChildHasSchCoords = layoutChildren.some((child) => {
+      const cProps = child._parsedProps
       const participatesInAutoLayout =
-        (child as any).source_component_id !== null ||
-        (child as any).source_group_id !== null
+        child.source_component_id !== null || child.source_group_id !== null
       return (
         participatesInAutoLayout &&
         (cProps?.schX !== undefined || cProps?.schY !== undefined)
@@ -2793,48 +2783,36 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    if (this._parsedProps.showAsSchematicBox) {
+    const explicitMode = this._parsedProps.schLayout?.layoutMode
+    if (
+      this._parsedProps.showAsSchematicBox ||
+      explicitMode === "none" ||
+      explicitMode === "relative"
+    ) {
       this._insertSchematicBorder()
       return
     }
 
-    const hasAnySectionName = this.children.some(
-      (c) =>
-        c.source_component_id !== null &&
-        c._parsedProps?.schSectionName !== undefined,
-    )
-    const hasSections = hasAnySectionName
-    if (hasSections) {
-      this._doInitialSchematicLayoutSections()
-      this._insertSchematicBorder()
-      return
-    }
-
-    const schematicLayoutMode = this._getSchematicLayoutMode()
-
-    if (schematicLayoutMode === "match-adapt") {
-      this._doInitialSchematicLayoutMatchpack()
-    }
-    if (schematicLayoutMode === "grid") {
+    const layoutChildren = getSchematicLayoutChildren(this.children)
+    const hasSections = hasSchematicSections(layoutChildren)
+    const mode = this._getSchematicLayoutMode(layoutChildren)
+    if (!hasSections && mode === "grid") {
       this._doInitialSchematicLayoutGrid()
-    }
-    if (schematicLayoutMode === "flex") {
+    } else if (!hasSections && mode === "flex") {
       this._doInitialSchematicLayoutFlex()
+    } else if (
+      hasSections ||
+      mode === "match-adapt" ||
+      this.root!.db.schematic_sheet.list().length > 1
+    ) {
+      layoutSchematicGroupBySheet(this, layoutChildren)
     }
 
     this._insertSchematicBorder()
   }
 
-  _doInitialSchematicLayoutSections(): void {
-    Group_doInitialSchematicLayoutSections(this as any)
-  }
-
   _doInitialSchematicLayoutMatchAdapt(): void {
     Group_doInitialSchematicLayoutMatchAdapt(this as any)
-  }
-
-  _doInitialSchematicLayoutMatchpack(): void {
-    Group_doInitialSchematicLayoutMatchPack(this as any)
   }
 
   _doInitialSchematicLayoutGrid(): void {

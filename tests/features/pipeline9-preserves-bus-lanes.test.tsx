@@ -529,10 +529,20 @@ test("preserves completed top-only LCD bus lanes through Pipeline 9", async () =
   expect(phases).toHaveLength(3)
   expect(
     phases.map((phase) => phase.startSimpleRouteJson!.connections.length),
-  ).toEqual([16, 16, 17])
+  ).toEqual([16, 16, 19])
+  const decouplingBranches =
+    phases[2]!.startSimpleRouteJson!.connections.filter(
+      (connection) =>
+        connection.maxLength === 5 && connection.pointsToConnect.length === 1,
+    )
+  expect(decouplingBranches).toHaveLength(2)
+  expect(decouplingBranches.map((branch) => branch.netConnectionName)).toEqual([
+    "source_net_1",
+    "source_net_1",
+  ])
   expect(
     phases.map((phase) => phase.endSimpleRouteJson!.traces!.length),
-  ).toEqual([16, 16, 79])
+  ).toEqual([16, 32, 95])
   expect(phases[0]!.startSimpleRouteJson!.buses).toMatchObject([
     { maxLengthSkew: 0.1, allowedLayers: ["top"] },
   ])

@@ -174,7 +174,10 @@ export abstract class PrimitiveComponent<
     let flipped = false
     let ancestor = this.parent
     while (ancestor) {
-      if (ancestor.isPcbLayerGroup && ancestor._parsedProps.layer === "bottom") {
+      if (
+        ancestor.isPcbLayerGroup &&
+        ancestor._parsedProps.layer === "bottom"
+      ) {
         flipped = !flipped
       }
       ancestor = ancestor.parent
@@ -1316,7 +1319,7 @@ export abstract class PrimitiveComponent<
           for (const selector of selectors) {
             const ar = this._cachedSelectAllQueries.get(selector)
             if (ar) {
-              ar.push(port)
+              if (!ar.includes(port)) ar.push(port)
             } else {
               this._cachedSelectAllQueries.set(selector, [port])
             }
@@ -1406,11 +1409,7 @@ export abstract class PrimitiveComponent<
     }
     let result: PrimitiveComponent | null = null
     if (options?.type) {
-      const allMatching = selectAll(
-        selector,
-        this,
-        cssSelectOptionsInsideSubcircuit,
-      )
+      const allMatching = this.selectAll(selectorRaw)
       const matchingComponents = allMatching.filter(
         (n) => n.lowercaseComponentName === options.type,
       )
