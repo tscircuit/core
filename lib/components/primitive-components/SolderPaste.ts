@@ -13,7 +13,7 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import type { SmtPad } from "./SmtPad"
 
 type PcbSolderPasteId = PcbSolderPaste["pcb_solder_paste_id"]
-type ImportedSolderPaste =
+type PcbSolderPasteWithCenter =
   | PcbSolderPasteCircle
   | PcbSolderPasteRect
   | PcbSolderPasteRotatedRect
@@ -22,7 +22,7 @@ type ImportedSolderPaste =
 
 export const isStandalonePcbSolderPaste = (
   element: AnyCircuitElement,
-): element is ImportedSolderPaste =>
+): element is PcbSolderPasteWithCenter =>
   element.type === "pcb_solder_paste" &&
   !element.pcb_smtpad_id &&
   (element.shape === "circle" ||
@@ -39,7 +39,7 @@ export const isStandalonePcbSolderPaste = (
 export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
   pcb_solder_paste_id: PcbSolderPasteId | null = null
   isPcbPrimitive = true
-  private importedSmtPad?: Pick<SmtPad, "pcb_smtpad_id">
+  private smtPad?: Pick<SmtPad, "pcb_smtpad_id">
 
   /**
    * Reconstruct an aperture already in its parent's local PCB frame (+X right,
@@ -47,7 +47,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
    * is in CCW degrees; coordinate transforms happen before this import.
    */
   static fromCircuitJson(
-    aperture: ImportedSolderPaste,
+    aperture: PcbSolderPasteWithCenter,
     smtPad?: Pick<SmtPad, "pcb_smtpad_id">,
   ): SolderPaste {
     const placement = {
@@ -79,7 +79,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
       }
     }
     const paste = new SolderPaste(props)
-    paste.importedSmtPad = smtPad
+    paste.smtPad = smtPad
     return paste
   }
 
@@ -117,7 +117,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
       (decomposeTSR(transform, false, isFlipped).rotation.angle * 180) / Math.PI
     const base = {
       ...center,
-      pcb_smtpad_id: this.importedSmtPad?.pcb_smtpad_id ?? undefined,
+      pcb_smtpad_id: this.smtPad?.pcb_smtpad_id ?? undefined,
       layer: maybeFlipLayer(authoredLayer) as "top" | "bottom",
       pcb_component_id:
         this.parent?.pcb_component_id ??
@@ -176,7 +176,7 @@ export class SolderPaste extends PrimitiveComponent<typeof solderPasteProps> {
     const { db } = this.root!
     const aperture = db.pcb_solder_paste.get(
       this.pcb_solder_paste_id,
-    )! as ImportedSolderPaste
+    )! as PcbSolderPasteWithCenter
     db.pcb_solder_paste.update(this.pcb_solder_paste_id, {
       x: aperture.x + deltaX,
       y: aperture.y + deltaY,
