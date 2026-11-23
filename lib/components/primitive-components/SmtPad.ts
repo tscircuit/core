@@ -136,15 +136,24 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
     const shouldCreateSolderPaste =
       !props.noSolderPaste && !isCoveredWithSolderMask && this._getIsSmt()
     const soldermaskMargin = props.solderMaskMargin
-    // solderPasteMargin is absolute per side. A pad without one uses its
-    // board's defaultSolderPasteMargin, else the aperture keeps the default
-    // 0.7 scale
+    // KiCad PAD::GetSolderPasteMargin adds absolute + dimension * ratio per edge.
+    // Without either margin, preserve the existing 0.7 aperture scale.
     const solderPasteMargin =
       props.solderPasteMargin ??
       this._getBoard()?._parsedProps.defaultSolderPasteMargin
+    const solderPasteMarginRatio =
+      props.shape === "rect" || props.shape === "rotated_rect"
+        ? props.solderPasteMarginRatio
+        : undefined
     const getSolderPasteSize = (padSize: number, marginScale = 2): number =>
-      solderPasteMargin !== undefined
-        ? Math.max(padSize + marginScale * solderPasteMargin, 0)
+      solderPasteMargin !== undefined || solderPasteMarginRatio !== undefined
+        ? Math.max(
+            padSize +
+              marginScale *
+                ((solderPasteMargin ?? 0) +
+                  padSize * (solderPasteMarginRatio ?? 0)),
+            0,
+          )
         : padSize * 0.7
 
     this.emitSolderMaskMarginWarning(isCoveredWithSolderMask, soldermaskMargin)
