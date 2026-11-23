@@ -1,0 +1,67 @@
+name: Verify normal native routing and its A13 cache replay
+on:
+  push:
+    branches: [analysis/conventional-native-negotiation-20261123]
+    paths: [.github/workflows/ddr-conventional-cache-replay.yml]
+permissions:
+  contents: read
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 70dec82328767172a9eb5184575fdc4d6c6d5fe8
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --backend=copyfile
+      - name: Verify the exact routing and Core implementations
+        run: |
+          cat > runtime-proof.private.ts <<'TS'
+          import { readFileSync, realpathSync } from "node:fs"
+          import { createHash } from "node:crypto"
+          const entry = realpathSync(Bun.resolveSync("@tscircuit/capacity-autorouter", process.cwd()))
+          const autorouterHash = createHash("sha256").update(readFileSync(entry)).digest("hex")
+          const groupHash = createHash("sha256").update(readFileSync("lib/components/primitive-components/Group/Group.ts")).digest("hex")
+          if (autorouterHash !== "ee46c4a5793703f442dc0a198e3d4a879bb8d562f2e09657bf6b2eea68087b2e") throw Error("Wrong autorouter preview")
+          if (groupHash !== "8ad729180c05fdd8405fa2c4e781f0e092f2388c0105248f94c45d906bfa16c1") throw Error("Different Core routing implementation")
+          console.log("VERIFIED_CONVENTIONAL_RUNTIME=" + JSON.stringify({ autorouterHash, groupHash }))
+          TS
+          bun runtime-proof.private.ts
+      - name: Verify the complete board after cache replay
+        run: |
+          cat > tests/repros/a13-cache-replay.private.test.tsx <<'TS'
+          import { expect, test } from "bun:test"
+          import { createHash } from "node:crypto"
+          import { A13FullDdrBoard } from "tests/fixtures/a13-full-ddr/board"
+          import { getTestFixture } from "tests/fixtures/get-test-fixture"
+          import type { LocalCacheEngine } from "lib/local-cache-engine"
+          
+          test("the complete native A13 result survives a local-cache replay", async (): Promise<void> => {
+            const entries = new Map<string, string>()
+            const localCacheEngine: LocalCacheEngine = {
+              getItem: (key) => entries.get(key) ?? null,
+              setItem: (key, value) => { entries.set(key, value) },
+            }
+            const fresh = getTestFixture({ platform: { localCacheEngine } }).circuit
+            fresh.add(<A13FullDdrBoard />)
+            await fresh.renderUntilSettled()
+            expect(fresh.db.pcb_autorouting_error.list()).toEqual([])
+            const firstCopper = fresh.getCircuitJson().filter(element => element.type === "pcb_trace" || element.type === "pcb_via")
+            const cached = getTestFixture({ platform: { localCacheEngine } }).circuit
+            let hits = 0
+            cached.on("autorouting:start", event => { if (event.cacheStatus === "hit") hits++ })
+            cached.add(<A13FullDdrBoard />)
+            await cached.renderUntilSettled()
+            expect(cached.db.pcb_autorouting_error.list()).toEqual([])
+            expect(hits).toBe(1)
+            const secondCopper = cached.getCircuitJson().filter(element => element.type === "pcb_trace" || element.type === "pcb_via")
+            expect(secondCopper).toEqual(firstCopper)
+            console.log("A13_CACHE_REPLAY="+JSON.stringify({hits, entries:entries.size, copperHash:createHash("sha256").update(JSON.stringify(secondCopper)).digest("hex")}))
+          }, 600_000)
+          
+          TS
+          bun test --timeout 9999999 tests/repros/a13-cache-replay.private.test.tsx

@@ -19,7 +19,7 @@ jobs:
             name: autorouter
           - repository: tscircuit/core
             ref: 70dec82328767172a9eb5184575fdc4d6c6d5fe8
-            tests: tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx tests/repros/repro-watchy-duplicate-ground-label-path-export.test.tsx tests/repros/usb-c-breakout-net-pair.test.tsx
+            tests: tests/components/normal-components/panel-traces-routing-bounds.test.tsx tests/repros/repro-board-trace-to-hole-edge-clearance.test.tsx tests/repros/repro-watchy-duplicate-ground-label-path-export.test.tsx tests/repros/usb-c-breakout-net-pair.test.tsx tests/repros/repro-orangecrab-data-chip-select.test.tsx
             name: core
     steps:
       - uses: actions/checkout@v4
@@ -48,5 +48,7 @@ jobs:
           for filename in paths:
             if not filename.endswith('.snap.svg'):continue
             content=pathlib.Path(filename).read_bytes()
-            print('APPROVED_PUBLIC_TEST_SVG='+json.dumps({'repo':os.environ['REPOSITORY'],'path':filename,'base64':base64.b64encode(content).decode()}))
+            encoded=base64.b64encode(content).decode()
+            for index in range(0,len(encoded),12000):
+              print('APPROVED_PUBLIC_TEST_SVG_CHUNK='+json.dumps({'repo':os.environ['REPOSITORY'],'path':filename,'offset':index,'length':len(encoded),'base64':encoded[index:index+12000]}))
           PY
