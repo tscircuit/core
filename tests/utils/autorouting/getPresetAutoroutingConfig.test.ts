@@ -28,6 +28,22 @@ describe("getPresetAutoroutingConfig", () => {
     expect(alias).toEqual(expected)
   })
 
+  test("resolves tscircuit_beta through the tscircuit platform registration", () => {
+    const platform = {
+      autorouterMap: {
+        tscircuit: {
+          createAutorouter: () => ({
+            run: async () => {},
+            getOutputSimpleRouteJson: async () => ({}),
+          }),
+        },
+      },
+    }
+    expect(
+      getPresetAutoroutingConfig("tscircuit_beta", platform).algorithmFn,
+    ).toBeFunction()
+  })
+
   test("normalizes fanout presets to local subcircuit routing", () => {
     expect(getPresetAutoroutingConfig("single_layer_fanout")).toMatchObject({
       local: true,

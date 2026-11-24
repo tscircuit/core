@@ -18,6 +18,7 @@ export class AssemblyDrawingNote extends PrimitiveComponent<
         "AssemblyDrawingPage",
         "AssemblyDrawingPartView",
         "AssemblyDrawingExplosionView",
+        "AssemblyDrawingHarnessView",
       ].includes(this.parent?.componentName ?? "")
     )
       throw new Error(

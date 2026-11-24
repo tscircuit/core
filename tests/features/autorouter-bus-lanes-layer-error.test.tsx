@@ -1,11 +1,16 @@
 import { expect, test } from "bun:test"
+import type { PcbTrace } from "circuit-json"
 import type { SimpleRouteJson } from "lib/utils/autorouting/SimpleRouteJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("bus_lanes rejects incompatible existing fanout exits without dogboning them again", async () => {
   const { circuit } = getTestFixture()
   const inputs: SimpleRouteJson[] = []
-  circuit.on("autorouting:start", (event) => inputs.push(event.simpleRouteJson))
+  let savedTraces: PcbTrace[] = []
+  circuit.on("autorouting:start", (event) => {
+    savedTraces = structuredClone(circuit.db.pcb_trace.list())
+    inputs.push(event.simpleRouteJson)
+  })
   circuit.add(
     <board width={16} height={10} doubleSidedAssembly routeRemaining={false}>
       {(["top", "bottom"] as const).map((layer, i) => {
@@ -74,10 +79,5 @@ test("bus_lanes rejects incompatible existing fanout exits without dogboning the
   // Keep the completed saved fanouts; the failed bus adds no new copper.
   const completedTraces = json.filter((e) => e.type === "pcb_trace")
   expect(completedTraces).toHaveLength(2)
-  expect(completedTraces).toMatchObject(
-    input.traces!.map((trace) => ({
-      pcb_trace_id: trace.pcb_trace_id,
-      route: trace.route,
-    })),
-  )
+  expect(completedTraces).toMatchObject(savedTraces)
 })
