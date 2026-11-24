@@ -33,6 +33,7 @@ type MatchpackRotation = (typeof DEFAULT_AVAILABLE_ROTATIONS)[number]
 type SourceComponentId = SourceComponentBase["source_component_id"]
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 type SchematicMatchPackLayoutOptions = {
+  layoutChildren: PrimitiveComponent[]
   schematicSheetId?: SchematicSheetId
 }
 
@@ -316,36 +317,6 @@ function getNestedGroupMatchpackProxy({
   }
 }
 
-function isTreeChildExplicitlyPositioned(
-  treeChild: CircuitJsonTreeNode,
-  group: Group,
-): boolean {
-  if (treeChild.nodeType === "component" && treeChild.sourceComponent) {
-    const component = group.children.find(
-      (groupChild) =>
-        groupChild.source_component_id ===
-        treeChild.sourceComponent?.source_component_id,
-    )
-    return (
-      component?._parsedProps?.schX !== undefined ||
-      component?._parsedProps?.schY !== undefined
-    )
-  }
-
-  if (treeChild.nodeType === "group" && treeChild.sourceGroup) {
-    const nestedGroup = group.children.find(
-      (groupChild) =>
-        groupChild.source_group_id === treeChild.sourceGroup?.source_group_id,
-    )
-    return (
-      nestedGroup?._parsedProps?.schX !== undefined ||
-      nestedGroup?._parsedProps?.schY !== undefined
-    )
-  }
-
-  return false
-}
-
 function getTreeChildChipId(
   child: CircuitJsonTreeNode,
   index: number,
@@ -377,7 +348,7 @@ function convertTreeToMatchPackInputProblem(
   tree: CircuitJsonTreeNode,
   db: CircuitJsonUtilObjects,
   group: Group<any>,
-  opts: SchematicMatchPackLayoutOptions = {},
+  opts: SchematicMatchPackLayoutOptions,
 ): {
   inputProblem: InputProblem
   nestedGroupMatchpackProxyMap: Record<string, NestedGroupMatchpackProxy>
@@ -404,18 +375,6 @@ function convertTreeToMatchPackInputProblem(
   )
 
   tree.childNodes.forEach((child, index) => {
-    const explicitlyPositioned = isTreeChildExplicitlyPositioned(child, group)
-
-    if (explicitlyPositioned) {
-      debug(
-        `[${group.name}] Child ${index} explicitly positioned, including as fixed chip`,
-      )
-    } else {
-      debug(
-        `[${group.name}] Processing child ${index}: nodeType=${child.nodeType}`,
-      )
-    }
-
     if (child.nodeType === "component") {
       debug(`[${group.name}] - Component: ${child.sourceComponent?.name}`)
     } else if (child.nodeType === "group") {
@@ -431,11 +390,14 @@ function convertTreeToMatchPackInputProblem(
 
       if (!schematicComponent) return
 
-      const component = group.children.find(
+      const component = opts.layoutChildren.find(
         (groupChild) =>
           groupChild.source_component_id ===
           child.sourceComponent?.source_component_id,
       )
+      const explicitlyPositioned =
+        component?._parsedProps?.schX !== undefined ||
+        component?._parsedProps?.schY !== undefined
 
       const ports = db.schematic_port.list({
         schematic_component_id: schematicComponent.schematic_component_id,
@@ -522,11 +484,6 @@ function convertTreeToMatchPackInputProblem(
         source_group_id: child.sourceGroup.source_group_id,
       })
 
-      const groupInstance = group.children.find(
-        (groupChild) =>
-          groupChild.source_group_id === child.sourceGroup?.source_group_id,
-      )
-
       debug(
         `[${group.name}] Found schematic_group for ${groupId}:`,
         schematicGroup,
@@ -548,7 +505,10 @@ function convertTreeToMatchPackInputProblem(
           db,
           schematicGroup,
           groupComponents,
-          groupInstance,
+          groupInstance: opts.layoutChildren.find(
+            (groupChild) =>
+              groupChild.source_group_id === child.sourceGroup?.source_group_id,
+          ),
         })
         nestedGroupMatchpackProxyMap[groupId] = matchpackProxy
 
@@ -809,7 +769,7 @@ export function applySchematicMatchPackLayoutToTree<
 >(
   group: Group<Props>,
   tree: CircuitJsonTreeNode,
-  opts: SchematicMatchPackLayoutOptions = {},
+  opts: SchematicMatchPackLayoutOptions,
 ): void {
   const { db } = group.root!
 
@@ -953,15 +913,7 @@ export function applySchematicMatchPackLayoutToTree<
     }
 
     if (treeNode.nodeType === "component" && treeNode.sourceComponent) {
-      const groupChild = group.children.find(
-        (c: any) =>
-          c.source_component_id ===
-          treeNode.sourceComponent?.source_component_id,
-      ) as any
-      if (
-        groupChild?._parsedProps?.schX !== undefined ||
-        groupChild?._parsedProps?.schY !== undefined
-      ) {
+      if (inputProblem.chipMap[chipId].fixedPosition) {
         debug(`Skipping position update for fixed chip ${chipId}`)
         continue
       }

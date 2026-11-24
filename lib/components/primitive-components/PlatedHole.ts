@@ -1,23 +1,24 @@
-import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 import { platedHoleProps } from "@tscircuit/props"
 import { distance } from "circuit-json"
-import type { Port } from "./Port"
 import type {
   LayerRef,
   PCBPlatedHoleInput,
-  PcbPlatedHoleOval,
   PcbHoleCircularWithRectPad,
   PcbHolePillWithRectPad,
   PcbHoleRotatedPillWithRectPad,
   PcbHoleWithPolygonPad,
+  PcbPlatedHoleOval,
 } from "circuit-json"
 import { decomposeTSR } from "transformation-matrix"
+import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 
 export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
   pcb_plated_hole_id: string | null = null
   matchedPort: Port | null = null
   isPcbPrimitive = true
+  _preserveSolderPaste = false
 
   get config() {
     return {
@@ -131,7 +132,10 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.parent?.pcb_component_id ??
       this.getPrimitiveContainer()?.pcb_component_id!
     const subcircuit = this.getSubcircuit()
-    const shouldCreateSolderPaste = this._getIsSmt()
+    const shouldCreateSolderPaste =
+      this._getIsSmt() &&
+      !this._preserveSolderPaste &&
+      !subcircuit._isInflatedFromCircuitJson
     const platedHoleLayers = this.getAvailablePcbLayers()
     const soldermaskMargin = props.solderMaskMargin
     const isCoveredWithSolderMask = props.coveredWithSolderMask ?? false
@@ -171,7 +175,7 @@ export class PlatedHole extends PrimitiveComponent<typeof platedHoleProps> {
       this.pcb_plated_hole_id = pcb_plated_hole.pcb_plated_hole_id
       // Cached apertures are restored as SolderPaste components. Preserve
       // their geometry or absence when inflating the hole.
-      if (shouldCreateSolderPaste && !subcircuit._isInflatedFromCircuitJson) {
+      if (shouldCreateSolderPaste) {
         db.pcb_solder_paste.insert({
           pcb_component_id: pcb_component_id ?? undefined,
           layer: "top",
