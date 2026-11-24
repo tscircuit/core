@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const packages = ['@tscircuit/capacity-autorouter', '@tscircuit/bus-lanes-solver', '@tscircuit/checks', '@tscircuit/props', 'circuit-json']
@@ -13,6 +13,8 @@ for (const revision of ['base', 'head']) {
     const directory = resolve(root, 'node_modules', name)
     const installed = JSON.parse(readFileSync(resolve(directory, 'package.json'), 'utf8'))
     const entry = resolve(directory, installed.module || installed.main || 'index.js')
+    const selectedEntry = Bun.resolveSync(name, root)
+    if (realpathSync(selectedEntry) !== realpathSync(entry)) throw new Error(`Inspected file differs from selected import: ${name}`)
     const source = readFileSync(entry)
     const stat = statSync(entry)
     revisions[revision][name] = {
