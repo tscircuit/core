@@ -158,7 +158,7 @@ function resolveAuthoredAssemblyCablePath({
     smoothPath.push(end)
   }
   smoothPath.push(path.at(-1)!)
-  const validatedPath = cad_cable.shape.path.safeParse(smoothPath)
+  const validatedPath = cad_cable.innerType().shape.path.safeParse(smoothPath)
   if (!validatedPath.success) {
     throw new Error(
       `assembly.cable "${cable.name}" waypoints produce invalid curve points; adjust their positions or spacing`,
@@ -290,6 +290,11 @@ export function resolveAssemblyCable(
       ("pinCount" in definition.connectorA
         ? `${definition.standard}_pins${definition.connectorA.pinCount}`
         : definition.standard),
+    // Build specifications are authored, never measured from the route.
+    nominal_length: cable._parsedProps.length,
+    length_tolerance: cable._parsedProps.lengthTolerance,
+    from_connector_name: cable._parsedProps.fromConnectorName,
+    to_connector_name: cable._parsedProps.toConnectorName,
     path,
   }
 }
