@@ -166,7 +166,8 @@
     "jscad-fiber": "^0.0.93",
     "poppygl": "0.0.38",
     "@jscad/modeling": "^2.13.0",
-    "@dagrejs/dagre": "^2.0.4"
+    "@dagrejs/dagre": "^2.0.4",
+    "@tscircuit/capacity-autorouter": "https://npm-releases.tscircuit.com/npm-tarballs/45457514426-1/tscircuit-capacity-autorouter-0.0.1162.tgz"
   },
   "overrides": {
     "graphics-debug": "$graphics-debug",
