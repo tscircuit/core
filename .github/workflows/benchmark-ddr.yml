@@ -14,6 +14,10 @@ on:
         description: Immutable Core candidate commit
         type: string
         required: true
+      probe_refinement:
+        description: Inspect existing bus refinement on the captured H616 phase
+        type: boolean
+        default: false
       circuits:
         description: JSON board list for focused timing controls
         type: string
@@ -127,6 +131,14 @@ jobs:
           PY_ATTEMPTS
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
+      - name: Probe existing bus matching APIs without changing the benchmark
+        if: inputs.probe_refinement == true && matrix.circuit == 'h616'
+        run: |
+          for mode in constrained without_lengths refine_completed; do
+            status=0
+            timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
+            echo "SKEW_PROBE_EXIT=$mode:$status"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
