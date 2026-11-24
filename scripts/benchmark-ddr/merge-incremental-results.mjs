@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const circuits = ['h3', 'a64', 'stmp157', 'orangecrab', 'a13', 'h616', 'butterstick', 'glider', 'imx6', 'icepi']
+const circuits = JSON.parse(process.env.DDR_CIRCUITS || '["h3","a64","stmp157","orangecrab","a13","h616","butterstick","glider","imx6","icepi"]')
 const benchmark = resolve('tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts')
 const { formatReport } = await import(pathToFileURL(resolve(benchmark, 'report.ts')).href)
 const { skewCheckCounts } = await import(pathToFileURL(resolve(benchmark, 'report-skew.ts')).href)
@@ -19,7 +19,7 @@ for (const revision of ['base', 'head']) {
     if (JSON.stringify(part.dependencies) !== JSON.stringify(first.dependencies)) throw new Error(`Dependency mismatch across ${revision} circuits`)
   }
   const merged = { ...first, fixtureHashes: Object.assign({}, ...parts.map(part => part.fixtureHashes)), cases: parts.flatMap(part => part.cases) }
-  if (new Set(merged.cases.map(circuit => circuit.circuit)).size !== 10) throw new Error(`Missing ${revision} circuits`)
+  if (new Set(merged.cases.map(circuit => circuit.circuit)).size !== circuits.length) throw new Error(`Missing ${revision} circuits`)
   reports[revision] = merged
   writeFileSync(resolve('aggregate', `${revision}.json`), JSON.stringify(merged, null, 2))
 }
