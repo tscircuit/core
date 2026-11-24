@@ -111,6 +111,20 @@ jobs:
               fingerprints[revision] = {'copperSha256': hashlib.sha256(canonical).hexdigest(), 'geometrySha256': hashlib.sha256(geometry_bytes).hexdigest(), 'records': len(records)}
           Path('results/copper-fingerprints.json').write_text(json.dumps(fingerprints, indent=2) + '\n')
           PY_HASH
+          python3 - <<'PY_ATTEMPTS'
+          import json, os
+          from pathlib import Path
+          circuit = os.environ['CIRCUIT']
+          for revision in ['base','head']:
+              for mode in ['routing','matching']:
+                  root=Path('results')/revision/circuit/'attempts'/mode
+                  if not (root/'progress.json').exists():continue
+                  progress=json.loads((root/'progress.json').read_text())
+                  assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
+                  groups=assessment.get('ddrSkew',{})
+                  targets=[{key:value for key,value in target.items() if key in ['name','status','severity','assessmentOnly','maxLengthSkew','minLength','maxLength','actualMinMm','actualMaxMm','actualSkewMm','marginMm','lengthsMm','referenceNets','skewReference','routerSkippedNets']} for target in assessment.get('ddrConstraints',[])]
+                  print('DDR_ATTEMPT='+json.dumps({'revision':revision,'circuit':circuit,'mode':mode,'progress':progress,'connected':assessment.get('connectedNets'),'requested':assessment.get('requestedNets'),'groups':groups,'targets':targets},separators=(',',':')))
+          PY_ATTEMPTS
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
       - uses: actions/upload-artifact@v4
