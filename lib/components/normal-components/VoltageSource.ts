@@ -100,6 +100,16 @@ export class VoltageSource extends NormalComponent<
       display_name: props.displayName,
     } as any)
     this.source_component_id = source_component.source_component_id
+
+    if (props.voltage !== undefined && props.peakToPeakVoltage !== undefined) {
+      db.source_property_ignored_warning.insert({
+        source_component_id: this.source_component_id,
+        subcircuit_id: this.getSubcircuit().subcircuit_id ?? undefined,
+        property_name: "peakToPeakVoltage",
+        error_type: "source_property_ignored_warning",
+        message: `${this.name || "unnamed voltage source"}: peakToPeakVoltage is ignored because voltage is set to ${formatSiUnit(props.voltage)}V. Use only one of voltage or peakToPeakVoltage.`,
+      })
+    }
   }
 
   doInitialSimulationRender() {
