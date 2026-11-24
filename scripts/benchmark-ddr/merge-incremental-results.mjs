@@ -43,7 +43,10 @@ for (const revision of ['base', 'head']) {
     const assessment = circuit.assessment
     const matching = Object.fromEntries(Object.entries(assessment?.ddrSkew || {}).map(([name, group]) => [name, { skewMm: group.skewMm, referenceSkewMm: group.referenceSkewMm, matchingStatus: group.matchingStatus }]))
     const targets = (assessment?.ddrConstraints || []).map(check => ({ name: check.name, status: check.status, severity: check.severity, assessmentOnly: check.assessmentOnly, minLength: check.minLength, maxLength: check.maxLength, maxLengthSkew: check.maxLengthSkew, actualMinMm: check.actualMinMm, actualMaxMm: check.actualMaxMm, actualSkewMm: check.actualSkewMm, marginMm: check.marginMm }))
-    console.log('DDR_CASE=' + JSON.stringify({ revision, circuit: circuit.circuit, status: circuit.status, connected: assessment?.connectedNets, requested: assessment?.requestedNets, physicalPass: isRoutingPass(circuit), physicalIssues: assessment ? physicalDrcIssues(assessment) : null, geometryErrorCount: assessment?.geometryErrors.length, seconds: circuit.wallMs / 1000, peakRssMb: circuit.peakRssMb, vias: assessment?.vias, wireLengthMm: assessment?.wireLengthMm, selectedAttempt: circuit.selectedAttempt, attempts: circuit.attempts, skew: skewCheckCounts({ ...report, cases: [circuit] }), matching, targets }))
+    const fingerprintPath = resolve('collected', circuit.circuit, 'copper-fingerprints.json')
+    let fingerprint
+    try { fingerprint = JSON.parse(readFileSync(fingerprintPath, 'utf8'))[revision] } catch { /* Initial published-main control predates copper hashes. */ }
+    console.log('DDR_CASE=' + JSON.stringify({ revision, fingerprint, circuit: circuit.circuit, status: circuit.status, connected: assessment?.connectedNets, requested: assessment?.requestedNets, physicalPass: isRoutingPass(circuit), physicalIssues: assessment ? physicalDrcIssues(assessment) : null, geometryErrorCount: assessment?.geometryErrors.length, seconds: circuit.wallMs / 1000, peakRssMb: circuit.peakRssMb, vias: assessment?.vias, wireLengthMm: assessment?.wireLengthMm, selectedAttempt: circuit.selectedAttempt, attempts: circuit.attempts, skew: skewCheckCounts({ ...report, cases: [circuit] }), matching, targets }))
   }
 }
 writeFileSync('aggregate/summary.json', JSON.stringify(summary, null, 2))

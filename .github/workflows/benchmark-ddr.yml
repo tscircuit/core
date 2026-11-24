@@ -70,6 +70,20 @@ jobs:
           head_status=0
           bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/base" --out "$GITHUB_WORKSPACE/results/base" --circuit "$CIRCUIT" --timeout 120 || base_status=$?
           bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/head" --out "$GITHUB_WORKSPACE/results/head" --circuit "$CIRCUIT" --timeout 120 || head_status=$?
+          python3 - <<'PY_HASH'
+          import hashlib, json
+          from pathlib import Path
+          fingerprints = {}
+          for revision in ['base', 'head']:
+              path = Path('results') / revision / 'results.json'
+              result = json.loads(path.read_text())
+              circuit = result['cases'][0]['circuit']
+              copper = json.loads((Path('results') / revision / circuit / 'circuit.json').read_text())
+              records = sorted((element for element in copper if element.get('type') in ['pcb_trace', 'pcb_via']), key=lambda element: json.dumps(element, sort_keys=True, separators=(',', ':')))
+              canonical = json.dumps(records, sort_keys=True, separators=(',', ':')).encode()
+              fingerprints[revision] = {'copperSha256': hashlib.sha256(canonical).hexdigest(), 'records': len(records)}
+          Path('results/copper-fingerprints.json').write_text(json.dumps(fingerprints, indent=2) + '\n')
+          PY_HASH
           cp package-provenance.json results/package-provenance.json
           if (( base_status != 0 || head_status != 0 )); then exit 1; fi
       - uses: actions/upload-artifact@v4
@@ -80,6 +94,7 @@ jobs:
             results/base/results.json
             results/head/results.json
             results/package-provenance.json
+            results/copper-fingerprints.json
   report:
     needs: benchmark
     if: always()
