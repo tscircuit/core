@@ -533,14 +533,10 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline?.length) {
-      const xValues = props.outline.map((point) => point.x)
-      const yValues = props.outline.map((point) => point.y)
-
-      const minX = Math.min(...xValues)
-      const maxX = Math.max(...xValues)
-      const minY = Math.min(...yValues)
-      const maxY = Math.max(...yValues)
+    const authoredOutlineBounds =
+      props.outline && getBoundsFromPoints(props.outline)
+    if (authoredOutlineBounds) {
+      const { minX, maxX, minY, maxY } = authoredOutlineBounds
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
@@ -583,22 +579,19 @@ export class Board
     // Explicit outlines in panels/subpanels need to be centered by panel layout.
     let outlineTranslation = { x: 0, y: 0 }
     if (
-      props.outline &&
-      outline &&
-      outline.length > 0 &&
+      authoredOutlineBounds &&
       (this.parent?.lowercaseComponentName === "panel" ||
         this.parent?.lowercaseComponentName === "subpanel")
     ) {
       // Find the center of the original outline
-      const outlineBounds = getBoundsFromPoints(outline)
-      if (outlineBounds) {
-        const outlineCenterX = (outlineBounds.minX + outlineBounds.maxX) / 2
-        const outlineCenterY = (outlineBounds.minY + outlineBounds.maxY) / 2
-        // Translation needed to move outline center to board center
-        outlineTranslation = {
-          x: center.x - outlineCenterX,
-          y: center.y - outlineCenterY,
-        }
+      const outlineCenterX =
+        (authoredOutlineBounds.minX + authoredOutlineBounds.maxX) / 2
+      const outlineCenterY =
+        (authoredOutlineBounds.minY + authoredOutlineBounds.maxY) / 2
+      // Translation needed to move outline center to board center
+      outlineTranslation = {
+        x: center.x - outlineCenterX,
+        y: center.y - outlineCenterY,
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
