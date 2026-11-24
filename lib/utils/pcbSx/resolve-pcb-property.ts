@@ -125,11 +125,15 @@ export function resolvePcbProperty({
     if (!component) continue
 
     const segments = selectorBody.split(/\s+/).map(parseSegment)
-    if (segments.length < 2) continue
+    const attributeSelectorCount = segments.filter(
+      (segment) => segment.attrName !== undefined,
+    ).length
+    if (segments.length < 2 && attributeSelectorCount === 0) continue
 
     if (matchesCompoundSelector(component, segments)) {
-      // More segments = more specific
-      const specificity = segments.length
+      // Each attribute selector is worth more than any number of bare type
+      // selectors (CSS specificity), so "tag[attr]" outranks "a b".
+      const specificity = segments.length + attributeSelectorCount * 10
       if (specificity > bestSpecificity) {
         bestSpecificity = specificity
         result = (entry as any)[propertyName]
