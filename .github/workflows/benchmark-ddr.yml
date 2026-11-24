@@ -22,6 +22,10 @@ on:
         description: Optional immutable bus-lanes source revision for head only
         type: string
         default: ''
+      matching_probe:
+        description: Separate H616 matching diagnostic, outside benchmark acceptance
+        type: boolean
+        default: false
       circuits:
         description: JSON board list for focused timing controls
         type: string
@@ -159,6 +163,24 @@ jobs:
           PY_ATTEMPTS
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
+      - name: Inspect a fresh matching attempt separately from benchmark acceptance
+        if: inputs.matching_probe == true && matrix.circuit == 'h616'
+        run: |
+          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          output="$GITHUB_WORKSPACE/results/matching-probe/h616"
+          mkdir -p "$output"
+          timeout -s KILL 120s bun --tsconfig-override head/tsconfig.json "$benchmark/worker.tsx" "$GITHUB_WORKSPACE/head" h616 "$output" matching > "$output/render.log" 2>&1 || true
+          if [ -f "$output/circuit.json" ]; then
+            timeout -s KILL 120s bun "$benchmark/assess.ts" "$GITHUB_WORKSPACE/head" h616 "$output" > "$output/validation.log" 2>&1 || true
+          fi
+          python3 - <<'PY_MATCHING'
+          import json
+          from pathlib import Path
+          root=Path('results/matching-probe/h616')
+          progress=json.loads((root/'progress.json').read_text()) if (root/'progress.json').exists() else {}
+          assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
+          print('MATCHING_PROBE='+json.dumps({'progress':progress,'assessment':assessment},separators=(',',':')))
+          PY_MATCHING
       - name: Probe existing bus matching APIs without changing the benchmark
         if: inputs.probe_refinement == true && matrix.circuit == 'h616'
         run: |
@@ -167,6 +189,9 @@ jobs:
             timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
             echo "SKEW_PROBE_EXIT=$mode:$status"
           done
+      - name: Capture H616 diagnostic inputs
+        if: (inputs.probe_refinement == true || inputs.matching_probe == true) && matrix.circuit == 'h616'
+        run: |
           python3 - <<'PY_CAPTURE'
           import base64, gzip, hashlib, json
           from pathlib import Path
@@ -174,6 +199,11 @@ jobs:
           paths = list(root.rglob('*.srj.json'))
           paths += list(root.rglob('assessment.json'))
           paths += [root / 'circuit.json']
+          probe = Path('results/matching-probe/h616')
+          if probe.exists():
+              paths += list(probe.rglob('*.srj.json'))
+              paths += list(probe.rglob('assessment.json'))
+              paths += list(probe.rglob('circuit.json'))
           paths += [Path('head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js')]
           for path in paths:
               payload = path.read_bytes()
