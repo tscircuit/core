@@ -68,7 +68,10 @@ export class BusLanesAutorouter implements GenericLocalAutorouter {
         }
         if (this.solver.solved) {
           this.isRouting = false
-          this.emit({ type: "complete", traces: this.solver.traces })
+          this.emit({
+            type: "complete",
+            traces: this.solver.traces,
+          })
           return
         }
         this.emit({
