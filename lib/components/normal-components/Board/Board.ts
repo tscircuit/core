@@ -533,7 +533,7 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline) {
+    if (props.outline?.length) {
       const xValues = props.outline.map((point) => point.x)
       const yValues = props.outline.map((point) => point.y)
 
@@ -544,6 +544,22 @@ export class Board
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+
+      // Default standalone bounds use circuit-world positions in mm in the
+      // right-handed PCB frame (+X right, +Y top, +Z above). Explicit placement,
+      // anchors, and panel layout retain their existing center semantics.
+      if (
+        props.pcbX === undefined &&
+        props.pcbY === undefined &&
+        !boardAnchorPosition &&
+        this.parent?.lowercaseComponentName !== "panel" &&
+        this.parent?.lowercaseComponentName !== "subpanel"
+      ) {
+        center = {
+          x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+          y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        }
+      }
     }
 
     let outline = props.outline
