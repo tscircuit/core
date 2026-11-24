@@ -61,13 +61,30 @@ const SPICE_MEGA_PATTERN = /^(\d+(?:\.\d+)?)meg$/i
  * If `value` is a string in RKM notation, return an equivalent string with an
  * explicit decimal point (e.g. "4k7" -> "4.7k"). SPICE "meg" values are
  * rewritten to "M" (e.g. "1meg" -> "1M"). Otherwise return `value` unchanged.
+ *
+ * Uppercase `U` and `N` are not SI prefixes (the SI symbols are `u` = micro and
+ * `n` = nano), so they are lowercased when they appear as the RKM separator,
+ * e.g. "2U2" -> "2.2u", "4N7" -> "4.7n". `P` is ambiguous: it is peta in SI but
+ * pico in the capacitor-marking convention, so it is only lowercased to `p`
+ * when `options.capacitive` is set (callers pass this for capacitance and
+ * inductance). `K`/`M`/`G` are already valid SI symbols and are preserved.
  */
-export const normalizeRkmNotation = (value: unknown): unknown => {
+export const normalizeRkmNotation = (
+  value: unknown,
+  options?: { capacitive?: boolean },
+): unknown => {
   if (typeof value !== "string") return value
   const trimmed = value.trim()
   const match = RKM_PATTERN.exec(trimmed)
   if (match) {
-    const [, intPart, prefix, fracPart] = match
+    const [, intPart, rawPrefix, fracPart] = match
+    let prefix = rawPrefix
+    // Uppercase U (micro) and N (nano) are not SI symbols; normalize to lower.
+    if (prefix === "U") prefix = "u"
+    else if (prefix === "N") prefix = "n"
+    // P is peta in SI but pico in capacitor marking; only treat as pico when
+    // the caller signals a capacitive/inductive context.
+    else if (prefix === "P" && options?.capacitive) prefix = "p"
     return `${intPart}.${fracPart}${prefix}`
   }
   const spiceMatch = SPICE_MEGA_PATTERN.exec(trimmed)
@@ -99,6 +116,17 @@ const SI_UNIT_PROP_KEYS = new Set([
   "impedance",
 ])
 
+// Props where an uppercase "P" RKM separator should be read as pico (the
+// capacitor/inductor marking convention) rather than peta (the SI meaning).
+// `P` is only lowercased to `p` for these props; for resistance/voltage/etc.
+// it is left untouched to avoid silently reinterpreting peta as pico.
+const CAPACITIVE_PROPS = new Set([
+  "capacitance",
+  "inductance",
+  "maxCapacitance",
+  "maxInductance",
+])
+
 /**
  * Return a shallow copy of `props` with RKM-notation values for known
  * SI-unit props normalized to decimal form. Non-string values and unknown
@@ -111,7 +139,9 @@ export const normalizeRkmNotationInProps = <T extends Record<string, unknown>>(
   const next: Record<string, unknown> = { ...props }
   for (const key of Object.keys(props)) {
     if (!SI_UNIT_PROP_KEYS.has(key)) continue
-    const normalized = normalizeRkmNotation(props[key])
+    const normalized = normalizeRkmNotation(props[key], {
+      capacitive: CAPACITIVE_PROPS.has(key),
+    })
     if (normalized !== props[key]) {
       next[key] = normalized
       changed = true
