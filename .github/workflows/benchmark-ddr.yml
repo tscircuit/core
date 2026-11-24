@@ -96,7 +96,15 @@ jobs:
               copper = json.loads((Path('results') / revision / circuit / 'circuit.json').read_text())
               records = sorted((element for element in copper if element.get('type') in ['pcb_trace', 'pcb_via']), key=lambda element: json.dumps(element, sort_keys=True, separators=(',', ':')))
               canonical = json.dumps(records, sort_keys=True, separators=(',', ':')).encode()
-              fingerprints[revision] = {'copperSha256': hashlib.sha256(canonical).hexdigest(), 'records': len(records)}
+              geometry = []
+              for record in records:
+                  if record['type'] == 'pcb_trace':
+                      geometry.append({'type': 'pcb_trace', 'route': [{key: value for key, value in point.items() if key in ['route_type', 'x', 'y', 'width', 'layer', 'from_layer', 'to_layer', 'via_diameter', 'via_hole_diameter']} for point in record['route']]})
+                  else:
+                      geometry.append({key: value for key, value in record.items() if key in ['type', 'x', 'y', 'outer_diameter', 'hole_diameter', 'layers', 'from_layer', 'to_layer']})
+              geometry.sort(key=lambda item: json.dumps(item, sort_keys=True, separators=(',', ':')))
+              geometry_bytes = json.dumps(geometry, sort_keys=True, separators=(',', ':')).encode()
+              fingerprints[revision] = {'copperSha256': hashlib.sha256(canonical).hexdigest(), 'geometrySha256': hashlib.sha256(geometry_bytes).hexdigest(), 'records': len(records)}
           Path('results/copper-fingerprints.json').write_text(json.dumps(fingerprints, indent=2) + '\n')
           PY_HASH
           cp package-provenance.json results/package-provenance.json
