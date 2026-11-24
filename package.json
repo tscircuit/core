@@ -123,7 +123,7 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#1a7894699da6a7c1662b60a6b00721f2aeb150bb"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#a9f00b09e315096fb4e2fb75d463b25f64b7bf6a"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
