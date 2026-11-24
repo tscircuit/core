@@ -139,6 +139,18 @@ jobs:
             timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
             echo "SKEW_PROBE_EXIT=$mode:$status"
           done
+          python3 - <<'PY_CAPTURE'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+          root = Path('results/head/h616')
+          paths = list(root.rglob('*.srj.json'))
+          paths += list(root.rglob('assessment.json'))
+          paths += [root / 'circuit.json']
+          paths += [Path('head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js')]
+          for path in paths:
+              payload = path.read_bytes()
+              print('SKEW_CAPTURE=' + json.dumps({'path':str(path), 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest(), 'gzipBase64':base64.b64encode(gzip.compress(payload)).decode()}, separators=(',', ':')))
+          PY_CAPTURE
       - uses: actions/upload-artifact@v4
         if: always()
         with:
