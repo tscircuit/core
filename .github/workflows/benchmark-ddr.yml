@@ -18,6 +18,10 @@ on:
         description: Inspect existing bus refinement on the captured H616 phase
         type: boolean
         default: false
+      bus_ref:
+        description: Optional immutable bus-lanes source revision for head only
+        type: string
+        default: ''
       circuits:
         description: JSON board list for focused timing controls
         type: string
@@ -57,10 +61,27 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
+      - uses: actions/checkout@v4
+        if: inputs.bus_ref != ''
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ inputs.bus_ref }}
+          path: bus-source
+          persist-credentials: false
+      - name: Build exact bus source candidate
+        if: inputs.bus_ref != ''
+        working-directory: bus-source
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          bun pm pack --filename ../bus-candidate.tgz
+          sha256sum dist/index.js
       - name: Freeze common validators and install independent dependency files
+        env:
+          BUS_REF: ${{ inputs.bus_ref }}
         run: |
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           for revision in ['tooling', 'base', 'head']:
               path = Path(revision) / 'package.json'
@@ -71,6 +92,10 @@ jobs:
                       manifest.get(group, {}).pop(name, None)
                   manifest.setdefault(section, {})[name] = version
               assert manifest['devDependencies']['@tscircuit/core-ddr-benchmark'].endswith('16b6352dc25e951192d88cb99a7cfe96abf62285')
+              if revision == 'head' and os.environ.get('BUS_REF'):
+                  for group in ['dependencies', 'devDependencies']:
+                      manifest.get(group, {}).pop('@tscircuit/bus-lanes-solver', None)
+                  manifest.setdefault('devDependencies', {})['@tscircuit/bus-lanes-solver'] = 'file:../bus-candidate.tgz'
               path.write_text(json.dumps(manifest, indent=2) + '\n')
           PY
           for revision in tooling base head; do
@@ -78,6 +103,9 @@ jobs:
           done
           python3 tooling/scripts/benchmark-ddr/verify-incremental-preview.py
           bun tooling/scripts/benchmark-ddr/inspect-incremental-packages.mjs
+          if [ -n "$BUS_REF" ]; then
+            cmp bus-source/dist/index.js head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+          fi
       - name: Run matched base and head on one board
         env:
           CIRCUIT: ${{ matrix.circuit }}
