@@ -9,6 +9,7 @@ for (const revision of ['base', 'head']) {
   const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
   revisions[revision] = {}
   for (const name of packages) {
+    if (manifest.dependencies?.[name] && manifest.devDependencies?.[name]) throw new Error(`Duplicate package pin: ${name}`)
     const directory = resolve(root, 'node_modules', name)
     const installed = JSON.parse(readFileSync(resolve(directory, 'package.json'), 'utf8'))
     const entry = resolve(directory, installed.module || installed.main || 'index.js')
@@ -16,7 +17,7 @@ for (const revision of ['base', 'head']) {
     const stat = statSync(entry)
     revisions[revision][name] = {
       version: installed.version,
-      declared: manifest.dependencies[name],
+      declared: manifest.devDependencies?.[name] ?? manifest.dependencies?.[name],
       sha256: createHash('sha256').update(source).digest('hex'),
       device: stat.dev,
       inode: stat.ino,
@@ -26,6 +27,7 @@ for (const revision of ['base', 'head']) {
 for (const name of packages) {
   const before = revisions.base[name]
   const after = revisions.head[name]
+  if (before.declared !== after.declared && before.sha256 === after.sha256) throw new Error(`Changed pin resolved to unchanged code: ${name}`)
   if (before.device === after.device && before.inode === after.inode) throw new Error(`Shared writable package file: ${name}`)
 }
 for (const name of ['@tscircuit/checks', '@tscircuit/props', 'circuit-json']) {
