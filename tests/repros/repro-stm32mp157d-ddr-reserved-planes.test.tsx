@@ -65,8 +65,9 @@ test("bus_lanes routes STM32MP157D DDR byte 0 across reserved inner planes", asy
   expect(viaPadErrors).toHaveLength(4)
   for (const error of viaPadErrors) {
     expect(error.message).toStartWith("Via unnamed via and pad U7")
+    expect(error.minimum_clearance).toBe(0.15)
     expect(error.actual_clearance).toBeGreaterThanOrEqual(0.125 - 1e-6)
-    expect(error.actual_clearance).toBeLessThan(error.minimum_clearance)
+    expect(error.actual_clearance).toBeLessThan(0.15)
   }
 
   const svgOptions = { shouldDrawErrors: false, showErrorsInTextOverlay: false }
