@@ -1,0 +1,3422 @@
+{
+  "J1": {
+    "pcbX": -63.0,
+    "pcbY": 42.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "U1": {
+    "pcbX": -62.0,
+    "pcbY": 33.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U2": {
+    "pcbX": -50.0,
+    "pcbY": 33.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D1": {
+    "pcbX": -70.0,
+    "pcbY": 38.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D2": {
+    "pcbX": -53.5,
+    "pcbY": 39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1": {
+    "pcbX": -67.0,
+    "pcbY": 32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R2": {
+    "pcbX": -67.5,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1": {
+    "pcbX": -64.0,
+    "pcbY": 27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2": {
+    "pcbX": -60.0,
+    "pcbY": 28.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3": {
+    "pcbX": -60.0,
+    "pcbY": 38.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3": {
+    "pcbX": -53.0,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R4": {
+    "pcbX": -49.5,
+    "pcbY": 29.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R5": {
+    "pcbX": -49.5,
+    "pcbY": 27.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R6": {
+    "pcbX": -49.5,
+    "pcbY": 25.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R7": {
+    "pcbX": -51.5,
+    "pcbY": 23.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C4": {
+    "pcbX": -45.0,
+    "pcbY": 19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C5": {
+    "pcbX": -52.5,
+    "pcbY": 20.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q1": {
+    "pcbX": -56.0,
+    "pcbY": 27.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R8": {
+    "pcbX": -57.0,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D3": {
+    "pcbX": -56.0,
+    "pcbY": 23.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R9": {
+    "pcbX": -49.0,
+    "pcbY": 21.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R10": {
+    "pcbX": -45.5,
+    "pcbY": 21.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C6": {
+    "pcbX": -43.0,
+    "pcbY": 34.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7": {
+    "pcbX": -43.0,
+    "pcbY": 26.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R11": {
+    "pcbX": -49.0,
+    "pcbY": 19.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "U10": {
+    "pcbX": -30.5,
+    "pcbY": 42.01,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1001": {
+    "pcbX": -46.0,
+    "pcbY": 45.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L10": {
+    "pcbX": -26.0,
+    "pcbY": 31.29,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D10": {
+    "pcbX": -32.0,
+    "pcbY": 22.78,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1001": {
+    "pcbX": -26.0,
+    "pcbY": 42.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R1002": {
+    "pcbX": -26.0,
+    "pcbY": 44.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1003": {
+    "pcbX": -46.5,
+    "pcbY": 39.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C1002": {
+    "pcbX": -36.0,
+    "pcbY": 18.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1004": {
+    "pcbX": -36.5,
+    "pcbY": 27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1003": {
+    "pcbX": -36.0,
+    "pcbY": 16.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1005": {
+    "pcbX": -36.5,
+    "pcbY": 29.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1006": {
+    "pcbX": -35.0,
+    "pcbY": 31.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1004": {
+    "pcbX": -42.0,
+    "pcbY": 38.69,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1005": {
+    "pcbX": -50.0,
+    "pcbY": 39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1006": {
+    "pcbX": -23.5,
+    "pcbY": 24.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1007": {
+    "pcbX": -18.0,
+    "pcbY": 24.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U11": {
+    "pcbX": -40.5,
+    "pcbY": 16.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1101": {
+    "pcbX": -32.5,
+    "pcbY": 17.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L11": {
+    "pcbX": -26.0,
+    "pcbY": 10.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D11": {
+    "pcbX": -38.5,
+    "pcbY": 8.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R1101": {
+    "pcbX": -35.0,
+    "pcbY": 14.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1102": {
+    "pcbX": -28.0,
+    "pcbY": 17.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1103": {
+    "pcbX": -45.0,
+    "pcbY": 13.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C1102": {
+    "pcbX": -49.0,
+    "pcbY": 6.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1104": {
+    "pcbX": -45.5,
+    "pcbY": 6.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1103": {
+    "pcbX": -52.5,
+    "pcbY": 6.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R1105": {
+    "pcbX": -45.5,
+    "pcbY": 9.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1106": {
+    "pcbX": -45.5,
+    "pcbY": 11.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C1104": {
+    "pcbX": -46.5,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1105": {
+    "pcbX": -48.5,
+    "pcbY": 13.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1106": {
+    "pcbX": -16.0,
+    "pcbY": 6.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1107": {
+    "pcbX": -16.0,
+    "pcbY": 9.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U12": {
+    "pcbX": 50.52,
+    "pcbY": 15.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1200": {
+    "pcbX": 47.459,
+    "pcbY": 14.927,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C1201": {
+    "pcbX": 53.582,
+    "pcbY": 14.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1200": {
+    "pcbX": 48.0,
+    "pcbY": 12.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R1201": {
+    "pcbX": 51.24,
+    "pcbY": 11.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "U70": {
+    "pcbX": 0,
+    "pcbY": 0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U72": {
+    "pcbX": -8.5,
+    "pcbY": 19.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L720": {
+    "pcbX": -15,
+    "pcbY": 21.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7200": {
+    "pcbX": -14.78,
+    "pcbY": 18.6,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7210": {
+    "pcbX": -20.0,
+    "pcbY": 20.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L721": {
+    "pcbX": -15,
+    "pcbY": 16,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7201": {
+    "pcbX": -20.0,
+    "pcbY": 17.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7211": {
+    "pcbX": -15.0,
+    "pcbY": 13.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L722": {
+    "pcbX": -2,
+    "pcbY": 23,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7202": {
+    "pcbX": -2,
+    "pcbY": 20.35,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7212": {
+    "pcbX": -2,
+    "pcbY": 26,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "L723": {
+    "pcbX": -2,
+    "pcbY": 15.4,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7203": {
+    "pcbX": -2,
+    "pcbY": 17.95,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7213": {
+    "pcbX": -2,
+    "pcbY": 12.9,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7220": {
+    "pcbX": -11.75,
+    "pcbY": 9.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7221": {
+    "pcbX": -9.0,
+    "pcbY": 11.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7222": {
+    "pcbX": -5.0,
+    "pcbY": 11.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7223": {
+    "pcbX": -11.75,
+    "pcbY": 6.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7224": {
+    "pcbX": -9.0,
+    "pcbY": 8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7225": {
+    "pcbX": -7.6,
+    "pcbY": 24.6,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7230": {
+    "pcbX": -5.0,
+    "pcbY": 29.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7231": {
+    "pcbX": -9.18,
+    "pcbY": 24.6,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7232": {
+    "pcbX": -18.0,
+    "pcbY": 4.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7233": {
+    "pcbX": -6.7,
+    "pcbY": 14.3,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R7200": {
+    "pcbX": -15.0,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7201": {
+    "pcbX": -11.0,
+    "pcbY": 32.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7202": {
+    "pcbX": -7.0,
+    "pcbY": 32.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7203": {
+    "pcbX": -3.0,
+    "pcbY": 32.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J74": {
+    "pcbX": -8.0,
+    "pcbY": 39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7000": {
+    "pcbX": 2.0,
+    "pcbY": 10.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7001": {
+    "pcbX": 18.25,
+    "pcbY": 19.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7002": {
+    "pcbX": 19.0,
+    "pcbY": 23.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7003": {
+    "pcbX": 12.0,
+    "pcbY": 10.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7004": {
+    "pcbX": 13.0,
+    "pcbY": 29.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7005": {
+    "pcbX": 9.75,
+    "pcbY": 29.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7006": {
+    "pcbX": 3.5,
+    "pcbY": 29.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7007": {
+    "pcbX": 16.0,
+    "pcbY": 29.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7008": {
+    "pcbX": 20.0,
+    "pcbY": 19.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7009": {
+    "pcbX": 18.25,
+    "pcbY": 27.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7010": {
+    "pcbX": 18.25,
+    "pcbY": 16.75,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "C7011": {
+    "pcbX": 1.25,
+    "pcbY": 30.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7012": {
+    "pcbX": 5.0,
+    "pcbY": 31.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7013": {
+    "pcbX": 13.0,
+    "pcbY": 31.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7014": {
+    "pcbX": 21.5,
+    "pcbY": 24.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7015": {
+    "pcbX": 16.0,
+    "pcbY": 31.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7016": {
+    "pcbX": 20.0,
+    "pcbY": 27.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7017": {
+    "pcbX": 19.0,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7018": {
+    "pcbX": 21.75,
+    "pcbY": 27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7019": {
+    "pcbX": 21.75,
+    "pcbY": 19.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7020": {
+    "pcbX": 23.0,
+    "pcbY": 22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7021": {
+    "pcbX": 15.0,
+    "pcbY": 10.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7022": {
+    "pcbX": 15.75,
+    "pcbY": 8.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7023": {
+    "pcbX": 18.25,
+    "pcbY": 13.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7024": {
+    "pcbX": 17.5,
+    "pcbY": 10.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7025": {
+    "pcbX": 13.75,
+    "pcbY": 6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7026": {
+    "pcbX": 20.0,
+    "pcbY": 13.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7027": {
+    "pcbX": 19.25,
+    "pcbY": 10.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7028": {
+    "pcbX": 23.5,
+    "pcbY": 19.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7029": {
+    "pcbX": 23.25,
+    "pcbY": 24.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7030": {
+    "pcbX": 22.25,
+    "pcbY": 14.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7031": {
+    "pcbX": 1.75,
+    "pcbY": 6.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7032": {
+    "pcbX": 23.5,
+    "pcbY": 27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7033": {
+    "pcbX": 18.0,
+    "pcbY": 7.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7034": {
+    "pcbX": 6.25,
+    "pcbY": 6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7035": {
+    "pcbX": 16.75,
+    "pcbY": 6.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7036": {
+    "pcbX": 21.0,
+    "pcbY": 10.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7037": {
+    "pcbX": 22.25,
+    "pcbY": 29.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U71": {
+    "pcbX": 0,
+    "pcbY": 0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R7100": {
+    "pcbX": -3.5,
+    "pcbY": 33.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7101": {
+    "pcbX": -0.5,
+    "pcbY": 31.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7102": {
+    "pcbX": -3.25,
+    "pcbY": 36.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7103": {
+    "pcbX": 17.75,
+    "pcbY": 33.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7104": {
+    "pcbX": 19.5,
+    "pcbY": 32.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7105": {
+    "pcbX": 18.5,
+    "pcbY": 35.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7106": {
+    "pcbX": 21.25,
+    "pcbY": 32.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7107": {
+    "pcbX": 23.0,
+    "pcbY": 32.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7108": {
+    "pcbX": -5.75,
+    "pcbY": 34.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7109": {
+    "pcbX": -0.5,
+    "pcbY": 33.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7110": {
+    "pcbX": -2.25,
+    "pcbY": 39.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7111": {
+    "pcbX": -1.75,
+    "pcbY": 41.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7112": {
+    "pcbX": 20.75,
+    "pcbY": 35.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7113": {
+    "pcbX": 19.75,
+    "pcbY": 38.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7114": {
+    "pcbX": 22.5,
+    "pcbY": 35.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7115": {
+    "pcbX": 24.25,
+    "pcbY": 35.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7116": {
+    "pcbX": -5.5,
+    "pcbY": 36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7117": {
+    "pcbX": -1.5,
+    "pcbY": 36.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7118": {
+    "pcbX": -4.0,
+    "pcbY": 39.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7119": {
+    "pcbX": -1.25,
+    "pcbY": 43.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7120": {
+    "pcbX": 19.75,
+    "pcbY": 41.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7121": {
+    "pcbX": 21.5,
+    "pcbY": 38.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7122": {
+    "pcbX": 23.25,
+    "pcbY": 38.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R7123": {
+    "pcbX": 22.0,
+    "pcbY": 40.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7130": {
+    "pcbX": 6.5,
+    "pcbY": 29.1,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7131": {
+    "pcbX": 15.0,
+    "pcbY": 33.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7132": {
+    "pcbX": 8.0,
+    "pcbY": 31.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7133": {
+    "pcbX": 17.5,
+    "pcbY": 38.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7134": {
+    "pcbX": 17.5,
+    "pcbY": 41.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7100": {
+    "pcbX": 14.25,
+    "pcbY": 37.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7101": {
+    "pcbX": 3.75,
+    "pcbY": 36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7102": {
+    "pcbX": 3.75,
+    "pcbY": 39.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7103": {
+    "pcbX": 14.25,
+    "pcbY": 41.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7104": {
+    "pcbX": 3.75,
+    "pcbY": 33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7105": {
+    "pcbX": 5.75,
+    "pcbY": 46.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7106": {
+    "pcbX": 12.25,
+    "pcbY": 46.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7107": {
+    "pcbX": 3.0,
+    "pcbY": 42.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7108": {
+    "pcbX": 15.25,
+    "pcbY": 45.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7109": {
+    "pcbX": 2.75,
+    "pcbY": 45.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7110": {
+    "pcbX": 2.0,
+    "pcbY": 36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7111": {
+    "pcbX": 8.75,
+    "pcbY": 46.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7112": {
+    "pcbX": 16.0,
+    "pcbY": 35.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7113": {
+    "pcbX": 2.0,
+    "pcbY": 33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7114": {
+    "pcbX": 17.0,
+    "pcbY": 43.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7115": {
+    "pcbX": 0.75,
+    "pcbY": 42.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7116": {
+    "pcbX": 0.5,
+    "pcbY": 45.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7117": {
+    "pcbX": 0.25,
+    "pcbY": 36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C7120": {
+    "pcbX": 3.25,
+    "pcbY": 44.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7121": {
+    "pcbX": 14.75,
+    "pcbY": 44.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7122": {
+    "pcbX": 0.0,
+    "pcbY": 39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Y70": {
+    "pcbX": 10.0,
+    "pcbY": 8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7040": {
+    "pcbX": 6.5,
+    "pcbY": 8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7041": {
+    "pcbX": 13.5,
+    "pcbY": 8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7000": {
+    "pcbX": 5.0,
+    "pcbY": 10.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7001": {
+    "pcbX": 9.0,
+    "pcbY": 10.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7002": {
+    "pcbX": 19.0,
+    "pcbY": 25.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7003": {
+    "pcbX": 2.0,
+    "pcbY": 8.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C7042": {
+    "pcbX": -1.0,
+    "pcbY": 8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7043": {
+    "pcbX": -1.0,
+    "pcbY": 11.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7004": {
+    "pcbX": 20.0,
+    "pcbY": 22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7005": {
+    "pcbX": 21.0,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J70": {
+    "pcbX": 34.0,
+    "pcbY": 38.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R7010": {
+    "pcbX": -6.25,
+    "pcbY": 26.8,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7011": {
+    "pcbX": 27.0,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7012": {
+    "pcbX": 30.2,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7013": {
+    "pcbX": 33.4,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R7014": {
+    "pcbX": 36.6,
+    "pcbY": 30.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R7015": {
+    "pcbX": 39.8,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7044": {
+    "pcbX": 44.0,
+    "pcbY": 31.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C7045": {
+    "pcbX": 40.5,
+    "pcbY": 28.607,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J71": {
+    "pcbX": 35.0,
+    "pcbY": 22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J72": {
+    "pcbX": 27.0,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J73": {
+    "pcbX": 33.0,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3000": {
+    "pcbX": 42.543,
+    "pcbY": 19.857,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3001": {
+    "pcbX": 44.04,
+    "pcbY": 24.143,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U41": {
+    "pcbX": 46.2,
+    "pcbY": 28.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U42": {
+    "pcbX": 45.66,
+    "pcbY": 19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3020": {
+    "pcbX": 47.129,
+    "pcbY": 25.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3021": {
+    "pcbX": 50.16,
+    "pcbY": 18.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "J2": {
+    "pcbX": -39.0,
+    "pcbY": 42.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R3010": {
+    "pcbX": -45.75,
+    "pcbY": 41.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R3011": {
+    "pcbX": -36.75,
+    "pcbY": 35.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D30": {
+    "pcbX": -36.25,
+    "pcbY": 37.868,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3012": {
+    "pcbX": -34.5,
+    "pcbY": 34.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R3013": {
+    "pcbX": -26.75,
+    "pcbY": 39.367,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "U30": {
+    "pcbX": 64.91,
+    "pcbY": 28.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3100": {
+    "pcbX": 58.379,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3101": {
+    "pcbX": 58.379,
+    "pcbY": 27.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3102": {
+    "pcbX": 58.379,
+    "pcbY": 24.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3100": {
+    "pcbX": 62.76,
+    "pcbY": 21.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3103": {
+    "pcbX": 65.64,
+    "pcbY": 21.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3101": {
+    "pcbX": 68.52,
+    "pcbY": 21.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3102": {
+    "pcbX": 71.497,
+    "pcbY": 29.544,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R3103": {
+    "pcbX": 72.48,
+    "pcbY": 28.168,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3104": {
+    "pcbX": 68.552,
+    "pcbY": 34.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U31": {
+    "pcbX": 72.12,
+    "pcbY": 37.019,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3110": {
+    "pcbX": 75.0,
+    "pcbY": 34.348,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3111": {
+    "pcbX": 72.12,
+    "pcbY": 39.69,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3110": {
+    "pcbX": 74.888,
+    "pcbY": 39.707,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U32": {
+    "pcbX": 72.191,
+    "pcbY": 31.938,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U33": {
+    "pcbX": 72.84,
+    "pcbY": 23.804,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U35": {
+    "pcbX": 74.649,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U36": {
+    "pcbX": 67.8,
+    "pcbY": 18.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3114": {
+    "pcbX": 67.8,
+    "pcbY": 15.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3115": {
+    "pcbX": 72.84,
+    "pcbY": 12.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3111": {
+    "pcbX": 74.28,
+    "pcbY": 19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3112": {
+    "pcbX": 75.304,
+    "pcbY": 29.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3112": {
+    "pcbX": 70.911,
+    "pcbY": 19.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C3113": {
+    "pcbX": 68.608,
+    "pcbY": 36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U34": {
+    "pcbX": 51.24,
+    "pcbY": 25.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3120": {
+    "pcbX": 47.073,
+    "pcbY": 21.68,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3121": {
+    "pcbX": 47.403,
+    "pcbY": 16.32,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3122": {
+    "pcbX": 50.576,
+    "pcbY": 20.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3123": {
+    "pcbX": 53.04,
+    "pcbY": 18.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3124": {
+    "pcbX": 53.4,
+    "pcbY": 20.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3125": {
+    "pcbX": 53.638,
+    "pcbY": 16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3126": {
+    "pcbX": 56.224,
+    "pcbY": 20.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R3127": {
+    "pcbX": 55.92,
+    "pcbY": 18.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C3120": {
+    "pcbX": 49.8,
+    "pcbY": 30.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U20": {
+    "pcbX": 52.747,
+    "pcbY": -20.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "Y20": {
+    "pcbX": 45.7,
+    "pcbY": -21.4,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2000": {
+    "pcbX": 43.1,
+    "pcbY": -22.4,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2001": {
+    "pcbX": 43.1,
+    "pcbY": -19.2,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2008": {
+    "pcbX": 41.5,
+    "pcbY": -20.8,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2012": {
+    "pcbX": 56.3,
+    "pcbY": -26.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2013": {
+    "pcbX": 59.233,
+    "pcbY": -22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2014": {
+    "pcbX": 44.65,
+    "pcbY": -29.9,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2000": {
+    "pcbX": 46.15,
+    "pcbY": -27.6,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "U21": {
+    "pcbX": 59.88,
+    "pcbY": -9.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R2001": {
+    "pcbX": 57.72,
+    "pcbY": -4.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R2002": {
+    "pcbX": 60.6,
+    "pcbY": -4.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R2003": {
+    "pcbX": 53.4,
+    "pcbY": -12.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2002": {
+    "pcbX": 55.56,
+    "pcbY": -12.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2004": {
+    "pcbX": 44.76,
+    "pcbY": -13.9,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2005": {
+    "pcbX": 42.6,
+    "pcbY": -14.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2006": {
+    "pcbX": 44.76,
+    "pcbY": -10.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R2007": {
+    "pcbX": 42.6,
+    "pcbY": -10.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2003": {
+    "pcbX": 50.5,
+    "pcbY": -26,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2004": {
+    "pcbX": 53.4,
+    "pcbY": -26,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2005": {
+    "pcbX": 59.233,
+    "pcbY": -20.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2006": {
+    "pcbX": 49.62,
+    "pcbY": -13.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C2007": {
+    "pcbX": 46.92,
+    "pcbY": -14.165,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2008": {
+    "pcbX": 46.15,
+    "pcbY": -26,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C2009": {
+    "pcbX": 43.15,
+    "pcbY": -26.2,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C2010": {
+    "pcbX": 59.233,
+    "pcbY": -18.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C2011": {
+    "pcbX": 46.15,
+    "pcbY": -24.4,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "J8": {
+    "pcbX": 27.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U510": {
+    "pcbX": 27.0,
+    "pcbY": -31.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D510": {
+    "pcbX": 22.6,
+    "pcbY": -35.35,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D511": {
+    "pcbX": 27.0,
+    "pcbY": -35.65,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R510": {
+    "pcbX": 23.0,
+    "pcbY": -31.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R511": {
+    "pcbX": 31.0,
+    "pcbY": -31.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C510": {
+    "pcbX": 26.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C511": {
+    "pcbX": 28.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C512": {
+    "pcbX": 30.0,
+    "pcbY": -36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C513": {
+    "pcbX": 24.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "J9": {
+    "pcbX": 39.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U520": {
+    "pcbX": 39.0,
+    "pcbY": -31.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D520": {
+    "pcbX": 34.6,
+    "pcbY": -35.35,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D521": {
+    "pcbX": 39.0,
+    "pcbY": -35.65,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R520": {
+    "pcbX": 35.0,
+    "pcbY": -31.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R521": {
+    "pcbX": 43.0,
+    "pcbY": -31.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C520": {
+    "pcbX": 38.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C521": {
+    "pcbX": 40.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C522": {
+    "pcbX": 42.0,
+    "pcbY": -36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C523": {
+    "pcbX": 36.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "J10": {
+    "pcbX": 51.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U530": {
+    "pcbX": 51.0,
+    "pcbY": -31.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D530": {
+    "pcbX": 46.6,
+    "pcbY": -35.35,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D531": {
+    "pcbX": 51.0,
+    "pcbY": -35.65,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R530": {
+    "pcbX": 47.0,
+    "pcbY": -31.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R531": {
+    "pcbX": 55.0,
+    "pcbY": -31.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C530": {
+    "pcbX": 50.3,
+    "pcbY": -27.9,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C531": {
+    "pcbX": 53.3,
+    "pcbY": -27.9,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C532": {
+    "pcbX": 54.0,
+    "pcbY": -36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C533": {
+    "pcbX": 46.8,
+    "pcbY": -29.1,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "J11": {
+    "pcbX": 63.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U540": {
+    "pcbX": 63.0,
+    "pcbY": -31.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D540": {
+    "pcbX": 58.6,
+    "pcbY": -35.35,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D541": {
+    "pcbX": 63.0,
+    "pcbY": -35.65,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R540": {
+    "pcbX": 59.0,
+    "pcbY": -31.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R541": {
+    "pcbX": 67.0,
+    "pcbY": -31.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C540": {
+    "pcbX": 62.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C541": {
+    "pcbX": 64.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C542": {
+    "pcbX": 66.0,
+    "pcbY": -36.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C543": {
+    "pcbX": 60.8,
+    "pcbY": -26.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "J3": {
+    "pcbX": -17.0,
+    "pcbY": 42.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "U550": {
+    "pcbX": -9.169,
+    "pcbY": 42.71,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D550": {
+    "pcbX": -17.169,
+    "pcbY": 32.393,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D551": {
+    "pcbX": -17.34,
+    "pcbY": 36.04,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R550": {
+    "pcbX": -14.605,
+    "pcbY": 34.75,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R551": {
+    "pcbX": -17.1,
+    "pcbY": 29.276,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C550": {
+    "pcbX": -24.0,
+    "pcbY": 37.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C551": {
+    "pcbX": -27.0,
+    "pcbY": 37.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C552": {
+    "pcbX": -11.059,
+    "pcbY": 27.5,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "C553": {
+    "pcbX": -12.883,
+    "pcbY": 28.975,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "J12": {
+    "pcbX": 61.22,
+    "pcbY": 43.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J13": {
+    "pcbX": 73.76,
+    "pcbY": 9.79,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP1": {
+    "pcbX": 32.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP2": {
+    "pcbX": 37.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP3": {
+    "pcbX": 42.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP4": {
+    "pcbX": 47.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP5": {
+    "pcbX": 52.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "TP6": {
+    "pcbX": 57.0,
+    "pcbY": -1.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U101": {
+    "pcbX": -66.0,
+    "pcbY": -27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q101": {
+    "pcbX": -71.0,
+    "pcbY": -8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q102": {
+    "pcbX": -71.0,
+    "pcbY": -16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q103": {
+    "pcbX": -64.75,
+    "pcbY": -8.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q104": {
+    "pcbX": -64.75,
+    "pcbY": -16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "L101": {
+    "pcbX": -67.75,
+    "pcbY": 2.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R101": {
+    "pcbX": -56.0,
+    "pcbY": -14.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R102": {
+    "pcbX": -60.0,
+    "pcbY": -25.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R103": {
+    "pcbX": -58.25,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C101": {
+    "pcbX": -60.25,
+    "pcbY": -20.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C102": {
+    "pcbX": -72.0,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C103": {
+    "pcbX": -70.5,
+    "pcbY": -21.75,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "D101": {
+    "pcbX": -67.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D102": {
+    "pcbX": -62.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R104": {
+    "pcbX": -69.5,
+    "pcbY": -32.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C104": {
+    "pcbX": -72.0,
+    "pcbY": -33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C105": {
+    "pcbX": -72.25,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C106": {
+    "pcbX": -59.25,
+    "pcbY": -30.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R105": {
+    "pcbX": -66.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R106": {
+    "pcbX": -67.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C107": {
+    "pcbX": -64.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C108": {
+    "pcbX": -61.0,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R107": {
+    "pcbX": -72.0,
+    "pcbY": -30.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R108": {
+    "pcbX": -60.0,
+    "pcbY": -28.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C109": {
+    "pcbX": -65.0,
+    "pcbY": -36.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C110": {
+    "pcbX": -62.0,
+    "pcbY": -36.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R109": {
+    "pcbX": -63.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C111": {
+    "pcbX": -56.0,
+    "pcbY": -19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C112": {
+    "pcbX": -56.0,
+    "pcbY": -22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C113": {
+    "pcbX": -56.0,
+    "pcbY": 1.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C114": {
+    "pcbX": -56.0,
+    "pcbY": -6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U102": {
+    "pcbX": -58.0,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U103": {
+    "pcbX": -56.0,
+    "pcbY": -39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J4": {
+    "pcbX": -63.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D103": {
+    "pcbX": -68.062,
+    "pcbY": -38.054,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C115": {
+    "pcbX": -59.0,
+    "pcbY": -37.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C116": {
+    "pcbX": -61.25,
+    "pcbY": -38.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R110": {
+    "pcbX": -73.75,
+    "pcbY": -30.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R111": {
+    "pcbX": -64.25,
+    "pcbY": -38.397,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R112": {
+    "pcbX": -72.75,
+    "pcbY": -27.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R113": {
+    "pcbX": -57.0,
+    "pcbY": -30.25,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R114": {
+    "pcbX": -65.668,
+    "pcbY": -38.397,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R115": {
+    "pcbX": -52.0,
+    "pcbY": -37.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R116": {
+    "pcbX": -52.5,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C117": {
+    "pcbX": -53.5,
+    "pcbY": -40.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C118": {
+    "pcbX": -54.25,
+    "pcbY": -36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R117": {
+    "pcbX": -57.5,
+    "pcbY": -28.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R118": {
+    "pcbX": -73.75,
+    "pcbY": -25.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R119": {
+    "pcbX": -73.75,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U104": {
+    "pcbX": -71.873,
+    "pcbY": -37.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U105": {
+    "pcbX": -55.0,
+    "pcbY": -45.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R120": {
+    "pcbX": -74.0,
+    "pcbY": -22.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R121": {
+    "pcbX": -55.0,
+    "pcbY": -24.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C119": {
+    "pcbX": -54.5,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R122": {
+    "pcbX": -55.25,
+    "pcbY": -27.25,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R123": {
+    "pcbX": -53.5,
+    "pcbY": -27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C120": {
+    "pcbX": -71.123,
+    "pcbY": -39.7,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C121": {
+    "pcbX": -55.0,
+    "pcbY": -42.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R124": {
+    "pcbX": -52.5,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U201": {
+    "pcbX": -42.0,
+    "pcbY": -27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q201": {
+    "pcbX": -47.0,
+    "pcbY": -8.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "Q202": {
+    "pcbX": -47.0,
+    "pcbY": -16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q203": {
+    "pcbX": -40.25,
+    "pcbY": -9.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q204": {
+    "pcbX": -40.25,
+    "pcbY": -16.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "L201": {
+    "pcbX": -43.75,
+    "pcbY": -0.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R201": {
+    "pcbX": -32.0,
+    "pcbY": -14.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R202": {
+    "pcbX": -36.0,
+    "pcbY": -25.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R203": {
+    "pcbX": -34.25,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C201": {
+    "pcbX": -36.0,
+    "pcbY": -28.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C202": {
+    "pcbX": -48.0,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C203": {
+    "pcbX": -42.0,
+    "pcbY": -20.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D201": {
+    "pcbX": -43.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D202": {
+    "pcbX": -38.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R204": {
+    "pcbX": -45.5,
+    "pcbY": -32.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C204": {
+    "pcbX": -48.0,
+    "pcbY": -33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C205": {
+    "pcbX": -46.5,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C206": {
+    "pcbX": -35.25,
+    "pcbY": -30.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R205": {
+    "pcbX": -42.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R206": {
+    "pcbX": -43.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C207": {
+    "pcbX": -40.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C208": {
+    "pcbX": -37.0,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R207": {
+    "pcbX": -48.0,
+    "pcbY": -30.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R208": {
+    "pcbX": -39.0,
+    "pcbY": -20.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C209": {
+    "pcbX": -41.0,
+    "pcbY": -36.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C210": {
+    "pcbX": -38.0,
+    "pcbY": -36.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R209": {
+    "pcbX": -39.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C211": {
+    "pcbX": -32.0,
+    "pcbY": -19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C212": {
+    "pcbX": -32.0,
+    "pcbY": -22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C213": {
+    "pcbX": -32.0,
+    "pcbY": 1.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C214": {
+    "pcbX": -32.0,
+    "pcbY": -6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U202": {
+    "pcbX": -34.0,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U203": {
+    "pcbX": -32.0,
+    "pcbY": -39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J5": {
+    "pcbX": -39.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D203": {
+    "pcbX": -48.5,
+    "pcbY": -42.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C215": {
+    "pcbX": -35.0,
+    "pcbY": -37.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C216": {
+    "pcbX": -37.25,
+    "pcbY": -38.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R210": {
+    "pcbX": -49.75,
+    "pcbY": -30.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R211": {
+    "pcbX": -41.0,
+    "pcbY": -38.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R212": {
+    "pcbX": -48.75,
+    "pcbY": -27.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R213": {
+    "pcbX": -43.25,
+    "pcbY": -37.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R214": {
+    "pcbX": -44.0,
+    "pcbY": -39.121,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R215": {
+    "pcbX": -30.25,
+    "pcbY": -34.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R216": {
+    "pcbX": -30.0,
+    "pcbY": -33.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C217": {
+    "pcbX": -29.5,
+    "pcbY": -40.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C218": {
+    "pcbX": -30.25,
+    "pcbY": -36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R217": {
+    "pcbX": -33.5,
+    "pcbY": -28.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R218": {
+    "pcbX": -49.75,
+    "pcbY": -25.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R219": {
+    "pcbX": -49.75,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U204": {
+    "pcbX": -47.0,
+    "pcbY": -36.727,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U205": {
+    "pcbX": -31.0,
+    "pcbY": -45.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R220": {
+    "pcbX": -48.25,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R221": {
+    "pcbX": -31.0,
+    "pcbY": -24.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C219": {
+    "pcbX": -47.0,
+    "pcbY": -45.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R222": {
+    "pcbX": -32.0,
+    "pcbY": -26.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R223": {
+    "pcbX": -29.75,
+    "pcbY": -27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C220": {
+    "pcbX": -47.0,
+    "pcbY": -39.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C221": {
+    "pcbX": -31.0,
+    "pcbY": -42.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R224": {
+    "pcbX": -28.0,
+    "pcbY": -27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U301": {
+    "pcbX": -18.0,
+    "pcbY": -27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q301": {
+    "pcbX": -23.0,
+    "pcbY": -11.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "Q302": {
+    "pcbX": -23.0,
+    "pcbY": -17.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "Q303": {
+    "pcbX": -16.25,
+    "pcbY": -12.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q304": {
+    "pcbX": -15.5,
+    "pcbY": -18.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "L301": {
+    "pcbX": -19.75,
+    "pcbY": -2.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R301": {
+    "pcbX": -8.0,
+    "pcbY": -14.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R302": {
+    "pcbX": -14.5,
+    "pcbY": -22.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R303": {
+    "pcbX": -12.0,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C301": {
+    "pcbX": -12.0,
+    "pcbY": -27.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C302": {
+    "pcbX": -25.25,
+    "pcbY": -22.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "C303": {
+    "pcbX": -10.25,
+    "pcbY": -25.5,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "D301": {
+    "pcbX": -21.75,
+    "pcbY": -22.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D302": {
+    "pcbX": -24.5,
+    "pcbY": -26.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R304": {
+    "pcbX": -21.5,
+    "pcbY": -32.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C304": {
+    "pcbX": -24.0,
+    "pcbY": -33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C305": {
+    "pcbX": -25.75,
+    "pcbY": -30.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C306": {
+    "pcbX": -11.25,
+    "pcbY": -30.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R305": {
+    "pcbX": -18.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R306": {
+    "pcbX": -19.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C307": {
+    "pcbX": -16.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C308": {
+    "pcbX": -13.0,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R307": {
+    "pcbX": -24.0,
+    "pcbY": -30.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R308": {
+    "pcbX": -17.5,
+    "pcbY": -22.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C309": {
+    "pcbX": -17.0,
+    "pcbY": -36.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C310": {
+    "pcbX": -14.0,
+    "pcbY": -36.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R309": {
+    "pcbX": -15.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C311": {
+    "pcbX": -8.0,
+    "pcbY": -20.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C312": {
+    "pcbX": -8.0,
+    "pcbY": -22.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C313": {
+    "pcbX": -8.0,
+    "pcbY": 1.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C314": {
+    "pcbX": -8.0,
+    "pcbY": -6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U302": {
+    "pcbX": -10.0,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U303": {
+    "pcbX": -8.0,
+    "pcbY": -39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J6": {
+    "pcbX": -15.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D303": {
+    "pcbX": -7.5,
+    "pcbY": -25.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C315": {
+    "pcbX": -11.0,
+    "pcbY": -37.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C316": {
+    "pcbX": -13.25,
+    "pcbY": -38.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R310": {
+    "pcbX": -25.75,
+    "pcbY": -33.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R311": {
+    "pcbX": -17.0,
+    "pcbY": -38.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R312": {
+    "pcbX": -20.0,
+    "pcbY": -36.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R313": {
+    "pcbX": -20.0,
+    "pcbY": -39.121,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R314": {
+    "pcbX": -7.0,
+    "pcbY": -34.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R315": {
+    "pcbX": -4.0,
+    "pcbY": -37.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R316": {
+    "pcbX": -5.25,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C317": {
+    "pcbX": -5.5,
+    "pcbY": -40.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C318": {
+    "pcbX": -6.25,
+    "pcbY": -36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R317": {
+    "pcbX": -4.75,
+    "pcbY": -17.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R318": {
+    "pcbX": -4.75,
+    "pcbY": -14.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R319": {
+    "pcbX": -26.0,
+    "pcbY": -36.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U304": {
+    "pcbX": -23.0,
+    "pcbY": -36.727,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U305": {
+    "pcbX": -7.0,
+    "pcbY": -45.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R320": {
+    "pcbX": -9.5,
+    "pcbY": -28.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R321": {
+    "pcbX": -11.75,
+    "pcbY": -12.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C319": {
+    "pcbX": -23.0,
+    "pcbY": -41.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R322": {
+    "pcbX": -7.25,
+    "pcbY": -29.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R323": {
+    "pcbX": -4.75,
+    "pcbY": -27.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C320": {
+    "pcbX": -23.0,
+    "pcbY": -39.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C321": {
+    "pcbX": -7.0,
+    "pcbY": -42.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R324": {
+    "pcbX": -4.5,
+    "pcbY": -24.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U401": {
+    "pcbX": 6.0,
+    "pcbY": -27.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q401": {
+    "pcbX": 1.0,
+    "pcbY": -8.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "Q402": {
+    "pcbX": 1.0,
+    "pcbY": -16.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q403": {
+    "pcbX": 7.75,
+    "pcbY": -9.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "Q404": {
+    "pcbX": 7.75,
+    "pcbY": -16.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "L401": {
+    "pcbX": 4.25,
+    "pcbY": 0.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R401": {
+    "pcbX": 16.0,
+    "pcbY": -14.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R402": {
+    "pcbX": 12.0,
+    "pcbY": -25.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R403": {
+    "pcbX": 13.75,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C401": {
+    "pcbX": 12.0,
+    "pcbY": -28.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C402": {
+    "pcbX": 0.0,
+    "pcbY": -24.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C403": {
+    "pcbX": 6.0,
+    "pcbY": -20.25,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "D401": {
+    "pcbX": 5.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D402": {
+    "pcbX": 10.0,
+    "pcbY": -22.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R404": {
+    "pcbX": 2.5,
+    "pcbY": -32.5,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C404": {
+    "pcbX": 0.0,
+    "pcbY": -33.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C405": {
+    "pcbX": 1.5,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C406": {
+    "pcbX": 12.75,
+    "pcbY": -30.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R405": {
+    "pcbX": 5.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R406": {
+    "pcbX": 5.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C407": {
+    "pcbX": 8.0,
+    "pcbY": -34.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C408": {
+    "pcbX": 11.0,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R407": {
+    "pcbX": 0.0,
+    "pcbY": -30.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R408": {
+    "pcbX": 9.0,
+    "pcbY": -20.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C409": {
+    "pcbX": 7.0,
+    "pcbY": -36.0,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C410": {
+    "pcbX": 10.0,
+    "pcbY": -36.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R409": {
+    "pcbX": 8.5,
+    "pcbY": -32.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C411": {
+    "pcbX": 16.0,
+    "pcbY": -19.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C412": {
+    "pcbX": 16.0,
+    "pcbY": -22.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C413": {
+    "pcbX": 16.0,
+    "pcbY": 1.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C414": {
+    "pcbX": 16.0,
+    "pcbY": -6.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U402": {
+    "pcbX": 14.0,
+    "pcbY": -34.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U403": {
+    "pcbX": 16.0,
+    "pcbY": -39.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "J7": {
+    "pcbX": 9.0,
+    "pcbY": -42.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "D403": {
+    "pcbX": -0.5,
+    "pcbY": -42.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C415": {
+    "pcbX": 13.0,
+    "pcbY": -37.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C416": {
+    "pcbX": 10.75,
+    "pcbY": -38.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R410": {
+    "pcbX": -1.75,
+    "pcbY": -30.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R411": {
+    "pcbX": 7.0,
+    "pcbY": -38.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R412": {
+    "pcbX": -0.75,
+    "pcbY": -27.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R413": {
+    "pcbX": 4.75,
+    "pcbY": -37.0,
+    "pcbRotation": 270,
+    "layer": "top"
+  },
+  "R414": {
+    "pcbX": 4.0,
+    "pcbY": -39.121,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R415": {
+    "pcbX": 17.75,
+    "pcbY": -34.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "R416": {
+    "pcbX": 18.0,
+    "pcbY": -33.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C417": {
+    "pcbX": 18.5,
+    "pcbY": -40.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C418": {
+    "pcbX": 17.75,
+    "pcbY": -36.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R417": {
+    "pcbX": 14.5,
+    "pcbY": -28.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R418": {
+    "pcbX": -1.75,
+    "pcbY": -25.5,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R419": {
+    "pcbX": -1.75,
+    "pcbY": -33.0,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "U404": {
+    "pcbX": 1.0,
+    "pcbY": -36.727,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "U405": {
+    "pcbX": 17.0,
+    "pcbY": -45.0,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R420": {
+    "pcbX": -0.25,
+    "pcbY": -21.75,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "R421": {
+    "pcbX": 17.0,
+    "pcbY": -24.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "C419": {
+    "pcbX": 1.0,
+    "pcbY": -45.5,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R422": {
+    "pcbX": 16.0,
+    "pcbY": -26.75,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R423": {
+    "pcbX": 18.25,
+    "pcbY": -27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  },
+  "C420": {
+    "pcbX": 1.0,
+    "pcbY": -39.75,
+    "pcbRotation": 180,
+    "layer": "top"
+  },
+  "C421": {
+    "pcbX": 17.0,
+    "pcbY": -42.25,
+    "pcbRotation": 0,
+    "layer": "top"
+  },
+  "R424": {
+    "pcbX": 20.0,
+    "pcbY": -27.25,
+    "pcbRotation": 90,
+    "layer": "top"
+  }
+}
