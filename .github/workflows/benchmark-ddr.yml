@@ -185,23 +185,28 @@ jobs:
           PY_ATTEMPTS
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
-      - name: Inspect a fresh matching attempt separately from benchmark acceptance
-        if: inputs.matching_probe == true && matrix.circuit == 'h616'
+      - name: Diagnose normal TSX matching separately from benchmark acceptance
+        if: inputs.matching_probe == true && matrix.circuit == 'glider'
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
         run: |
           benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
-          output="$GITHUB_WORKSPACE/results/matching-probe/h616"
-          mkdir -p "$output"
-          timeout -s KILL 120s bun --tsconfig-override head/tsconfig.json "$benchmark/worker.tsx" "$GITHUB_WORKSPACE/head" h616 "$output" matching > "$output/render.log" 2>&1 || true
-          if [ -f "$output/circuit.json" ]; then
-            timeout -s KILL 120s bun "$benchmark/assess.ts" "$GITHUB_WORKSPACE/head" h616 "$output" > "$output/validation.log" 2>&1 || true
-          fi
+          for revision in base head; do
+            output="$GITHUB_WORKSPACE/results/matching-probe/$revision/$CIRCUIT"
+            mkdir -p "$output"
+            timeout -s KILL 120s bun --tsconfig-override "$revision/tsconfig.json" "$benchmark/worker.tsx" "$GITHUB_WORKSPACE/$revision" "$CIRCUIT" "$output" matching > "$output/render.log" 2>&1 || true
+            if [ -f "$output/circuit.json" ]; then
+              timeout -s KILL 120s bun "$benchmark/assess.ts" "$GITHUB_WORKSPACE/$revision" "$CIRCUIT" "$output" > "$output/validation.log" 2>&1 || true
+            fi
+          done
           python3 - <<'PY_MATCHING'
-          import json
+          import json, os
           from pathlib import Path
-          root=Path('results/matching-probe/h616')
-          progress=json.loads((root/'progress.json').read_text()) if (root/'progress.json').exists() else {}
-          assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
-          print('MATCHING_PROBE='+json.dumps({'progress':progress,'assessment':assessment},separators=(',',':')))
+          for revision in ['base','head']:
+              root=Path('results/matching-probe')/revision/os.environ['CIRCUIT']
+              progress=json.loads((root/'progress.json').read_text()) if (root/'progress.json').exists() else {}
+              assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
+              print('MATCHING_PROBE='+json.dumps({'revision':revision,'progress':progress,'assessment':assessment},separators=(',',':')))
           PY_MATCHING
       - name: Probe existing bus matching APIs without changing the benchmark
         if: inputs.probe_refinement == true && matrix.circuit == 'h616'
@@ -223,6 +228,8 @@ jobs:
               paths += list(root.rglob('assessment.json'))
               paths += list(root.rglob('progress.json'))
               paths += [root / 'circuit.json']
+              probe = Path('results/matching-probe') / revision / os.environ['CIRCUIT']
+              paths += list(probe.rglob('*.srj.json')) + list(probe.rglob('assessment.json')) + list(probe.rglob('progress.json')) + ([probe / 'circuit.json'] if (probe / 'circuit.json').exists() else [])
               for path in paths:
                   if not path.exists(): continue
                   payload = path.read_bytes()
