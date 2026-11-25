@@ -211,44 +211,25 @@ jobs:
             timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
             echo "SKEW_PROBE_EXIT=$mode:$status"
           done
-      - name: Export validated full H616 before and after views
-        if: matrix.circuit == 'h616'
-        run: |
-          cat > tooling/render-h616.mjs <<'JS'
-          import { readFileSync } from 'node:fs'
-          import { gzipSync } from 'node:zlib'
-          import { convertCircuitJsonToPcbSvg } from 'circuit-to-svg'
-          for (const revision of ['base','head']) {
-            const root=`results/${revision}/h616`
-            const assessment=JSON.parse(readFileSync(`${root}/assessment.json`,'utf8'))
-            const physical=Object.entries(assessment.findings).filter(([name])=>!name.startsWith('ddr_')).reduce((sum,[,count])=>sum+count,0)
-            if (assessment.connectedNets!==53 || physical || assessment.geometryErrors.length) throw Error('Refusing incomplete or physically invalid H616 image')
-            const copper=JSON.parse(readFileSync(`${root}/circuit.json`,'utf8'))
-            const svg=convertCircuitJsonToPcbSvg(copper,{width:1200,height:1200})
-            console.log('H616_VALIDATED_SVG='+JSON.stringify({revision,gzipBase64:gzipSync(svg).toString('base64')}))
-          }
-          JS
-          bun tooling/render-h616.mjs
-      - name: Capture H616 diagnostic inputs
-        if: matrix.circuit == 'h616'
+      - name: Capture unchanged native candidate inputs and assessments
+        if: contains(fromJSON('["orangecrab","glider","icepi"]'), matrix.circuit)
         run: |
           python3 - <<'PY_CAPTURE'
-          import base64, gzip, hashlib, json
+          import base64, gzip, hashlib, json, os
           from pathlib import Path
-          root = Path('results/head/h616')
-          paths = list(root.rglob('*.srj.json'))
-          paths += list(root.rglob('assessment.json'))
-          paths += [root / 'circuit.json']
-          probe = Path('results/matching-probe/h616')
-          if probe.exists():
-              paths += list(probe.rglob('*.srj.json'))
-              paths += list(probe.rglob('assessment.json'))
-              paths += list(probe.rglob('circuit.json'))
-          paths += [Path('head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js')]
-          for path in paths:
-              payload = path.read_bytes()
-              print('SKEW_CAPTURE=' + json.dumps({'path':str(path), 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest(), 'gzipBase64':base64.b64encode(gzip.compress(payload)).decode()}, separators=(',', ':')))
+          for revision in ['base','head']:
+              root = Path('results') / revision / os.environ['CIRCUIT']
+              paths = list(root.rglob('*.srj.json'))
+              paths += list(root.rglob('assessment.json'))
+              paths += list(root.rglob('progress.json'))
+              paths += [root / 'circuit.json']
+              for path in paths:
+                  if not path.exists(): continue
+                  payload = path.read_bytes()
+                  print('NATIVE_SKEW_CAPTURE=' + json.dumps({'path':str(path), 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest(), 'gzipBase64':base64.b64encode(gzip.compress(payload)).decode()}, separators=(',', ':')))
           PY_CAPTURE
+        env:
+          CIRCUIT: ${{ matrix.circuit }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
