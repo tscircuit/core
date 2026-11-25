@@ -186,7 +186,7 @@ jobs:
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
       - name: Diagnose normal TSX matching separately from benchmark acceptance
-        if: inputs.matching_probe == true && contains(fromJSON('["glider","icepi"]'), matrix.circuit)
+        if: inputs.matching_probe == true
         env:
           CIRCUIT: ${{ matrix.circuit }}
         run: |
@@ -206,7 +206,9 @@ jobs:
               root=Path('results/matching-probe')/revision/os.environ['CIRCUIT']
               progress=json.loads((root/'progress.json').read_text()) if (root/'progress.json').exists() else {}
               assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
-              print('MATCHING_PROBE='+json.dumps({'revision':revision,'progress':progress,'assessment':assessment},separators=(',',':')))
+              summary={'connectedNets':assessment.get('connectedNets'),'requestedNets':assessment.get('requestedNets'),'findings':assessment.get('findings'),'constraints':[{key:value for key,value in c.items() if key in ['name','status','severity','maxLengthSkew','actualSkewMm','marginMm','actualMinMm','actualMaxMm','minLength','maxLength']} for c in assessment.get('ddrConstraints',[])],'groups':{name:{key:value for key,value in group.items() if key in ['skewMm','maxSkewMm','matchingStatus']} for name,group in assessment.get('ddrSkew',{}).items()}}
+              safe_progress={'renderCompleted':progress.get('renderCompleted'),'renderMs':progress.get('renderMs'),'phases':progress.get('phases'),'errorCount':len(progress.get('errors',[]))}
+              print('MATCHING_PROBE='+json.dumps({'revision':revision,'progress':safe_progress,'assessment':summary},separators=(',',':')))
           PY_MATCHING
       - name: Probe existing bus matching APIs without changing the benchmark
         if: inputs.probe_refinement == true && matrix.circuit == 'h616'
