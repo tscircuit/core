@@ -106,7 +106,9 @@ jobs:
                   for group in ['dependencies', 'devDependencies']:
                       manifest.get(group, {}).pop(name, None)
                   manifest.setdefault(section, {})[name] = version
-              assert manifest['devDependencies']['@tscircuit/core-ddr-benchmark'].endswith('16b6352dc25e951192d88cb99a7cfe96abf62285')
+              adapter_spec = manifest['devDependencies']['@tscircuit/core-ddr-benchmark']
+              adapter_ref = os.environ.get('BENCHMARK_REF') or '16b6352dc25e951192d88cb99a7cfe96abf62285'
+              assert adapter_spec.endswith('16b6352dc25e951192d88cb99a7cfe96abf62285') or adapter_spec.endswith(adapter_ref)
               if os.environ.get('BENCHMARK_REF'):
                   manifest['devDependencies']['@tscircuit/core-ddr-benchmark'] = 'github:ShiboSoftwareDev/core-ddr-benchmark#' + os.environ['BENCHMARK_REF']
               if revision == 'head' and os.environ.get('BUS_REF'):
