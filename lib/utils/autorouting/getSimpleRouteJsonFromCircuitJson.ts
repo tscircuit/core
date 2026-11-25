@@ -607,16 +607,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   >()
   for (const sourceTrace of sourceTraces) {
     const portCount = sourceTrace.connected_source_port_ids.length
-    // A width on two physical terminals fixes that pair, including when
-    // rebuilding the routing input from saved Circuit JSON without JSX.
-    if (
-      portCount < 2 ||
-      !(
-        writtenPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
-        (portCount === 2 && sourceTrace.min_trace_thickness !== undefined)
-      )
-    )
-      continue
+    const hasWidthOnPair =
+      portCount === 2 && sourceTrace.min_trace_thickness !== undefined
+    const hasOrderedChain =
+      portCount > 2 && writtenPathSourceTraceIds.has(sourceTrace.source_trace_id)
+    if (!hasWidthOnPair && !hasOrderedChain) continue
     // The path lists ports only. A `net.X` entry attaches the chain to that
     // net through the net connection; it is not a position in the chain.
     const path = sourceTrace.connected_source_port_ids.flatMap(
