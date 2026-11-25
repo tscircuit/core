@@ -52,9 +52,9 @@ export interface TscircuitElements {
   opamp: Props.OpAmpProps
   cadmodel: Exclude<Props.CadModelPropsInput, null | string>
   cadassembly: Props.CadAssemblyProps
-  net: Props.NetProps
+  net: Props.NetProps & Attributes
   trace: Props.TraceProps
-  bus: Props.BusProps
+  bus: Props.BusProps & Attributes
   differentialpair: Props.DifferentialPairProps
   breakout: Props.BreakoutProps
   breakoutpoint: Props.BreakoutPointProps
