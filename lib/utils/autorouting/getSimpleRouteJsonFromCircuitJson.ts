@@ -610,7 +610,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const hasWidthOnPair =
       portCount === 2 && sourceTrace.min_trace_thickness !== undefined
     const hasOrderedChain =
-      portCount > 2 && writtenPathSourceTraceIds.has(sourceTrace.source_trace_id)
+      portCount > 2 &&
+      writtenPathSourceTraceIds.has(sourceTrace.source_trace_id)
     if (!hasWidthOnPair && !hasOrderedChain) continue
     // The path lists ports only. A `net.X` entry attaches the chain to that
     // net through the net connection; it is not a position in the chain.
