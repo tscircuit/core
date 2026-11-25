@@ -11,25 +11,43 @@ export const reversePcbTraceRoute = (
   route: PcbTrace["route"],
   routeThicknessMode: PcbTrace["route_thickness_mode"] = "constant",
 ): PcbTrace["route"] => {
-  const reversedRoute = route
-    .slice()
-    .reverse()
-    .map((point) => {
-      if (point.route_type === "wire") {
-        const { start_width, end_width, width_interpolation_mode, ...wire } =
-          point
-        return wire
+  const reversedPoints = route.slice().reverse()
+  const reversedRoute = reversedPoints.map((point, index) => {
+    if (point.route_type === "wire") {
+      const { start_width, end_width, width_interpolation_mode, ...wire } =
+        point
+      return wire
+    }
+    if (point.route_type === "via") {
+      const previous = reversedPoints[index - 1]
+      const next = reversedPoints[index + 1]
+      // Routers can store a terminal via from pad to plane at either end.
+      // Its only neighboring wire determines the direction of traversal.
+      if (
+        (!previous &&
+          next?.route_type === "wire" &&
+          next.layer === point.to_layer) ||
+        (!next &&
+          previous?.route_type === "wire" &&
+          previous.layer === point.from_layer)
+      ) {
+        return { ...point }
       }
-      if (point.route_type !== "through_pad") return { ...point }
-
       return {
         ...point,
-        start: point.end,
-        end: point.start,
-        start_layer: point.end_layer,
-        end_layer: point.start_layer,
+        from_layer: point.to_layer,
+        to_layer: point.from_layer,
       }
-    })
+    }
+
+    return {
+      ...point,
+      start: point.end,
+      end: point.start,
+      start_layer: point.end_layer,
+      end_layer: point.start_layer,
+    }
+  })
 
   if (routeThicknessMode === "constant") {
     for (

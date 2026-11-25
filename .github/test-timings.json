@@ -1,5 +1,8 @@
 {
-  "source": ["https://github.com/tscircuit/core/actions/runs/36667217060"],
+  "source": [
+    "https://github.com/tscircuit/core/actions/runs/36667217060",
+    "https://github.com/tscircuit/core/actions/runs/45718487323"
+  ],
   "durationMsByFile": {
     "tests/assembly/assembly-model-url-disabled.test.tsx": 1,
     "tests/assembly/assembly-model-url-formats.test.tsx": 2,
@@ -1075,6 +1078,7 @@
     "tests/repros/repro-drv8305-motor-driver-inline-net-labels.test.tsx": 2270,
     "tests/repros/repro-duplicate-obstacle-connectivity-aliases.test.tsx": 346,
     "tests/repros/repro-gameboy-direct-subcircuit-routing.test.tsx": 4554,
+    "tests/repros/repro-icepi-ddr-timing.test.tsx": 69491,
     "tests/repros/repro-icm20948-shared-ground-label.test.tsx": 1916,
     "tests/repros/repro-imported-rotated-pill-pads-missing-3d.test.tsx": 1215,
     "tests/repros/repro-imported-symbol-port-offset.test.tsx": 525,

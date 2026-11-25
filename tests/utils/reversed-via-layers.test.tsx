@@ -11,7 +11,7 @@ test("via traversal on a route reversed from RX back to TX", async () => {
     { route_type: "wire", x: 4, y: 0, width: 0.3, layer: "bottom" },
   ])
   const via = route.find((point) => point.route_type === "via")!
-  expect([via.from_layer, via.to_layer]).toEqual(["top", "bottom"])
+  expect([via.from_layer, via.to_layer]).toEqual(["bottom", "top"])
 
   const { circuit } = getTestFixture()
   circuit.add(
