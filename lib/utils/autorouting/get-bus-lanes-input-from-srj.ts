@@ -1,3 +1,4 @@
+import { getBusLanesLengthMatchingBuses } from "./get-bus-lanes-length-matching-buses"
 import type {
   SimpleRouteJson as BusLanesInput,
   Trace as BusLanesTrace,
@@ -66,5 +67,11 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     }
     flushFragment()
   }
-  return { ...input, traces }
+  const routingInput = { ...input, traces }
+  return {
+    ...routingInput,
+    buses: input.buses?.flatMap((bus) =>
+      getBusLanesLengthMatchingBuses(bus, routingInput),
+    ),
+  }
 }
