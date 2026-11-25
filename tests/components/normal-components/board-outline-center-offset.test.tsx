@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("outline offsets: known-bad default-center baseline", async () => {
+test("board center follows the emitted outline after outline offsets", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -25,9 +25,8 @@ test("outline offsets: known-bad default-center baseline", async () => {
   )
   await circuit.renderUntilSettled()
 
-  // Pin the known-bad default center; the upper fix updates this expectation.
   expect(circuit.db.pcb_board.list()[0]).toMatchObject({
-    center: { x: -7, y: 11 },
+    center: { x: 13, y: 26 },
     width: 40,
     height: 30,
     outline: [

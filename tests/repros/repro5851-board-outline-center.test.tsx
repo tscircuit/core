@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("repro5851: outlined board emits a displaced bounding box", async () => {
+test("repro5851: outlined board bounds match its outline", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board
@@ -19,9 +19,9 @@ test("repro5851: outlined board emits a displaced bounding box", async () => {
   await circuit.renderUntilSettled()
 
   const pcbBoard = circuit.db.pcb_board.list()[0]
-  // Pin the known-bad baseline for #5851; the stacked fix updates this assertion.
+  // The emitted center describes the outline bounding box.
   expect(pcbBoard).toMatchObject({
-    center: { x: 0, y: 0 },
+    center: { x: 20, y: 15 },
     width: 40,
     height: 30,
     outline: [
