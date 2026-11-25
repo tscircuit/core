@@ -276,6 +276,9 @@ export class SolderJumper<
     const traces = db.pcb_trace.list({
       pcb_component_id: this.pcb_component_id,
     })
+    const internalConnections = db.source_component_internal_connection.list({
+      source_component_id: this.source_component_id!,
+    })
     const updatePortId = (portId: string | undefined) => {
       if (portId && typeof portId === "string" && portId.startsWith("{PIN")) {
         const pin = portId.replace("{PIN", "").replace("}", "")
@@ -284,12 +287,37 @@ export class SolderJumper<
       return portId
     }
     for (const trace of traces) {
-      if (!trace.route) continue
-      for (const segment of trace.route) {
-        if (segment.route_type !== "wire") continue
-        segment.start_pcb_port_id = updatePortId(segment.start_pcb_port_id)
-        segment.end_pcb_port_id = updatePortId(segment.end_pcb_port_id)
-      }
+      const route = trace.route.map((segment) => {
+        if (segment.route_type !== "wire") return segment
+        return {
+          ...segment,
+          start_pcb_port_id: updatePortId(segment.start_pcb_port_id),
+          end_pcb_port_id: updatePortId(segment.end_pcb_port_id),
+        }
+      })
+      const pcbPortIds = new Set(
+        route.flatMap((segment) => {
+          if (segment.route_type !== "wire") return []
+          return [segment.start_pcb_port_id, segment.end_pcb_port_id].filter(
+            (id): id is string => id !== undefined,
+          )
+        }),
+      )
+      const sourcePortIds = [...pcbPortIds].map(
+        (id) => db.pcb_port.get(id)?.source_port_id,
+      )
+      const internalConnection = internalConnections.find(
+        (connection) =>
+          pcbPortIds.size >= 2 &&
+          sourcePortIds.every(
+            (id) => id !== undefined && connection.source_port_ids.includes(id),
+          ),
+      )
+      db.pcb_trace.update(trace.pcb_trace_id, {
+        route,
+        source_component_internal_connection_id:
+          internalConnection?.source_component_internal_connection_id,
+      })
     }
   }
 }

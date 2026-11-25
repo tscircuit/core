@@ -369,9 +369,11 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     const additionalIds = obstacle.connectedTo.flatMap((id) =>
       sharedConnMap.getIdsConnectedToNet(id),
     )
+    // Keep circuit IDs after expansion; map-local net labels can change
+    // between phases and must not influence routing identity.
     obstacle.connectedTo = [
       ...new Set([...obstacle.connectedTo, ...additionalIds]),
-    ]
+    ].filter((id) => sharedConnMap.getIdsConnectedToNet(id).length === 0)
   }
 
   // Build mapping from source_port_id to internal connection ID for interconnects

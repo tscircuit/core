@@ -121,6 +121,26 @@ export function insertAutoplacedJumpers(params: {
         pin_number: pinNumber,
       })
 
+      for (const sourceTraceId of pad.connectedTo ?? []) {
+        const sourceTrace = db.source_trace.get(sourceTraceId)
+        if (!sourceTrace) {
+          const sourceNet = db.source_net.get(sourceTraceId)
+          if (sourceNet)
+            db.source_trace.insert({
+              connected_source_port_ids: [sourcePort.source_port_id],
+              connected_source_net_ids: [sourceNet.source_net_id],
+              subcircuit_id: subcircuit_id ?? undefined,
+            })
+          continue
+        }
+        db.source_trace.update(sourceTraceId, {
+          connected_source_port_ids: [
+            ...sourceTrace.connected_source_port_ids,
+            sourcePort.source_port_id,
+          ],
+        })
+      }
+
       // Get layer from pad - may be `layer` string or `layers` array
       const padLayer = pad.layer || pad.layers?.[0] || "top"
 

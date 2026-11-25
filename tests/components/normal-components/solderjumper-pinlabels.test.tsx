@@ -32,6 +32,17 @@ it("should render a solderjumper with pinlabels and bridgedPins using labels", a
     internallyConnectedPins[0].map((p: any) => p.props.name).sort(),
   ).toEqual(["OUT", "SET"].sort())
 
+  const internalConnection =
+    circuit.db.source_component_internal_connection.getWhere({
+      source_component_id: j1.source_component_id,
+    })!
+  const bridge = circuit.db.pcb_trace.getWhere({
+    pcb_component_id: j1.pcb_component_id,
+  })!
+  expect(bridge.source_component_internal_connection_id).toBe(
+    internalConnection.source_component_internal_connection_id,
+  )
+
   expect(circuit).toMatchPcbSnapshot(import.meta.path)
   expect(circuit).toMatchSchematicSnapshot(import.meta.path)
 })

@@ -2445,7 +2445,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
-        // source_trace_id: circuitTrace.source_trace_id!,
+        source_trace_id: getSourceTraceIdForRoutedTrace({
+          db,
+          trace: routedTrace,
+          subcircuit_id: this.subcircuit_id,
+        }),
       })
       claimSrjAssignablePcbViasTraversedByRoute({
         db,

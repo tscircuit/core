@@ -28,12 +28,19 @@ export class BaseBreakoutPoint<
   matchedSourceTraceId: string | null = null
   isPcbPrimitive = true
 
-  _getSourceTraceIdForPort(port: Port): string | undefined {
+  _getOrCreateSourceTraceIdForPort(port: Port): string | undefined {
     const { db } = this.root!
     const trace = db.source_trace
       .list()
       .find((st) => st.connected_source_port_ids.includes(port.source_port_id!))
-    return trace?.source_trace_id
+    return (
+      trace?.source_trace_id ??
+      db.source_trace.insert({
+        connected_source_port_ids: [port.source_port_id!],
+        connected_source_net_ids: [],
+        subcircuit_id: this.getSubcircuit().subcircuit_id!,
+      }).source_trace_id
+    )
   }
 
   _getSourceNetIdForPort(port: Port): string | undefined {
@@ -62,7 +69,7 @@ export class BaseBreakoutPoint<
       source_port_id: this.matchedPort?.source_port_id ?? undefined,
       source_trace_id: this.matchedPort
         ? (this.matchedSourceTraceId ??
-          this._getSourceTraceIdForPort(this.matchedPort))
+          this._getOrCreateSourceTraceIdForPort(this.matchedPort))
         : undefined,
       source_net_id: this.matchedNet
         ? this.matchedNet.source_net_id
