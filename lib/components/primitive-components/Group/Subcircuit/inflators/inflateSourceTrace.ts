@@ -148,4 +148,5 @@ export function inflateSourceTrace(
     : undefined
 
   subcircuit.add(trace)
+  inflatorContext.inflatedSourceTraces.set(sourceTrace.source_trace_id, trace)
 }

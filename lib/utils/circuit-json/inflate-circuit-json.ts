@@ -8,6 +8,7 @@ import type {
 import type { SubcircuitI } from "../../components/primitive-components/Group/Subcircuit/SubcircuitI"
 import { inflatePcbBoard } from "../../components/primitive-components/Group/Subcircuit/inflators/inflatePcbBoard"
 import { inflateSimulation } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSimulation"
+import { inflateSourceBus } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceBus"
 import { inflateSourceCapacitor } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceCapacitor"
 import { inflateSourceChip } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceChip"
 import { inflateSourceConnector } from "../../components/primitive-components/Group/Subcircuit/inflators/inflateSourceConnector"
@@ -45,6 +46,7 @@ export const inflateCircuitJson = (
     injectionDb,
     subcircuit: target,
     groupsMap,
+    inflatedSourceTraces: new Map(),
   }
 
   // Inflate source_groups in dependency order (parents before children)
@@ -141,6 +143,10 @@ export const inflateCircuitJson = (
   const sourceTraces = injectionDb.source_trace.list()
   for (const sourceTrace of sourceTraces) {
     inflateSourceTrace(sourceTrace, inflationCtx)
+  }
+
+  for (const sourceBus of injectionDb.source_bus.list()) {
+    inflateSourceBus(sourceBus, inflationCtx)
   }
 
   // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)
