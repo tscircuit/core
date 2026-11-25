@@ -13,10 +13,13 @@ import type { ResolvedDrawingDimension } from "lib/utils/assembly-drawing/dimens
 import { resolveDrawingPartSelection } from "lib/utils/assembly-drawing/resolve-drawing-part-selection"
 
 import { AssemblyDrawingExplosionView } from "../AssemblyDrawingExplosionView"
+import { AssemblyDrawingHarnessView } from "../AssemblyDrawingHarnessView"
 import {
+  isAssemblyDrawingView,
   usesResolvedDrawingScene,
   type AssemblyDrawingView,
 } from "lib/utils/assembly-drawing/drawing-view"
+import { prepareHarnessDrawing } from "lib/utils/assembly-drawing/prepare-harness-drawing"
 import { resolveDrawingExplosion } from "lib/utils/assembly-drawing/resolve-drawing-explosion"
 import {
   resolveDrawingStage,
@@ -61,8 +64,18 @@ export function AssemblyDrawingPage_doInitialDrawingRender(
   const circuitJson = db.toArray()
   // Resolve every reference before committing a page. Forward stage/view references
   // work regardless of TSX order, and invalid annotations leave no partial sheet.
-  const preparedViews = resolveDrawingViewCenters(page).map(
-    ({ view, center }) => {
+  const placedViews = resolveDrawingViewCenters(page)
+  const harness = prepareHarnessDrawing(
+    page,
+    placedViews.flatMap(({ view, center }) =>
+      view instanceof AssemblyDrawingHarnessView ? [{ view, center }] : [],
+    ),
+  )
+  const preparedViews = placedViews
+    .flatMap(({ view, center }) =>
+      isAssemblyDrawingView(view) ? [{ view, center }] : [],
+    )
+    .map(({ view, center }) => {
       const viewProps = view._parsedProps
       const explosion =
         view instanceof AssemblyDrawingExplosionView
@@ -117,8 +130,7 @@ export function AssemblyDrawingPage_doInitialDrawingRender(
         drawingView,
         dimensions: [] as ResolvedDrawingDimension[],
       }
-    },
-  )
+    })
   const annotations = prepareDrawingAnnotations(
     page,
     preparedViews.map((prepared) => ({
@@ -218,6 +230,7 @@ export function AssemblyDrawingPage_doInitialDrawingRender(
         sheet_number: block.sheetNumber,
         number_of_sheets: block.numberOfSheets,
       })
+    harness.insert(drawing_page_id)
   }
   if (
     !preparedViews.some(({ view }) =>
