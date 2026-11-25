@@ -15,7 +15,6 @@ import {
   reconnectReroutedSimpleRouteJsonRegion,
 } from "@tscircuit/capacity-autorouter"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { type Box, getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
@@ -135,7 +134,10 @@ import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignabl
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
-import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import {
+  insertAutoplacedJumpers,
+  validateAutoplacedJumpers,
+} from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -310,7 +312,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _asyncAutoroutingResult: GroupAutoroutingResult | null = null
-  private _autoroutingConnMap: ConnectivityMap | null = null
   private _acceptedAutoroutingPhaseResult: GroupAutoroutingResult | null = null
   private _renderedAutoroutingResult: GroupAutoroutingResult | null = null
   private _renderedAutoroutingPcbTraceIds: PcbTraceId[] = []
@@ -910,17 +911,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    const { simpleRouteJson, connMap } = getSimpleRouteJsonFromCircuitJson({
-      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-      db,
-      allowViaInPad: autorouterConfig.allowViaInPad,
-      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-      nominalTraceWidth:
-        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
-      subcircuit_id: this.subcircuit_id,
-      subcircuitComponent: this,
-    })
-    this._autoroutingConnMap = connMap
+    const { simpleRouteJson, connMap: desiredConnMap } =
+      getSimpleRouteJsonFromCircuitJson({
+        pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+        db,
+        allowViaInPad: autorouterConfig.allowViaInPad,
+        minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+        nominalTraceWidth:
+          preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+        subcircuit_id: this.subcircuit_id,
+        subcircuitComponent: this,
+      })
     const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
@@ -948,6 +949,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         },
       ).then((r) => r.json())
+      validateAutoplacedJumpers({
+        db,
+        desiredConnMap,
+        output_jumpers: autorouting_result.output_jumpers ?? [],
+      })
       this._asyncAutoroutingResult = autorouting_result
       this._markDirty("PcbTraceRender")
       return
@@ -1172,7 +1178,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    let { simpleRouteJson: baseSimpleRouteJson, connMap } =
+    // Every phase in this run must preserve the same declared source connectivity.
+    const { simpleRouteJson, connMap: desiredConnMap } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
@@ -1182,7 +1189,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
-    this._autoroutingConnMap = connMap
+    let baseSimpleRouteJson = simpleRouteJson
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -2088,7 +2095,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Get jumper output from solver
         const solver = (autorouter as any)?.solver
         if (solver?.getOutputJumpers) {
-          outputJumpers.push(...(solver.getOutputJumpers() || []))
+          const jumpers = solver.getOutputJumpers() ?? []
+          validateAutoplacedJumpers({
+            db,
+            desiredConnMap,
+            output_jumpers: jumpers,
+          })
+          outputJumpers.push(...jumpers)
         }
 
         if (isRegionReroutePhase && rerouteOriginalSrj) {
@@ -2514,14 +2527,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // First, create jumper components from getOutputJumpers() result
     if (output_jumpers && output_jumpers.length > 0) {
-      if (!this._autoroutingConnMap) {
-        throw new Error(
-          "Source connectivity is unavailable for autorouter jumpers.",
-        )
-      }
       insertAutoplacedJumpers({
         db,
-        connMap: this._autoroutingConnMap,
         output_jumpers,
         subcircuit_id: this.subcircuit_id,
       })

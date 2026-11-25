@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import {
   type AutoplacedJumper,
-  insertAutoplacedJumpers,
+  validateAutoplacedJumpers,
 } from "lib/components/primitive-components/Group/insert-autoplaced-jumpers"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
@@ -28,7 +28,7 @@ test("autoplaced jumpers reject mixed source nets before changing the circuit", 
   )
   await circuit.renderUntilSettled()
   const { db } = circuit
-  const { connMap } = getSimpleRouteJsonFromCircuitJson({ db })
+  const { connMap: desiredConnMap } = getSimpleRouteJsonFromCircuitJson({ db })
   const vm = db.source_net.getWhere({ name: "VM" })!
   const gnd = db.source_net.getWhere({ name: "GND" })!
   const sourceTracesBefore = structuredClone(db.source_trace.list())
@@ -54,7 +54,7 @@ test("autoplaced jumpers reject mixed source nets before changing the circuit", 
     ],
   }
   expect(() =>
-    insertAutoplacedJumpers({ db, connMap, output_jumpers: [jumper] }),
+    validateAutoplacedJumpers({ db, desiredConnMap, output_jumpers: [jumper] }),
   ).toThrow("Autorouter jumper would connect separate intended nets.")
 
   const validJumper: AutoplacedJumper = {
@@ -65,9 +65,9 @@ test("autoplaced jumpers reject mixed source nets before changing the circuit", 
     })),
   }
   expect(() =>
-    insertAutoplacedJumpers({
+    validateAutoplacedJumpers({
       db,
-      connMap,
+      desiredConnMap,
       output_jumpers: [
         validJumper,
         {
@@ -83,7 +83,7 @@ test("autoplaced jumpers reject mixed source nets before changing the circuit", 
 
   expect(db.source_trace.list()).toEqual(sourceTracesBefore)
   expect(db.source_component.list()).toHaveLength(2)
-  expect(connMap.areIdsConnected(vm.source_net_id, gnd.source_net_id)).toBe(
-    false,
-  )
+  expect(
+    desiredConnMap.areIdsConnected(vm.source_net_id, gnd.source_net_id),
+  ).toBe(false)
 })

@@ -56,22 +56,13 @@ function groupPadsByInternalConnection(
   return groups
 }
 
-/**
- * Insert autoplaced jumpers into the database with full circuit JSON elements:
- * - source_component
- * - source_port (one per pad)
- * - source_component_internal_connection (for internally connected pads)
- * - pcb_component
- * - pcb_smtpad (one per pad)
- * - pcb_port (linking source_port to pcb_smtpad)
- */
-export function insertAutoplacedJumpers(params: {
+/** Validate router output against declared source connectivity before accepting it. */
+export function validateAutoplacedJumpers(params: {
   db: CircuitJsonUtilObjects
-  connMap: ConnectivityMap
+  desiredConnMap: ConnectivityMap
   output_jumpers: AutoplacedJumper[]
-  subcircuit_id?: string | null
 }): void {
-  const { db, connMap, output_jumpers, subcircuit_id } = params
+  const { db, desiredConnMap, output_jumpers } = params
 
   // Validate the complete batch before adding source records. Router output
   // may reference an intended net, but must never join separate source nets.
@@ -85,7 +76,7 @@ export function insertAutoplacedJumpers(params: {
         .filter((id) => db.source_trace.get(id) || db.source_net.get(id))
       if (
         sourceConnectionIds.length > 1 &&
-        !connMap.areAllIdsConnected(sourceConnectionIds)
+        !desiredConnMap.areAllIdsConnected(sourceConnectionIds)
       ) {
         throw new Error(
           "Autorouter jumper would connect separate intended nets.",
@@ -93,6 +84,18 @@ export function insertAutoplacedJumpers(params: {
       }
     }
   }
+}
+
+/**
+ * Insert validated autoplaced jumpers during PcbTraceRender, including their
+ * source declarations, PCB components, pads, and ports.
+ */
+export function insertAutoplacedJumpers(params: {
+  db: CircuitJsonUtilObjects
+  output_jumpers: AutoplacedJumper[]
+  subcircuit_id?: string | null
+}): void {
+  const { db, output_jumpers, subcircuit_id } = params
 
   for (
     let jumperIndex = 0;

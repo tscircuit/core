@@ -13,6 +13,24 @@ export class BreakoutPoint extends BaseBreakoutPoint<
     }
   }
 
+  doInitialPortMatching(): void {
+    this._matchConnection()
+  }
+
+  doInitialSourceTraceRender(): void {
+    const port = this.matchedPort
+    // Authored traces render their own source records during this phase.
+    if (!port || port._getDirectlyConnectedTraces().length > 0) return
+    if (this._getSourceTraceIdForPort(port)) return
+
+    const { db } = this.root!
+    this.matchedSourceTraceId = db.source_trace.insert({
+      connected_source_port_ids: [port.source_port_id!],
+      connected_source_net_ids: [],
+      subcircuit_id: this.getSubcircuit().subcircuit_id!,
+    }).source_trace_id
+  }
+
   _matchConnection(): void {
     if (this.matchedPort) return
     const { connection } = this._parsedProps
@@ -30,7 +48,6 @@ export class BreakoutPoint extends BaseBreakoutPoint<
   }
 
   doInitialPcbPrimitiveRender(): void {
-    this._matchConnection()
     this._renderPcbBreakoutPoint()
   }
 }
