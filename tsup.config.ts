@@ -33,6 +33,6 @@ export default defineConfig({
     "@tscircuit/schematic-trace-solver",
     "@tscircuit/via-stitch-solver",
     "@tscircuit/winding-breakout-point-solver",
-    "circuit-json-to-differential-pair-phase-skew",
+    "compute-differential-pair-phase-skew",
   ],
 })
