@@ -284,8 +284,6 @@ export class Via extends PrimitiveComponent<typeof viaProps> {
         ? connectedNetOrTrace.source_net_id
         : undefined
     const pcb_via = db.pcb_via.insert({
-      source_manually_placed_via_id:
-        this.source_manually_placed_via_id ?? undefined,
       x: position.x,
       y: position.y,
       hole_diameter: holeDiameter,
