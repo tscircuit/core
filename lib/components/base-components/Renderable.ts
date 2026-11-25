@@ -71,6 +71,7 @@ export const orderedRenderPhases = [
   "PcbTraceRender",
   "PcbRouteNetIslands",
   "PcbTraceTeardropRender",
+  "PcbDifferentialPairPhaseSkewRender",
   "PcbCopperPourRender",
   "PcbViaStitchRender",
   "PcbCopperPourCleanup",
@@ -148,6 +149,15 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbTraceTeardropRender: ["PcbTraceRender", "PcbRouteNetIslands"],
+  PcbDifferentialPairPhaseSkewRender: [
+    "RenderIsolatedSubcircuits",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+    "PcbTraceRender",
+    "PcbRouteNetIslands",
+    "PcbTraceTeardropRender",
+  ],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
