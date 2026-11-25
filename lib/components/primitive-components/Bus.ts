@@ -2,6 +2,7 @@ import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
 import { busProps } from "@tscircuit/props"
 import { getSourceBusRouteLength } from "lib/utils/autorouting/getSourceBusRouteLength"
+import type { DifferentialPair } from "./DifferentialPair"
 import {
   type BaseComponentConfig,
   PrimitiveComponent,
@@ -41,9 +42,44 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
         `Bus "${this.name}" resolves multiple entries to one trace`,
       )
     }
+    const lengthMatchTo = this._parsedProps.lengthMatchTo
+    const matchingSelectors =
+      typeof lengthMatchTo === "string"
+        ? [lengthMatchTo]
+        : (lengthMatchTo ?? [])
+    const matchingSourceTraceIds = matchingSelectors.flatMap((selector) => {
+      const subcircuit = this.getSubcircuit()
+      const selectedBus =
+        subcircuit.selectAll<Bus>("bus").find((bus) => bus.name === selector) ??
+        subcircuit.selectOne<Bus>(selector, { type: "bus" })
+      const selectedPair =
+        subcircuit
+          .selectAll<DifferentialPair>("differentialpair")
+          .find((pair) => pair.name === selector) ??
+        subcircuit.selectOne<DifferentialPair>(selector, {
+          type: "differentialpair",
+        })
+      const traceSelectors = selectedBus
+        ? selectedBus._parsedProps.connections
+        : selectedPair
+          ? [
+              selectedPair._parsedProps.positiveConnection,
+              selectedPair._parsedProps.negativeConnection,
+            ]
+          : [selector]
+      return traceSelectors.map((traceNameOrPortSelector) =>
+        getBusSourceTraceIdOrThrow({
+          bus: this,
+          busSourceTraces,
+          traceNameOrPortSelector,
+        }),
+      )
+    })
     const sourceBus = db.source_bus.insert({
       name: this._parsedProps.name,
-      source_trace_ids,
+      source_trace_ids: [
+        ...new Set([...source_trace_ids, ...matchingSourceTraceIds]),
+      ],
       max_length_skew: this._parsedProps.maxLengthSkew,
       min_length: getSourceBusRouteLength({
         bus: this,

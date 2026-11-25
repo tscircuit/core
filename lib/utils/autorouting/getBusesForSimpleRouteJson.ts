@@ -149,6 +149,7 @@ export const getBusesForSimpleRouteJson = ({
     const busSourceTraces = sourceTraces.filter(
       (sourceTrace) => sourceTrace.subcircuit_id === busSubcircuitId,
     )
+    const ownedSourceTraceIds = new Set<SourceTrace["source_trace_id"]>()
     const connectionNames = bus._parsedProps.connections.flatMap(
       (traceNameOrPortSelector) => {
         const sourceTraceId = getBusSourceTraceIdOrThrow({
@@ -156,6 +157,7 @@ export const getBusesForSimpleRouteJson = ({
           busSourceTraces,
           traceNameOrPortSelector,
         })
+        ownedSourceTraceIds.add(sourceTraceId)
         // Fixed copper has no pending SRJ connection; source_bus still keeps
         // every member so routing DRC checks the complete bus.
         if (preservedSourceTraceIds?.has(sourceTraceId)) return []
@@ -177,10 +179,33 @@ export const getBusesForSimpleRouteJson = ({
 
     if (connectionNames.length === 0) continue
 
+    const matchingSourceTraceIds =
+      bus._parsedProps.lengthMatchTo === undefined
+        ? []
+        : bus.root!.db.source_bus.get(bus.source_bus_id!)!.source_trace_ids
+    const lengthMatchToConnectionNames = matchingSourceTraceIds
+      .filter((sourceTraceId) => !ownedSourceTraceIds.has(sourceTraceId))
+      .flatMap((sourceTraceId) => {
+        if (preservedSourceTraceIds?.has(sourceTraceId)) return [sourceTraceId]
+        return getBusSrjConnectionNamesOrThrow({
+          srjConnections,
+          bus,
+          sourceTraceId,
+          traceNameOrPortSelector:
+            busSourceTraces.find(
+              (trace) => trace.source_trace_id === sourceTraceId,
+            )!.name ?? "unnamed trace",
+          busSourceTraces,
+        })
+      })
+
     declaredSrjBuses.push({
       busId: bus.name,
       name: bus.name,
       connectionNames,
+      ...(lengthMatchToConnectionNames.length > 0
+        ? { lengthMatchToConnectionNames }
+        : {}),
       ...getBusTargetLengthBounds(bus),
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }

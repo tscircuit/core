@@ -125,6 +125,8 @@ export type SimpleRouteBusTermination =
     }
 
 export type SimpleRouteBus = {
+  /** Additional TSX lengthMatchTo members, resolved before invoking the router. */
+  lengthMatchToConnectionNames?: SrjConnectionName[]
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]

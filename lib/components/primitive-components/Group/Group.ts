@@ -35,6 +35,7 @@ import {
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
+import { resolveBusLengthMatchTo } from "lib/utils/autorouting/resolve-bus-length-match-to"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -1551,6 +1552,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (!isTestPointPhase) {
         simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)
       }
+      simpleRouteJson = resolveBusLengthMatchTo(simpleRouteJson)
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
