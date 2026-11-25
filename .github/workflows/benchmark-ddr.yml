@@ -101,7 +101,7 @@ jobs:
               manifest = json.loads(path.read_text())
               for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.561'}.items():
                   declared = manifest.get('devDependencies', {}).get(name, manifest.get('dependencies', {}).get(name, ''))
-                  if name != '@tscircuit/checks' and (revision == 'head' or (revision == 'base' and declared.startswith('https://pkg.pr.new/'))):
+                  if name != '@tscircuit/checks' and declared.startswith('https://pkg.pr.new/'):
                       continue
                   section = 'devDependencies' if name in manifest.get('devDependencies', {}) else 'dependencies'
                   for group in ['dependencies', 'devDependencies']:
