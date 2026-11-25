@@ -105,7 +105,7 @@ it("maps SOT-23 pads to G/S/D by default on <mosfet>", async () => {
       .list()
       .find((p) => p.source_port_id === sourcePort.source_port_id)!
     const schematicComponent = circuit.db.schematic_component.get(
-      schematicPort.schematic_component_id,
+      schematicPort.schematic_component_id!,
     )!
     const symbol: SchSymbol = symbols.n_channel_e_mosfet_transistor_horz!
     const symbolPort = symbol.ports.find((p) => p.labels.includes(role))!
