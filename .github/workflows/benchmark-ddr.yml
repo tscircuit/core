@@ -85,7 +85,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.3'
-      - name: Install trusted benchmark and both core dependency sets
+      - name: Install benchmark and both core dependency sets
         run: |
           cd tooling
           bun install --ignore-scripts
@@ -98,7 +98,7 @@ jobs:
           CIRCUIT: ${{ needs.resolve.outputs.circuit }}
           SAMPLE_TIMEOUT: ${{ needs.resolve.outputs.timeout }}
         run: |
-          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
+          benchmark="$GITHUB_WORKSPACE/head/node_modules/@tscircuit/core-ddr-benchmark/scripts"
           args=(--timeout "$SAMPLE_TIMEOUT")
           if [[ -n "$CIRCUIT" ]]; then args+=(--circuit "$CIRCUIT"); fi
           mkdir -p results
