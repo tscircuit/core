@@ -2,10 +2,10 @@ import { expect, test } from "bun:test"
 import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("exports the width and terminal order of traces on a shared net", () => {
+test("exports and routes traces with different widths on a shared net", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width={16} height={12} routingDisabled schematicDisabled>
+    <board width={16} height={12} autorouter="auto_local" schematicDisabled>
       <testpoint name="A" footprintVariant="pad" pcbX={-5} />
       <testpoint name="B" footprintVariant="pad" pcbX={5} />
       <testpoint name="C" footprintVariant="pad" pcbY={2} />
@@ -15,6 +15,12 @@ test("exports the width and terminal order of traces on a shared net", () => {
       <trace name="sense" from="B.pin1" to="C.pin1" width={0.25} />
       <trace from="C.pin1" to="net.VCC" />
       <trace from="D.pin1" to="net.VCC" />
+      <pcbnotetext pcbY={-2.5} fontSize={0.55} text="Requested widths (mm)" />
+      <pcbnotetext
+        pcbY={-3.6}
+        fontSize={0.5}
+        text="A–B 0.80   ·   B–C 0.25   ·   VCC tap 0.20"
+      />
     </board>,
   )
   circuit.render()
@@ -43,4 +49,5 @@ test("exports the width and terminal order of traces on a shared net", () => {
       "automatic (A.pin1, B.pin1, C.pin1, D.pin1) · 0.8 mm",
     ]
   `)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
