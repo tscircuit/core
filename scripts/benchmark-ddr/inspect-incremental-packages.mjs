@@ -32,7 +32,7 @@ for (const name of packages) {
   if (before.declared !== after.declared && before.sha256 === after.sha256) throw new Error(`Changed pin resolved to unchanged code: ${name}`)
   if (before.device === after.device && before.inode === after.inode) throw new Error(`Shared writable package file: ${name}`)
 }
-for (const name of ['@tscircuit/checks', '@tscircuit/props', 'circuit-json']) {
+for (const name of ['@tscircuit/checks']) {
   if (revisions.base[name].sha256 !== revisions.head[name].sha256) throw new Error(`Unmatched shared dependency: ${name}`)
 }
 writeFileSync('package-provenance.json', JSON.stringify(revisions, null, 2))

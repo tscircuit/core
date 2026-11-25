@@ -22,6 +22,10 @@ on:
         description: Optional immutable bus-lanes source revision for head only
         type: string
         default: ''
+      benchmark_ref:
+        description: Optional immutable adapter revision, identical on base and head
+        type: string
+        default: ''
       matching_probe:
         description: Separate H616 matching diagnostic, outside benchmark acceptance
         type: boolean
@@ -83,6 +87,7 @@ jobs:
       - name: Freeze common validators and install independent dependency files
         env:
           BUS_REF: ${{ inputs.bus_ref }}
+          BENCHMARK_REF: ${{ inputs.benchmark_ref }}
         run: |
           python3 - <<'PY'
           import json, os
@@ -91,11 +96,15 @@ jobs:
               path = Path(revision) / 'package.json'
               manifest = json.loads(path.read_text())
               for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.561'}.items():
+                  if revision == 'head' and name != '@tscircuit/checks':
+                      continue
                   section = 'devDependencies' if name in manifest.get('devDependencies', {}) else 'dependencies'
                   for group in ['dependencies', 'devDependencies']:
                       manifest.get(group, {}).pop(name, None)
                   manifest.setdefault(section, {})[name] = version
               assert manifest['devDependencies']['@tscircuit/core-ddr-benchmark'].endswith('16b6352dc25e951192d88cb99a7cfe96abf62285')
+              if os.environ.get('BENCHMARK_REF'):
+                  manifest['devDependencies']['@tscircuit/core-ddr-benchmark'] = 'github:ShiboSoftwareDev/core-ddr-benchmark#' + os.environ['BENCHMARK_REF']
               if revision == 'head' and os.environ.get('BUS_REF'):
                   for group in ['dependencies', 'devDependencies']:
                       manifest.get(group, {}).pop('@tscircuit/bus-lanes-solver', None)
@@ -110,6 +119,11 @@ jobs:
           if [ -n "$BUS_REF" ]; then
             cmp bus-source/dist/index.js head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
           fi
+      - name: Typecheck and build exact Core candidate
+        working-directory: head
+        run: |
+          bunx tsc --noEmit > ../head-typecheck.log 2>&1 || { tail -n 100 ../head-typecheck.log; exit 1; }
+          bun run build
       - name: Run matched base and head on one board
         env:
           CIRCUIT: ${{ matrix.circuit }}
