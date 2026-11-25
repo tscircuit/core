@@ -1,0 +1,98 @@
+{
+  "revision": "C",
+  "units": "mm",
+  "case_pcb_origin_mm": [
+    -39.95,
+    -29.3,
+    8.55
+  ],
+  "board_outline_mm": [
+    [
+      -48,
+      -28
+    ],
+    [
+      -46,
+      -30
+    ],
+    [
+      48,
+      -30
+    ],
+    [
+      50,
+      -28
+    ],
+    [
+      50,
+      28
+    ],
+    [
+      48,
+      30
+    ],
+    [
+      -46,
+      30
+    ],
+    [
+      -48,
+      28
+    ],
+    [
+      -48,
+      7
+    ],
+    [
+      -50,
+      5
+    ],
+    [
+      -50,
+      -5
+    ],
+    [
+      -48,
+      -7
+    ]
+  ],
+  "pcb_holes_mm": [
+    [
+      -45,
+      -25
+    ],
+    [
+      -45,
+      25
+    ],
+    [
+      45,
+      -25
+    ],
+    [
+      23,
+      25
+    ]
+  ],
+  "usb_anchor_mm": [
+    -46,
+    0
+  ],
+  "usb_rotation_deg": 270,
+  "fpc_anchor_mm": [
+    38.9,
+    22.3
+  ],
+  "fpc_rotation_deg": 180,
+  "usb_mouth_case_x_mm": -91.300029,
+  "usb_axis_case_y_mm": -29.3,
+  "usb_axis_case_z_mm": 6.549511,
+  "usb_aperture_mm": [
+    14,
+    8
+  ],
+  "case_depth_mm": 18.0,
+  "stand_height_mm": 26,
+  "case_screw_length_mm": 14,
+  "case_split_z_mm": 6.549511
+}
