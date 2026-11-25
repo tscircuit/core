@@ -19,12 +19,12 @@ test("imported silkscreen retains board rotation on both sides", async () => {
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     camPos: [24, 42, 18],
-    diffTolerance: 0.001,
+    diffTolerance: 0.0001,
     snapshotSuffix: "top",
   })
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     camPos: [24, -42, 18],
-    diffTolerance: 0.001,
+    diffTolerance: 0.0001,
     snapshotSuffix: "bottom",
   })
 

@@ -27,12 +27,12 @@ test("KiCad subcircuit preserves bottom silkscreen layer and rotation", async ()
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     camPos: [11, 19, 8],
-    diffTolerance: 0.001,
+    diffTolerance: 0.0001,
     snapshotSuffix: "top",
   })
   await expect(circuit).toMatch3dSnapshot(import.meta.path, {
     camPos: [11, -19, 8],
-    diffTolerance: 0.001,
+    diffTolerance: 0.0001,
     snapshotSuffix: "bottom",
   })
 
