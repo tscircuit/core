@@ -1174,8 +1174,18 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     minViaPadDiameter ?? board?.min_via_pad_diameter
   const resolvedMinTraceToHoleEdgeClearance =
     minTraceToHoleEdgeClearance ?? board?.min_trace_to_hole_edge_clearance
+  const pcbGroupTraceClearance =
+    pcbGroup?.autorouter_configuration?.trace_clearance
   const resolvedMinTraceToPadEdgeClearance =
-    minTraceToPadEdgeClearance ?? board?.min_trace_to_pad_edge_clearance
+    minTraceToPadEdgeClearance ??
+    (pcbGroupTraceClearance !== undefined
+      ? board?.min_trace_to_pad_edge_clearance !== undefined
+        ? Math.max(
+            board.min_trace_to_pad_edge_clearance,
+            pcbGroupTraceClearance,
+          )
+        : pcbGroupTraceClearance
+      : board?.min_trace_to_pad_edge_clearance)
   const resolvedMinViaEdgeToPadEdgeClearance =
     minViaEdgeToPadEdgeClearance ?? board?.min_via_edge_to_pad_edge_clearance
   const resolvedMinViaHoleEdgeToViaHoleEdgeClearance =

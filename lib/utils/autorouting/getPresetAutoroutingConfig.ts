@@ -42,7 +42,7 @@ export function getLegacyAutorouterPreset(
     : null
 }
 
-export function getPresetAutoroutingConfig(
+function resolvePresetAutoroutingConfig(
   autorouterConfig: AutorouterProp | undefined,
   platformConfig?: PlatformConfig,
 ): NormalizedAutorouterConfig {
@@ -195,4 +195,25 @@ export function getPresetAutoroutingConfig(
         groupMode: "subcircuit",
       }
   }
+}
+
+export function getPresetAutoroutingConfig(
+  autorouterConfig: AutorouterProp | undefined,
+  platformConfig?: PlatformConfig,
+): NormalizedAutorouterConfig {
+  const resolved = resolvePresetAutoroutingConfig(
+    autorouterConfig,
+    platformConfig,
+  )
+  if (
+    typeof autorouterConfig === "object" &&
+    autorouterConfig.traceClearance !== undefined &&
+    resolved.traceClearance === undefined
+  ) {
+    return {
+      ...resolved,
+      traceClearance: autorouterConfig.traceClearance,
+    }
+  }
+  return resolved
 }
