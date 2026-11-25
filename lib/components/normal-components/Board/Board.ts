@@ -533,17 +533,29 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    if (props.outline) {
-      const xValues = props.outline.map((point) => point.x)
-      const yValues = props.outline.map((point) => point.y)
-
-      const minX = Math.min(...xValues)
-      const maxX = Math.max(...xValues)
-      const minY = Math.min(...yValues)
-      const maxY = Math.max(...yValues)
+    const explicitOutlineBounds =
+      props.outline && getBoundsFromPoints(props.outline)
+    if (explicitOutlineBounds) {
+      const { minX, maxX, minY, maxY } = explicitOutlineBounds
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
+
+      // Default standalone bounds use circuit-world positions in mm in the
+      // right-handed PCB frame (+X right, +Y top, +Z above). Explicit placement,
+      // anchors, and panel layout retain their existing center semantics.
+      if (
+        props.pcbX === undefined &&
+        props.pcbY === undefined &&
+        !boardAnchorPosition &&
+        this.parent?.lowercaseComponentName !== "panel" &&
+        this.parent?.lowercaseComponentName !== "subpanel"
+      ) {
+        center = {
+          x: (minX + maxX) / 2 + (props.outlineOffsetX ?? 0),
+          y: (minY + maxY) / 2 + (props.outlineOffsetY ?? 0),
+        }
+      }
     }
 
     let outline = props.outline
@@ -567,22 +579,19 @@ export class Board
     // Explicit outlines in panels/subpanels need to be centered by panel layout.
     let outlineTranslation = { x: 0, y: 0 }
     if (
-      props.outline &&
-      outline &&
-      outline.length > 0 &&
+      explicitOutlineBounds &&
       (this.parent?.lowercaseComponentName === "panel" ||
         this.parent?.lowercaseComponentName === "subpanel")
     ) {
       // Find the center of the original outline
-      const outlineBounds = getBoundsFromPoints(outline)
-      if (outlineBounds) {
-        const outlineCenterX = (outlineBounds.minX + outlineBounds.maxX) / 2
-        const outlineCenterY = (outlineBounds.minY + outlineBounds.maxY) / 2
-        // Translation needed to move outline center to board center
-        outlineTranslation = {
-          x: center.x - outlineCenterX,
-          y: center.y - outlineCenterY,
-        }
+      const outlineCenterX =
+        (explicitOutlineBounds.minX + explicitOutlineBounds.maxX) / 2
+      const outlineCenterY =
+        (explicitOutlineBounds.minY + explicitOutlineBounds.maxY) / 2
+      // Translation needed to move outline center to board center
+      outlineTranslation = {
+        x: center.x - outlineCenterX,
+        y: center.y - outlineCenterY,
       }
     }
     const subcircuitProps = this.getSubcircuit()._parsedProps
