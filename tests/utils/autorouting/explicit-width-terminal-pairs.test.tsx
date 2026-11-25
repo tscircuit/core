@@ -6,10 +6,10 @@ test("exports the width and terminal order of traces on a shared net", () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={12} routingDisabled schematicDisabled>
-      <pinheader name="A" pinCount={1} pcbX={-5} />
-      <pinheader name="B" pinCount={1} pcbX={5} />
-      <pinheader name="C" pinCount={1} pcbY={2} />
-      <pinheader name="D" pinCount={1} pcbY={4} />
+      <testpoint name="A" footprintVariant="pad" pcbX={-5} />
+      <testpoint name="B" footprintVariant="pad" pcbX={5} />
+      <testpoint name="C" footprintVariant="pad" pcbY={2} />
+      <testpoint name="D" footprintVariant="pad" pcbY={4} />
       <net name="VCC" nominalTraceWidth={0.2} />
       <trace name="supply" from="A.pin1" to="B.pin1" width={0.8} />
       <trace name="sense" from="B.pin1" to="C.pin1" width={0.25} />
