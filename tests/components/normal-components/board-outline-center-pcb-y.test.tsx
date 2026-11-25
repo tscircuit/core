@@ -18,7 +18,6 @@ test("an explicit pcbY preserves one-axis board placement", async () => {
     >
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={6} pcbY={7} />
       <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-      <pcbnotetext pcbX={10} pcbY={8} text="Preserve pcb-y placement" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -38,6 +37,10 @@ test("an explicit pcbY preserves one-axis board placement", async () => {
   })
   expect(circuit.db.pcb_component.list()[0].center).toEqual({ x: 6, y: -43 })
   expect(circuit.db.pcb_via.list()[0]).toMatchObject({ x: 2, y: -47 })
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Explicit pcbY=-50: unchanged",
+    viewport: { minX: -30, minY: -70, maxX: 60, maxY: 40 },
+    gridStepMm: 10,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })

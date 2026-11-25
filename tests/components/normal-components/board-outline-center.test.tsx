@@ -14,9 +14,7 @@ test("outline center: known-bad standalone baseline", async () => {
         { x: 20, y: 30 },
         { x: 0, y: 30 },
       ]}
-    >
-      <pcbnotetext pcbX={10} pcbY={8} text="Default outline center" />
-    </board>,
+    />,
   )
   await circuit.renderUntilSettled()
 
@@ -34,6 +32,10 @@ test("outline center: known-bad standalone baseline", async () => {
       { x: 0, y: 30 },
     ],
   })
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Default outline center",
+    viewport: { minX: -30, minY: -20, maxX: 50, maxY: 40 },
+    gridStepMm: 10,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })

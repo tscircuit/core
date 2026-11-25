@@ -34,6 +34,10 @@ test("repro5851: outlined board emits a displaced bounding box", async () => {
     ],
   })
 
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Issue #5851: default outline center",
+    viewport: { minX: -30, minY: -20, maxX: 50, maxY: 40 },
+    gridStepMm: 10,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })

@@ -21,7 +21,6 @@ test("an explicit board anchor retains its existing center semantics", async () 
     >
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={6} pcbY={7} />
       <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-      <pcbnotetext pcbX={10} pcbY={8} text="Preserve anchor placement" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -41,6 +40,10 @@ test("an explicit board anchor retains its existing center semantics", async () 
   })
   expect(circuit.db.pcb_component.list()[0].center).toEqual({ x: 6, y: 7 })
   expect(circuit.db.pcb_via.list()[0]).toMatchObject({ x: 2, y: 3 })
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Explicit board anchor: unchanged",
+    viewport: { minX: -20, minY: -20, maxX: 160, maxY: 100 },
+    gridStepMm: 20,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })
