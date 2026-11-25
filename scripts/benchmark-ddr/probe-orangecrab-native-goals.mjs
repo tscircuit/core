@@ -54,11 +54,16 @@ const physicalChildren = originalChildren.filter(child => !["bus", "net", "autor
 const nets = source.traces.map(trace => {
   const originalNet = originalChildren.find(child => child.type === "net" && child.props.name === trace.name)
   if (!originalNet) throw Error("Native net disappeared")
-  return cloneElement(originalNet, { routingPhaseIndex: phaseForTrace(trace) })
+  const props = { routingPhaseIndex: phaseForTrace(trace) }
+  if (trace.path.length > 2) {
+    const endpoints = getDdrNetEndpoints(source, trace)
+    props.connectsTo = trace.path.filter(port => !endpoints.includes(port))
+  }
+  return cloneElement(originalNet, props)
 })
 const timingTraces = source.traces.filter(trace => trace.path.length > 2).map(trace => {
   const [from, to] = getDdrNetEndpoints(source, trace)
-  return createElement("trace", { key: timingName(trace), name: timingName(trace), from, to, routingPhaseIndex: phaseForTrace(trace) })
+  return createElement("trace", { key: timingName(trace), name: timingName(trace), path: [from, to, `net.${trace.name}`], routingPhaseIndex: phaseForTrace(trace) })
 })
 const phases = [0, 1].map(phaseIndex => createElement("autoroutingphase", {
   key: `native_goal_phase_${phaseIndex}`,
