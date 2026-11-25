@@ -1,9 +1,10 @@
 import { mosfetProps, resolveManufacturerPartNumber } from "@tscircuit/props"
+import { getMosfetPortOptions } from "lib/utils/footprints/get-mosfet-port-options"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import type { BaseSymbolName } from "lib/utils/constants"
+import type { BaseSymbolName, MosfetPorts } from "lib/utils/constants"
 import { getMosfetSchematicSymbolName } from "./get-mosfet-schematic-symbol-name"
 
-export class Mosfet extends NormalComponent<typeof mosfetProps> {
+export class Mosfet extends NormalComponent<typeof mosfetProps, MosfetPorts> {
   get config() {
     return {
       componentName: "Mosfet",
@@ -12,6 +13,10 @@ export class Mosfet extends NormalComponent<typeof mosfetProps> {
       zodProps: mosfetProps,
       shouldRenderAsSchematicBox: false,
     }
+  }
+
+  initPorts() {
+    super.initPorts(getMosfetPortOptions(this))
   }
 
   doInitialSourceRender() {
