@@ -99,7 +99,7 @@ jobs:
           for revision in ['tooling', 'base', 'head']:
               path = Path(revision) / 'package.json'
               manifest = json.loads(path.read_text())
-              for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.561'}.items():
+              for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.562'}.items():
                   declared = manifest.get('devDependencies', {}).get(name, manifest.get('dependencies', {}).get(name, ''))
                   if name != '@tscircuit/checks' and declared.startswith('https://pkg.pr.new/'):
                       continue
