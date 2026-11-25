@@ -63,19 +63,18 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
   expect(copperPourLayers.has("inner1")).toBe(true)
   expect(copperPourLayers.has("inner2")).toBe(true)
 
-  const inner2EscapeVias = circuit.db.pcb_via.list().filter((via) => {
-    const endpoints = [via.from_layer, via.to_layer]
-    return endpoints.includes("top") && endpoints.includes("inner2")
-  })
+  const topToInner2Vias = circuit.db.pcb_via
+    .list()
+    .filter((via) => via.from_layer === "top" && via.to_layer === "inner2")
 
-  expect(inner2EscapeVias.length).toBeGreaterThan(0)
+  expect(topToInner2Vias.length).toBeGreaterThan(0)
   expect(
     circuit.db.pcb_via
       .list()
       .every((via) => via.subcircuit_connectivity_map_key),
   ).toBe(true)
   expect(
-    inner2EscapeVias.every(
+    topToInner2Vias.every(
       (via) => via.layers.join(",") === getViaBoardLayers(4).join(","),
     ),
   ).toBe(true)
@@ -83,7 +82,7 @@ test("unbroken inner-layer copper pours participate in autorouting", async () =>
   const vccNet = circuit.db.source_net.list().find((net) => net.name === "VCC")
   expect(vccNet?.subcircuit_connectivity_map_key).toBeDefined()
   expect(
-    inner2EscapeVias.every(
+    topToInner2Vias.every(
       (via) =>
         via.subcircuit_connectivity_map_key ===
         vccNet?.subcircuit_connectivity_map_key,

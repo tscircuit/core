@@ -14,13 +14,27 @@ export const reversePcbTraceRoute = (
   const reversedRoute = route
     .slice()
     .reverse()
-    .map((point) => {
+    .map((point, index, points) => {
       if (point.route_type === "wire") {
         const { start_width, end_width, width_interpolation_mode, ...wire } =
           point
         return wire
       }
       if (point.route_type === "via") {
+        const previous = points[index - 1]
+        const next = points[index + 1]
+        // Routers can store a terminal via from pad to plane at either end.
+        // Its only neighboring wire determines the direction of traversal.
+        if (
+          (!previous &&
+            next?.route_type === "wire" &&
+            next.layer === point.to_layer) ||
+          (!next &&
+            previous?.route_type === "wire" &&
+            previous.layer === point.from_layer)
+        ) {
+          return { ...point }
+        }
         return {
           ...point,
           from_layer: point.to_layer,

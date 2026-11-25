@@ -84,3 +84,27 @@ test("preserves variable wire segment widths when reversing a PCB route", () => 
   ).toEqual(interpolatedRoute)
   expect(interpolatedRoute).toEqual(originalInterpolatedRoute)
 })
+
+test("reverses terminal vias stored in either layer order", () => {
+  const wire = {
+    route_type: "wire",
+    x: 0,
+    y: 0,
+    layer: "top",
+    width: 0.2,
+  } as const
+  for (const [from_layer, to_layer] of [
+    ["top", "inner1"],
+    ["inner1", "top"],
+  ] as const) {
+    const via = { route_type: "via", x: 0, y: 0, from_layer, to_layer } as const
+    expect(reversePcbTraceRoute([via, wire]).at(-1)).toMatchObject({
+      from_layer: "top",
+      to_layer: "inner1",
+    })
+    expect(reversePcbTraceRoute([wire, via])[0]).toMatchObject({
+      from_layer: "inner1",
+      to_layer: "top",
+    })
+  }
+})
