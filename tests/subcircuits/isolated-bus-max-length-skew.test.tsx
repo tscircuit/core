@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
+import { SKEWED_BUS_ROUTES } from "./isolated-bus-max-length-skew.route"
 
 /** The bus's allowed length difference between its traces, in mm. */
 const MAX_LENGTH_SKEW_MM = 0.1
@@ -44,8 +45,18 @@ function SkewedBus() {
         pcbX={6}
         pcbY={-0.8}
       />
-      <trace name="A" from=".R1 > .pin2" to=".R2 > .pin1" pcbStraightLine />
-      <trace name="B" from=".R3 > .pin2" to=".R4 > .pin1" pcbStraightLine />
+      <trace
+        name="A"
+        from=".R1 > .pin2"
+        to=".R2 > .pin1"
+        pcbPath={SKEWED_BUS_ROUTES.A}
+      />
+      <trace
+        name="B"
+        from=".R3 > .pin2"
+        to=".R4 > .pin1"
+        pcbPath={SKEWED_BUS_ROUTES.B}
+      />
       <bus
         name="BUS"
         connections={["A", "B"]}
