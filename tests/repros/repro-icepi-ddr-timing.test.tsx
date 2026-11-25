@@ -10,12 +10,14 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.source_net.list()).toHaveLength(50)
-  const timedBuses = circuit.db.source_bus.list().filter(
-    (bus) =>
-      bus.source_trace_ids.length > 0 &&
-      (bus.max_length_skew !== undefined ||
-        (bus.min_length !== undefined && bus.max_length !== undefined)),
-  )
+  const timedBuses = circuit.db.source_bus
+    .list()
+    .filter(
+      (bus) =>
+        bus.source_trace_ids.length > 0 &&
+        (bus.max_length_skew !== undefined ||
+          (bus.min_length !== undefined && bus.max_length !== undefined)),
+    )
   expect(timedBuses).toHaveLength(18)
   const circuitJson = circuit.getCircuitJson()
   const pcbConnectivity = new PcbConnectivityMap(circuitJson).connMap
