@@ -69,9 +69,9 @@ test("rotated silkscreen follows its footprint's pad direction on both sides", a
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
   for (const text of circuit.db.pcb_silkscreen_text.list()) {
-    const [start, end] = circuit.db.pcb_smtpad.list({
-      pcb_component_id: text.pcb_component_id,
-    })
+    const [start, end] = circuit.db.pcb_smtpad
+      .list({ pcb_component_id: text.pcb_component_id })
+      .filter((pad) => pad.shape === "rect")
     const dx = end!.x - start!.x
     const dy = end!.y - start!.y
     const distance = Math.hypot(dx, dy)
