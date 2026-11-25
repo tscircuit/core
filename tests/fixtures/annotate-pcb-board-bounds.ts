@@ -7,7 +7,9 @@ type PcbSnapshotViewport = NonNullable<PcbSvgOptions["viewport"]>
  * Annotate board positions in circuit-world mm, in the right-handed PCB frame
  * (+X right, +Y up, +Z above). The viewport corners and centers are points.
  * Each fixture supplies the same viewport before and after, independently of
- * emitted center metadata. Review notes never change board or copper geometry.
+ * emitted center metadata. Native fabrication-note text/paths and PCB-note
+ * rectangles are rendered by toMatchPcbSnapshot, without SVG postprocessing.
+ * Review notes never change board or copper geometry.
  */
 export const annotatePcbBoardBounds = (
   circuit: Pick<RootCircuit, "db">,
@@ -27,11 +29,11 @@ export const annotatePcbBoardBounds = (
     color: string,
     strokeWidth: number,
   ) => {
-    circuit.db.pcb_note_line.insert({
-      x1,
-      y1,
-      x2,
-      y2,
+    circuit.db.pcb_fabrication_note_path.insert({
+      route: [
+        { x: x1, y: y1 },
+        { x: x2, y: y2 },
+      ],
       layer: "top",
       stroke_width: strokeWidth * markerScale,
       color,
@@ -44,7 +46,7 @@ export const annotatePcbBoardBounds = (
     color: string,
     fontSize = 1.2,
   ) => {
-    circuit.db.pcb_note_text.insert({
+    circuit.db.pcb_fabrication_note_text.insert({
       anchor_position: { x, y },
       anchor_alignment: "bottom_left",
       text,
@@ -129,7 +131,7 @@ export const annotatePcbBoardBounds = (
       "#ffcc00",
       0.15,
     )
-    circuit.db.pcb_note_text.insert({
+    circuit.db.pcb_fabrication_note_text.insert({
       anchor_position: {
         x: pcbBoard.center.x + labelDirection * 3 * markerScale,
         y: pcbBoard.center.y + 3 * markerScale,
@@ -158,6 +160,7 @@ export const annotatePcbBoardBounds = (
   )
 
   return {
+    showFabricationNotes: true,
     width: 1200,
     height: 1000,
     backgroundColor: "#0f172a",
