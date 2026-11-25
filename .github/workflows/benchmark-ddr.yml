@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [reserved, interleaved]
+        mode: [reserved]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,7 +66,7 @@ jobs:
       - name: Fresh native Core render at the original 120 second cap
         run: |
           mkdir -p results
-          timeout -s KILL 120s bun --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" '${{ matrix.mode }}' > results/render.log 2>&1 || true
+          timeout -s KILL 120s bun --cpu-prof --cpu-prof-dir results --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" '${{ matrix.mode }}' > results/render.log 2>&1 || true
           cat results/render.log
           bun core/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core" orangecrab "$GITHUB_WORKSPACE/results"
           python3 - <<'PY'
@@ -76,6 +76,15 @@ jobs:
           a=json.loads(Path('results/assessment.json').read_text())
           print('NATIVE_GOALS_PROGRESS='+json.dumps(p,separators=(',',':')))
           print('NATIVE_GOALS_ASSESSMENT='+json.dumps({k:v for k,v in a.items() if k not in ['ddrSkew','ddrLaneAudit','ddrRoutingTargets','ddrDelayMatching']},separators=(',',':')))
+          from collections import Counter
+          for filename in Path('results').glob('*.cpuprofile'):
+              profile=json.loads(filename.read_text())
+              times=Counter()
+              nodes={node['id']:node for node in profile['nodes']}
+              for sample,delta in zip(profile['samples'],profile['timeDeltas']):
+                  frame=nodes[sample]['callFrame']
+                  times[(frame['functionName'],frame['url'],frame['lineNumber'])]+=delta
+              print('NATIVE_GOALS_CPU='+json.dumps([{'function':key[0],'file':key[1],'line':key[2]+1,'milliseconds':ms/1000} for key,ms in times.most_common(45)]))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
