@@ -1,0 +1,79 @@
+{
+  "scope": "H616 DDR fixture, 53 signals, empty initial copper",
+  "coreCommit": "d29a1f6f265dc9052ca583e44d3cc6960174d1a2",
+  "benchmarkCommit": "8d1d38943e32444230c9430d46d8f3818424f918",
+  "solverVersion": "0.0.66",
+  "propsVersion": "0.0.746",
+  "circuitJsonVersion": "0.0.561",
+  "runtime": "Bun 1.4.3, Linux x64",
+  "comparison": "Before is the untuned routing attempt; after is a fresh matching-only attempt with a separate unchanged 120-second solve budget. The standard two-attempt workflow exhausted its shared budget on this machine and retained the untuned route.",
+  "commands": {
+    "before": "bun scripts/run.ts --core /workspace/core-ddr --circuit h616 --out /workspace/ddr-evidence/h616-head",
+    "after": "runAttempt(corePath, h616, output, 120_000, \"matching\")",
+    "independentAssessment": "scripts/assess.ts, original numeric constraints and original copper preservation targets"
+  },
+  "images": "Same viewport includes the complete copper of both attempts; no initial copper is supplied.",
+  "fixtureSha256": "64aacd287e030ccced3c4351d7db984d0df0a23c4f59a335a4289ee8dc377b82",
+  "solverProvenance": {
+    "modulePath": "/workspace/core-ddr/node_modules/@tscircuit/bus-lanes-solver/dist/index.js",
+    "sha256": "066e0bb3629eaaa27e4817a426ed097e9b62b280fc03ac766a1ba22ec5f1981c"
+  },
+  "before": {
+    "connected": 53,
+    "requested": 53,
+    "hardChecksPassed": 1,
+    "hardChecksTotal": 9,
+    "preservationPassed": 1,
+    "preservationTotal": 6,
+    "wireLengthMm": 692.8449773277013,
+    "vias": 91,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 0,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0,
+      "ddr_constraints": 8,
+      "ddr_matching": 5,
+      "ddr_package_matching": 0,
+      "ddr_delay_matching": 0
+    },
+    "geometryErrors": [],
+    "wallMs": 120084.35695699998
+  },
+  "after": {
+    "connected": 53,
+    "requested": 53,
+    "hardChecksPassed": 9,
+    "hardChecksTotal": 9,
+    "preservationPassed": 6,
+    "preservationTotal": 6,
+    "wireLengthMm": 707.6801338630715,
+    "vias": 96,
+    "findings": {
+      "missing_traces": 0,
+      "disconnected_ports": 0,
+      "trace_overlap": 0,
+      "pad_trace": 0,
+      "via_trace": 0,
+      "via_pad": 0,
+      "via_spacing": 0,
+      "contiguous": 0,
+      "via_in_pad": 0,
+      "hole_trace": 0,
+      "width": 0,
+      "ddr_constraints": 0,
+      "ddr_matching": 0,
+      "ddr_package_matching": 0,
+      "ddr_delay_matching": 0
+    },
+    "geometryErrors": [],
+    "wallMs": 67309.50451700001
+  }
+}
