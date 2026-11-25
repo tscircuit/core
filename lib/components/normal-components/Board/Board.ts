@@ -533,10 +533,10 @@ export class Board
     }
 
     // Compute width and height from outline if not provided
-    const authoredOutlineBounds =
+    const explicitOutlineBounds =
       props.outline && getBoundsFromPoints(props.outline)
-    if (authoredOutlineBounds) {
-      const { minX, maxX, minY, maxY } = authoredOutlineBounds
+    if (explicitOutlineBounds) {
+      const { minX, maxX, minY, maxY } = explicitOutlineBounds
 
       computedWidth = maxX - minX
       computedHeight = maxY - minY
@@ -579,15 +579,15 @@ export class Board
     // Explicit outlines in panels/subpanels need to be centered by panel layout.
     let outlineTranslation = { x: 0, y: 0 }
     if (
-      authoredOutlineBounds &&
+      explicitOutlineBounds &&
       (this.parent?.lowercaseComponentName === "panel" ||
         this.parent?.lowercaseComponentName === "subpanel")
     ) {
       // Find the center of the original outline
       const outlineCenterX =
-        (authoredOutlineBounds.minX + authoredOutlineBounds.maxX) / 2
+        (explicitOutlineBounds.minX + explicitOutlineBounds.maxX) / 2
       const outlineCenterY =
-        (authoredOutlineBounds.minY + authoredOutlineBounds.maxY) / 2
+        (explicitOutlineBounds.minY + explicitOutlineBounds.maxY) / 2
       // Translation needed to move outline center to board center
       outlineTranslation = {
         x: center.x - outlineCenterX,
