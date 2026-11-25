@@ -145,7 +145,7 @@ export const inflateCircuitJson = (
   }
 
   for (const sourceBus of injectionDb.source_bus.list()) {
-    inflateSourceBus(sourceBus, inflationCtx)
+    inflateSourceBus({ sourceBus, inflatorContext: inflationCtx })
   }
 
   // Inflate standalone PCB primitives (silkscreen, fab notes, pcb notes, etc.)

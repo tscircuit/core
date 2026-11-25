@@ -40,7 +40,7 @@ function SharedStartPinBus() {
   )
 }
 
-test.failing("isolated-bus-shared-start-pin", async () => {
+test("isolated-bus-shared-start-pin", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={18}>

@@ -10,6 +10,7 @@ import type { InflatorContext } from "../InflatorFn"
 import { getSelectorPath } from "./inflateSourceTrace"
 
 type SourceTraceId = SourceTrace["source_trace_id"]
+type SourceBusKind = "differential_pair" | "bus"
 
 function getSourceTraceSelector({
   sourceTraceId,
@@ -23,7 +24,15 @@ function getSourceTraceSelector({
   if (!sourceTrace) return
   if (sourceTrace.name) return sourceTrace.name
 
-  const sourcePortId = sourceTrace.connected_source_port_ids[0]
+  const sourceTraces = injectionDb.source_trace.list()
+  const sourcePortId = sourceTrace.connected_source_port_ids.find(
+    (sourcePortId) =>
+      sourceTraces.every(
+        (otherSourceTrace) =>
+          otherSourceTrace.source_trace_id === sourceTraceId ||
+          !otherSourceTrace.connected_source_port_ids.includes(sourcePortId),
+      ),
+  )
   if (sourcePortId === undefined) return
   const sourcePort = injectionDb.source_port.get(sourcePortId)
   if (!sourcePort) return
@@ -82,44 +91,66 @@ function getRouteLength({
   return routeLength
 }
 
-export function inflateSourceBus(
-  sourceBus: SourceBus,
-  inflatorContext: InflatorContext,
-) {
-  const { subcircuit } = inflatorContext
-  const { name, differential_pair, max_length_skew } = sourceBus
-  if (differential_pair) {
-    const positiveConnection = getSourceTraceSelector({
-      sourceTraceId: differential_pair.positive_source_trace_id,
-      inflatorContext,
-    })
-    const negativeConnection = getSourceTraceSelector({
-      sourceTraceId: differential_pair.negative_source_trace_id,
-      inflatorContext,
-    })
-    if (positiveConnection === undefined || negativeConnection === undefined) {
-      return
-    }
+/** Determines which component represents the stored source bus. */
+function getSourceBusKind({
+  sourceBus,
+}: { sourceBus: SourceBus }): SourceBusKind {
+  if (sourceBus.differential_pair) return "differential_pair"
+  return "bus"
+}
 
-    const props: DifferentialPairProps = {
-      positiveConnection,
-      negativeConnection,
-    }
-    if (name !== undefined) props.name = name
-    if (max_length_skew !== undefined) props.maxLengthSkew = max_length_skew
-    if (sourceBus.target_differential_impedance !== undefined) {
-      props.targetDifferentialImpedance =
-        sourceBus.target_differential_impedance
-    }
-    if (differential_pair.trace_gap !== undefined) {
-      props.pcbTraceGap = differential_pair.trace_gap
-    }
-    if (differential_pair.max_uncoupled_length !== undefined) {
-      props.maxUncoupledLength = differential_pair.max_uncoupled_length
-    }
-    subcircuit.add(new DifferentialPair(props))
+/** Restores a differential pair with its trace selectors and constraints. */
+function inflateDifferentialPair({
+  sourceBus,
+  differentialPair,
+  inflatorContext,
+}: {
+  sourceBus: SourceBus
+  differentialPair: NonNullable<SourceBus["differential_pair"]>
+  inflatorContext: InflatorContext
+}) {
+  const { subcircuit } = inflatorContext
+  const { name, max_length_skew } = sourceBus
+  const positiveConnection = getSourceTraceSelector({
+    sourceTraceId: differentialPair.positive_source_trace_id,
+    inflatorContext,
+  })
+  const negativeConnection = getSourceTraceSelector({
+    sourceTraceId: differentialPair.negative_source_trace_id,
+    inflatorContext,
+  })
+  if (positiveConnection === undefined || negativeConnection === undefined) {
     return
   }
+
+  const props: DifferentialPairProps = {
+    positiveConnection,
+    negativeConnection,
+  }
+  if (name !== undefined) props.name = name
+  if (max_length_skew !== undefined) props.maxLengthSkew = max_length_skew
+  if (sourceBus.target_differential_impedance !== undefined) {
+    props.targetDifferentialImpedance = sourceBus.target_differential_impedance
+  }
+  if (differentialPair.trace_gap !== undefined) {
+    props.pcbTraceGap = differentialPair.trace_gap
+  }
+  if (differentialPair.max_uncoupled_length !== undefined) {
+    props.maxUncoupledLength = differentialPair.max_uncoupled_length
+  }
+  subcircuit.add(new DifferentialPair(props))
+}
+
+/** Restores a bus with its member selectors and length constraints. */
+function inflateBus({
+  sourceBus,
+  inflatorContext,
+}: {
+  sourceBus: SourceBus
+  inflatorContext: InflatorContext
+}) {
+  const { subcircuit } = inflatorContext
+  const { name, max_length_skew } = sourceBus
 
   const connections = getSourceTraceSelectors({
     sourceTraceIds: sourceBus.source_trace_ids,
@@ -145,4 +176,29 @@ export function inflateSourceBus(
     props.lengthTolerance = sourceBus.length_tolerance
   }
   subcircuit.add(new Bus(props))
+}
+
+/** Restores the component corresponding to a stored source bus. */
+export function inflateSourceBus({
+  sourceBus,
+  inflatorContext,
+}: {
+  sourceBus: SourceBus
+  inflatorContext: InflatorContext
+}) {
+  switch (getSourceBusKind({ sourceBus })) {
+    case "differential_pair": {
+      const { differential_pair } = sourceBus
+      if (!differential_pair) return
+      inflateDifferentialPair({
+        sourceBus,
+        differentialPair: differential_pair,
+        inflatorContext,
+      })
+      return
+    }
+    case "bus":
+      inflateBus({ sourceBus, inflatorContext })
+      return
+  }
 }
