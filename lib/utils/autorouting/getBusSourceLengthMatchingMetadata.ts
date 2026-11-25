@@ -1,4 +1,8 @@
-import type { SourceBus, SourceTrace } from "circuit-json"
+import type {
+  SourceBus,
+  SourceBusLengthMatchingPath,
+  SourceTrace,
+} from "circuit-json"
 import { Bus } from "lib/components/primitive-components/Bus"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
@@ -33,7 +37,7 @@ function resolveLengthReference({
   ) {
     if (visited.has(group))
       throw new Error(`Bus "${bus.name}" has a circular length reference`)
-    const next = new Set(visited).add(group)
+    const visitedReferenceGroups = new Set(visited).add(group)
     let selectors: string[]
     if (group instanceof Bus) selectors = group._parsedProps.connections
     else
@@ -46,7 +50,7 @@ function resolveLengthReference({
         bus,
         sourceTraces,
         selector: member,
-        visited: next,
+        visited: visitedReferenceGroups,
       }),
     )
   }
@@ -70,7 +74,7 @@ export function getBusSourceLengthMatchingMetadata({
   SourceBus,
   "skew_reference" | "length_match_source_trace_ids" | "length_matching_paths"
 > {
-  const paths: NonNullable<SourceBus["length_matching_paths"]> = []
+  const length_matching_paths: SourceBusLengthMatchingPath[] = []
   for (const [fromSelector, toSelector] of bus._parsedProps
     .lengthMatchingPaths ?? []) {
     const from = bus
@@ -82,31 +86,31 @@ export function getBusSourceLengthMatchingMetadata({
         `Bus "${bus.name}" needs two distinct timing-path ports: "${fromSelector}", "${toSelector}"`,
       )
     }
-    const first = sourceTraces.find((trace) =>
+    const fromSourceTrace = sourceTraces.find((trace) =>
       trace.connected_source_port_ids.includes(from.source_port_id!),
     )
-    const second = sourceTraces.find((trace) =>
+    const toSourceTrace = sourceTraces.find((trace) =>
       trace.connected_source_port_ids.includes(to.source_port_id!),
     )
-    if (!first || !second)
+    if (!fromSourceTrace || !toSourceTrace)
       throw new Error(
         `Bus "${bus.name}" timing-path ports need connected traces`,
       )
     const sameNet =
-      first === second ||
-      (first.subcircuit_connectivity_map_key !== undefined &&
-        first.subcircuit_connectivity_map_key ===
-          second.subcircuit_connectivity_map_key) ||
-      first.connected_source_net_ids?.some((netId) =>
-        second.connected_source_net_ids?.includes(netId),
+      fromSourceTrace === toSourceTrace ||
+      (fromSourceTrace.subcircuit_connectivity_map_key !== undefined &&
+        fromSourceTrace.subcircuit_connectivity_map_key ===
+          toSourceTrace.subcircuit_connectivity_map_key) ||
+      fromSourceTrace.connected_source_net_ids?.some((netId) =>
+        toSourceTrace.connected_source_net_ids?.includes(netId),
       )
     if (!sameNet) {
       throw new Error(
         `Bus "${bus.name}" timing-path ports "${fromSelector}" and "${toSelector}" belong to different nets`,
       )
     }
-    paths.push({
-      source_trace_id: first.source_trace_id,
+    length_matching_paths.push({
+      source_trace_id: fromSourceTrace.source_trace_id,
       source_port_ids: [from.source_port_id, to.source_port_id],
     })
   }
@@ -116,7 +120,8 @@ export function getBusSourceLengthMatchingMetadata({
   > = {}
   if (bus._parsedProps.skewReference !== undefined)
     metadata.skew_reference = bus._parsedProps.skewReference
-  if (paths.length) metadata.length_matching_paths = paths
+  if (length_matching_paths.length)
+    metadata.length_matching_paths = length_matching_paths
   let selectors = bus._parsedProps.lengthMatchTo ?? []
   if (typeof selectors === "string") selectors = [selectors]
   if (selectors.length) {
