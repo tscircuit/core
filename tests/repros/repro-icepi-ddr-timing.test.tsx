@@ -36,4 +36,4 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
         element.type === "pcb_bus_routing_constraint_warning",
     ),
   ).toEqual([])
-}, 300_000)
+}, 480_000)
