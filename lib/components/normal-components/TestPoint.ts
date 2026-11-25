@@ -69,6 +69,9 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     } = this._getPropsWithDefaults()
 
     if (footprintVariant === "through_hole") {
+      if (padDiameter !== undefined) {
+        return `platedhole_d${holeDiameter}_pd${padDiameter}`
+      }
       return `platedhole_d${holeDiameter}`
     }
 
