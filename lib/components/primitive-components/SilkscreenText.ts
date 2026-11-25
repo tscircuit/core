@@ -33,22 +33,18 @@ export class SilkscreenText extends PrimitiveComponent<
     const { maybeFlipLayer, isFlipped } = this._getPcbPrimitiveFlippedHelpers()
     const subcircuit = this.getSubcircuit()
 
-    // Calculate rotation for silkscreen text
-    let rotation = 0
-
-    // If the component has an explicit rotation, use that
-    if (props.pcbRotation !== undefined && props.pcbRotation !== 0) {
-      rotation = props.pcbRotation
-    } else {
-      // Otherwise, check for parent group rotations
-      const globalTransform = this._computePcbGlobalTransformBeforeLayout()
-      const decomposedTransform = decomposeTSR(globalTransform)
-      rotation = (decomposedTransform.rotation.angle * 180) / Math.PI
-    }
-    // When text is on bottom layer, adjust rotation to keep text readable
-    if (isFlipped) {
-      rotation = (rotation + 180) % 360
-    }
+    // Like the anchor position, the text direction is authored in footprint-local
+    // mm (+X right, +Y up) and must include the parent transform in board space.
+    // PrimitiveComponent._computePcbGlobalTransformBeforeLayout composes the
+    // same parent * flipY() * local transform used for pad placement. Extract
+    // the rotation separately from that reflection; the renderer mirrors glyphs.
+    const decomposedTransform = decomposeTSR(
+      this._computePcbGlobalTransformBeforeLayout(),
+      false,
+      isFlipped,
+    )
+    const rotationDegrees = (decomposedTransform.rotation.angle * 180) / Math.PI
+    const rotation = ((rotationDegrees % 360) + 360) % 360
 
     const uniqueLayers = new Set(props.layers)
     if (props.layer) uniqueLayers.add(props.layer)

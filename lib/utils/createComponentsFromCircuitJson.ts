@@ -63,7 +63,8 @@ const calculateCcwRotation = (
   if (elementCcwRotation !== undefined && elementCcwRotation !== null) {
     totalRotation = elementCcwRotation - componentAngle
   } else {
-    totalRotation = componentAngle
+    // An omitted footprint-local text angle inherits the component transform.
+    totalRotation = 0
   }
 
   const normalizedRotation = ((totalRotation % 360) + 360) % 360
@@ -736,6 +737,7 @@ export const createComponentsFromCircuitJson = (
         const silkscreenText = new SilkscreenText({
           anchorAlignment: elm.anchor_alignment || "center",
           text,
+          layer: elm.layer,
           pcbX,
           pcbY: elm.anchor_position.y,
           pcbRotation: ccwRotation ?? 0,
