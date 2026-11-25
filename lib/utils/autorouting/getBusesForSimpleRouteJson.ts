@@ -1,4 +1,5 @@
 import { getBusSourceTraceIdOrThrow } from "./getBusSourceTraceIdOrThrow"
+import { getBusSourceLengthMatchingMetadata } from "./getBusSourceLengthMatchingMetadata"
 import { getBusTargetLengthBounds } from "./getBusTargetLengthBounds"
 import type { SourceNet, SourceTrace } from "circuit-json"
 import type { Bus } from "lib/components/primitive-components/Bus"
@@ -6,11 +7,13 @@ import type {
   SimpleRouteBus,
   SimpleRouteConnection,
   SrjConnectionName,
+  SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 
 type SubcircuitId = NonNullable<SourceTrace["subcircuit_id"]>
 type GetBusesParams = {
   srjConnections: SimpleRouteConnection[]
+  fixedTraces?: SimplifiedPcbTrace[]
   buses: Bus[]
   sourceTraces: SourceTrace[]
   subcircuitId?: SubcircuitId | null
@@ -28,7 +31,9 @@ const getBusSrjConnectionNamesOrThrow = ({
   sourceTraceId,
   traceNameOrPortSelector,
   busSourceTraces,
+  fixedTraces = [],
 }: {
+  fixedTraces?: SimplifiedPcbTrace[]
   srjConnections: SimpleRouteConnection[]
   bus: Bus
   sourceTraceId: SourceTrace["source_trace_id"]
@@ -63,12 +68,143 @@ const getBusSrjConnectionNamesOrThrow = ({
     connectedSourceNetIds.has(srjConnection.name),
   )
 
-  if (matchingSrjConnections.length === 0) {
+  const names = new Set(
+    matchingSrjConnections.map((connection) => connection.name),
+  )
+  for (const trace of fixedTraces) {
+    if (
+      trace.connection_name &&
+      (connectedSourceNetIds.has(trace.connection_name) ||
+        trace.source_trace_id === sourceTraceId)
+    )
+      names.add(trace.connection_name)
+  }
+  if (names.size === 0) {
     throw new Error(
       `Could not find an SRJ connection for "${traceNameOrPortSelector}" in bus "${bus.name}"`,
     )
   }
-  return matchingSrjConnections.map((srjConnection) => srjConnection.name)
+  return [...names]
+}
+
+/** Timing comparisons may refer to completed copper without making it a new routing request. */
+const getBusSrjLengthMatchingMetadata = ({
+  bus,
+  srjConnections,
+  fixedTraces,
+  busSourceTraces,
+}: {
+  bus: Bus
+  srjConnections: SimpleRouteConnection[]
+  fixedTraces: SimplifiedPcbTrace[]
+  busSourceTraces: SourceTrace[]
+}): Pick<
+  SimpleRouteBus,
+  "skewReference" | "referenceConnectionNames" | "lengthMatchingPaths"
+> => {
+  const source = getBusSourceLengthMatchingMetadata({
+    bus,
+    sourceTraces: busSourceTraces,
+  })
+  const metadata: Pick<
+    SimpleRouteBus,
+    "skewReference" | "referenceConnectionNames" | "lengthMatchingPaths"
+  > = {}
+  if (source.skew_reference !== undefined)
+    metadata.skewReference = source.skew_reference
+  const references: SrjConnectionName[] = []
+  const paths = [...(source.length_matching_paths ?? [])]
+  for (const sourceTraceId of source.length_match_source_trace_ids ?? []) {
+    const names = getBusSrjConnectionNamesOrThrow({
+      bus,
+      srjConnections,
+      fixedTraces,
+      busSourceTraces,
+      sourceTraceId,
+      traceNameOrPortSelector: "lengthMatchTo",
+    })
+    references.push(...names)
+    if (
+      names.some((name) =>
+        srjConnections.some((connection) => connection.name === name),
+      )
+    )
+      continue
+    const trace = busSourceTraces.find(
+      (trace) => trace.source_trace_id === sourceTraceId,
+    )!
+    if (
+      paths.some((path) => {
+        const owner = busSourceTraces.find(
+          (candidate) => candidate.source_trace_id === path.source_trace_id,
+        )!
+        return (
+          owner === trace ||
+          (owner.subcircuit_connectivity_map_key !== undefined &&
+            owner.subcircuit_connectivity_map_key ===
+              trace.subcircuit_connectivity_map_key)
+        )
+      })
+    )
+      continue
+    const ports = [
+      ...new Set(
+        busSourceTraces
+          .filter(
+            (candidate) =>
+              candidate === trace ||
+              (trace.subcircuit_connectivity_map_key !== undefined &&
+                candidate.subcircuit_connectivity_map_key ===
+                  trace.subcircuit_connectivity_map_key),
+          )
+          .flatMap((candidate) => candidate.connected_source_port_ids),
+      ),
+    ]
+    if (ports.length !== 2)
+      throw new Error(
+        `Bus "${bus.name}" needs lengthMatchingPaths for a branched timing reference`,
+      )
+    paths.push({
+      source_trace_id: sourceTraceId,
+      source_port_ids: [ports[0], ports[1]],
+    })
+  }
+  if (references.length)
+    metadata.referenceConnectionNames = [...new Set(references)]
+  for (const path of paths) {
+    const names = getBusSrjConnectionNamesOrThrow({
+      bus,
+      srjConnections,
+      fixedTraces,
+      busSourceTraces,
+      sourceTraceId: path.source_trace_id,
+      traceNameOrPortSelector: "lengthMatchingPaths",
+    })
+    if (names.length !== 1)
+      throw new Error(
+        `Bus "${bus.name}" timing path must resolve to one electrical routing connection`,
+      )
+    const endpoints = path.source_port_ids.map((sourcePortId) => {
+      const port = bus.root!.db.pcb_port.getWhere({
+        source_port_id: sourcePortId,
+      })
+      if (!port?.layers.length)
+        throw new Error(`Bus "${bus.name}" timing path has no PCB port`)
+      return {
+        x: port.x,
+        y: port.y,
+        layer: port.layers[0],
+        pcb_port_id: port.pcb_port_id,
+      }
+    })
+    metadata.lengthMatchingPaths ??= []
+    metadata.lengthMatchingPaths.push({
+      connectionName: names[0],
+      from: endpoints[0],
+      to: endpoints[1],
+    })
+  }
+  return metadata
 }
 
 const normalizeNetName = (netNameOrSelector: string): string =>
@@ -135,6 +271,7 @@ export const getPlaneTerminatedSourceTraceLayers = ({
 /** Converts bus trace names or port selectors into SRJ constraints. */
 export const getBusesForSimpleRouteJson = ({
   srjConnections,
+  fixedTraces = [],
   buses,
   sourceTraces,
   subcircuitId,
@@ -182,6 +319,12 @@ export const getBusesForSimpleRouteJson = ({
       name: bus.name,
       connectionNames,
       ...getBusTargetLengthBounds(bus),
+      ...getBusSrjLengthMatchingMetadata({
+        bus,
+        srjConnections,
+        fixedTraces,
+        busSourceTraces,
+      }),
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }
         : {}),
