@@ -142,6 +142,11 @@ export const getBusesForSimpleRouteJson = ({
   preservedSourceTraceIds,
 }: GetBusesParams): SimpleRouteBus[] | undefined => {
   const declaredSrjBuses: SimpleRouteBus[] = []
+  // Local fanout routes are prefixes of the global signal, not additional
+  // timing references. Measure each selected signal from pad to pad once.
+  const globalSrjConnections = srjConnections.filter(
+    (connection) => !connection.routingPcbGroupId,
+  )
   for (const bus of buses) {
     const busSubcircuitId = bus.getSubcircuit().subcircuit_id
     if (subcircuitId && busSubcircuitId !== subcircuitId) continue
@@ -182,13 +187,14 @@ export const getBusesForSimpleRouteJson = ({
     const matchingSourceTraceIds =
       bus._parsedProps.lengthMatchTo === undefined
         ? []
-        : bus.root!.db.source_bus.get(bus.source_bus_id!)!.source_trace_ids
+        : (bus.root!.db.source_bus.get(bus.source_bus_id!)!
+            .length_match_source_trace_ids ?? [])
     const lengthMatchToConnectionNames = matchingSourceTraceIds
       .filter((sourceTraceId) => !ownedSourceTraceIds.has(sourceTraceId))
       .flatMap((sourceTraceId) => {
         if (preservedSourceTraceIds?.has(sourceTraceId)) return [sourceTraceId]
         return getBusSrjConnectionNamesOrThrow({
-          srjConnections,
+          srjConnections: globalSrjConnections,
           bus,
           sourceTraceId,
           traceNameOrPortSelector:
@@ -199,6 +205,66 @@ export const getBusesForSimpleRouteJson = ({
         })
       })
 
+    // A named two-port trace chooses its signal path even when the net also
+    // contains termination pads. Endpoint points are board-world XY in mm
+    // (+X right, +Y up); layers and coordinates come from the placed pads.
+    const lengthMatchingPaths = [
+      ...new Set([...ownedSourceTraceIds, ...matchingSourceTraceIds]),
+    ].flatMap((sourceTraceId) => {
+      const sourceTrace = busSourceTraces.find(
+        (trace) => trace.source_trace_id === sourceTraceId,
+      )!
+      const connectedSourcePortIds = new Set(
+        busSourceTraces
+          .filter(
+            (trace) =>
+              trace === sourceTrace ||
+              (sourceTrace.subcircuit_connectivity_map_key !== undefined &&
+                trace.subcircuit_connectivity_map_key ===
+                  sourceTrace.subcircuit_connectivity_map_key),
+          )
+          .flatMap((trace) => trace.connected_source_port_ids),
+      )
+      if (
+        connectedSourcePortIds.size <= 2 &&
+        !matchingSourceTraceIds.includes(sourceTraceId)
+      )
+        return []
+      const sourcePortIds =
+        sourceTrace.connected_source_port_ids.length === 2
+          ? sourceTrace.connected_source_port_ids
+          : [...connectedSourcePortIds]
+      if (sourcePortIds.length !== 2) return []
+      const pcbPorts = sourcePortIds.map(
+        (sourcePortId) =>
+          bus.root!.db.pcb_port.getWhere({ source_port_id: sourcePortId })!,
+      )
+      const names = preservedSourceTraceIds?.has(sourceTraceId)
+        ? [sourceTraceId]
+        : getBusSrjConnectionNamesOrThrow({
+            srjConnections: globalSrjConnections,
+            bus,
+            sourceTraceId,
+            busSourceTraces,
+            traceNameOrPortSelector: sourceTrace.name ?? "unnamed trace",
+          })
+      if (names.length !== 1) return []
+      const [from, to] = pcbPorts.map((port) => ({
+        x: port.x,
+        y: port.y,
+        layer: port.layers[0],
+        pcb_port_id: port.pcb_port_id,
+      }))
+      return [
+        {
+          connectionName: names[0],
+          pcbPortIds: [from.pcb_port_id, to.pcb_port_id] as [string, string],
+          from,
+          to,
+        },
+      ]
+    })
+
     declaredSrjBuses.push({
       busId: bus.name,
       name: bus.name,
@@ -206,6 +272,7 @@ export const getBusesForSimpleRouteJson = ({
       ...(lengthMatchToConnectionNames.length > 0
         ? { lengthMatchToConnectionNames }
         : {}),
+      ...(lengthMatchingPaths.length ? { lengthMatchingPaths } : {}),
       ...getBusTargetLengthBounds(bus),
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }

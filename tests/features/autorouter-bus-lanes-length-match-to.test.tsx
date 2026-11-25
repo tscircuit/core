@@ -43,11 +43,17 @@ test("bus_lanes matches a bus selected by lengthMatchTo in the same phase", asyn
   )
   expect(
     circuit.db.source_bus.getWhere({ name: "DATA" })!.source_trace_ids,
-  ).toHaveLength(2)
+  ).toHaveLength(1)
   expect(
     circuit
       .getCircuitJson()
       .filter((element) => element.type.endsWith("_error")),
   ).toEqual([])
+  expect(
+    circuit.db.source_bus.getWhere({ name: "DATA" })!
+      .length_match_source_trace_ids,
+  ).toEqual([
+    circuit.db.source_trace.getWhere({ name: "CLK" })!.source_trace_id,
+  ])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

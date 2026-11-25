@@ -35,7 +35,6 @@ import {
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
-import { resolveBusLengthMatchTo } from "lib/utils/autorouting/resolve-bus-length-match-to"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
 import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
@@ -66,6 +65,7 @@ import {
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
+import { storePcbDifferentialPairPhaseSkew } from "lib/utils/circuit-json/store-pcb-differential-pair-phase-skew"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -1552,7 +1552,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       if (!isTestPointPhase) {
         simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)
       }
-      simpleRouteJson = resolveBusLengthMatchTo(simpleRouteJson)
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
         routingPhasePlan.drcTolerances,
@@ -3097,6 +3096,19 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
+  }
+
+  /** Stores phase skew after routing and trace teardrops are complete. */
+  doInitialPcbDifferentialPairPhaseSkewRender(): void {
+    const { root } = this
+    if (!root || root.pcbDisabled || this.getTopLevelRenderable() !== this)
+      return
+    storePcbDifferentialPairPhaseSkew(root.db)
+  }
+
+  /** Recomputes stored phase skew when the routing phases run again. */
+  updatePcbDifferentialPairPhaseSkewRender(): void {
+    this.doInitialPcbDifferentialPairPhaseSkewRender()
   }
 
   doInitialPcbDesignRuleChecks() {
