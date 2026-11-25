@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { Bus } from "lib/components/primitive-components/Bus"
 import { inflateSourceBus } from "lib/components/primitive-components/Group/Subcircuit/inflators/inflateSourceBus"
-import { createBusInflation } from "./inflate-source-bus-route-length.fixture"
+import { createBusInflation } from "./create-bus-inflation.fixture"
 
 test("bus inflation preserves zero and skips absent route lengths", () => {
   const { sourceBus, inflatorContext } = createBusInflation()

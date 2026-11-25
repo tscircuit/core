@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { inflateSourceBus } from "lib/components/primitive-components/Group/Subcircuit/inflators/inflateSourceBus"
-import { createBusInflation } from "./inflate-source-bus-route-length.fixture"
+import { createBusInflation } from "./create-bus-inflation.fixture"
 
 test("bus inflation does not silently drop an unresolvable length reference", () => {
   const { sourceBus, inflatorContext } = createBusInflation()
