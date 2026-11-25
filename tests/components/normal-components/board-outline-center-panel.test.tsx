@@ -20,7 +20,6 @@ test("outlined boards retain panel and subpanel placement", async () => {
         ]}
       >
         <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-        <pcbnotetext pcbX={0} pcbY={20} text="Panel placement" />
       </board>
       <subpanel layoutMode="none" width={100} height={100} pcbX={70} pcbY={50}>
         <board
@@ -35,7 +34,6 @@ test("outlined boards retain panel and subpanel placement", async () => {
           ]}
         >
           <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-          <pcbnotetext pcbX={0} pcbY={0} text="Subpanel placement" />
         </board>
       </subpanel>
     </panel>,
@@ -74,6 +72,10 @@ test("outlined boards retain panel and subpanel placement", async () => {
     { x: 32, y: 23 },
     { x: 102, y: 73 },
   ])
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Panel and subpanel: unchanged",
+    viewport: { minX: -80, minY: -100, maxX: 160, maxY: 140 },
+    gridStepMm: 20,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })

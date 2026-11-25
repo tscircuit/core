@@ -21,7 +21,6 @@ test("board center follows the emitted outline after outline offsets", async () 
     >
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={6} pcbY={7} />
       <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-      <pcbnotetext pcbX={10} pcbY={20} text="Outline offsets" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -45,6 +44,10 @@ test("board center follows the emitted outline after outline offsets", async () 
     { x: 6.51, y: 7 },
   ])
   expect(circuit.db.pcb_via.list()[0]).toMatchObject({ x: 2, y: 3 })
-  annotatePcbBoardBounds(circuit)
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  const snapshotOptions = annotatePcbBoardBounds(circuit, {
+    title: "Outline offsets: X=-7, Y=11 mm",
+    viewport: { minX: -40, minY: -10, maxX: 50, maxY: 50 },
+    gridStepMm: 10,
+  })
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, snapshotOptions)
 })
