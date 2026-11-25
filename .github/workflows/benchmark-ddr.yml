@@ -100,7 +100,8 @@ jobs:
               path = Path(revision) / 'package.json'
               manifest = json.loads(path.read_text())
               for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.561'}.items():
-                  if revision == 'head' and name != '@tscircuit/checks':
+                  declared = manifest.get('devDependencies', {}).get(name, manifest.get('dependencies', {}).get(name, ''))
+                  if name != '@tscircuit/checks' and (revision == 'head' or (revision == 'base' and declared.startswith('https://pkg.pr.new/'))):
                       continue
                   section = 'devDependencies' if name in manifest.get('devDependencies', {}) else 'dependencies'
                   for group in ['dependencies', 'devDependencies']:
@@ -108,7 +109,7 @@ jobs:
                   manifest.setdefault(section, {})[name] = version
               adapter_spec = manifest['devDependencies']['@tscircuit/core-ddr-benchmark']
               adapter_ref = os.environ.get('BENCHMARK_REF') or '16b6352dc25e951192d88cb99a7cfe96abf62285'
-              assert adapter_spec.endswith('16b6352dc25e951192d88cb99a7cfe96abf62285') or adapter_spec.endswith(adapter_ref)
+              assert any(adapter_spec.endswith(ref) for ref in ['16b6352dc25e951192d88cb99a7cfe96abf62285', 'f1832f9f97a1c419506398e65ea2f8c567a2370f', adapter_ref])
               if os.environ.get('BENCHMARK_REF'):
                   manifest['devDependencies']['@tscircuit/core-ddr-benchmark'] = 'github:ShiboSoftwareDev/core-ddr-benchmark#' + os.environ['BENCHMARK_REF']
               if revision == 'head' and os.environ.get('BUS_REF'):
