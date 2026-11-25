@@ -1,10 +1,11 @@
 import type { CircuitJsonTreeNode } from "@tscircuit/circuit-json-util"
-import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { SchematicSheet } from "circuit-json"
 import Debug from "debug"
+import type { PrimitiveComponent } from "lib/components/base-components/PrimitiveComponent"
 import type { z } from "zod"
 import type { Group } from "./Group"
 
+import { getSchematicSheetContentWidth } from "lib/utils/schematic/warn-if-schematic-elements-outside-sheet"
 import { applySchematicMatchPackLayoutToTree } from "./applySchematicMatchPackLayoutToTree"
 import { computeSchematicSectionLayoutUsingRows } from "./computeSchematicSectionLayoutUsingRows"
 import { updateSchematicPrimitivesForLayoutShift } from "./utils/updateSchematicPrimitivesForLayoutShift"
@@ -140,6 +141,13 @@ export function Group_doInitialSchematicLayoutSections<
   // Phase 3: pack sections into rows
   const groupSchPositionBeforeLayout =
     group._getGlobalSchematicPositionBeforeLayout()
+  const schematicSheet = schematicSheetId
+    ? db.schematic_sheet.get(schematicSheetId)
+    : undefined
+  const maxRowWidth =
+    schematicSheet?.sheet_width !== undefined
+      ? getSchematicSheetContentWidth(schematicSheet.sheet_width)
+      : undefined
   const sectionPlacements = computeSchematicSectionLayoutUsingRows({
     sectionBlocks: Array.from(sectionNameToBoundsWithChildren.values()).map(
       (bounds) => ({
@@ -148,6 +156,7 @@ export function Group_doInitialSchematicLayoutSections<
       }),
     ),
     groupSchPositionBeforeLayout,
+    maxRowWidth,
   })
 
   for (const [sectionName, placement] of sectionPlacements) {
