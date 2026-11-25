@@ -287,7 +287,7 @@ export function getValidatedCompleteSavedPaths(savedPhase: SavedPhasePaths) {
   )
 
   // Shared ports and SRJ aliases establish logical net membership. Only
-  // physical contacts in the saved copper can satisfy these connections.
+  // saved copper contacts and declared existing links can satisfy them.
   const nets = new ConnectivityMap({})
   nets.addConnections(
     input.connections.map((connection) => [

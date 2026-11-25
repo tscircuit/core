@@ -83,7 +83,10 @@ export function getAutoroutingPhasePcbTracePaths({
       port: Port,
     ) => {
       const selector = terminal.port_selector ?? port.getPortSelector()
-      if (subcircuit.selectOne(selector, { type: "port" }) !== port)
+      const matchingPorts = subcircuit
+        .selectAll(selector)
+        .filter((component) => component.componentName === "Port")
+      if (matchingPorts.length !== 1 || matchingPorts[0] !== port)
         throw new Error(`PCB port selector is not unique: ${selector}`)
       const transform = inverse(getSavedPcbTracePathTransform(group, port))
       return fanoutTracePath.parse({

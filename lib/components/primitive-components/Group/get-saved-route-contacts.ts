@@ -51,7 +51,22 @@ export function getSavedPhaseRouteContacts(
       ],
     })),
   )
-  const contacts = getSavedRouteContacts(routes, terminals, input)
+  // These groups are already connected inside components or through retained
+  // board copper. Net membership alone must never join disconnected terminals.
+  const connectedTerminalGroups = input.connections.flatMap((connection) =>
+    (connection.externallyConnectedPointIds ?? []).map((pointIds) => {
+      const connectedPointIds = new Set(pointIds)
+      return terminals.flatMap(({ point }, index) =>
+        point.pointId && connectedPointIds.has(point.pointId) ? [index] : [],
+      )
+    }),
+  )
+  const contacts = getSavedRouteContacts(
+    routes,
+    terminals,
+    input,
+    connectedTerminalGroups,
+  )
   const terminalsByComponent = new Map<number, (typeof terminals)[number][]>()
   const componentsByConnection = new Map<SimpleRouteConnection, Set<number>>()
   for (const [index, terminal] of terminals.entries()) {
@@ -80,12 +95,14 @@ export function getSavedPhaseRouteContacts(
  * Find physical contacts in board-world mm (+X right, +Y up, +Z above).
  * Each route is already continuous through its declared layer transitions.
  * Wires touch on a shared layer at their centrelines; vias and plated ports
- * join the layers they occupy.
+ * join the layers they occupy. Connected terminal groups contain terminal
+ * indices for existing electrical links; they do not create geometric contacts.
  */
 export function getSavedRouteContacts(
   routes: readonly SavedRoute[],
   terminals: readonly CopperContact[],
   board: BoardStack,
+  connectedTerminalGroups: readonly (readonly number[])[] = [],
 ) {
   const segments: CopperSegment[] = []
   for (const [node, route] of routes.entries()) {
@@ -137,6 +154,15 @@ export function getSavedRouteContacts(
       node = parents[node]!
     }
     return node
+  }
+  for (const group of connectedTerminalGroups) {
+    const first = group[0]
+    if (first === undefined) continue
+    for (const terminalIndex of group.slice(1)) {
+      parents[component(routes.length + terminalIndex)] = component(
+        routes.length + first,
+      )
+    }
   }
   for (const [
     segmentIndex,
