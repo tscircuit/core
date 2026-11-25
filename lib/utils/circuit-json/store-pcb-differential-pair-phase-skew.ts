@@ -1,5 +1,5 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
-import { getDifferentialPairPhaseSkew } from "circuit-json-to-differential-pair-phase-skew"
+import { getDifferentialPairPhaseSkew } from "compute-differential-pair-phase-skew"
 
 /** Saves one phase skew element per measurable pair and removes stale elements. */
 export function storePcbDifferentialPairPhaseSkew(
