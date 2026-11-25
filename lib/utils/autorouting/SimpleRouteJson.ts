@@ -141,6 +141,7 @@ export type SimpleRouteBus = {
   referenceConnectionNames?: SrjConnectionName[]
   lengthMatchingPaths?: {
     connectionName: SrjConnectionName
+    pcbPortIds: [string, string]
     from: SimpleRouteConnection["pointsToConnect"][number]
     to: SimpleRouteConnection["pointsToConnect"][number]
   }[]

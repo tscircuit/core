@@ -200,6 +200,7 @@ const getBusSrjLengthMatchingMetadata = ({
     metadata.lengthMatchingPaths ??= []
     metadata.lengthMatchingPaths.push({
       connectionName: names[0],
+      pcbPortIds: [endpoints[0].pcb_port_id, endpoints[1].pcb_port_id],
       from: endpoints[0],
       to: endpoints[1],
     })
