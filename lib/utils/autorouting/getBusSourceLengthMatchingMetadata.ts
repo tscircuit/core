@@ -82,34 +82,31 @@ export function getBusSourceLengthMatchingMetadata({
         `Bus "${bus.name}" needs two distinct timing-path ports: "${fromSelector}", "${toSelector}"`,
       )
     }
-    const fromId = getBusSourceTraceIdOrThrow({
-      bus,
-      busSourceTraces: sourceTraces,
-      traceNameOrPortSelector: fromSelector,
-    })
-    const toId = getBusSourceTraceIdOrThrow({
-      bus,
-      busSourceTraces: sourceTraces,
-      traceNameOrPortSelector: toSelector,
-    })
-    const first = sourceTraces.find(
-      (trace) => trace.source_trace_id === fromId,
-    )!
-    const second = sourceTraces.find((trace) => trace.source_trace_id === toId)!
+    const first = sourceTraces.find((trace) =>
+      trace.connected_source_port_ids.includes(from.source_port_id!),
+    )
+    const second = sourceTraces.find((trace) =>
+      trace.connected_source_port_ids.includes(to.source_port_id!),
+    )
+    if (!first || !second)
+      throw new Error(
+        `Bus "${bus.name}" timing-path ports need connected traces`,
+      )
     const sameNet =
+      first === second ||
       (first.subcircuit_connectivity_map_key !== undefined &&
         first.subcircuit_connectivity_map_key ===
           second.subcircuit_connectivity_map_key) ||
       first.connected_source_net_ids?.some((netId) =>
         second.connected_source_net_ids?.includes(netId),
       )
-    if (fromId !== toId && !sameNet) {
+    if (!sameNet) {
       throw new Error(
         `Bus "${bus.name}" timing-path ports "${fromSelector}" and "${toSelector}" belong to different nets`,
       )
     }
     paths.push({
-      source_trace_id: fromId,
+      source_trace_id: first.source_trace_id,
       source_port_ids: [from.source_port_id, to.source_port_id],
     })
   }
