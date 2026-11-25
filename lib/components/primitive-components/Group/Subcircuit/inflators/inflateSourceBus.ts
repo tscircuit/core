@@ -22,9 +22,19 @@ function getSourceTraceSelector({
   const { injectionDb } = inflatorContext
   const sourceTrace = injectionDb.source_trace.get(sourceTraceId)
   if (!sourceTrace) return
-  if (sourceTrace.name) return sourceTrace.name
 
   const sourceTraces = injectionDb.source_trace.list()
+  if (
+    sourceTrace.name &&
+    sourceTraces.every(
+      (otherSourceTrace) =>
+        otherSourceTrace.source_trace_id === sourceTraceId ||
+        otherSourceTrace.name !== sourceTrace.name,
+    )
+  ) {
+    return sourceTrace.name
+  }
+
   const sourcePortId = sourceTrace.connected_source_port_ids.find(
     (sourcePortId) =>
       sourceTraces.every(
