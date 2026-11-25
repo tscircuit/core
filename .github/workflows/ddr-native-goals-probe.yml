@@ -1,0 +1,86 @@
+name: Verify all native OrangeCrab timing requirements
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        type: string
+        default: abe9820189e7a1b83c00afe31a1a5a6a159268ab
+      bus_ref:
+        type: string
+        default: 9e135829b28d35ddd1ec2c5dd84a001cc721ec52
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [main, reserved]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: tooling
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: core
+          ref: ${{ inputs.core_ref }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: matrix.mode == 'reserved'
+        with:
+          repository: tscircuit/bus-lanes-solver
+          path: bus
+          ref: ${{ inputs.bus_ref }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Build exact bus rounding change
+        if: matrix.mode == 'reserved'
+        working-directory: bus
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          bun pm pack --filename ../bus.tgz
+          sha256sum dist/index.js
+      - name: Install pinned Core with isolated package files
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('core/package.json')
+          package = json.loads(p.read_text())
+          pins = {'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
+          if os.environ['MODE'] == 'reserved': pins['@tscircuit/bus-lanes-solver'] = 'file:../bus.tgz'
+          for name, pin in pins.items():
+              package.get('dependencies', {}).pop(name, None)
+              package.setdefault('devDependencies', {})[name] = pin
+          p.write_text(json.dumps(package, indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+      - name: Fresh native Core render at the original 120 second cap
+        run: |
+          mkdir -p results
+          timeout -s KILL 120s bun --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" > results/render.log 2>&1 || true
+          cat results/render.log
+          bun core/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core" orangecrab "$GITHUB_WORKSPACE/results"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('results/progress.json').read_text())
+          a=json.loads(Path('results/assessment.json').read_text())
+          print('NATIVE_GOALS_PROGRESS='+json.dumps(p,separators=(',',':')))
+          print('NATIVE_GOALS_ASSESSMENT='+json.dumps({k:v for k,v in a.items() if k not in ['ddrSkew','ddrLaneAudit','ddrRoutingTargets','ddrDelayMatching']},separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-goals-${{ matrix.mode }}
+          path: results/
