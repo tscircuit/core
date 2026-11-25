@@ -68,7 +68,10 @@ test("a saved VM route touching the TVS ground pad must report a short", async (
   )
 
   await circuit.renderUntilSettled()
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+  await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
+    shouldDrawErrors: true,
+    showErrorsInTextOverlay: true,
+  })
   expect(circuit.db.pcb_trace_error.list()).toContainEqual(
     expect.objectContaining({
       message:
