@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
+import "./check-dist-bundled-phase-skew"
 
 const solverPackage = "@tscircuit/test-point-rerouter"
 
