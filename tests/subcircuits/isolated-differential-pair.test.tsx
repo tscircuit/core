@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { cju } from "@tscircuit/circuit-json-util"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 function Pair() {
@@ -48,24 +49,15 @@ test.failing("isolated-differential-pair", async () => {
   await circuit.renderUntilSettled()
   circuit.render()
 
-  const circuitJson = circuit.getCircuitJson()
-  const sourceGroups = circuitJson.filter((elm) => elm.type === "source_group")
-  const sourceTraces = circuitJson.filter((elm) => elm.type === "source_trace")
-  const sourceBuses = circuitJson.filter((elm) => elm.type === "source_bus")
+  const db = cju(circuit.getCircuitJson())
 
   for (const name of ["Normal", "Isolated"]) {
-    const subcircuit_id = sourceGroups.find(
-      (group) => group.name === name,
-    )?.subcircuit_id
+    const subcircuit_id = db.source_group.getWhere({ name })?.subcircuit_id
     expect(subcircuit_id).toBeDefined()
-    const pairTraces = sourceTraces.filter(
-      (trace) => trace.subcircuit_id === subcircuit_id,
-    )
+    const pairTraces = db.source_trace.list({ subcircuit_id })
     expect(pairTraces).toHaveLength(2)
     const [positiveTrace, negativeTrace] = pairTraces
-    expect(
-      sourceBuses.filter((bus) => bus.subcircuit_id === subcircuit_id),
-    ).toEqual([
+    expect(db.source_bus.list({ subcircuit_id })).toEqual([
       expect.objectContaining({
         name: "PAIR",
         max_length_skew: 0.05,
@@ -84,6 +76,7 @@ test.failing("isolated-differential-pair", async () => {
     ])
   }
 
+  const sourceBuses = db.source_bus.list()
   expect(sourceBuses).toHaveLength(2)
   expect(new Set(sourceBuses.map((bus) => bus.source_bus_id)).size).toBe(2)
 })
