@@ -46,7 +46,6 @@ export const inflateCircuitJson = (
     injectionDb,
     subcircuit: target,
     groupsMap,
-    inflatedSourceTraces: new Map(),
   }
 
   // Inflate source_groups in dependency order (parents before children)

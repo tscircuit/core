@@ -11,7 +11,7 @@ import {
 } from "lib/utils/pcbTraceRouteToPcbPath"
 import type { InflatorContext } from "../InflatorFn"
 
-const getSelectorPath = (
+export const getSelectorPath = (
   component: { name: string; source_group_id: string | undefined },
   inflatorContext: InflatorContext,
 ): string => {
@@ -111,11 +111,13 @@ export function inflateSourceTrace(
   }
 
   const traceProps: {
+    name?: string
     path: string[]
     pcbPath?: ManualPcbPathPoint[]
     pcbStraightLine?: boolean
     thickness?: number
   } = {
+    name: sourceTrace.name,
     path: connectedSelectors,
   }
 
@@ -148,5 +150,4 @@ export function inflateSourceTrace(
     : undefined
 
   subcircuit.add(trace)
-  inflatorContext.inflatedSourceTraces.set(sourceTrace.source_trace_id, trace)
 }
