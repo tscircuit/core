@@ -2,6 +2,7 @@ import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
 import { busProps } from "@tscircuit/props"
 import { getSourceBusRouteLength } from "lib/utils/autorouting/getSourceBusRouteLength"
+import { getBusLengthMatchSourceTraceIds } from "lib/utils/autorouting/get-bus-length-match-source-trace-ids"
 import {
   type BaseComponentConfig,
   PrimitiveComponent,
@@ -44,6 +45,10 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
     const sourceBus = db.source_bus.insert({
       name: this._parsedProps.name,
       source_trace_ids,
+      length_match_source_trace_ids: getBusLengthMatchSourceTraceIds({
+        bus: this,
+        busSourceTraces,
+      }),
       max_length_skew: this._parsedProps.maxLengthSkew,
       min_length: getSourceBusRouteLength({
         bus: this,

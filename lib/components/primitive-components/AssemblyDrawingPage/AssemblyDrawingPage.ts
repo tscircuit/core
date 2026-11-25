@@ -22,12 +22,15 @@ export class AssemblyDrawingPage extends PrimitiveComponent<
         (child) =>
           child.componentName !== "AssemblyDrawingPartView" &&
           child.componentName !== "AssemblyDrawingExplosionView" &&
+          child.componentName !== "AssemblyDrawingHarnessView" &&
+          child.componentName !== "AssemblyDrawingWiringTable" &&
+          child.componentName !== "AssemblyDrawingBomTable" &&
           child.componentName !== "AssemblyDrawingNote" &&
           child.componentName !== "AssemblyDrawingTitleBlock",
       )
     )
       throw new Error(
-        "Drawing pages can contain only drawing views, notes and a title block",
+        "Drawing pages can contain only drawing views, tables, notes and a title block",
       )
     if (
       this.children.filter(

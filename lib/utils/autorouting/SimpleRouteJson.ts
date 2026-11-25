@@ -1,3 +1,4 @@
+import type { BusLengthMatchingPath } from "@tscircuit/bus-lanes-solver"
 import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
@@ -92,6 +93,10 @@ export type SimpleRouteConnection = {
   mergedConnectionNames?: string[]
   isOffBoard?: boolean
   netConnectionName?: string
+  /** Maximum routed length of this connection, in mm. */
+  maxLength?: number
+  /** Maximum number of vias on this connection. */
+  maxViaCount?: number
   nominalTraceWidth?: number
   /** @deprecated Use `nominalTraceWidth` instead. */
   width?: number
@@ -121,6 +126,9 @@ export type SimpleRouteBusTermination =
     }
 
 export type SimpleRouteBus = {
+  lengthMatchingPaths?: BusLengthMatchingPath[]
+  /** Additional TSX lengthMatchTo members, resolved before invoking the router. */
+  lengthMatchToConnectionNames?: SrjConnectionName[]
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]
