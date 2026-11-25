@@ -39,18 +39,35 @@ export function renderUsbCEpaperViaPorts(fixture: UsbCEpaperViaPortFixture) {
   const color = fixture.renderError ? "#fb7185" : "#4ade80"
   const busy = fixture.viaPorts.find((via) => via.name === "BUSY_FROM_VIA")!
   const busyPosition = point(busy.position.x, busy.position.y)
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="690" viewBox="0 0 900 690">
-    <rect width="900" height="690" fill="#141414"/>
+  const busyLayerPorts = busy.expectedLayers
+    .map((layer, index) => {
+      const present = busy.sourcePorts.some((port) => port.name === layer)
+      const color = present ? "#4ade80" : "#fb7185"
+      return `<rect x="${60 + index * 200}" y="724" width="180" height="54" rx="6" fill="#090909" stroke="${color}"/>
+        <text x="${150 + index * 200}" y="746" fill="#f4f4f4">${layer}</text>
+        <text x="${150 + index * 200}" y="767" fill="${color}">${present ? "port present" : "PORT MISSING"}</text>`
+    })
+    .join("")
+  const busyResult = hasInner2(busy)
+    ? "inner2 port exists: DISPLAY_BUSY can join DISPLAY_INTERCONNECT."
+    : "inner2 port missing: DISPLAY_BUSY cannot join DISPLAY_INTERCONNECT."
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="860" viewBox="0 0 900 860">
+    <rect width="900" height="860" fill="#141414"/>
     <g fill="#f4f4f4" font-family="sans-serif" text-anchor="middle">
-      <text x="450" y="32" font-size="22" font-weight="bold">Real RP2354B USB-C e-paper board: via layer ports</text>
+      <text x="450" y="32" font-size="22" font-weight="bold">Real e-paper board: via ports required by the display bus</text>
       <text x="450" y="64" font-size="19" fill="${color}">${status}</text>
       <text x="450" y="92" font-size="16">84 vias / 4 layers: ${portCount} of 336 source ports; inner2 available on ${available} of 84 vias</text>
       <text x="450" y="116" font-size="16">Display bus: ${resolvedEndpoints} of 14 inner2 endpoints; 76 components / 42 nets / 100 x 60 mm</text>
-      <text x="450" y="646" font-size="15">Markers show emitted inner2 source ports at actual via positions; they are not copper.</text>
-      <text x="450" y="672" font-size="14">Pinned board source: rushabhcodes/usb-c-e-paper-display @ 1a7ebab; global autorouting disabled.</text>
+      <text x="450" y="642" font-size="15">Green dot = inner2 port present. Red dot = inner2 port missing.</text>
+      <text x="450" y="666" font-size="14">Dots mark actual via positions; this is a source-port diagnostic, not a copper render.</text>
+      <text x="450" y="707" font-size="18" font-weight="bold">BUSY_FROM_VIA: emitted ports on this four-layer board</text>
+      <g font-size="15">${busyLayerPorts}</g>
+      <text x="450" y="808" font-size="16" fill="${color}">${busyResult}</text>
+      <text x="450" y="842" font-size="14">Board source: rushabhcodes/usb-c-e-paper-display @ 1a7ebab; autorouting disabled.</text>
     </g>
     <polygon points="${outline}" fill="#090909" stroke="#a3a3a3" stroke-width="2"/>
     ${markers}
+    <circle cx="${busyPosition.x}" cy="${busyPosition.y}" r="9" fill="none" stroke="#f4f4f4" stroke-width="2"/>
     <g fill="#d4d4d4" font-family="sans-serif" font-size="15">
       <text x="54" y="374">J1 USB-C</text>
       <text x="298" y="374">U1 RP2354B</text>
