@@ -120,6 +120,7 @@ jobs:
             cmp bus-source/dist/index.js head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
           fi
       - name: Typecheck and build exact Core candidate
+        if: matrix.circuit == 'h616'
         working-directory: head
         run: |
           bunx tsc --noEmit > ../head-typecheck.log 2>&1 || { tail -n 100 ../head-typecheck.log; exit 1; }
@@ -203,6 +204,24 @@ jobs:
             timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
             echo "SKEW_PROBE_EXIT=$mode:$status"
           done
+      - name: Export validated full H616 before and after views
+        if: matrix.circuit == 'h616'
+        run: |
+          cat > tooling/render-h616.mjs <<'JS'
+          import { readFileSync } from 'node:fs'
+          import { gzipSync } from 'node:zlib'
+          import { convertCircuitJsonToPcbSvg } from 'circuit-to-svg'
+          for (const revision of ['base','head']) {
+            const root=`results/${revision}/h616`
+            const assessment=JSON.parse(readFileSync(`${root}/assessment.json`,'utf8'))
+            const physical=Object.entries(assessment.findings).filter(([name])=>!name.startsWith('ddr_')).reduce((sum,[,count])=>sum+count,0)
+            if (assessment.connectedNets!==53 || physical || assessment.geometryErrors.length) throw Error('Refusing incomplete or physically invalid H616 image')
+            const copper=JSON.parse(readFileSync(`${root}/circuit.json`,'utf8'))
+            const svg=convertCircuitJsonToPcbSvg(copper,{width:1200,height:1200})
+            console.log('H616_VALIDATED_SVG='+JSON.stringify({revision,gzipBase64:gzipSync(svg).toString('base64')}))
+          }
+          JS
+          bun tooling/render-h616.mjs
       - name: Capture H616 diagnostic inputs
         if: (inputs.probe_refinement == true || inputs.matching_probe == true) && matrix.circuit == 'h616'
         run: |
