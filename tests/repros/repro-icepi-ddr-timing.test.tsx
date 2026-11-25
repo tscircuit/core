@@ -45,4 +45,4 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
     shouldDrawRatsNest: circuit.db.pcb_trace.list().length === 0,
     showDebugObjects: false,
   })
-}, 480_000)
+}, 300_000)
