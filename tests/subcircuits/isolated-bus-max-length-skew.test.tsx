@@ -6,8 +6,11 @@ const MAX_LENGTH_SKEW_MM = 0.1
 
 type SubcircuitName = "Normal" | "Isolated"
 
-/** What the board writes above each subcircuit. */
-type StatusLines = Record<SubcircuitName, string>
+/** Two lines of text the board writes above one subcircuit. */
+type StatusLines = { result: string; reason: string }
+
+/** What the board writes: a headline, then two lines above each subcircuit. */
+type BoardText = { headline: string } & Record<SubcircuitName, StatusLines>
 
 /** A bus of a 4 mm trace (A) and a 12 mm trace (B): 8 mm of length skew. */
 function SkewedBus() {
@@ -52,22 +55,24 @@ function SkewedBus() {
   )
 }
 
-/** Renders the same skewed bus in a normal and an isolated subcircuit, labelled with `statusLines`. */
-async function renderBoard({ statusLines }: { statusLines: StatusLines }) {
+/** Renders the same skewed bus in a normal and an isolated subcircuit, labelled with `boardText`. */
+async function renderBoard({ boardText }: { boardText: BoardText }) {
   const { circuit } = getTestFixture()
   circuit.add(
-    <board width={20} height={17}>
-      <pcbnotetext
-        text="<bus maxLengthSkew> must be checked whether or not its subcircuit renders in isolation"
-        pcbY={7.4}
-        fontSize={0.36}
-      />
-      <pcbnotetext text={statusLines.Normal} pcbY={5.7} fontSize={0.4} />
-      <subcircuit name="Normal" pcbY={3}>
+    <board width={20} height={22}>
+      <pcbnotetext text={boardText.headline} pcbY={9.6} fontSize={0.6} />
+      <pcbnotetext text={boardText.Normal.result} pcbY={7.6} fontSize={0.45} />
+      <pcbnotetext text={boardText.Normal.reason} pcbY={6.8} fontSize={0.4} />
+      <subcircuit name="Normal" pcbY={3.6}>
         <SkewedBus />
       </subcircuit>
-      <pcbnotetext text={statusLines.Isolated} pcbY={0.1} fontSize={0.4} />
-      <subcircuit name="Isolated" pcbY={-3} _subcircuitCachingEnabled>
+      <pcbnotetext text={boardText.Isolated.result} pcbY={0} fontSize={0.45} />
+      <pcbnotetext
+        text={boardText.Isolated.reason}
+        pcbY={-0.8}
+        fontSize={0.4}
+      />
+      <subcircuit name="Isolated" pcbY={-4} _subcircuitCachingEnabled>
         <SkewedBus />
       </subcircuit>
     </board>,
@@ -77,13 +82,13 @@ async function renderBoard({ statusLines }: { statusLines: StatusLines }) {
 }
 
 /** PASS when the subcircuit's bus reports its length skew, FAIL when the skew goes unreported. */
-function getStatusLine({
+function getStatusLines({
   circuit,
   name,
 }: {
   circuit: Awaited<ReturnType<typeof renderBoard>>
   name: SubcircuitName
-}): string {
+}): StatusLines {
   const { db } = circuit
   const subcircuit_id = db.source_group.getWhere({ name })?.subcircuit_id
   const lengthSkewError = db.pcb_bus_length_skew_error
@@ -93,22 +98,33 @@ function getStatusLine({
         db.source_bus.get(error.source_bus_id)?.subcircuit_id === subcircuit_id,
     )
   if (!lengthSkewError) {
-    return `FAIL: ${name} - no length skew error, maxLengthSkew was dropped`
+    return {
+      result: `FAIL: ${name.toLowerCase()} subcircuit`,
+      reason: "no error, the bus max length skew was ignored",
+    }
   }
-  return `PASS: ${name} - ${lengthSkewError.actual_length_skew.toFixed(2)} mm skew exceeds ${MAX_LENGTH_SKEW_MM} mm`
+  return {
+    result: `PASS: ${name.toLowerCase()} subcircuit`,
+    reason: `error: ${lengthSkewError.actual_length_skew.toFixed(2)} mm skew is over the ${MAX_LENGTH_SKEW_MM} mm limit`,
+  }
 }
 
 test.failing("isolated-bus-max-length-skew", async () => {
+  const blank = { result: "", reason: "" }
   const firstPass = await renderBoard({
-    statusLines: { Normal: "", Isolated: "" },
+    boardText: { headline: "", Normal: blank, Isolated: blank },
   })
-  const statusLines: StatusLines = {
-    Normal: getStatusLine({ circuit: firstPass, name: "Normal" }),
-    Isolated: getStatusLine({ circuit: firstPass, name: "Isolated" }),
+  const Normal = getStatusLines({ circuit: firstPass, name: "Normal" })
+  const Isolated = getStatusLines({ circuit: firstPass, name: "Isolated" })
+  let headline = "In isolation, bus props are ignored"
+  if (Isolated.result.startsWith("PASS")) {
+    headline = "In isolation, bus props are kept"
   }
-  const circuit = await renderBoard({ statusLines })
+  const circuit = await renderBoard({
+    boardText: { headline, Normal, Isolated },
+  })
 
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
-  expect(statusLines.Normal).toStartWith("PASS")
-  expect(statusLines.Isolated).toStartWith("PASS")
+  expect(Normal.result).toStartWith("PASS")
+  expect(Isolated.result).toStartWith("PASS")
 })
