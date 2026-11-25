@@ -1,303 +1,86 @@
-name: Incremental native DDR benchmark
+name: Verify all native OrangeCrab timing requirements
 on:
   workflow_dispatch:
     inputs:
-      verify_build:
-        description: Typecheck and build this source revision (skip only after it has passed)
-        type: boolean
-        default: true
-      stage:
-        description: Incremental candidate label
+      core_ref:
         type: string
-        required: true
-      base_ref:
-        description: Immutable Core baseline commit
-        type: string
-        required: true
-      head_ref:
-        description: Immutable Core candidate commit
-        type: string
-        required: true
-      probe_refinement:
-        description: Inspect existing bus refinement on the captured H616 phase
-        type: boolean
-        default: false
+        default: abe9820189e7a1b83c00afe31a1a5a6a159268ab
       bus_ref:
-        description: Optional immutable bus-lanes source revision for head only
         type: string
-        default: ''
-      fanout_ref:
-        description: Exact local-dogbone source change to overlay on the pinned bus dependency
-        type: string
-        default: ''
-      benchmark_ref:
-        description: Optional immutable adapter revision, identical on base and head
-        type: string
-        default: ''
-      matching_probe:
-        description: Separate H616 matching diagnostic, outside benchmark acceptance
-        type: boolean
-        default: false
-      circuits:
-        description: JSON board list for focused timing controls
-        type: string
-        default: '["h3","a64","stmp157","orangecrab","a13","h616","butterstick","glider","imx6","icepi"]'
-      order:
-        description: Base/head execution order
-        type: choice
-        options: [base_head, head_base]
-        default: base_head
+        default: 9e135829b28d35ddd1ec2c5dd84a001cc721ec52
 permissions:
   contents: read
-  actions: read
 jobs:
-  benchmark:
-    name: ${{ inputs.stage }} / ${{ matrix.circuit }}
-    runs-on: ${{ vars.BENCHMARK_RUNNER || 'blacksmith-8vcpu-ubuntu-2404-arm' }}
+  probe:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     strategy:
       fail-fast: false
       matrix:
-        circuit: ${{ fromJSON(inputs.circuits) }}
+        mode: [main, reserved]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
           path: tooling
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_ref }}
-          path: base
+          path: core
+          ref: ${{ inputs.core_ref }}
           persist-credentials: false
       - uses: actions/checkout@v4
+        if: matrix.mode == 'reserved'
         with:
-          ref: ${{ inputs.head_ref }}
-          path: head
+          repository: tscircuit/bus-lanes-solver
+          path: bus
+          ref: ${{ inputs.bus_ref }}
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.3'
-      - uses: actions/checkout@v4
-        if: inputs.bus_ref != ''
-        with:
-          repository: tscircuit/bus-lanes-solver
-          ref: ${{ inputs.bus_ref }}
-          path: bus-source
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        if: inputs.fanout_ref != ''
-        with:
-          repository: tscircuit/fanout-solver
-          ref: ${{ inputs.fanout_ref }}
-          path: fanout-source
-          persist-credentials: false
-      - name: Build exact bus source candidate
-        if: inputs.bus_ref != ''
-        working-directory: bus-source
+          bun-version: 1.4.3
+      - name: Build exact bus rounding change
+        if: matrix.mode == 'reserved'
+        working-directory: bus
         run: |
           bun install --ignore-scripts --backend=copyfile
-          if [ -n '${{ inputs.fanout_ref }}' ]; then
-            python3 - <<'PY_FANOUT'
-          import hashlib
-          from pathlib import Path
-          original = Path('node_modules/@tscircuit/fanout-solver/lib/route-local-signal-dogbones.ts')
-          candidate = Path('../fanout-source/lib/route-local-signal-dogbones.ts')
-          expected = '      Number(p.x < origin.x) * 2 +\n      Number(p.y > origin.y) * 2 +\n      Math.hypot(p.x - origin.x, p.y - origin.y)'
-          assert expected in original.read_text()
-          assert 'distance(origin, p) + distance(p, connection.targetPoint)' in candidate.read_text()
-          print('FANOUT_LOCAL_SOURCE_BEFORE=' + hashlib.sha256(original.read_bytes()).hexdigest())
-          original.write_bytes(candidate.read_bytes())
-          print('FANOUT_LOCAL_SOURCE_AFTER=' + hashlib.sha256(original.read_bytes()).hexdigest())
-          PY_FANOUT
-          fi
           bun run build
-          bun pm pack --filename ../bus-candidate.tgz
+          bun pm pack --filename ../bus.tgz
           sha256sum dist/index.js
-      - name: Freeze common validators and install independent dependency files
+      - name: Install pinned Core with isolated package files
         env:
-          BUS_REF: ${{ inputs.bus_ref }}
-          BENCHMARK_REF: ${{ inputs.benchmark_ref }}
+          MODE: ${{ matrix.mode }}
         run: |
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          for revision in ['tooling', 'base', 'head']:
-              path = Path(revision) / 'package.json'
-              manifest = json.loads(path.read_text())
-              for name, version in {'@tscircuit/checks':'0.0.283', '@tscircuit/props':'0.0.746', 'circuit-json':'0.0.562'}.items():
-                  declared = manifest.get('devDependencies', {}).get(name, manifest.get('dependencies', {}).get(name, ''))
-                  if name != '@tscircuit/checks' and declared.startswith('https://pkg.pr.new/'):
-                      continue
-                  section = 'devDependencies' if name in manifest.get('devDependencies', {}) else 'dependencies'
-                  for group in ['dependencies', 'devDependencies']:
-                      manifest.get(group, {}).pop(name, None)
-                  manifest.setdefault(section, {})[name] = version
-              adapter_spec = manifest['devDependencies']['@tscircuit/core-ddr-benchmark']
-              adapter_ref = os.environ.get('BENCHMARK_REF') or '16b6352dc25e951192d88cb99a7cfe96abf62285'
-              assert any(adapter_spec.endswith(ref) for ref in ['16b6352dc25e951192d88cb99a7cfe96abf62285', 'f1832f9f97a1c419506398e65ea2f8c567a2370f', adapter_ref])
-              if os.environ.get('BENCHMARK_REF'):
-                  manifest['devDependencies']['@tscircuit/core-ddr-benchmark'] = 'github:ShiboSoftwareDev/core-ddr-benchmark#' + os.environ['BENCHMARK_REF']
-              if revision == 'head' and os.environ.get('BUS_REF'):
-                  for group in ['dependencies', 'devDependencies']:
-                      manifest.get(group, {}).pop('@tscircuit/bus-lanes-solver', None)
-                  manifest.setdefault('devDependencies', {})['@tscircuit/bus-lanes-solver'] = 'file:../bus-candidate.tgz'
-              path.write_text(json.dumps(manifest, indent=2) + '\n')
+          p = Path('core/package.json')
+          package = json.loads(p.read_text())
+          pins = {'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
+          if os.environ['MODE'] == 'reserved': pins['@tscircuit/bus-lanes-solver'] = 'file:../bus.tgz'
+          for name, pin in pins.items():
+              package.get('dependencies', {}).pop(name, None)
+              package.setdefault('devDependencies', {})[name] = pin
+          p.write_text(json.dumps(package, indent=2)+'\n')
           PY
-          for revision in tooling base head; do
-            (cd "$revision" && bun install --ignore-scripts --backend=copyfile)
-          done
-          python3 tooling/scripts/benchmark-ddr/verify-incremental-preview.py
-          bun tooling/scripts/benchmark-ddr/inspect-incremental-packages.mjs
-          if [ -n "$BUS_REF" ]; then
-            cmp bus-source/dist/index.js head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
-          fi
-      - name: Typecheck and build exact Core candidate
-        if: inputs.verify_build == true && matrix.circuit == 'h616'
-        working-directory: head
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+      - name: Fresh native Core render at the original 120 second cap
         run: |
-          bunx tsc --noEmit > ../head-typecheck.log 2>&1 || { tail -n 100 ../head-typecheck.log; exit 1; }
-          bun run build
-      - name: Run matched base and head on one board
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
-          RUN_ORDER: ${{ inputs.order }}
-        run: |
-          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
-          run_status=0
-          case "$RUN_ORDER" in
-            base_head) revisions=(base head) ;;
-            head_base) revisions=(head base) ;;
-            *) exit 1 ;;
-          esac
-          for revision in "${revisions[@]}"; do
-            bun "$benchmark/run.ts" --core "$GITHUB_WORKSPACE/$revision" --out "$GITHUB_WORKSPACE/results/$revision" --circuit "$CIRCUIT" --timeout 120 || run_status=$?
-          done
-          python3 - <<'PY_HASH'
-          import hashlib, json
+          mkdir -p results
+          timeout -s KILL 120s bun --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" > results/render.log 2>&1 || true
+          cat results/render.log
+          bun core/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core" orangecrab "$GITHUB_WORKSPACE/results"
+          python3 - <<'PY'
+          import json
           from pathlib import Path
-          fingerprints = {}
-          for revision in ['base', 'head']:
-              path = Path('results') / revision / 'results.json'
-              result = json.loads(path.read_text())
-              circuit = result['cases'][0]['circuit']
-              copper = json.loads((Path('results') / revision / circuit / 'circuit.json').read_text())
-              records = sorted((element for element in copper if element.get('type') in ['pcb_trace', 'pcb_via']), key=lambda element: json.dumps(element, sort_keys=True, separators=(',', ':')))
-              canonical = json.dumps(records, sort_keys=True, separators=(',', ':')).encode()
-              geometry = []
-              for record in records:
-                  if record['type'] == 'pcb_trace':
-                      geometry.append({'type': 'pcb_trace', 'route': [{key: value for key, value in point.items() if key in ['route_type', 'x', 'y', 'width', 'layer', 'from_layer', 'to_layer', 'via_diameter', 'via_hole_diameter']} for point in record['route']]})
-                  else:
-                      geometry.append({key: value for key, value in record.items() if key in ['type', 'x', 'y', 'outer_diameter', 'hole_diameter', 'layers', 'from_layer', 'to_layer']})
-              geometry.sort(key=lambda item: json.dumps(item, sort_keys=True, separators=(',', ':')))
-              geometry_bytes = json.dumps(geometry, sort_keys=True, separators=(',', ':')).encode()
-              fingerprints[revision] = {'copperSha256': hashlib.sha256(canonical).hexdigest(), 'geometrySha256': hashlib.sha256(geometry_bytes).hexdigest(), 'records': len(records)}
-          Path('results/copper-fingerprints.json').write_text(json.dumps(fingerprints, indent=2) + '\n')
-          PY_HASH
-          python3 - <<'PY_ATTEMPTS'
-          import json, os
-          from pathlib import Path
-          circuit = os.environ['CIRCUIT']
-          for revision in ['base','head']:
-              for mode in ['routing','matching']:
-                  root=Path('results')/revision/circuit/'attempts'/mode
-                  if not (root/'progress.json').exists():continue
-                  progress=json.loads((root/'progress.json').read_text())
-                  assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
-                  groups=assessment.get('ddrSkew',{})
-                  targets=[{key:value for key,value in target.items() if key in ['name','status','severity','assessmentOnly','maxLengthSkew','minLength','maxLength','actualMinMm','actualMaxMm','actualSkewMm','marginMm','lengthsMm','referenceNets','skewReference','routerSkippedNets']} for target in assessment.get('ddrConstraints',[])]
-                  print('DDR_ATTEMPT='+json.dumps({'revision':revision,'circuit':circuit,'mode':mode,'progress':progress,'connected':assessment.get('connectedNets'),'requested':assessment.get('requestedNets'),'groups':groups,'targets':targets},separators=(',',':')))
-          PY_ATTEMPTS
-          cp package-provenance.json results/package-provenance.json
-          if (( run_status != 0 )); then exit 1; fi
-      - name: Diagnose normal TSX matching separately from benchmark acceptance
-        if: inputs.matching_probe == true
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
-        run: |
-          benchmark="$GITHUB_WORKSPACE/tooling/node_modules/@tscircuit/core-ddr-benchmark/scripts"
-          for revision in base head; do
-            output="$GITHUB_WORKSPACE/results/matching-probe/$revision/$CIRCUIT"
-            mkdir -p "$output"
-            timeout -s KILL 120s bun --tsconfig-override "$revision/tsconfig.json" "$benchmark/worker.tsx" "$GITHUB_WORKSPACE/$revision" "$CIRCUIT" "$output" matching > "$output/render.log" 2>&1 || true
-            if [ -f "$output/circuit.json" ]; then
-              timeout -s KILL 120s bun "$benchmark/assess.ts" "$GITHUB_WORKSPACE/$revision" "$CIRCUIT" "$output" > "$output/validation.log" 2>&1 || true
-            fi
-          done
-          python3 - <<'PY_MATCHING'
-          import json, os
-          from pathlib import Path
-          for revision in ['base','head']:
-              root=Path('results/matching-probe')/revision/os.environ['CIRCUIT']
-              progress=json.loads((root/'progress.json').read_text()) if (root/'progress.json').exists() else {}
-              assessment=json.loads((root/'assessment.json').read_text()) if (root/'assessment.json').exists() else {}
-              summary={'connectedNets':assessment.get('connectedNets'),'requestedNets':assessment.get('requestedNets'),'findings':assessment.get('findings'),'constraints':[{key:value for key,value in c.items() if key in ['name','status','severity','maxLengthSkew','actualSkewMm','marginMm','actualMinMm','actualMaxMm','minLength','maxLength']} for c in assessment.get('ddrConstraints',[])],'groups':{name:{key:value for key,value in group.items() if key in ['skewMm','maxSkewMm','matchingStatus']} for name,group in assessment.get('ddrSkew',{}).items()}}
-              safe_progress={'renderCompleted':progress.get('renderCompleted'),'renderMs':progress.get('renderMs'),'phases':progress.get('phases'),'errorCount':len(progress.get('errors',[]))}
-              print('MATCHING_PROBE='+json.dumps({'revision':revision,'progress':safe_progress,'assessment':summary},separators=(',',':')))
-          PY_MATCHING
-      - name: Probe existing bus matching APIs without changing the benchmark
-        if: inputs.probe_refinement == true && matrix.circuit == 'h616'
-        run: |
-          for mode in constrained without_lengths refine_completed; do
-            status=0
-            timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
-            echo "SKEW_PROBE_EXIT=$mode:$status"
-          done
-      - name: Capture unchanged native candidate inputs and assessments
-        if: contains(fromJSON('["orangecrab","glider","icepi"]'), matrix.circuit)
-        run: |
-          python3 - <<'PY_CAPTURE'
-          import base64, gzip, hashlib, json, os
-          from pathlib import Path
-          for revision in ['base','head']:
-              root = Path('results') / revision / os.environ['CIRCUIT']
-              paths = list(root.rglob('*.srj.json'))
-              paths += list(root.rglob('assessment.json'))
-              paths += list(root.rglob('progress.json'))
-              paths += [root / 'circuit.json']
-              probe = Path('results/matching-probe') / revision / os.environ['CIRCUIT']
-              paths += list(probe.rglob('*.srj.json')) + list(probe.rglob('assessment.json')) + list(probe.rglob('progress.json')) + ([probe / 'circuit.json'] if (probe / 'circuit.json').exists() else [])
-              for path in paths:
-                  if not path.exists(): continue
-                  payload = path.read_bytes()
-                  print('NATIVE_SKEW_CAPTURE=' + json.dumps({'path':str(path), 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest(), 'gzipBase64':base64.b64encode(gzip.compress(payload)).decode()}, separators=(',', ':')))
-          PY_CAPTURE
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
+          p=json.loads(Path('results/progress.json').read_text())
+          a=json.loads(Path('results/assessment.json').read_text())
+          print('NATIVE_GOALS_PROGRESS='+json.dumps(p,separators=(',',':')))
+          print('NATIVE_GOALS_ASSESSMENT='+json.dumps({k:v for k,v in a.items() if k not in ['ddrSkew','ddrLaneAudit','ddrRoutingTargets','ddrDelayMatching']},separators=(',',':')))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ matrix.circuit }}
-          path: |
-            results/base/results.json
-            results/head/results.json
-            results/package-provenance.json
-            results/copper-fingerprints.json
-  report:
-    needs: benchmark
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-          path: tooling
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.3'
-      - name: Install identical report implementation
-        working-directory: tooling
-        run: bun install --ignore-scripts --backend=copyfile
-      - uses: actions/download-artifact@v4
-        with:
-          path: collected
-      - name: Merge original benchmark records and print named numeric metrics
-        env:
-          DDR_CIRCUITS: ${{ inputs.circuits }}
-        run: bun tooling/scripts/benchmark-ddr/merge-incremental-results.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: incremental-comparison
-          path: aggregate
+          name: native-goals-${{ matrix.mode }}
+          path: results/
