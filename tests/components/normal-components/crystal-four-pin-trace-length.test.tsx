@@ -75,6 +75,7 @@ test("four-pin crystal routing constraints only apply to signal pins", async () 
     ".R_GND > .pin1 to net.GND": undefined,
   })
 
-  expect(circuit.db.pcb_trace.list()).toHaveLength(4)
+  // The two ground pins are internally connected: only one needs a PCB trace.
+  expect(circuit.db.pcb_trace.list()).toHaveLength(3)
   expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
 })
