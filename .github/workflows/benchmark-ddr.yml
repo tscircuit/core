@@ -2,6 +2,10 @@ name: Incremental native DDR benchmark
 on:
   workflow_dispatch:
     inputs:
+      verify_build:
+        description: Typecheck and build this source revision (skip only after it has passed)
+        type: boolean
+        default: true
       stage:
         description: Incremental candidate label
         type: string
@@ -120,7 +124,7 @@ jobs:
             cmp bus-source/dist/index.js head/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
           fi
       - name: Typecheck and build exact Core candidate
-        if: matrix.circuit == 'h616'
+        if: inputs.verify_build == true && matrix.circuit == 'h616'
         working-directory: head
         run: |
           bunx tsc --noEmit > ../head-typecheck.log 2>&1 || { tail -n 100 ../head-typecheck.log; exit 1; }
