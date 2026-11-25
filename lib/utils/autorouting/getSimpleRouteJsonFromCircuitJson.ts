@@ -585,29 +585,36 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     subcircuitId: subcircuit_id,
   })
   const exposedBridgeSourceTraceIds = new Set<SourceTrace["source_trace_id"]>()
-  const orderedPathsBySourceTraceId = new Map<
-    SourceTrace["source_trace_id"],
-    NonNullable<SimpleRouteConnection["path"]>
-  >()
+  const writtenPathSourceTraceIds = new Set<SourceTrace["source_trace_id"]>()
   for (const trace of subcircuitComponent?.selectAll<Trace>("trace") ?? []) {
     const sourceTraceId = trace.source_trace_id
     if (!sourceTraceId) continue
     if (trace._exposesSubcircuitConnection) {
       exposedBridgeSourceTraceIds.add(sourceTraceId)
     }
-    if (
-      sourceTraceIdsAlreadyPreservedAsSrjTraces.has(sourceTraceId) ||
-      !("path" in trace.props)
-    )
-      continue
-
-    const sourceTrace = sourceTraceById.get(sourceTraceId)
     // Source rows can be shared by equivalent trace declarations. Use the
     // declaration that supplied the stored order.
     if (
-      !sourceTrace ||
-      sourceTrace.name !== trace._parsedProps.name ||
-      sourceTrace.connected_source_port_ids.length <= 2
+      "path" in trace.props &&
+      sourceTraceById.get(sourceTraceId)?.name === trace._parsedProps.name
+    ) {
+      writtenPathSourceTraceIds.add(sourceTraceId)
+    }
+  }
+  const orderedPathsBySourceTraceId = new Map<
+    SourceTrace["source_trace_id"],
+    NonNullable<SimpleRouteConnection["path"]>
+  >()
+  for (const sourceTrace of sourceTraces) {
+    const portCount = sourceTrace.connected_source_port_ids.length
+    // A width on two physical terminals fixes that pair, including when
+    // rebuilding the routing input from saved Circuit JSON without JSX.
+    if (
+      portCount < 2 ||
+      !(
+        writtenPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
+        (portCount === 2 && sourceTrace.min_trace_thickness !== undefined)
+      )
     )
       continue
     // The path lists ports only. A `net.X` entry attaches the chain to that
@@ -623,7 +630,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       path.length === sourceTrace.connected_source_port_ids.length &&
       new Set(path).size === path.length
     ) {
-      orderedPathsBySourceTraceId.set(sourceTraceId, path)
+      orderedPathsBySourceTraceId.set(sourceTrace.source_trace_id, path)
     }
   }
   // Preserve two-terminal pair sections and every ordered multi-port path
@@ -697,13 +704,37 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         }
       }
 
-      const srjTraceHintConnectionPoints =
-        getSrjConnectionPointsFromPcbTraceHints(connectedPcbPorts, traceHints)
-
       const connectedPortRoutePoints = connectedPcbPorts.map((port) =>
         getPcbPortRoutePoint(port),
       )
-      const path = orderedPathsBySourceTraceId.get(trace.source_trace_id)
+      let path = orderedPathsBySourceTraceId.get(trace.source_trace_id)
+      let srjTraceHintConnectionPoints: SimpleRouteConnection["pointsToConnect"]
+      if (
+        traceHints.length &&
+        path?.length === 2 &&
+        trace.min_trace_thickness !== undefined
+      ) {
+        // Follow each pad's escape hints outwards, then enter the destination
+        // in reverse order. Otherwise the direct edge would bypass the hints.
+        const [start, end] = connectedPcbPorts
+        const waypoints = [
+          ...getSrjConnectionPointsFromPcbTraceHints([start!], traceHints),
+          ...getSrjConnectionPointsFromPcbTraceHints(
+            [end!],
+            traceHints,
+          ).reverse(),
+        ].map((point, index) => ({
+          ...point,
+          pointId: `${trace.source_trace_id}_hint_${index}`,
+        }))
+        srjTraceHintConnectionPoints = waypoints
+        path = [path[0]!, ...waypoints.map((point) => point.pointId), path[1]!]
+      } else {
+        srjTraceHintConnectionPoints = getSrjConnectionPointsFromPcbTraceHints(
+          connectedPcbPorts,
+          traceHints,
+        )
+      }
       const [firstConnectedPortRoutePoint, ...remainingPortRoutePoints] =
         connectedPortRoutePoints
       return {
@@ -850,22 +881,26 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       )
     }
     for (const sourceTrace of connectedSourceTraces) {
-      if (sourceTrace.min_trace_thickness === undefined) continue
+      if (
+        sourceTrace.min_trace_thickness === undefined ||
+        orderedPathsBySourceTraceId.has(sourceTrace.source_trace_id)
+      )
+        continue
       nominalTraceWidthForConnection = Math.max(
         nominalTraceWidthForConnection ?? 0,
         sourceTrace.min_trace_thickness,
       )
     }
 
-    // Explicit paths preserve their identity, but still inherit net width rules.
+    // A path without its own width inherits the net's target.
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
     for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
       connection.netConnectionName = net.source_net_id
-      connection.nominalTraceWidth = nominalTraceWidthForConnection
-      connection.width = nominalTraceWidthForConnection
+      connection.nominalTraceWidth ??= nominalTraceWidthForConnection
+      connection.width ??= nominalTraceWidthForConnection
     }
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []
