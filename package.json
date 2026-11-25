@@ -62,7 +62,7 @@
     "@tscircuit/math-utils": "0.0.39",
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
-    "@tscircuit/ngspice-spice-engine": "^0.0.28",
+    "@tscircuit/ngspice-spice-engine": "^0.0.29",
     "@tscircuit/props": "^0.0.746",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.246.tgz",
