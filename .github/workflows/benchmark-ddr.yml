@@ -211,25 +211,6 @@ jobs:
             timeout 75s bun --tsconfig-override head/tsconfig.json tooling/scripts/benchmark-ddr/probe-existing-skew.mjs "$GITHUB_WORKSPACE/head" "$GITHUB_WORKSPACE/results/head" "$mode" || status=$?
             echo "SKEW_PROBE_EXIT=$mode:$status"
           done
-      - name: Capture unchanged native candidate inputs and assessments
-        if: contains(fromJSON('["orangecrab","glider","icepi"]'), matrix.circuit)
-        run: |
-          python3 - <<'PY_CAPTURE'
-          import base64, gzip, hashlib, json, os
-          from pathlib import Path
-          for revision in ['base','head']:
-              root = Path('results') / revision / os.environ['CIRCUIT']
-              paths = list(root.rglob('*.srj.json'))
-              paths += list(root.rglob('assessment.json'))
-              paths += list(root.rglob('progress.json'))
-              paths += [root / 'circuit.json']
-              for path in paths:
-                  if not path.exists(): continue
-                  payload = path.read_bytes()
-                  print('NATIVE_SKEW_CAPTURE=' + json.dumps({'path':str(path), 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest(), 'gzipBase64':base64.b64encode(gzip.compress(payload)).decode()}, separators=(',', ':')))
-          PY_CAPTURE
-        env:
-          CIRCUIT: ${{ matrix.circuit }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
