@@ -14,14 +14,7 @@ test("repro5851: outlined board emits a displaced bounding box", async () => {
         { x: 20, y: 30 },
         { x: 0, y: 30 },
       ]}
-    >
-      <pcbnotetext
-        pcbX={20}
-        pcbY={5}
-        fontSize={0.7}
-        text="Solid: outline | dashed: bounds | yellow: center"
-      />
-    </board>,
+    />,
   )
   await circuit.renderUntilSettled()
 
