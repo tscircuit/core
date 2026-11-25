@@ -87,7 +87,11 @@ const getBusSrjConnectionNamesOrThrow = ({
   return [...names]
 }
 
-/** Timing comparisons may refer to completed copper without making it a new routing request. */
+/**
+ * Timing comparisons may refer to completed copper without rerouting it.
+ * Endpoints use circuit-world millimeters in a right-handed frame (+X right,
+ * +Y up, +Z toward the top layer). They are points; no transform is applied.
+ */
 const getBusSrjLengthMatchingMetadata = ({
   bus,
   srjConnections,

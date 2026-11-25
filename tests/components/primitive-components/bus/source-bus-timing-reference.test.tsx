@@ -35,7 +35,10 @@ test("keeps a selected clock path separate from its termination branch", () => {
   expect(clockBus.length_matching_paths).toEqual([
     {
       source_trace_id: clock.source_trace_id,
-      source_port_ids: clock.connected_source_port_ids,
+      source_port_ids: [
+        clock.connected_source_port_ids[0],
+        clock.connected_source_port_ids[1],
+      ],
     },
   ])
   expect(dataBus).toMatchObject({
