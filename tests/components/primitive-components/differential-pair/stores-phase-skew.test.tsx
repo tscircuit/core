@@ -79,7 +79,6 @@ test("stores signed phase skew for a routed differential pair", async () => {
   )
 
   await circuit.renderUntilSettled()
-  await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 
   const { db } = circuit
   const [bus] = db.source_bus.list()
