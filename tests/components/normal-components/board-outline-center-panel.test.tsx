@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("outlined boards retain panel and subpanel placement", async () => {
@@ -73,5 +74,6 @@ test("outlined boards retain panel and subpanel placement", async () => {
     { x: 32, y: 23 },
     { x: 102, y: 73 },
   ])
+  annotatePcbBoardBounds(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

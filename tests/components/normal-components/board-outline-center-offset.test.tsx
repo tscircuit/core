@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board center follows the emitted outline after outline offsets", async () => {
@@ -20,7 +21,7 @@ test("board center follows the emitted outline after outline offsets", async () 
     >
       <resistor name="R1" resistance="1k" footprint="0402" pcbX={6} pcbY={7} />
       <via pcbX={2} pcbY={3} fromLayer="top" toLayer="bottom" />
-      <pcbnotetext pcbX={10} pcbY={20} text="Bounds center: (13, 26)" />
+      <pcbnotetext pcbX={10} pcbY={20} text="Outline offsets" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -44,5 +45,6 @@ test("board center follows the emitted outline after outline offsets", async () 
     { x: 6.51, y: 7 },
   ])
   expect(circuit.db.pcb_via.list()[0]).toMatchObject({ x: 2, y: 3 })
+  annotatePcbBoardBounds(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

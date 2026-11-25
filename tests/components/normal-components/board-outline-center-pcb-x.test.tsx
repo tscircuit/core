@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("an explicit pcbX of zero preserves one-axis board placement", async () => {
@@ -37,5 +38,6 @@ test("an explicit pcbX of zero preserves one-axis board placement", async () => 
   })
   expect(circuit.db.pcb_component.list()[0].center).toEqual({ x: 6, y: 7 })
   expect(circuit.db.pcb_via.list()[0]).toMatchObject({ x: 2, y: 3 })
+  annotatePcbBoardBounds(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

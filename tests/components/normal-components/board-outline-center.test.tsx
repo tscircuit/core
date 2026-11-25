@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { annotatePcbBoardBounds } from "tests/fixtures/annotate-pcb-board-bounds"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("board center describes the bounding box of an asymmetric outline", async () => {
@@ -14,7 +15,7 @@ test("board center describes the bounding box of an asymmetric outline", async (
         { x: 0, y: 30 },
       ]}
     >
-      <pcbnotetext pcbX={10} pcbY={8} text="Bounds center: (20, 15)" />
+      <pcbnotetext pcbX={10} pcbY={8} text="Default outline center" />
     </board>,
   )
   await circuit.renderUntilSettled()
@@ -32,5 +33,6 @@ test("board center describes the bounding box of an asymmetric outline", async (
       { x: 0, y: 30 },
     ],
   })
+  annotatePcbBoardBounds(circuit)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })
