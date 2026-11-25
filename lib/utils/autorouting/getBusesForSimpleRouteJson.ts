@@ -75,7 +75,7 @@ const getBusSrjConnectionNamesOrThrow = ({
     if (
       trace.connection_name &&
       (connectedSourceNetIds.has(trace.connection_name) ||
-        trace.source_trace_id === sourceTraceId)
+        trace.connection_name === sourceTraceId)
     )
       names.add(trace.connection_name)
   }

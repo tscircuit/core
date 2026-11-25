@@ -1,5 +1,5 @@
 import type { SourceBus, SourceTrace } from "circuit-json"
-import type { Bus } from "lib/components/primitive-components/Bus"
+import { Bus } from "lib/components/primitive-components/Bus"
 import type { DifferentialPair } from "lib/components/primitive-components/DifferentialPair"
 import type { Port } from "lib/components/primitive-components/Port/Port"
 import { getBusSourceTraceIdOrThrow } from "./getBusSourceTraceIdOrThrow"
@@ -34,7 +34,14 @@ function resolveLengthReference({
     if (visited.has(group))
       throw new Error(`Bus "${bus.name}" has a circular length reference`)
     const next = new Set(visited).add(group)
-    return group._parsedProps.connections.flatMap((member) =>
+    let selectors: string[]
+    if (group instanceof Bus) selectors = group._parsedProps.connections
+    else
+      selectors = [
+        group._parsedProps.positiveConnection,
+        group._parsedProps.negativeConnection,
+      ]
+    return selectors.flatMap((member) =>
       resolveLengthReference({
         bus,
         sourceTraces,
