@@ -13,7 +13,6 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
     width: 1200,
     height: 1000,
     viewport: { minX: 2, maxX: 32, minY: -9, maxY: 23 },
-    backgroundColor: "white",
     shouldDrawRatsNest: circuit.db.pcb_trace.list().length === 0,
     showDebugObjects: false,
   })
