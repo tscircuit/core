@@ -27,6 +27,16 @@ test.failing(
     )
     await circuit.renderUntilSettled()
     await expect(circuit).toMatchPcbSnapshot(import.meta.path)
+    await expect(circuit).toMatch3dSnapshot(import.meta.path, {
+      camPos: [11, 19, 8],
+      diffTolerance: 0.001,
+      snapshotSuffix: "top",
+    })
+    await expect(circuit).toMatch3dSnapshot(import.meta.path, {
+      camPos: [11, -19, 8],
+      diffTolerance: 0.001,
+      snapshotSuffix: "bottom",
+    })
 
     // Native KiCad: R2 is on B.SilkS, mirrored, with a 0 degree draw rotation.
     expect(
