@@ -18,8 +18,8 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
   })
   expect(circuit.db.source_net.list()).toHaveLength(50)
   expect(circuit.db.source_bus.list()).toHaveLength(18)
-  const pcbConnectivity = new PcbConnectivityMap(circuit.getCircuitJson())
-    .connMap
+  const circuitJson = circuit.getCircuitJson()
+  const pcbConnectivity = new PcbConnectivityMap(circuitJson).connMap
   for (const signal of icePiDdrSource.traces) {
     const pcbPortIds = signal.path.map(
       (selector) => circuit.firstChild!.selectOne<Port>(selector)!.pcb_port_id!,
@@ -27,8 +27,13 @@ test("iCE/Pi CM0 SBC end-to-end DDR routing and timing", async () => {
     expect(
       pcbConnectivity.areAllIdsConnected(pcbPortIds),
       signal.nativeNet,
-    ).toBe(false)
+    ).toBe(true)
   }
-  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(1)
-  expect(circuit.db.pcb_bus_routing_constraint_warning.list()).toHaveLength(8)
+  expect(
+    circuitJson.filter(
+      (element) =>
+        element.type.endsWith("_error") ||
+        element.type === "pcb_bus_routing_constraint_warning",
+    ),
+  ).toEqual([])
 }, 300_000)
