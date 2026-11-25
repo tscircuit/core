@@ -186,7 +186,7 @@ jobs:
           cp package-provenance.json results/package-provenance.json
           if (( run_status != 0 )); then exit 1; fi
       - name: Diagnose normal TSX matching separately from benchmark acceptance
-        if: inputs.matching_probe == true && matrix.circuit == 'glider'
+        if: inputs.matching_probe == true && contains(fromJSON('["glider","icepi"]'), matrix.circuit)
         env:
           CIRCUIT: ${{ matrix.circuit }}
         run: |
