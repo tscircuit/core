@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [main, reserved]
+        mode: [reserved, interleaved]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +29,6 @@ jobs:
           ref: ${{ inputs.core_ref }}
           persist-credentials: false
       - uses: actions/checkout@v4
-        if: matrix.mode == 'reserved'
         with:
           repository: tscircuit/bus-lanes-solver
           path: bus
@@ -39,7 +38,6 @@ jobs:
         with:
           bun-version: 1.4.3
       - name: Build exact bus rounding change
-        if: matrix.mode == 'reserved'
         working-directory: bus
         run: |
           bun install --ignore-scripts --backend=copyfile
@@ -56,7 +54,7 @@ jobs:
           p = Path('core/package.json')
           package = json.loads(p.read_text())
           pins = {'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
-          if os.environ['MODE'] == 'reserved': pins['@tscircuit/bus-lanes-solver'] = 'file:../bus.tgz'
+          pins['@tscircuit/bus-lanes-solver'] = 'file:../bus.tgz'
           for name, pin in pins.items():
               package.get('dependencies', {}).pop(name, None)
               package.setdefault('devDependencies', {})[name] = pin
@@ -68,7 +66,7 @@ jobs:
       - name: Fresh native Core render at the original 120 second cap
         run: |
           mkdir -p results
-          timeout -s KILL 120s bun --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" > results/render.log 2>&1 || true
+          timeout -s KILL 120s bun --tsconfig-override core/tsconfig.json tooling/scripts/benchmark-ddr/probe-orangecrab-native-goals.mjs "$GITHUB_WORKSPACE/core" "$GITHUB_WORKSPACE/results" '${{ matrix.mode }}' > results/render.log 2>&1 || true
           cat results/render.log
           bun core/node_modules/@tscircuit/core-ddr-benchmark/scripts/assess.ts "$GITHUB_WORKSPACE/core" orangecrab "$GITHUB_WORKSPACE/results"
           python3 - <<'PY'

@@ -2,14 +2,29 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { gunzipSync } from "node:zlib"
 
-const [corePath, output] = process.argv.slice(2)
+const [corePath, output, mode] = process.argv.slice(2)
 mkdirSync(output, { recursive: true })
 const benchmark = join(corePath, "node_modules/@tscircuit/core-ddr-benchmark")
 const { RootCircuit } = await import(join(corePath, "index.ts"))
 const { NativeDdrBoard } = await import(join(benchmark, "circuits/native-ddr-board.tsx"))
 const { getDdrRoutingBuses, getDdrReference } = await import(join(benchmark, "circuits/ddr-constraints.ts"))
 const { getDdrSkewGroups, getDdrNetEndpoints } = await import(join(benchmark, "circuits/ddr-signals.ts"))
-const { Children, createElement, cloneElement } = await import(join(corePath, "node_modules/react/index.js"))
+const { Children, createElement, cloneElement, Fragment } = await import(join(corePath, "node_modules/react/index.js"))
+const { BusLanesPipelineSolver } = await import(join(corePath, "node_modules/@tscircuit/bus-lanes-solver/dist/index.js"))
+const profile = { visualizations: 0, visualizationMs: 0, phases: {} }
+const originalVisualize = BusLanesPipelineSolver.prototype.visualize
+BusLanesPipelineSolver.prototype.visualize = function () {
+  const start = performance.now()
+  try { return originalVisualize.call(this) }
+  finally { profile.visualizations++; profile.visualizationMs += performance.now() - start }
+}
+const originalStep = BusLanesPipelineSolver.prototype._step
+BusLanesPipelineSolver.prototype._step = function () {
+  const phase = this.phase
+  const start = performance.now()
+  try { return originalStep.call(this) }
+  finally { profile.phases[phase] = (profile.phases[phase] ?? 0) + performance.now() - start }
+}
 const source = JSON.parse(gunzipSync(readFileSync(join(benchmark, "circuits/orangecrab.json.gz"))).toString())
 const sourceBefore = JSON.stringify(source)
 const dataNames = new Set(getDdrSkewGroups(source).filter(group => / byte[01]$/.test(group.name)).flatMap(group => group.signals.map(signal => signal.name)))
@@ -72,11 +87,14 @@ const phases = [0, 1].map(phaseIndex => createElement("autoroutingphase", {
   autorouter: "bus_lanes",
   connections: source.traces.filter(trace => phaseForTrace(trace) === phaseIndex).flatMap(trace => trace.path),
 }))
-const board = cloneElement(original, {}, ...physicalChildren, ...phases, ...nets,
-  ...timingTraces, ...stagedBuses.map(bus => createElement("bus", { key: bus.name, ...bus })))
+let routingChildren = [...nets, ...timingTraces]
+if (mode === "interleaved") routingChildren = nets.map(net => createElement(Fragment, { key: net.props.name }, net,
+  timingTraces.find(trace => trace.props.name === `DDR_TIMING_${net.props.name}`)))
+const board = cloneElement(original, {}, ...physicalChildren, ...phases, ...routingChildren,
+  ...stagedBuses.map(bus => createElement("bus", { key: bus.name, ...bus })))
 const circuit = new RootCircuit()
 const started = performance.now()
-const progress = { renderCompleted: false, renderMs: null, phases: [], errors: [] }
+const progress = { renderCompleted: false, renderMs: null, phases: [], errors: [], profile }
 const save = () => {
   writeFileSync(join(output, "progress.json"), JSON.stringify(progress))
   writeFileSync(join(output, "circuit.json"), JSON.stringify(circuit.getCircuitJson()))
