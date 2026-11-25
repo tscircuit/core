@@ -223,7 +223,7 @@ jobs:
           JS
           bun tooling/render-h616.mjs
       - name: Capture H616 diagnostic inputs
-        if: (inputs.probe_refinement == true || inputs.matching_probe == true) && matrix.circuit == 'h616'
+        if: matrix.circuit == 'h616'
         run: |
           python3 - <<'PY_CAPTURE'
           import base64, gzip, hashlib, json
