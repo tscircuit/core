@@ -4,13 +4,13 @@ import {
 } from "@tscircuit/props"
 import type { SourceSimplePushButton } from "circuit-json"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -56,6 +56,16 @@ export class PushButton extends NormalComponent<
       .sort((a, b) => (a.props.pinNumber ?? 0) - (b.props.pinNumber ?? 0))[0]
     if (secondTerminalPort) {
       secondTerminalPort.schematicSymbolPortDef = symPort2!
+    }
+
+    const hasAlias = (alias: string) =>
+      ports.some((port) => port.getNameAndAliases().includes(alias))
+
+    if (pin1Port && !hasAlias("side1")) {
+      pin1Port.externallyAddedAliases.push("side1")
+    }
+    if (secondTerminalPort && !hasAlias("side2")) {
+      secondTerminalPort.externallyAddedAliases.push("side2")
     }
   }
 
