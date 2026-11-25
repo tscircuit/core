@@ -26,6 +26,10 @@ on:
         description: Optional immutable bus-lanes source revision for head only
         type: string
         default: ''
+      fanout_ref:
+        description: Exact local-dogbone source change to overlay on the pinned bus dependency
+        type: string
+        default: ''
       benchmark_ref:
         description: Optional immutable adapter revision, identical on base and head
         type: string
@@ -80,11 +84,32 @@ jobs:
           ref: ${{ inputs.bus_ref }}
           path: bus-source
           persist-credentials: false
+      - uses: actions/checkout@v4
+        if: inputs.fanout_ref != ''
+        with:
+          repository: tscircuit/fanout-solver
+          ref: ${{ inputs.fanout_ref }}
+          path: fanout-source
+          persist-credentials: false
       - name: Build exact bus source candidate
         if: inputs.bus_ref != ''
         working-directory: bus-source
         run: |
           bun install --ignore-scripts --backend=copyfile
+          if [ -n '${{ inputs.fanout_ref }}' ]; then
+            python3 - <<'PY_FANOUT'
+          import hashlib
+          from pathlib import Path
+          original = Path('node_modules/@tscircuit/fanout-solver/lib/route-local-signal-dogbones.ts')
+          candidate = Path('../fanout-source/lib/route-local-signal-dogbones.ts')
+          expected = '      Number(p.x < origin.x) * 2 +\n      Number(p.y > origin.y) * 2 +\n      Math.hypot(p.x - origin.x, p.y - origin.y)'
+          assert expected in original.read_text()
+          assert 'distance(origin, p) + distance(p, connection.targetPoint)' in candidate.read_text()
+          print('FANOUT_LOCAL_SOURCE_BEFORE=' + hashlib.sha256(original.read_bytes()).hexdigest())
+          original.write_bytes(candidate.read_bytes())
+          print('FANOUT_LOCAL_SOURCE_AFTER=' + hashlib.sha256(original.read_bytes()).hexdigest())
+          PY_FANOUT
+          fi
           bun run build
           bun pm pack --filename ../bus-candidate.tgz
           sha256sum dist/index.js
