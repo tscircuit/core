@@ -15,6 +15,7 @@ import {
   reconnectReroutedSimpleRouteJsonRegion,
 } from "@tscircuit/capacity-autorouter"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 import { type Box, getBoundsFromPoints } from "@tscircuit/math-utils"
 import {
   type AutorouterConfig,
@@ -309,6 +310,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
   }
 
   _asyncAutoroutingResult: GroupAutoroutingResult | null = null
+  private _autoroutingConnMap: ConnectivityMap | null = null
   private _acceptedAutoroutingPhaseResult: GroupAutoroutingResult | null = null
   private _renderedAutoroutingResult: GroupAutoroutingResult | null = null
   private _renderedAutoroutingPcbTraceIds: PcbTraceId[] = []
@@ -908,7 +910,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    const { simpleRouteJson, connMap } = getSimpleRouteJsonFromCircuitJson({
       pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
       db,
       allowViaInPad: autorouterConfig.allowViaInPad,
@@ -918,6 +920,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       subcircuit_id: this.subcircuit_id,
       subcircuitComponent: this,
     })
+    this._autoroutingConnMap = connMap
     const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
@@ -1169,7 +1172,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    let { simpleRouteJson: baseSimpleRouteJson } =
+    let { simpleRouteJson: baseSimpleRouteJson, connMap } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
@@ -1179,6 +1182,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+    this._autoroutingConnMap = connMap
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -2424,6 +2428,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
+      // SRJ names identify declared source connections. Copper geometry must
+      // not choose the intended owner when the routed endpoint is wrong.
+      const sourceConnectionId = routedTrace.connection_name
+      const sourceOwnerId = sourceConnectionId
+        ? (db.source_trace.get(sourceConnectionId)?.source_trace_id ??
+          db.source_net.get(sourceConnectionId)?.source_net_id)
+        : undefined
       const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
 
@@ -2446,11 +2457,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
-        source_trace_id: getSourceTraceIdForRoutedTrace({
-          db,
-          trace: routedTrace,
-          subcircuit_id: this.subcircuit_id,
-        }),
+        source_trace_id: sourceOwnerId,
       })
       claimSrjAssignablePcbViasTraversedByRoute({
         db,
@@ -2507,8 +2514,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // First, create jumper components from getOutputJumpers() result
     if (output_jumpers && output_jumpers.length > 0) {
+      if (!this._autoroutingConnMap) {
+        throw new Error(
+          "Source connectivity is unavailable for autorouter jumpers.",
+        )
+      }
       insertAutoplacedJumpers({
         db,
+        connMap: this._autoroutingConnMap,
         output_jumpers,
         subcircuit_id: this.subcircuit_id,
       })

@@ -1,5 +1,6 @@
 import type { LayerRef, PcbSmtPadRect } from "circuit-json"
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
 
 export interface AutoplacedJumperPad {
   center: { x: number; y: number }
@@ -52,8 +53,7 @@ function groupPadsByInternalConnection(
     }
   }
 
-  // Only return groups with 2+ pads (those represent internal connections)
-  return groups.filter((g) => g.length >= 2)
+  return groups
 }
 
 /**
@@ -67,10 +67,32 @@ function groupPadsByInternalConnection(
  */
 export function insertAutoplacedJumpers(params: {
   db: CircuitJsonUtilObjects
+  connMap: ConnectivityMap
   output_jumpers: AutoplacedJumper[]
   subcircuit_id?: string | null
 }): void {
-  const { db, output_jumpers, subcircuit_id } = params
+  const { db, connMap, output_jumpers, subcircuit_id } = params
+
+  // Validate the complete batch before adding source records. Router output
+  // may reference an intended net, but must never join separate source nets.
+  for (const jumper of output_jumpers) {
+    for (const pads of groupPadsByInternalConnection(
+      jumper.pads,
+      jumper.orientation,
+    )) {
+      const sourceConnectionIds = pads
+        .flatMap((pad) => pad.connectedTo ?? [])
+        .filter((id) => db.source_trace.get(id) || db.source_net.get(id))
+      if (
+        sourceConnectionIds.length > 1 &&
+        !connMap.areAllIdsConnected(sourceConnectionIds)
+      ) {
+        throw new Error(
+          "Autorouter jumper would connect separate intended nets.",
+        )
+      }
+    }
+  }
 
   for (
     let jumperIndex = 0;
@@ -121,10 +143,10 @@ export function insertAutoplacedJumpers(params: {
         pin_number: pinNumber,
       })
 
-      for (const sourceTraceId of pad.connectedTo ?? []) {
-        const sourceTrace = db.source_trace.get(sourceTraceId)
+      for (const sourceConnectionId of pad.connectedTo ?? []) {
+        const sourceTrace = db.source_trace.get(sourceConnectionId)
         if (!sourceTrace) {
-          const sourceNet = db.source_net.get(sourceTraceId)
+          const sourceNet = db.source_net.get(sourceConnectionId)
           if (sourceNet)
             db.source_trace.insert({
               connected_source_port_ids: [sourcePort.source_port_id],
@@ -133,7 +155,7 @@ export function insertAutoplacedJumpers(params: {
             })
           continue
         }
-        db.source_trace.update(sourceTraceId, {
+        db.source_trace.update(sourceTrace.source_trace_id, {
           connected_source_port_ids: [
             ...sourceTrace.connected_source_port_ids,
             sourcePort.source_port_id,
