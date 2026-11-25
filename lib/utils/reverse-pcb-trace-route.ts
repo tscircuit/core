@@ -20,7 +20,13 @@ export const reversePcbTraceRoute = (
           point
         return wire
       }
-      if (point.route_type !== "through_pad") return { ...point }
+      if (point.route_type === "via") {
+        return {
+          ...point,
+          from_layer: point.to_layer,
+          to_layer: point.from_layer,
+        }
+      }
 
       return {
         ...point,
