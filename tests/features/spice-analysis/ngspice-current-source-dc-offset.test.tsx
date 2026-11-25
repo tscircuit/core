@@ -44,8 +44,8 @@ test("ngspice preserves a square current source's DC offset", async () => {
 
   const graphs = circuit.db.simulation_transient_voltage_graph.list()
   expect(graphs).toHaveLength(1)
-  expect(Math.min(...graphs[0]!.voltage_levels)).toBeCloseTo(0)
-  expect(Math.max(...graphs[0]!.voltage_levels)).toBeCloseTo(0.5)
+  expect(Math.min(...graphs[0]!.voltage_levels)).toBeCloseTo(0.5)
+  expect(Math.max(...graphs[0]!.voltage_levels)).toBeCloseTo(1)
   await expect(circuit).toMatchSimulationSnapshot(import.meta.path, {
     width: 1000,
     height: 760,
