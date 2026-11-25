@@ -149,13 +149,6 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbTraceTeardropRender: ["PcbTraceRender", "PcbRouteNetIslands"],
-  PcbDifferentialPairPhaseSkewRender: [
-    "RenderIsolatedSubcircuits",
-    "PcbFootprintStringRender",
-    "FetchPartFootprint",
-    "PcbPlacementDesignRuleChecks",
-    "PcbTraceRender",
-  ],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
@@ -190,6 +183,13 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "PcbPlacementDesignRuleChecks",
+  ],
+  PcbDifferentialPairPhaseSkewRender: [
+    "RenderIsolatedSubcircuits",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+    "PcbTraceRender",
   ],
   PcbDesignRuleChecks: [
     "PcbFootprintStringRender",
