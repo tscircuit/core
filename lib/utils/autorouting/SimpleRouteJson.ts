@@ -137,14 +137,6 @@ export type SimpleRouteBus = {
     Record<SrjConnectionName, { x: number; y: number; layer?: string }>
   >
   maxLengthSkew?: number
-  skewReference?: "range" | "mean" | "references"
-  referenceConnectionNames?: SrjConnectionName[]
-  lengthMatchingPaths?: {
-    connectionName: SrjConnectionName
-    pcbPortIds: [string, string]
-    from: SimpleRouteConnection["pointsToConnect"][number]
-    to: SimpleRouteConnection["pointsToConnect"][number]
-  }[]
   /** Pad-to-pad planar copper limits per member, including fixed fanouts, in mm. */
   minLength?: number
   maxLength?: number

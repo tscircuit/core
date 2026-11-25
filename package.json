@@ -63,7 +63,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
     "@tscircuit/ngspice-spice-engine": "^0.0.28",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@901d603",
+    "@tscircuit/props": "^0.0.746",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.246.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -79,7 +79,7 @@
     "bun-match-svg": "0.0.16",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "https://pkg.pr.new/circuit-json@5c7810c",
+    "circuit-json": "0.0.561",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.36",
@@ -123,7 +123,7 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#42a48967075ef164ad6f94e80d1c3c30069daf28"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
@@ -171,8 +171,8 @@
   "overrides": {
     "graphics-debug": "$graphics-debug",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@901d603",
-    "circuit-json": "https://pkg.pr.new/circuit-json@5c7810c",
+    "@tscircuit/props": "^0.0.746",
+    "circuit-json": "0.0.561",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {

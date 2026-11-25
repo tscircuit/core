@@ -1128,7 +1128,6 @@ export const getSimpleRouteJsonFromCircuitJson = ({
 
   const srjBuses = getBusesForSimpleRouteJson({
     srjConnections: allConns,
-    fixedTraces: preservedRoutedSubcircuitTraces,
     buses,
     sourceTraces: db.source_trace.list(),
     subcircuitId: subcircuit_id,

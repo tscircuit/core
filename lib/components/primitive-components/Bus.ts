@@ -1,7 +1,6 @@
 import type { SourceBus } from "circuit-json"
 import { getBusSourceTraceIdOrThrow } from "lib/utils/autorouting/getBusSourceTraceIdOrThrow"
 import { busProps } from "@tscircuit/props"
-import { getBusSourceLengthMatchingMetadata } from "lib/utils/autorouting/getBusSourceLengthMatchingMetadata"
 import { getSourceBusRouteLength } from "lib/utils/autorouting/getSourceBusRouteLength"
 import {
   type BaseComponentConfig,
@@ -46,10 +45,6 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
       name: this._parsedProps.name,
       source_trace_ids,
       max_length_skew: this._parsedProps.maxLengthSkew,
-      ...getBusSourceLengthMatchingMetadata({
-        bus: this,
-        sourceTraces: busSourceTraces,
-      }),
       min_length: getSourceBusRouteLength({
         bus: this,
         busSourceTraces,
