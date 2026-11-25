@@ -171,8 +171,8 @@
   "overrides": {
     "graphics-debug": "$graphics-debug",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.746",
-    "circuit-json": "0.0.561",
+    "@tscircuit/props": "https://pkg.pr.new/tscircuit/props/@tscircuit/props@901d603",
+    "circuit-json": "https://pkg.pr.new/circuit-json@5c7810c",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
