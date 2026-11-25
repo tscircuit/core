@@ -83,7 +83,7 @@
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "^0.0.36",
-    "compute-differential-pair-phase-skew": "github:tscircuit/compute-differential-pair-phase-skew#e95ff76",
+    "compute-differential-pair-phase-skew": "github:tscircuit/compute-differential-pair-phase-skew#d64d807",
     "circuit-json-to-spice": "^0.0.50",
     "circuit-to-svg": "^0.0.463",
     "concurrently": "^9.1.2",
