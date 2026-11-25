@@ -1,4 +1,3 @@
-import type { BusLengthMatchingPath } from "@tscircuit/bus-lanes-solver"
 import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
@@ -6,6 +5,10 @@ import type {
 import type { PcbGroup } from "circuit-json"
 import type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
+export type {
+  SimpleRouteBus,
+  SimpleRouteBusTermination,
+} from "@tscircuit/capacity-autorouter"
 export type { CircuitJsonMetadata, Obstacle } from "../obstacles/types"
 
 export type PcbGroupId = PcbGroup["pcb_group_id"]
@@ -115,44 +118,6 @@ export type SimpleRouteDifferentialPair = {
   maxUncoupledLength?: number
 }
 
-/** A group of connections that an autorouter should keep together. */
-export type SimpleRouteBusTermination =
-  | {
-      type: "boundary"
-    }
-  | {
-      type: "plane"
-      layer: string
-    }
-
-export type SimpleRouteBus = {
-  lengthMatchingPaths?: BusLengthMatchingPath[]
-  /** Additional TSX lengthMatchTo members, resolved before invoking the router. */
-  lengthMatchToConnectionNames?: SrjConnectionName[]
-  busId: string
-  name?: string
-  connectionNames: SrjConnectionName[]
-  /**
-   * Per-connection downstream points that should guide fanout boundary exits.
-   * These are routing hints and do not replace electrical endpoints. A known
-   * layer lets paired fanouts preserve a compatible winding order.
-   */
-  connectionExitTargets?: Readonly<
-    Record<SrjConnectionName, { x: number; y: number; layer?: string }>
-  >
-  maxLengthSkew?: number
-  /** Pad-to-pad planar copper limits per member, including fixed fanouts, in mm. */
-  minLength?: number
-  maxLength?: number
-  traceWidth?: number
-  allowedLayers?: string[]
-  /** Highest-priority fanout layer for this bus. */
-  preferredLayer?: string
-  /** Additional preferred fanout layers for this bus, in priority order. */
-  preferredLayers?: string[]
-  termination?: SimpleRouteBusTermination
-}
-
 export type SimpleRouteJson = Omit<
   AutorouterSimpleRouteJson,
   | "connections"
@@ -163,7 +128,6 @@ export type SimpleRouteJson = Omit<
   | "allowJumpers"
   | "availableJumperTypes"
   | "differentialPairs"
-  | "buses"
 > & {
   layerCount: number
   /** Whether autorouters may use vias that do not span the full board stack. */
@@ -202,7 +166,6 @@ export type SimpleRouteJson = Omit<
   allowJumpers?: boolean
   availableJumperTypes?: Array<"1206x4" | "0603">
   differentialPairs?: SimpleRouteDifferentialPair[]
-  buses?: SimpleRouteBus[]
 }
 
 // declare module "autorouting-dataset" {
