@@ -1,33 +1,23 @@
 import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
 import { getDifferentialPairPhaseSkew } from "compute-differential-pair-phase-skew"
 
-/** Saves one phase skew element per measurable pair and removes stale elements. */
+/**
+ * Replaces the stored phase skew elements with freshly computed ones. Each
+ * element's id comes from its pair's source_bus_id, so a pair keeps its id
+ * across renders.
+ */
 export function storePcbDifferentialPairPhaseSkew(
   db: CircuitJsonUtilObjects,
 ): void {
-  const phaseSkewTable = db.pcb_differential_pair_phase_skew
-  const stalePhaseSkewIds = new Set(
-    phaseSkewTable
-      .list()
-      .map((phaseSkew) => phaseSkew.pcb_differential_pair_phase_skew_id),
-  )
-  if (
-    stalePhaseSkewIds.size === 0 &&
-    !db.source_bus.list().some((bus) => bus.differential_pair)
-  ) {
-    return
+  for (const phaseSkew of db.pcb_differential_pair_phase_skew.list()) {
+    db.pcb_differential_pair_phase_skew.delete(
+      phaseSkew.pcb_differential_pair_phase_skew_id,
+    )
   }
+  if (!db.source_bus.list().some((bus) => bus.differential_pair)) return
 
   const phaseSkews = getDifferentialPairPhaseSkew({ circuitJson: db.toArray() })
   for (const phaseSkew of phaseSkews) {
-    const { pcb_differential_pair_phase_skew_id } = phaseSkew
-    if (stalePhaseSkewIds.delete(pcb_differential_pair_phase_skew_id)) {
-      phaseSkewTable.update(pcb_differential_pair_phase_skew_id, phaseSkew)
-      continue
-    }
-    phaseSkewTable.insert(phaseSkew)
-  }
-  for (const pcb_differential_pair_phase_skew_id of stalePhaseSkewIds) {
-    phaseSkewTable.delete(pcb_differential_pair_phase_skew_id)
+    db.pcb_differential_pair_phase_skew.insert(phaseSkew)
   }
 }
