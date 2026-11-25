@@ -172,7 +172,6 @@
     "graphics-debug": "$graphics-debug",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.746",
-    "circuit-json": "0.0.561",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
