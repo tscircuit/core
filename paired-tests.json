@@ -1,0 +1,34 @@
+[
+  {
+    "solver": "1df038d",
+    "exit": 1,
+    "diffs": {
+      "tests/drc/__snapshots__/bus-length-skew-pcb.diff.png": "561cf2eca93477c7326cdf11f56dbbc10ddcfa28aa2c8bdbd795eb289d601aed",
+      "tests/features/__snapshots__/autorouter-bus-lanes-pair-skew-pcb.diff.png": "23ab80abfb1d2de46d07ce733a5d8c4f999abf9c96320c7960c34ed4e5433599",
+      "tests/features/__snapshots__/autorouter-bus-lanes-saved-fanouts-pcb.diff.png": "cc4a5944f76183c9c2c8a80b1a3a2d9906e0b18426ff0fca1a98b4a3b9829696",
+      "tests/features/__snapshots__/autorouter-bus-lanes-pcb.diff.png": "679214c6f22083f7a490ccdd4e00b5f0ced9285eb56995673ef5e36da1e98009",
+      "tests/features/__snapshots__/autorouter-bus-lanes-followed-by-global-pcb.diff.png": "8fa2f42c5a58a5f06b2a7948d43ebafb54b844f6eea64d928ab958def3e67ac0",
+      "tests/repros/__snapshots__/repro-length-matched-bus-split-across-phases-pcb.diff.png": "9b3f92a268bd66dfc7d31a92dce1955cfd9d58bfabddd112190e89f7508e8543",
+      "tests/repros/__snapshots__/length-matched-bus-complete-phase-control-pcb.diff.png": "93e33f8e4fe7e9261698b5d9c198adc130ec43dcf1fbfbfbd1af17a8c08ef7d7",
+      "tests/components/primitive-components/bus/__snapshots__/ddr-routing-constraints-pcb.diff.png": "cb769730b16d6d06b7936bf207cc10e519ea9699677432dc2eacdadf67331b6f",
+      "tests/components/primitive-components/bus/__snapshots__/source-bus-length-checks-pcb.diff.png": "57ff048629be3a7a740fba88777cd6f7521b911afbf8d91ef82cf9a352ccf844",
+      "tests/components/primitive-components/bus/__snapshots__/net-connections-pcb.diff.png": "64ee3e783b00681bd60c4e16fbb406ed378b54d9fdce929beff542c4ce84aeb1"
+    }
+  },
+  {
+    "solver": "bb22465",
+    "exit": 1,
+    "diffs": {
+      "tests/drc/__snapshots__/bus-length-skew-pcb.diff.png": "561cf2eca93477c7326cdf11f56dbbc10ddcfa28aa2c8bdbd795eb289d601aed",
+      "tests/features/__snapshots__/autorouter-bus-lanes-pair-skew-pcb.diff.png": "23ab80abfb1d2de46d07ce733a5d8c4f999abf9c96320c7960c34ed4e5433599",
+      "tests/features/__snapshots__/autorouter-bus-lanes-saved-fanouts-pcb.diff.png": "cc4a5944f76183c9c2c8a80b1a3a2d9906e0b18426ff0fca1a98b4a3b9829696",
+      "tests/features/__snapshots__/autorouter-bus-lanes-pcb.diff.png": "679214c6f22083f7a490ccdd4e00b5f0ced9285eb56995673ef5e36da1e98009",
+      "tests/features/__snapshots__/autorouter-bus-lanes-followed-by-global-pcb.diff.png": "8fa2f42c5a58a5f06b2a7948d43ebafb54b844f6eea64d928ab958def3e67ac0",
+      "tests/repros/__snapshots__/repro-length-matched-bus-split-across-phases-pcb.diff.png": "9b3f92a268bd66dfc7d31a92dce1955cfd9d58bfabddd112190e89f7508e8543",
+      "tests/repros/__snapshots__/length-matched-bus-complete-phase-control-pcb.diff.png": "93e33f8e4fe7e9261698b5d9c198adc130ec43dcf1fbfbfbd1af17a8c08ef7d7",
+      "tests/components/primitive-components/bus/__snapshots__/ddr-routing-constraints-pcb.diff.png": "cb769730b16d6d06b7936bf207cc10e519ea9699677432dc2eacdadf67331b6f",
+      "tests/components/primitive-components/bus/__snapshots__/source-bus-length-checks-pcb.diff.png": "57ff048629be3a7a740fba88777cd6f7521b911afbf8d91ef82cf9a352ccf844",
+      "tests/components/primitive-components/bus/__snapshots__/net-connections-pcb.diff.png": "64ee3e783b00681bd60c4e16fbb406ed378b54d9fdce929beff542c4ce84aeb1"
+    }
+  }
+]

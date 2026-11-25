@@ -1,0 +1,16 @@
+{
+  "1df038d": {
+    "LICENSE": "ca7297e39b387390aa2f079ac8634c89d99c4a198e672b36087e52528c38a2f4",
+    "dist/index.js": "066e0bb3629eaaa27e4817a426ed097e9b62b280fc03ac766a1ba22ec5f1981c",
+    "package.json": "bff71e6848e4f4ec1bf810c86c80800434d30ea0aa21b61ba86d0bd6c673a29c",
+    "README.md": "f09b62c065f819ac694b319751eca18bb597533ea8f861e131798bdbfa107756",
+    "dist/index.d.ts": "6ee1521d5b3dfe9d9cff855a419f7a21c337ba23dfefca67fc54d1dde743a255"
+  },
+  "bb22465": {
+    "LICENSE": "ca7297e39b387390aa2f079ac8634c89d99c4a198e672b36087e52528c38a2f4",
+    "dist/index.js": "066e0bb3629eaaa27e4817a426ed097e9b62b280fc03ac766a1ba22ec5f1981c",
+    "package.json": "bff71e6848e4f4ec1bf810c86c80800434d30ea0aa21b61ba86d0bd6c673a29c",
+    "README.md": "f09b62c065f819ac694b319751eca18bb597533ea8f861e131798bdbfa107756",
+    "dist/index.d.ts": "6ee1521d5b3dfe9d9cff855a419f7a21c337ba23dfefca67fc54d1dde743a255"
+  }
+}

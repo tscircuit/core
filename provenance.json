@@ -1,0 +1,29 @@
+{
+  "coreParent": "faaea95f5eea4e972c8daa8ae51a3dc49ab10c10",
+  "main": "de64aaf0859b49d43dd611cade55573bc7f7a26c",
+  "head": "8e78815a47faa8bd7a1b7470478bbe9aaec874f6",
+  "solver": "bb22465eee9ac2c014a4afd9fe2f2421d0ca2eec",
+  "solverUrl": "https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@bb22465",
+  "publishedPackagesIdentical": true,
+  "packageFileHashes": {
+    "LICENSE": "ca7297e39b387390aa2f079ac8634c89d99c4a198e672b36087e52528c38a2f4",
+    "README.md": "f09b62c065f819ac694b319751eca18bb597533ea8f861e131798bdbfa107756",
+    "package.json": "bff71e6848e4f4ec1bf810c86c80800434d30ea0aa21b61ba86d0bd6c673a29c",
+    "dist/index.js": "066e0bb3629eaaa27e4817a426ed097e9b62b280fc03ac766a1ba22ec5f1981c",
+    "dist/index.d.ts": "6ee1521d5b3dfe9d9cff855a419f7a21c337ba23dfefca67fc54d1dde743a255"
+  },
+  "localMatchedSnapshotComparison": {
+    "oldPass": 5,
+    "oldFail": 10,
+    "newPass": 5,
+    "newFail": 10,
+    "identicalDiffPngs": true,
+    "reasonInvestigated": "PCB note font-family only in inspected pair-skew snapshot; unchanged routes and note text"
+  },
+  "ci": "https://github.com/tscircuit/core/actions/runs/45569460269",
+  "benchmark": "https://github.com/tscircuit/core/actions/runs/45569469728",
+  "budgetSecondsPerBoard": 120,
+  "h616FinalLocalCore": "8e78815a47faa8bd7a1b7470478bbe9aaec874f6",
+  "h616FinalBudgetMs": 120000,
+  "runtime": "Bun 1.4.2 macOS arm64"
+}
