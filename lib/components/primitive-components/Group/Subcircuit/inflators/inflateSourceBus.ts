@@ -24,14 +24,10 @@ function getSourceTraceSelector({
   if (!sourceTrace) return
 
   const sourceTraces = injectionDb.source_trace.list()
-  if (
-    sourceTrace.name &&
-    sourceTraces.every(
-      (otherSourceTrace) =>
-        otherSourceTrace.source_trace_id === sourceTraceId ||
-        otherSourceTrace.name !== sourceTrace.name,
-    )
-  ) {
+  const tracesWithSameName = sourceTraces.filter(
+    (otherSourceTrace) => otherSourceTrace.name === sourceTrace.name,
+  )
+  if (sourceTrace.name && tracesWithSameName.length === 1) {
     return sourceTrace.name
   }
 
