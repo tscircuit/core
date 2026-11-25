@@ -98,7 +98,7 @@ function getStatusLine({
   return `PASS: ${name} - ${lengthSkewError.actual_length_skew.toFixed(2)} mm skew exceeds ${MAX_LENGTH_SKEW_MM} mm`
 }
 
-test.failing("isolated-bus-max-length-skew", async () => {
+test("isolated-bus-max-length-skew", async () => {
   const firstPass = await renderBoard({
     statusLines: { Normal: "", Isolated: "" },
   })
