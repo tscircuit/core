@@ -72,9 +72,9 @@ function getRouteLength({
   sourceBusRouteLength,
   inflatorContext,
 }: {
-  sourceBusRouteLength: SourceBusRouteLength | undefined
+  sourceBusRouteLength: SourceBusRouteLength
   inflatorContext: InflatorContext
-}): RouteLength | undefined {
+}): RouteLength {
   if (typeof sourceBusRouteLength !== "object") return sourceBusRouteLength
 
   const { reference, offset, source_trace_ids } = sourceBusRouteLength
@@ -85,7 +85,11 @@ function getRouteLength({
       sourceTraceIds: source_trace_ids,
       inflatorContext,
     })
-    if (!selectors) return
+    if (!selectors) {
+      throw new Error(
+        `Cannot restore bus route-length constraint: could not resolve source traces ${source_trace_ids.join(", ")}`,
+      )
+    }
     routeLength.of = selectors
   }
   return routeLength
@@ -166,11 +170,11 @@ function inflateBus({
     ["maxLength", sourceBus.max_length],
     ["targetLength", sourceBus.target_length],
   ] as const) {
-    const routeLength = getRouteLength({
+    if (sourceBusRouteLength === undefined) continue
+    props[property] = getRouteLength({
       sourceBusRouteLength,
       inflatorContext,
     })
-    if (routeLength !== undefined) props[property] = routeLength
   }
   if (sourceBus.length_tolerance !== undefined) {
     props.lengthTolerance = sourceBus.length_tolerance
