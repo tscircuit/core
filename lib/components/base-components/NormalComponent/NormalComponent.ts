@@ -2518,6 +2518,12 @@ export class NormalComponent<
   }
 
   doInitialSourceComponentPropertyValidation(): void {
+    super.doInitialSourceComponentPropertyValidation()
+    this._insertInvalidFootprintPropErrors()
+  }
+
+  updateSourceComponentPropertyValidation(): void {
+    super.updateSourceComponentPropertyValidation()
     this._insertInvalidFootprintPropErrors()
   }
 

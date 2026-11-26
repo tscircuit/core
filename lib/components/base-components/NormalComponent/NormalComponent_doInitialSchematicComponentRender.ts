@@ -70,8 +70,8 @@ export function NormalComponent_doInitialSchematicComponentRender(
 
   if (
     component.schematic_component_id &&
-    (component.props.schX !== undefined ||
-      component.props.schY !== undefined) &&
+    (component._parsedProps.schX !== undefined ||
+      component._parsedProps.schY !== undefined) &&
     !!manualPlacement
   ) {
     if (!component.schematic_component_id) {
