@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.solver }}
+          ref: investigate/native-surface-minimum-candidates
           path: bus
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -146,7 +146,7 @@ jobs:
 
 # Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
 
-# Quantify contact margins and actual barrel spans without exporting geometry.
+# Keep the original native reset input private on this runner.
 
       - name: Intercept the exact private reset input and compare existing strategies
         working-directory: autorouter
