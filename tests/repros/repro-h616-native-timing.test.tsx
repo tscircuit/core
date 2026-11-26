@@ -6,5 +6,5 @@ test("H616 native timing constraints reproduce the failed bus route", async () =
   const { circuit } = getTestFixture()
   circuit.add(<H616DdrBoard />)
   await circuit.renderUntilSettled()
-  expect(circuit.db.pcb_autorouting_error.list().length).toMatchInlineSnapshot()
+  expect(circuit.db.pcb_autorouting_error.list().length).toMatchInlineSnapshot(`1`)
 }, 120000)
