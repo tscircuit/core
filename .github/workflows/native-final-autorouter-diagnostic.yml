@@ -145,3 +145,5 @@ jobs:
 # Use net-associated selected paths with the unmodified Core connection adapter.
 
 # Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
+
+# Quantify contact margins and actual barrel spans without exporting geometry.
