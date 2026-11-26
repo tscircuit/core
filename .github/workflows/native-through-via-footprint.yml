@@ -152,3 +152,5 @@ jobs:
 # Quantify contact margins and actual barrel spans without exporting geometry.
 
 # Keep the native via raster for copper outside wire routing layers.
+
+# Include selected high-density strategy counters.

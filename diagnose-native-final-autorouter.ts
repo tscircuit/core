@@ -12,7 +12,7 @@ Type.prototype.step=function(...args:unknown[]){
  if(key!==this.__nativeFinalDiagnostic){
   this.__nativeFinalDiagnostic=key
   const stats=Object.fromEntries(Object.entries(joint?.stats??{}).filter(([name,value])=>typeof value==='number'||typeof value==='boolean'))
-  console.log('FINAL_AR_STATE='+JSON.stringify({...JSON.parse(key),stage:this.pipelineDef[this.currentPipelineStepIndex]?.solverName,active:this.activeSubSolver?.constructor?.name,stats}))
+  console.log('FINAL_AR_STATE='+JSON.stringify({...JSON.parse(key),stage:this.pipelineDef[this.currentPipelineStepIndex]?.solverName,active:this.activeSubSolver?.constructor?.name,hdStats:Object.fromEntries(Object.entries(hd?.stats??{}).filter(([name,value])=>typeof value==='number'||typeof value==='boolean')),stats}))
  }
  return result
 }
