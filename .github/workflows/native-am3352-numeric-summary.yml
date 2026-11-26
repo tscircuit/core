@@ -1,0 +1,87 @@
+name: Read completed AM3352 numeric comparison
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-am3352-numeric-summary.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - name: Wait for the existing paired solve, without rerunning it
+        uses: actions/github-script@v7
+        with:
+          script: |
+            for (let attempt = 0; attempt < 200; attempt++) {
+              const { data } = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner, repo: context.repo.repo,
+                run_id: 45870748867,
+              });
+              if (data.status === "completed") {
+                console.log(`Paired run completed: ${data.conclusion}`);
+                return;
+              }
+              await new Promise(resolve => setTimeout(resolve, 30000));
+            }
+            throw Error("Paired run has not completed; no new solves were started");
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 2718df9b52937392f648612ca4a31d6352b585a5
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 45870748867
+          pattern: am3352-*
+          path: reports
+      - name: Emit numeric acceptance and length metrics only
+        run: |
+          bun -e '
+            import { loadSamplePairs, summarizeComparison, renderComparison } from "./scripts/pr-benchmark/report.ts";
+            const pairs = await loadSamplePairs("reports");
+            const options = {
+              samples: pairs,
+              mainSha: "2718df9b52937392f648612ca4a31d6352b585a5",
+              prSha: "e71752110cf7f3d6d6039509a1f7c8198c578ab7",
+              controllerSha: "2718df9b52937392f648612ca4a31d6352b585a5",
+              prNumber: 272, timeoutSeconds: 3600,
+              runUrl: "https://github.com/tscircuit/core/actions/runs/45870748867",
+            };
+            const summary = summarizeComparison(options);
+            console.log("AM3352_SUMMARY=" + JSON.stringify(summary));
+            const numeric = value => {
+              if (value === null || typeof value === "number" || typeof value === "boolean") return value;
+              if (Array.isArray(value)) return value.map(numeric);
+              if (typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([key, child]) => !["name", "busId", "issues"].includes(key) && typeof child !== "string").map(([key, child]) => [key, numeric(child)]));
+              return undefined;
+            };
+            const rows = pairs.map(pair => ({ sample: pair.sample, metadata: pair.metadata,
+              ...Object.fromEntries(["main", "pr"].map(ref => {
+                const r = pair[ref].report;
+                return [ref, { solved: r?.solved, solveMilliseconds: r?.solveMilliseconds,
+                  iterations: r?.iterations, requestedSignals: r?.requestedSignals,
+                  routedSignals: r?.routedSignals, fixedPowerPreserved: r?.fixedPowerPreserved,
+                  validation: numeric({ valid: r?.validation?.valid, complete: r?.validation?.complete,
+                    matched: r?.validation?.matched, fixedPowerTraces: r?.validation?.fixedPowerTraces,
+                    fixedPowerVias: r?.validation?.fixedPowerVias, fixedPowerPadJoins: r?.validation?.fixedPowerPadJoins,
+                    fixedDrcValid: r?.validation?.fixedDrc?.valid, combinedDrcValid: r?.validation?.combinedDrc?.valid,
+                    busLengths: r?.validation?.busLengths, pairLengths: r?.validation?.pairLengths }) }];
+              })) }));
+            console.log("AM3352_NUMERIC_ROWS=" + JSON.stringify(rows));
+            await Bun.write("numeric-summary.json", JSON.stringify({summary, rows}, null, 2));
+            await Bun.write(process.env.GITHUB_STEP_SUMMARY, renderComparison(options));
+            if (!summary.artifactComplete || !summary.inputComparable || !summary.metadataComparable || summary.main.accepted !== 11 || summary.pr.accepted !== 11) throw Error("All eleven paired fresh solves must be accepted");
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: final-numeric-am3352
+          path: numeric-summary.json
+          if-no-files-found: warn
