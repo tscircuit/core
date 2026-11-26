@@ -1,56 +1,15 @@
-name: Verify the final bounded-compaction package within the official budget
+name: Isolate visibility cache allocation on real routing searches
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  benchmark:
-    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    strategy:
-      fail-fast: false
-      matrix:
-        repeat: [1, 2]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: core
-          ref: 72eb10b664e2b74f2da7eadd208ed9dc48b26464
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.3
-      - name: Install the actual Core PR package with isolated files
-        working-directory: core
-        run: |
-          bun install --ignore-scripts --backend=copyfile
-          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
-          python3 - <<'PY'
-          import json,hashlib
-          from pathlib import Path
-          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='00953e196fcadcc85efa5ddd3816a3b0dbffc7e5e7f35c1932b225076229265a'
-          print('EXACT_PACKAGE_VERIFIED')
-          PY
-      - name: Rerun the official shared 120 second benchmark
-        working-directory: core
-        run: |
-          bun run benchmark:ddr -- --out ../results --circuit orangecrab --timeout 120
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          row=json.loads(Path('../results/results.json').read_text())['cases'][0]
-          assessment=row['assessment']
-          print('NATIVE_REPEAT_RESULT='+json.dumps(row,separators=(',',':')))
-          assert assessment['connectedNets']==50
-          assert all(target['status']=='met' for target in assessment['ddrConstraints'])
-          assert all(assessment['findings'][key]==0 for key in ['trace_overlap','pad_trace','via_trace','via_pad','via_spacing','contiguous','via_in_pad','hole_trace','width'])
-          PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: native-repeat-${{ matrix.repeat }}
-          path: results/
-  cache:
+  compare:
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 90
+    env:
+      BUN_JSC_forceRAMSize: '2147483648'
+      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,36 +20,36 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          path: head
+          path: eager
           ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          path: lazy
+          ref: 1cc12c68175b9047ef8fddedbf6b67061a48dc6b
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
-      - name: Install independent source files before timing
+          bun-version: 1.4.0
+      - name: Prepare independent installations before timing
         run: |
-          (cd base && bun install --ignore-scripts --backend=copyfile)
-          (cd head && bun install --ignore-scripts --backend=copyfile)
-      - name: Compare the unchanged real control phase in balanced order
+          for side in base eager lazy; do
+            (cd "$side" && bun install --ignore-scripts --backend=copyfile)
+          done
+      - name: Balanced base-eager-lazy-lazy-eager-base routing controls
         run: |
           mkdir -p results
           iteration=0
-          for side in base head head base; do
+          for side in base eager lazy lazy eager base; do
             iteration=$((iteration+1))
-            (cd "$side" && bun test tests/orangecrab-native-control.test.ts) > "results/$iteration-$side.log" 2>&1
-            cat "results/$iteration-$side.log"
+            bun base/scripts/benchmark.ts --worker inner-layers-right --solver "$GITHUB_WORKSPACE/$side/lib/index.ts" --timeout-seconds 3600 > "results/$iteration-$side-am.log" 2>&1
+            grep '^REPORT ' "results/$iteration-$side-am.log"
+            (cd "$side" && bun test tests/orangecrab-native-control.test.ts) > "results/$iteration-$side-orange.log" 2>&1
+            cat "results/$iteration-$side-orange.log"
           done
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          rows=[]
-          for p in sorted(Path('results').glob('*.log')):
-              row=next(json.loads(line) for line in p.read_text().splitlines() if line.startswith('{"seconds":'))
-              row['file']=p.name; rows.append(row)
-          assert len(rows)==4 and len({r['copperSha256'] for r in rows})==1 and len({r['iterations'] for r in rows})==1
-          print('CACHE_BALANCED='+json.dumps(rows,separators=(',',':')))
-          PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: native-cache-timing
+          name: visibility-allocation-isolation
           path: results/
