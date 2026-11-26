@@ -22,6 +22,10 @@ test("pcb calc supports component-relative references", () => {
   const errors = circuit.db.source_failed_to_create_component_error.list()
   expect(errors).toHaveLength(0)
 
+  const invalidPropertyErrors =
+    circuit.db.source_invalid_component_property_error.list()
+  expect(invalidPropertyErrors).toHaveLength(0)
+
   const sourceComponents = circuit.db.source_component.list()
   const r1Source = sourceComponents.find((component) => component.name === "R1")
   const r2Source = sourceComponents.find((component) => component.name === "R2")
