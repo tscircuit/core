@@ -1,55 +1,67 @@
-name: Isolate visibility cache allocation on real routing searches
+name: Profile unchanged DDR benchmark main
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  compare:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 90
-    env:
-      BUN_JSC_forceRAMSize: '2147483648'
-      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
+  profile:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [glider, h616]
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/bus-lanes-solver
-          path: base
-          ref: 7f71524bc8d7d82e31528d8533226d03ec33e9e8
+          path: analysis
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/bus-lanes-solver
-          path: eager
-          ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          path: lazy
-          ref: 1cc12c68175b9047ef8fddedbf6b67061a48dc6b
+          ref: abe9820189e7a1b83c00afe31a1a5a6a159268ab
+          path: core
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
-      - name: Prepare independent installations before timing
+          bun-version: 1.4.3
+      - name: Install the unchanged original Core and benchmark
         run: |
-          for side in base eager lazy; do
-            (cd "$side" && bun install --ignore-scripts --backend=copyfile)
-          done
-      - name: Balanced base-eager-lazy-lazy-eager-base routing controls
+          cp analysis/intercept-native-stages.ts core/intercept-native-stages.ts
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          pins={'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
+          s['devDependencies'].update(pins);p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/capacity-autorouter/dist/index.js node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+      - name: Profile the official unchanged 120 second benchmark
+        working-directory: core
         run: |
-          mkdir -p results
-          iteration=0
-          for side in base eager lazy lazy eager base; do
-            iteration=$((iteration+1))
-            bun base/scripts/benchmark.ts --worker inner-layers-right --solver "$GITHUB_WORKSPACE/$side/lib/index.ts" --timeout-seconds 3600 > "results/$iteration-$side-am.log" 2>&1
-            grep '^REPORT ' "results/$iteration-$side-am.log"
-            (cd "$side" && bun test tests/orangecrab-native-control.test.ts) > "results/$iteration-$side-orange.log" 2>&1
-            cat "results/$iteration-$side-orange.log"
-          done
+          mkdir -p ../profiles
+          export BUN_OPTIONS="--preload $PWD/intercept-native-stages.ts --cpu-prof --cpu-prof-dir=$GITHUB_WORKSPACE/profiles"
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120
+          unset BUN_OPTIONS
+          python3 - <<'PY'
+          import json,collections
+          from pathlib import Path
+          for p in Path('../profiles').glob('*.cpuprofile'):
+              j=json.loads(p.read_text());nodes={n['id']:n for n in j['nodes']};times=collections.Counter()
+              for node,delta in zip(j.get('samples',[]),j.get('timeDeltas',[])):
+                  f=nodes[node]['callFrame'];times[(f['functionName'],f.get('url',''),f.get('lineNumber'))]+=delta
+              print('NATIVE_CPU_PROFILE='+json.dumps({'file':p.name,'frames':[{'function':n[0],'url':n[1],'line':n[2],'seconds':t/1e6} for n,t in times.most_common(25)]},separators=(',',':')))
+          for p in Path('../results').rglob('render.log'):
+              print('NATIVE_STAGE_LOG='+str(p))
+              for line in p.read_text().splitlines():
+                  if line.startswith('UNCHANGED_PIPELINE_STAGE='):print(line)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: visibility-allocation-isolation
-          path: results/
+          name: unchanged-native-profile-${{ matrix.board }}
+          path: |
+            profiles/
+            results/results.json
+            results/**/render.log
+            results/**/progress.json
