@@ -43,7 +43,15 @@ jobs:
       - name: Fresh standard Dataset18 run, one sample worker and one routing thread
         working-directory: router
         run: |
-          ./benchmark.sh --pipeline 9 --dataset dataset18 --concurrency 1 --threads 1 --effort 1 > ../private-dataset18.log 2>&1
+          bun -e 'try { await import("./scripts/benchmark/benchmark-run-task.ts"); console.log("DATASET18_IMPORT_PREFLIGHT=passed") } catch(error) { const s=String(error);console.log("DATASET18_IMPORT_PREFLIGHT="+JSON.stringify({missingExport:s.includes("No matching export"),missingModule:s.includes("Cannot find"),nativeBinding:s.includes("binding")||s.includes("native") }));process.exit(1) }'
+          if ! ./benchmark.sh --pipeline 9 --dataset dataset18 --concurrency 1 --threads 1 --effort 1 > ../private-dataset18.log 2>&1; then
+            python3 - <<'PYCODE'
+          from pathlib import Path
+          s=Path('../private-dataset18.log').read_text()
+          print('DATASET18_STARTUP_CATEGORY='+str({'missing_export':'No matching export' in s,'missing_module':'Cannot find' in s,'unknown_argument':'Unknown argument' in s or 'Unknown option' in s,'unknown_solver':'Unknown solver' in s,'wrong_working_directory':'ENOENT' in s,'native_binding':'binding' in s,'syntax_error':'SyntaxError' in s}))
+          PYCODE
+            exit 1
+          fi
           python3 - <<'PY'
           import json
           from pathlib import Path
