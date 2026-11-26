@@ -100,13 +100,25 @@ jobs:
       - name: Run unchanged ten-board native benchmark with the original shared budget
         run: |
           export DDR_ASSESSMENT_CHECKS="$PWD/validator/node_modules/@tscircuit/checks/dist/index.js"
+          mkdir validator-preflight
+          echo '[]' > validator-preflight/circuit.json
+          if ! bun benchmark/scripts/assess.ts "$PWD/runtime" '${{ matrix.board }}' "$PWD/validator-preflight" > validator-preflight.log 2>&1; then
+            python3 - <<'PYCODE'
+          import re
+          from pathlib import Path
+          text=re.sub(r'\x1b\[[0-9;]*m','',Path('validator-preflight.log').read_text(errors='replace'))
+          print(text[-2500:])
+          PYCODE
+            exit 1
+          fi
           bun benchmark/scripts/run.ts --core "$PWD/runtime" --out "$PWD/results" --circuit '${{ matrix.board }}' --timeout 120 > private-render.log 2>&1 || run_status=$?
           python3 - <<'PYCODE'
           import json,re
           from pathlib import Path
           for p in [Path('private-render.log'),*Path('results').rglob('render.log'),*Path('results').rglob('validation.log')]:
               if not p.exists(): continue
-              for line in p.read_text(errors='replace').splitlines():
+              text=re.sub(r'\x1b\[[0-9;]*m','',p.read_text(errors='replace'))
+              for line in text.splitlines():
                   if re.search(r'^(?:error:|Error:|TypeError:|ReferenceError:)|Cannot find module|already registered',line):
                       print('PUBLISHED_CODE_DIAGNOSTIC='+line[:250])
           p=Path('results/results.json')
