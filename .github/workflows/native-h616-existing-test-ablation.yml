@@ -1,0 +1,45 @@
+name: Isolate existing H616 skew-only routing regression
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-h616-existing-test-ablation.yml]
+permissions:
+  contents: read
+jobs:
+  isolate:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [main, original-working, fresh-conflicts, pending-landings, pending-guides]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 41bba8b19795077927e9f1a00f540e3aa1d9be31
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Isolate production source on the unchanged public fixture
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import os,subprocess
+          variant=os.environ['VARIANT']
+          if variant in ['main','original-working']:
+              source={'main':'2718df9b52937392f648612ca4a31d6352b585a5','original-working':'0f801c1eca3063e53b7d947c326ba605276596d4'}[variant]
+              subprocess.run(['git','fetch','--depth=1','origin',source],check=True)
+              subprocess.run(['git','restore','--source='+source,'lib'],check=True)
+          if variant=='fresh-conflicts':
+              p=Path('lib/route-surface-bridge.ts');s=p.read_text().replace('conflicts.firstConflict(', 'new CopperConflictIndex().firstConflict(');p.write_text(s)
+          if variant=='pending-landings':
+              p=Path('lib/bus-lanes-solver.ts');s=p.read_text().replace('includeViaLandings: hasLengthConstraints(this.input)','includeViaLandings: true');p.write_text(s)
+          if variant=='pending-guides':
+              p=Path('lib/negotiate-surface-routes.ts');s=p.read_text().replace('if (hasLengthConstraints(native)) {','if (true) {');p.write_text(s)
+          PYCODE
+          bun install --ignore-scripts --backend=copyfile
+      - name: Require successful route and every existing acceptance check
+        run: BUN_UPDATE_SNAPSHOTS=1 bun test tests/h616-declarative-skew.test.ts
