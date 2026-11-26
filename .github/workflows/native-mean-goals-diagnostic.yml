@@ -61,7 +61,7 @@ jobs:
           from pathlib import Path
           for p in Path("../results").rglob("render.log"):
               for line in p.read_text().splitlines():
-                  if line.startswith("SOLVER_FAILURE="): print(line)
+                  if line.startswith(("SOLVER_FAILURE=", "SMALL_REQUEST=")): print(line)
           for p in Path("../results").glob("*/attempts/matching/progress.json"):
               progress=json.loads(p.read_text())
               print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))

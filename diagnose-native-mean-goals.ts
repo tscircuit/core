@@ -11,6 +11,11 @@ const step=bus.BusLanesPipelineSolver.prototype.step
 bus.BusLanesPipelineSolver.prototype.step=function(...args:unknown[]){
  if(!seen.has(this)){
   seen.add(this)
+  if(this.input?.connections?.length<=4){
+   const connections=this.input.connections
+   const summarizeConnection=(c:any)=>({terminals:c.pointsToConnect.length,layers:c.pointsToConnect.map((p:any)=>p.layer),handoffs:c.pointsToConnect.map((p:any)=>p.layers?.length??0)})
+   console.log("SMALL_REQUEST="+JSON.stringify({connections:connections.map(summarizeConnection),sharedPorts:connections.map((c:any)=>connections.map((other:any)=>c.pointsToConnect.filter((p:any)=>p.pcb_port_id&&other.pointsToConnect.some((q:any)=>q.pcb_port_id===p.pcb_port_id)).length)),buses:this.input.buses?.map((b:any)=>({members:b.connectionNames.length,selectedPaths:b.lengthMatchingPaths?.length??0,min:b.minLength,max:b.maxLength,skew:b.maxLengthSkew})),fixed:this.input.traces?.length}))
+  }
   for(const input of new Set([this.input,this.routingInput])){
    if(!input?.buses)continue
    input.buses=input.buses.map(b=>goals.has(b.busId)?{...b,skewReference:'mean',maxLengthSkew:goals.get(b.busId)}:b)
