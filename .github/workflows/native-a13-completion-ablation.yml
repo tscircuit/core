@@ -73,7 +73,6 @@ jobs:
           python3 - <<'PYCODE'
           import os,subprocess
           from pathlib import Path
-          os.chdir("bus")
           variant=os.environ['VARIANT']
           main='2718df9b52937392f648612ca4a31d6352b585a5'
           subprocess.run(['git','fetch','--depth=1','origin',main],check=True)
