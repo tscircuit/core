@@ -1,28 +1,46 @@
-name: Refresh affected native bus snapshots after numerical reserve
+name: Balanced native AM3352 timing control
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  snapshot:
-    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+  control:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 150
+    env:
+      BUN_JSC_forceRAMSize: '2147483648'
+      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: a3c29d979a8ab96a1536fc1657c4b24fedcde763
+          repository: tscircuit/bus-lanes-solver
+          path: base
+          ref: d531b3a8c88525872820f51cbe46f1770d46a951
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          path: head
+          ref: cf5b863f49409f9ad49606c1a6e492ff7f91f2f6
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
-      - run: bun install --ignore-scripts --backend=copyfile
-      - name: Rerun the complete Core connectivity, timing, coupling and DRC assertions
-        env:
-          BUN_UPDATE_SNAPSHOTS: '1'
+          bun-version: 1.4.0
+      - name: Install both revisions before timing
         run: |
-          bun test tests/features/autorouter-bus-lanes-am3352.test.tsx --timeout 120000
-          git diff --numstat
+          (cd base && bun install --ignore-scripts --backend=copyfile)
+          (cd head && bun install --ignore-scripts --backend=copyfile)
+      - name: Run base-head-head-base with the original 3600 second case budget
+        run: |
+          mkdir -p results
+          iteration=0
+          for side in base head head base; do
+            iteration=$((iteration+1))
+            bun base/scripts/benchmark.ts --worker inner-layers-right --solver "$GITHUB_WORKSPACE/$side/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results/$iteration-$side" > "results/$iteration-$side.log" 2>&1
+            grep '^REPORT ' "results/$iteration-$side.log"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-bus-core-snapshots
-          path: tests/features/__snapshots__/autorouter-bus-lanes-am3352-*-pcb.snap.svg
+          name: am3352-balanced-inner-layers-right
+          path: results/
