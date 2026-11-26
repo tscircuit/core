@@ -69,7 +69,7 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
     } = this._getPropsWithDefaults()
 
     if (footprintVariant === "through_hole") {
-      if (padDiameter !== undefined) {
+      if (padDiameter !== undefined && padDiameter > holeDiameter!) {
         return `platedhole_d${holeDiameter}_pd${padDiameter}`
       }
       return `platedhole_d${holeDiameter}`
@@ -118,5 +118,19 @@ export class TestPoint extends NormalComponent<typeof testpointProps> {
       display_name: props.displayName,
     } as SourceSimpleTestPoint)
     this.source_component_id = source_component.source_component_id
+
+    if (
+      footprintVariant === "through_hole" &&
+      padDiameter !== undefined &&
+      holeDiameter !== undefined &&
+      padDiameter <= holeDiameter
+    ) {
+      db.source_invalid_component_property_error.insert({
+        source_component_id: this.source_component_id,
+        property_name: "padDiameter",
+        message: `Invalid padDiameter on ${this.getDisplayName()}: ${padDiameter}mm must be larger than holeDiameter (${holeDiameter}mm); using the default pad size instead`,
+        error_type: "source_invalid_component_property_error",
+      })
+    }
   }
 }
