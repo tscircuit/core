@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [orangecrab, glider, h616]
+        board: [orangecrab, h3, a64, stm32mp157, a13, h616, butterstick, glider, imx6, icepi]
         side: [main, candidate]
     steps:
       - uses: actions/checkout@v4
