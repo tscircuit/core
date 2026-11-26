@@ -326,7 +326,7 @@ export class Connector<
     if (this._getConnectorProps().standard !== "usb_c") {
       return super._computeSchematicBoxDimensions()
     }
-    if (this.getSchematicSymbol()) return null
+    if (this.getSchematicSymbol() || this._hasCustomSymbol()) return null
     if (!this.config.shouldRenderAsSchematicBox) return null
 
     const { _parsedProps: props } = this

@@ -7,7 +7,12 @@ import type { Port } from "../../Port"
 export const getPortForSchematicSymbolPort = (port: Port): Port => {
   const { schX, schY } = port._parsedProps
   if (schX !== undefined && schY !== undefined) return port
-  if (!port.getParentNormalComponent()?.getSchematicSymbol()) return port
+  const parentNormalComponent = port.getParentNormalComponent()
+  if (parentNormalComponent?._hasCustomSymbolPorts?.()) {
+    if (port._getSymbolAncestor()) return port
+    return port._getCustomSymbolInternallyConnectedPort() ?? port
+  }
+  if (!parentNormalComponent?.getSchematicSymbol()) return port
 
   const internallyConnectedPorts = port._getPortsInternallyConnectedToThisPort()
   const schematicSymbolPortDef =
