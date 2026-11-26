@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, c41826a8b5fd0e11555db9429b80e11f3c46e580]
+        solver: [c41826a8b5fd0e11555db9429b80e11f3c46e580]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -72,10 +72,13 @@ jobs:
               traces=[row for row in circuit if row['type']=='pcb_trace']
               sources={row['source_trace_id']:row for row in circuit if row['type']=='source_trace'}
               for error in findings.get('trace_overlap',[]):
-                  involved=[t for t in traces if t['pcb_trace_id'] in error.get('pcb_trace_error_id','')]
+                  primary=error.get('pcb_trace_id')
+                  error_id=error.get('pcb_trace_error_id','')
+                  involved=[t for t in traces if t['pcb_trace_id']==primary or error_id in [f"overlap_{primary}_{t['pcb_trace_id']}",f"overlap_{t['pcb_trace_id']}_{primary}"]]
+                  classes=[sorted(set(b.get('name','unnamed') for b in circuit if b['type']=='source_bus' and t.get('source_trace_id') in b.get('source_trace_ids',[]))) for t in involved]
                   ids=[t.get('source_trace_id') for t in involved]
                   port_sets=[set(sources.get(i,{}).get('connected_source_port_ids',[])) for i in ids]
-                  print('OVERLAP_CATEGORY='+json.dumps({'keys':list(error),'involvedTraces':len(involved),'sameSource':len(set(ids))==1,'sharedSourcePorts':bool(len(port_sets)==2 and port_sets[0]&port_sets[1]),'routeLayers':[sorted(set(point.get('layer') for point in t['route'] if point.get('layer'))) for t in involved]},separators=(',',':')))
+                  print('OVERLAP_CATEGORY='+json.dumps({'kind':'self_short' if 'shorts to itself' in error.get('message','') else 'overlap' if 'accidental contact' in error.get('message','') else 'clearance','busClasses':classes,'gapMm':__import__('re').findall(r'gap: ([0-9.-]+)mm',error.get('message','')),'involvedTraces':len(involved),'sameSource':len(set(ids))==1,'sharedSourcePorts':bool(len(port_sets)==2 and port_sets[0]&port_sets[1]),'routeLayers':[sorted(set(point.get('layer') for point in t['route'] if point.get('layer'))) for t in involved]},separators=(',',':')))
           for p in Path("../results").glob("*/attempts/matching/assessment.json"):
               a=json.loads(p.read_text())
               goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
@@ -101,3 +104,5 @@ jobs:
 # Use net-associated selected paths with the unmodified Core connection adapter.
 
 # Classify remaining overlap findings without exporting geometry or identifiers.
+
+# Resolve exact trace identities and error kind without disclosing them.
