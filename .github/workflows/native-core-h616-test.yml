@@ -10,13 +10,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bus: [2718df9b52937392f648612ca4a31d6352b585a5, cce8cf090690a947e12c8ec3065abb946e4f043c]
+        bus: [ef193a1062675ce5cfdec1a5e814a7ddab5ccebe]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ae9e5e5b28612e906cc2afdfdddf27d9175854ca
+          ref: 654ea80d3c6e812cb94548da9ce6a89fedc4c279
           path: core
       - uses: actions/checkout@v4
         with:
@@ -32,10 +32,21 @@ jobs:
           bun install --ignore-scripts --backend=copyfile
           bunx tsup
           cd ../core
+          python3 - <<'PYCODE'
+          import json
+          from pathlib import Path
+          p=Path('package.json'); data=json.loads(p.read_text())
+          data['devDependencies']['@tscircuit/core-ddr-benchmark']='github:ShiboSoftwareDev/core-ddr-benchmark#5c850f63f75796e01efab7c3868760ca3d8f4e52'
+          p.write_text(json.dumps(data,indent=2)+'\n')
+          PYCODE
           bun install --ignore-scripts --backend=copyfile
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
       - name: Verify whole-circuit repro; export code and aggregate count only
         working-directory: core
         run: |
-          BUN_UPDATE_SNAPSHOTS=1 bun test --update-snapshots tests/repros/repro-h616-native-timing.test.tsx
-          cat tests/repros/repro-h616-native-timing.test.tsx
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-h616-native-timing.test.tsx tests/repros/repro-h616-ddr3.test.tsx
+          python3 - <<'PYCODE'
+          import base64,gzip
+          from pathlib import Path
+          print('APPROVED_H616_LEGACY_CORE_SVG_GZIP='+base64.b64encode(gzip.compress(Path('tests/repros/__snapshots__/repro-h616-ddr3-pcb.snap.svg').read_bytes())).decode())
+          PYCODE
