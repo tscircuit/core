@@ -45,6 +45,17 @@ jobs:
           old='join(corePath, "node_modules/@tscircuit/checks/dist/index.js")'
           assert s.count(old)==1
           p.write_text(s.replace(old,'process.env.DDR_ASSESSMENT_CHECKS!'))
+          p=Path('benchmark/scripts/run.ts');s=p.read_text()
+          old='existsSync(join(corePath,"lib/RootCircuit.ts"))'
+          assert s.count(old)==1
+          s=s.replace(old,'existsSync(join(corePath,"index.ts"))')
+          old='coreCommit: commit(corePath)'
+          assert s.count(old)==1
+          s=s.replace(old,'coreCommit: process.env.DDR_RUNTIME_CORE_COMMIT!')
+          start=s.index('  dependencies: Object.fromEntries(')
+          end=s.index('\n  timeoutSeconds,',start)
+          s=s[:start]+'  dependencies: JSON.parse(process.env.DDR_RUNTIME_DEPENDENCIES!),'+s[end:]
+          p.write_text(s)
           PY
           (cd runtime && bun install --ignore-scripts --backend=copyfile)
           (cd validator && bun install --ignore-scripts --backend=copyfile)
@@ -64,9 +75,28 @@ jobs:
           const coreEntry=resolvePackage("@tscircuit/core",tscEntry)
           const routerEntry=resolvePackage("@tscircuit/capacity-autorouter",coreEntry)
           const coreManifest=manifest(coreEntry)
-          console.log("PUBLISHED_RUNTIME_PROOF="+JSON.stringify({tscircuit:record(tscEntry),core:record(coreEntry),autorouter:record(routerEntry),bundledBus:coreManifest.devDependencies?.["@tscircuit/bus-lanes-solver"],bundledFanout:coreManifest.devDependencies?.["@tscircuit/fanout-solver"],validator:"0.0.282"}))
+          const proof={tscircuit:record(tscEntry),core:record(coreEntry),autorouter:record(routerEntry),runtimeChecks:record(resolvePackage("@tscircuit/checks",coreEntry)),props:record(resolvePackage("@tscircuit/props",coreEntry)),circuitJson:record(resolvePackage("circuit-json",coreEntry)),bundledBus:coreManifest.devDependencies?.["@tscircuit/bus-lanes-solver"],bundledFanout:coreManifest.devDependencies?.["@tscircuit/fanout-solver"],validator:"0.0.282"}
+          console.log("PUBLISHED_RUNTIME_PROOF="+JSON.stringify(proof))
+          await Bun.write("runtime-proof.json",JSON.stringify(proof))
           TS
           (cd runtime && bun proof.ts)
+          python3 - <<'PY'
+          import json,os,re,urllib.request
+          from pathlib import Path
+          proof=json.loads(Path('runtime/runtime-proof.json').read_text())
+          manifest=json.load(urllib.request.urlopen('https://registry.npmjs.org/@tscircuit/core/'+proof['core']['version']))
+          deps={
+            '@tscircuit/capacity-autorouter':proof['autorouter']['version'],
+            '@tscircuit/bus-lanes-solver':re.search(r'/([0-9]+\.[0-9]+\.[0-9]+)\.tgz$',proof['bundledBus']).group(1),
+            '@tscircuit/fanout-solver':proof['bundledFanout'],
+            '@tscircuit/checks':proof['runtimeChecks']['version'],
+            '@tscircuit/props':proof['props']['version'],
+            'circuit-json':proof['circuitJson']['version'],
+          }
+          with open(os.environ['GITHUB_ENV'],'a')as f:
+            f.write('DDR_RUNTIME_CORE_COMMIT='+manifest['gitHead']+'\n')
+            f.write('DDR_RUNTIME_DEPENDENCIES='+json.dumps(deps,separators=(',',':'))+'\n')
+          PY
       - name: Run unchanged ten-board native benchmark with the original shared budget
         run: |
           export DDR_ASSESSMENT_CHECKS="$PWD/validator/node_modules/@tscircuit/checks/dist/index.js"
