@@ -1,4 +1,4 @@
-name: Balanced iMX6 finished-length control
+name: Balanced Glider and A13 finished-length controls
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
@@ -7,6 +7,10 @@ permissions:
   contents: read
 jobs:
   control:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [glider, a13]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 25
     steps:
@@ -63,7 +67,7 @@ jobs:
           index=0
           for side in base head head base; do
             index=$((index+1))
-            (cd "$side" && bun scripts/benchmark-ddr/run.ts --out "../results/$index-$side" --circuit imx6 --timeout 120)
+            (cd "$side" && bun scripts/benchmark-ddr/run.ts --out "../results/$index-$side" --circuit '${{ matrix.board }}' --timeout 120)
             python3 - "$index" "$side" <<'PY'
           import json,sys
           from pathlib import Path
@@ -75,7 +79,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: balanced-imx6-declared-length
+          name: balanced-${{ matrix.board }}-finished-length
           path: |
             results/**/results.json
             results/**/progress.json
