@@ -1,0 +1,72 @@
+name: Verify pad-safe native timing on exact Core main
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-latest-core-timing.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [h616]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 475aea19f0adecae85b5a9eafe55164c4d22d621]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: c6bbe04498131a8e5b2f90e646cb3246116801d8
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ matrix.solver }}
+          path: bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install isolated actual source builds
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ..
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#b9fec770c4a6df0876e91939aa3dd03eb01c3201'})
+          p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+          cp ../analysis/diagnose-native-mean-goals.ts .
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Measure unchanged requirements and budget; export aggregates only
+        working-directory: core
+        run: |
+          export BUN_OPTIONS="--preload $PWD/diagnose-native-mean-goals.ts"
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120 > ../private-run.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path("../results").rglob("render.log"):
+              for line in p.read_text().splitlines():
+                  if line.startswith(("SOLVER_FAILURE=", "SMALL_REQUEST=")): print(line)
+          for p in Path("../results").glob("*/attempts/matching/progress.json"):
+              progress=json.loads(p.read_text())
+              print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))
+          for c in json.loads(Path('../results/results.json').read_text())['cases']:
+              a=c['assessment']
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
+          PY
