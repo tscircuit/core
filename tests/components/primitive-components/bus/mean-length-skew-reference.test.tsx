@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/autorouting/getSimpleRouteJsonFromCircuitJson"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
 test("preserves a bus mean-deviation skew rule in source JSON", () => {
@@ -22,4 +23,11 @@ test("preserves a bus mean-deviation skew rule in source JSON", () => {
     max_length_skew: 0.5,
     length_skew_reference: "mean",
   })
+  const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+    circuitJson: circuit.getCircuitJson(),
+    subcircuitComponent: circuit.firstChild!,
+  })
+  expect(simpleRouteJson.buses).toContainEqual(
+    expect.objectContaining({ maxLengthSkew: 0.5, skewReference: "mean" }),
+  )
 })
