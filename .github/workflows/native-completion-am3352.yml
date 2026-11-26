@@ -1,0 +1,164 @@
+name: Native completion AM3352 base/head
+
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-completion-am3352.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-completion-am3352-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.samples.outputs.matrix }}
+      base_sha: ${{ steps.refs.outputs.base_sha }}
+      head_sha: ${{ steps.refs.outputs.head_sha }}
+    steps:
+      - name: Pin base and head
+        id: refs
+        env:
+          BASE_SHA: 2718df9b52937392f648612ca4a31d6352b585a5
+          HEAD_SHA: be31674b4c7118ffb2e974e1854ea80e8ff68c14
+        run: |
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ steps.refs.outputs.base_sha }}
+          persist-credentials: false
+      - name: Include every declared benchmark sample
+        id: samples
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs')
+            const samples = JSON.parse(fs.readFileSync('scripts/pr-benchmark/samples.json', 'utf8'))
+            if (samples.length !== 11 || new Set(samples).size !== 11)
+              throw Error('Expected all 11 unique AM3352 samples')
+            core.setOutput('matrix', JSON.stringify({ sample: samples }))
+
+  benchmark:
+    needs: prepare
+    name: Route ${{ matrix.sample }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    # Two sequential 60-minute solver budgets plus installation/validation.
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 11
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout base harness and solver
+        uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          path: base
+          persist-credentials: false
+      - name: Checkout pinned PR solver
+        uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ needs.prepare.outputs.head_sha }}
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install both revisions before timing
+        run: |
+          for checkout in base head; do
+            (
+              cd "$checkout"
+              if [[ -f bun.lock || -f bun.lockb ]]; then
+                bun install --frozen-lockfile --ignore-scripts --backend=copyfile
+              else
+                bun install --ignore-scripts --backend=copyfile
+              fi
+            )
+          done
+      - name: Fresh base and head solves with identical fixtures and budgets
+        env:
+          SAMPLE: ${{ matrix.sample }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+        run: |
+          bun base/scripts/pr-benchmark/run-pair.ts \
+            --sample "$SAMPLE" --timeout-seconds 3600 \
+            --main base/lib/index.ts --pr head/lib/index.ts \
+            --main-sha "$BASE_SHA" --pr-sha "$HEAD_SHA" --controller-sha "$BASE_SHA" \
+            --output "results/$SAMPLE.json"
+      - name: Retain fresh reports and logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: am3352-${{ matrix.sample }}
+          path: results/
+          if-no-files-found: error
+          retention-days: 30
+
+  acceptance:
+    name: AM3352 benchmark (11/11)
+    needs: [prepare, benchmark]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: am3352-*
+          path: reports
+      - name: Publish comparison and require all eleven fresh head solves
+        env:
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MATRIX_RESULT: ${{ needs.benchmark.result }}
+        run: |
+          mkdir -p reports
+          bun --eval '
+            import { appendFileSync } from "node:fs";
+            import { SAMPLE_NAMES, loadSamplePairs, renderComparison, summarizeComparison } from "./scripts/pr-benchmark/report.ts";
+            const options = {
+              samples: await loadSamplePairs("reports"),
+              mainSha: process.env.BASE_SHA, prSha: process.env.HEAD_SHA,
+              controllerSha: process.env.BASE_SHA, prNumber: Number(process.env.PR_NUMBER),
+              timeoutSeconds: 3600, runUrl: process.env.RUN_URL,
+            };
+            const markdown = renderComparison(options);
+            await Bun.write("comparison.md", markdown);
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+            const summary = summarizeComparison(options);
+            console.log(`Fresh head acceptance: ${summary.pr.accepted}/${SAMPLE_NAMES.length}`);
+            if (process.env.MATRIX_RESULT !== "success" || !summary.artifactComplete ||
+                !summary.inputComparable || !summary.metadataComparable ||
+                summary.pr.accepted !== SAMPLE_NAMES.length)
+              throw Error("All 11 fresh PR samples must pass connectivity, DRC, matching, coupling and fixed-copper preservation");
+          '
+      - name: Retain benchmark analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: am3352-comparison
+          path: comparison.md
+          if-no-files-found: warn
+          retention-days: 30
