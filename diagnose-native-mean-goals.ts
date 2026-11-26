@@ -22,6 +22,10 @@ bus.BusLanesPipelineSolver.prototype.step=function(...args:unknown[]){
   }
  }
  const value=step.apply(this,args)
+ if(this.input?.connections?.length<=2){
+  const key=JSON.stringify({phase:this.phase,childPhase:this.child?.phase,childFailure:this.child?.failureCode,failed:this.failed,code:this.failureCode,canNegotiate:this.canNegotiateGeneratedSites})
+  if(key!==this.__clockPhase){this.__clockPhase=key;console.log("CLOCK_PHASE="+JSON.stringify({terminals:this.input.connections.map(c=>c.pointsToConnect.length),...JSON.parse(key),iteration:this.iterations}))}
+ }
  if(this.failed&&!this.__failureDiagnosticReported){this.__failureDiagnosticReported=true;console.log("SOLVER_FAILURE="+JSON.stringify({connections:this.input?.connections?.length,phase:this.phase,code:this.failureCode,childCode:this.child?.failureCode}))}
  return value
 }
