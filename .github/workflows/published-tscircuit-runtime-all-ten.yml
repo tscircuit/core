@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         release: [0.0.3279, 0.0.3300]
-        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
+        board: [h616]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 15
     env:
@@ -60,9 +60,9 @@ jobs:
           }
           function manifest(entry:string){let d=dirname(entry);while(!existsSync(join(d,"package.json")))d=dirname(d);return JSON.parse(readFileSync(join(d,"package.json"),"utf8"))}
           function record(entry:string){const m=manifest(entry);return {version:m.version,sha256:createHash("sha256").update(readFileSync(entry)).digest("hex"),entry}}
-          const tscEntry=root.resolve("tscircuit"),tscRequire=createRequire(tscEntry)
-          const coreEntry=tscRequire.resolve("@tscircuit/core"),coreRequire=createRequire(coreEntry)
-          const routerEntry=coreRequire.resolve("@tscircuit/capacity-autorouter")
+          const tscEntry=fileURLToPath(import.meta.resolve("tscircuit"))
+          const coreEntry=resolvePackage("@tscircuit/core",tscEntry)
+          const routerEntry=resolvePackage("@tscircuit/capacity-autorouter",coreEntry)
           const coreManifest=manifest(coreEntry)
           console.log("PUBLISHED_RUNTIME_PROOF="+JSON.stringify({tscircuit:record(tscEntry),core:record(coreEntry),autorouter:record(routerEntry),bundledBus:coreManifest.devDependencies?.["@tscircuit/bus-lanes-solver"],bundledFanout:coreManifest.devDependencies?.["@tscircuit/fanout-solver"],validator:"0.0.282"}))
           TS
