@@ -1,0 +1,27 @@
+name: Verify existing constrained native routing controls
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-critical-routing-controls.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        solver: [2718df9b52937392f648612ca4a31d6352b585a5, 01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, f5826ca6e34cc4c8b99b67fc8e5894936ee1a599]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ matrix.solver }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --ignore-scripts --backend=copyfile
+      - name: Run the unchanged strict OrangeCrab byte control
+        run: bun test tests/repros/orangecrab-core-byte1.test.ts
