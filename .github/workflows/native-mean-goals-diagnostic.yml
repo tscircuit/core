@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 9db98e9c84cf25e7f4545c8c5c5df31403c71b68]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 507e32f]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -59,8 +59,11 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
+          for p in Path("../results").rglob("render.log"):
+              for line in p.read_text().splitlines():
+                  if line.startswith("SOLVER_FAILURE="): print(line)
           for c in json.loads(Path('../results/results.json').read_text())['cases']:
               a=c['assessment']
               goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
-              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb']},separators=(',',':')))
+              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
           PY

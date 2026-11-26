@@ -16,5 +16,7 @@ bus.BusLanesPipelineSolver.prototype.step=function(...args:unknown[]){
    input.buses=input.buses.map(b=>goals.has(b.busId)?{...b,skewReference:'mean',maxLengthSkew:goals.get(b.busId)}:b)
   }
  }
- return step.apply(this,args)
+ const value=step.apply(this,args)
+ if(this.failed&&!this.__failureDiagnosticReported){this.__failureDiagnosticReported=true;console.log("SOLVER_FAILURE="+JSON.stringify({connections:this.input?.connections?.length,phase:this.phase,code:this.failureCode,childCode:this.child?.failureCode}))}
+ return value
 }
