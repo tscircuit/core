@@ -1,4 +1,4 @@
-name: Balanced iMX6 declared-length control
+name: Balanced iMX6 finished-length control
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: 8f0559ff709f851e346866a8aa14e72e9f0834b6
+          ref: 01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f
           path: head-bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2

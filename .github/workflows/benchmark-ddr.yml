@@ -1,4 +1,4 @@
-name: Unchanged DDR benchmark with declared-length route scoring
+name: Unchanged DDR benchmark with finished-length route comparison
 on:
   workflow_dispatch:
   push:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '8f0559ff709f851e346866a8aa14e72e9f0834b6' }}
+          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f' }}
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
