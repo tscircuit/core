@@ -16,8 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: c6330ed58ca2a37964836e30b72acf85b7825a39
+          ref: 5f67a736ff18d6290a06aade9e8576e6da262396
           path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: e71752110cf7f3d6d6039509a1f7c8198c578ab7
+          path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -28,6 +34,15 @@ jobs:
           bun install --ignore-scripts --backend=copyfile
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
           bun -e 'for(const name of["@tscircuit/bus-lanes-solver","@tscircuit/checks","@tscircuit/props","circuit-json"])console.log(name,Bun.resolveSync(name,process.cwd()))'
+      - name: Verify that the installed preview is the exact source build
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ..
+          sha256sum bus/dist/index.js core/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+          cmp bus/dist/index.js core/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+          stat -c '%d:%i %n' bus/dist/index.js core/node_modules/@tscircuit/bus-lanes-solver/dist/index.js
       - name: Verify the complete unchanged public Core circuit
         working-directory: core
         run: |
