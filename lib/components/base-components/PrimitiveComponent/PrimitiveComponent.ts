@@ -288,9 +288,23 @@ export abstract class PrimitiveComponent<
     const { rawValue, axis, propertyName = axis } = params
     if (typeof rawValue !== "string") return
 
+    const parsedValue = (
+      this._parsedProps as Record<string, unknown> | undefined
+    )?.[propertyName]
+    if (typeof parsedValue === "number" && Number.isFinite(parsedValue)) {
+      return
+    }
+
     const isNormalComponent = (this as any)._isNormalComponent === true
+    const isInsideFootprint = this._isInsideFootprint()
+    // Group_doInitialPcbCalcPlacementResolution defers component-relative calc
+    // placement for non-group, non-subcircuit normal components, while
+    // non-normal primitives outside <footprint> resolve them directly.
+    const supportsDeferredComponentCalc =
+      isNormalComponent && !this.isGroup && !this.isSubcircuit
     const allowComponentVariables =
-      !isNormalComponent && !this._isInsideFootprint()
+      !isInsideFootprint &&
+      (!isNormalComponent || supportsDeferredComponentCalc)
 
     let calcIdentifiers: string[] = []
     try {
@@ -310,7 +324,22 @@ export abstract class PrimitiveComponent<
     if (includesComponentVariable && !allowComponentVariables) {
       this._reportInvalidComponentPropertyError(
         propertyName,
-        `Invalid ${propertyName} value for ${this.componentName}: component-relative calc references are not supported for footprint elements (${this.componentName}); ${propertyName} will be ignored. expression="${rawValue}"`,
+        `Invalid ${propertyName} value for ${this.componentName}: component-relative calc references are not supported for ${
+          isInsideFootprint
+            ? `footprint elements (${this.componentName})`
+            : this.componentName
+        }; ${propertyName} will be ignored. expression="${rawValue}"`,
+      )
+      return
+    }
+
+    // If zod parsed a string prop into NaN (e.g. a bare identifier like
+    // "R999.x" without calc(...)), deferred placement and _resolvePcbCoordinate
+    // would otherwise see NaN and silently resolve to 0.
+    if (typeof parsedValue === "number" && Number.isNaN(parsedValue)) {
+      this._reportInvalidComponentPropertyError(
+        propertyName,
+        `Invalid ${propertyName} value for ${this.componentName}: Invalid calc() expression. expression="${rawValue}"`,
       )
     }
   }
