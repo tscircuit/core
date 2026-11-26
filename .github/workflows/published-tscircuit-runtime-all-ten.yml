@@ -38,7 +38,7 @@ jobs:
           import json,os
           from pathlib import Path
           Path('runtime/package.json').write_text(json.dumps({'name':'published-tscircuit-ddr-runtime','version':os.environ['RELEASE'],'type':'module','dependencies':{'tscircuit':os.environ['RELEASE']}}))
-          Path('validator/package.json').write_text(json.dumps({'private':True,'type':'module','dependencies':{'@tscircuit/checks':'0.0.282','@tscircuit/solver-utils':'0.0.16','graphics-debug':'0.0.99','circuit-json':'0.0.552','@tscircuit/math-utils':'0.0.39','@tscircuit/circuit-json-util':'0.0.135','circuit-json-to-connectivity-map':'0.0.38','@flatten-js/core':'1.6.2'}}))
+          Path('validator/package.json').write_text(json.dumps({'private':True,'type':'module','dependencies':{'@tscircuit/checks':'0.0.282','@tscircuit/solver-utils':'0.0.16'}}))
           Path('runtime/index.ts').write_text('export * from "tscircuit"\n')
           Path('runtime/tsconfig.json').write_text(json.dumps({'compilerOptions':{'jsx':'react-jsx','target':'ESNext','module':'ESNext','moduleResolution':'bundler'}}))
           p=Path('benchmark/scripts/assess.ts');s=p.read_text()
