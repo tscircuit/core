@@ -1,115 +1,51 @@
-name: Inspect bounded-compaction AM3352 routes and recheck timing
+name: Verify the final bounded-compaction package within the official budget
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  route:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 80
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     strategy:
       fail-fast: false
-      max-parallel: 11
       matrix:
-        sample: [control, control-inner1, right, left, above, inner-layers, inner-layers-right, inner-layers-left, inner-layers-above, inner-layers-complete-ca, outer-layers]
-    env:
-      BUN_JSC_forceRAMSize: '2147483648'
-      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
+        repeat: [1, 2]
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/bus-lanes-solver
-          ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
+          path: core
+          ref: 72eb10b664e2b74f2da7eadd208ed9dc48b26464
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
-      - run: bun install --ignore-scripts --backend=copyfile
-      - name: Freshly solve and retain only validated completed routes
+          bun-version: 1.4.3
+      - name: Install the actual Core PR package with isolated files
+        working-directory: core
         run: |
-          mkdir -p results
-          bun scripts/benchmark.ts --worker '${{ matrix.sample }}' --solver "$GITHUB_WORKSPACE/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results" > results/solve.log 2>&1
-          cat results/solve.log
-          test -f 'results/${{ matrix.sample }}.json'
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='4374e5d26a1607dae71a049cefab5b54b65b42695d100611f0da9fe71b76a100'
+          print('EXACT_PACKAGE_VERIFIED')
+          PY
+      - name: Rerun the official shared 120 second benchmark
+        working-directory: core
+        run: |
+          bun run benchmark:ddr -- --out ../results --circuit orangecrab --timeout 120
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          row=json.loads(Path('../results/results.json').read_text())['cases'][0]
+          assessment=row['assessment']
+          print('NATIVE_REPEAT_RESULT='+json.dumps(row,separators=(',',':')))
+          assert assessment['connectedNets']==50
+          assert all(target['status']=='met' for target in assessment['ddrConstraints'])
+          assert all(assessment['findings'][key]==0 for key in ['trace_overlap','pad_trace','via_trace','via_pad','via_spacing','contiguous','via_in_pad','hole_trace','width'])
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gallery-case-${{ matrix.sample }}
-          path: results/
-  gallery:
-    needs: route
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-      - run: bun install --ignore-scripts --backend=copyfile
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: gallery-case-*
-          path: captures
-      - name: Revalidate all eleven fresh solves before rendering anything
-        run: |
-          cat > render-accepted-gallery.ts <<'TS'
-          import { readFileSync } from 'node:fs'
-          import { am3352SamplePlacements, loadAm3352Sample } from './scripts/am3352-samples'
-          import { exportAm3352RoutedSnapshots } from './scripts/snapshot-routed-am3352'
-          const candidates=[]
-          for(const {name} of am3352SamplePlacements){
-            const captured=JSON.parse(readFileSync(`captures/gallery-case-${name}/${name}.json`,'utf8'))
-            const {metadata}=await loadAm3352Sample(name)
-            candidates.push({metadata,solver:{...captured,getOutput:()=>captured.output}})
-          }
-          const reports=await exportAm3352RoutedSnapshots(candidates,'gallery')
-          await Bun.write('gallery/validation.json',JSON.stringify(reports))
-          TS
-          bun render-accepted-gallery.ts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: accepted-am3352-gallery
-          path: gallery/
-  control:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 150
-    env:
-      BUN_JSC_forceRAMSize: '2147483648'
-      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          path: base
-          ref: 7f71524bc8d7d82e31528d8533226d03ec33e9e8
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          path: head
-          ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-      - name: Install both revisions before timing
-        run: |
-          (cd base && bun install --ignore-scripts --backend=copyfile)
-          (cd head && bun install --ignore-scripts --backend=copyfile)
-      - name: Run base-head-head-base with the original 3600 second case budget
-        run: |
-          mkdir -p results
-          iteration=0
-          for side in base head head base; do
-            iteration=$((iteration+1))
-            bun base/scripts/benchmark.ts --worker inner-layers-right --solver "$GITHUB_WORKSPACE/$side/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results/$iteration-$side" > "results/$iteration-$side.log" 2>&1
-            grep '^REPORT ' "results/$iteration-$side.log"
-          done
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: am3352-balanced-inner-layers-right
+          name: native-repeat-${{ matrix.repeat }}
           path: results/
