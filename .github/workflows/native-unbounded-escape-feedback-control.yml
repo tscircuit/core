@@ -1,0 +1,100 @@
+name: Reuse pair escape feedback after ordinary allocation fails
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-unbounded-escape-feedback-control.yml]
+permissions:
+  contents: read
+jobs:
+  control:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [unbounded_escape_feedback]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 75
+    env:
+      BUN_JSC_forceRAMSize: "2147483648"
+      BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: e71752110cf7f3d6d6039509a1f7c8198c578ab7
+          path: bus
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 5f67a736ff18d6290a06aade9e8576e6da262396
+          path: core
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Isolate the changed policy in a private checkout
+        working-directory: bus
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          variant=os.environ['VARIANT']
+          if variant == 'unbounded_escape_feedback':
+              p=Path('lib/route-surface-ordinary-signals.ts');s=p.read_text()
+              old='if (!initial.native.buses?.some((bus) => bus.maxLength !== undefined))\n    return yield* runBoundedRouting('
+              assert s.count(old)==1
+              s=s.replace(old,'if (!initial.native.buses?.some((bus) => bus.maxLength !== undefined)) {\n    const routed = yield* runBoundedRouting(')
+              old='      options.maxSteps ?? 250000,\n    )\n  let state = initial'
+              assert s.count(old)==1
+              s=s.replace(old,'      options.maxSteps ?? 250000,\n    )\n    if (routed) return routed\n  }\n  let state = initial')
+              p.write_text(s)
+          if variant in ['scope_refinement','scope_both']:
+              p=Path('lib/route-surface-bridge.ts');s=p.read_text()
+              old='const negotiatedInner = softTraces.length > 0'
+              assert s.count(old)==1
+              s=s.replace(old,'const negotiatedInner = softTraces.length > 0 && (!!innerCarrier(input) || (input.buses ?? []).some((bus) => (bus.minLength ?? 0) > 0))')
+              p.write_text(s)
+          if variant in ['scope_retry','scope_both']:
+              p=Path('lib/bus-lanes-pipeline-solver.ts');s=p.read_text()
+              old='bus.connectionNames.length === this.routingInput.connections.length,'
+              assert s.count(old)==1
+              p.write_text(s.replace(old,'(bus.minLength ?? 0) > 0 && bus.connectionNames.length === this.routingInput.connections.length,'))
+          PY
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          sha256sum dist/index.js
+      - name: Fresh unchanged AM3352 outer-layer solve
+        working-directory: bus
+        run: |
+          bun scripts/benchmark.ts --worker outer-layers --timeout-seconds 3600 > ../private-am.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lines=Path('../private-am.log').read_text().splitlines()
+          report=json.loads(next(line[7:] for line in lines if line.startswith('REPORT ')))
+          v=report.get('validation') or {}
+          result={k:report.get(k) for k in ['sample','status','solved','iterations','solveMilliseconds','routedSignals','requestedSignals','inputSha256','fixedPowerPreserved','inputUnchanged','failureCode']}
+          result['validation']={k:v.get(k) for k in ['valid','complete','matched','fixedPowerTraces','fixedPowerVias','fixedPowerPadJoins']}
+          print('OUTER_LAYER_CONTROL='+json.dumps(result,separators=(',',':')))
+          Path('../outer-control.json').write_text(json.dumps(result))
+          PY
+      - name: Verify H616 still meets all original constraints
+        working-directory: core
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+          cmp ../bus/dist/index.js node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit h616 --timeout 120 > ../private-core.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for c in json.loads(Path('../results/results.json').read_text())['cases']:
+              a=c['assessment']
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              result={'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'wallMs':c['wallMs']}
+              print('H616_OUTER_CONTROL='+json.dumps(result,separators=(',',':')))
+              outer=json.loads(Path('../outer-control.json').read_text())
+              if not outer['solved'] or a['connectedNets']!=53 or len(goals)!=6 or any(g['status']!='met' for g in goals) or any(a['findings'].values()):
+                  raise RuntimeError('Both unchanged AM3352 and the full H616 timing requirements must pass')
+          PY
