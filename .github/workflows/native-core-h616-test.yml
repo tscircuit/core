@@ -10,43 +10,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bus: [f5826ca6e34cc4c8b99b67fc8e5894936ee1a599]
+        test: [repro-h616-native-timing, repro-h616-ddr3]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 654ea80d3c6e812cb94548da9ce6a89fedc4c279
+          ref: c6330ed58ca2a37964836e30b72acf85b7825a39
           path: core
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.bus }}
-          path: bus
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
-      - name: Install exact isolated runtime
-        run: |
-          cd bus
-          bun install --ignore-scripts --backend=copyfile
-          bunx tsup
-          cd ../core
-          python3 - <<'PYCODE'
-          import json
-          from pathlib import Path
-          p=Path('package.json'); data=json.loads(p.read_text())
-          data['devDependencies']['@tscircuit/core-ddr-benchmark']='github:ShiboSoftwareDev/core-ddr-benchmark#5c850f63f75796e01efab7c3868760ca3d8f4e52'
-          p.write_text(json.dumps(data,indent=2)+'\n')
-          PYCODE
-          bun install --ignore-scripts --backend=copyfile
-          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
-      - name: Verify whole-circuit repro; export code and aggregate count only
+      - name: Install and fingerprint the actual Core PR previews
         working-directory: core
         run: |
-          BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-h616-native-timing.test.tsx tests/repros/repro-h616-ddr3.test.tsx
-          python3 - <<'PYCODE'
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          bun -e 'for(const name of["@tscircuit/bus-lanes-solver","@tscircuit/checks","@tscircuit/props","circuit-json"])console.log(name,Bun.resolveSync(name,process.cwd()))'
+      - name: Verify the complete unchanged public Core circuit
+        working-directory: core
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/${{ matrix.test }}.test.tsx
+      - name: Retrieve the approved validated existing H616 Core SVG
+        if: matrix.test == 'repro-h616-ddr3'
+        working-directory: core
+        run: |
+          python3 - <<'PY'
           import base64,gzip
           from pathlib import Path
           print('APPROVED_H616_LEGACY_CORE_SVG_GZIP='+base64.b64encode(gzip.compress(Path('tests/repros/__snapshots__/repro-h616-ddr3-pcb.snap.svg').read_bytes())).decode())
-          PYCODE
+          PY
