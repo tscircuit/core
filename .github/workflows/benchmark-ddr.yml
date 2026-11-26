@@ -1,75 +1,51 @@
-name: Inspect all eleven final scoped native AM3352 routes
+name: Verify the final installed native DDR integration twice
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  route:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 80
+  benchmark:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     strategy:
       fail-fast: false
-      max-parallel: 11
       matrix:
-        sample: [control, control-inner1, right, left, above, inner-layers, inner-layers-right, inner-layers-left, inner-layers-above, inner-layers-complete-ca, outer-layers]
-    env:
-      BUN_JSC_forceRAMSize: '2147483648'
-      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
+        repeat: [1, 2]
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/bus-lanes-solver
-          ref: 1ba8039163ceed3a62ee94979911bd30e2f1dfd6
+          path: core
+          ref: 31f23331f07ca852aa0bc4c6659ff32ea074232b
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
-      - run: bun install --ignore-scripts --backend=copyfile
-      - name: Freshly solve and retain only validated completed routes
+          bun-version: 1.4.3
+      - name: Install the actual Core PR package with isolated files
+        working-directory: core
         run: |
-          mkdir -p results
-          bun scripts/benchmark.ts --worker '${{ matrix.sample }}' --solver "$GITHUB_WORKSPACE/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results" > results/solve.log 2>&1
-          cat results/solve.log
-          test -f 'results/${{ matrix.sample }}.json'
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='56e4c358b33f1987611a79e047d7808625fa7aa23f2c9beaf6450a1021066bad'
+          print('EXACT_PACKAGE_VERIFIED')
+          PY
+      - name: Rerun the official shared 120 second benchmark
+        working-directory: core
+        run: |
+          bun run benchmark:ddr -- --out ../results --circuit orangecrab --timeout 120
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          row=json.loads(Path('../results/results.json').read_text())['cases'][0]
+          assessment=row['assessment']
+          print('NATIVE_REPEAT_RESULT='+json.dumps(row,separators=(',',':')))
+          assert assessment['connectedNets']==50
+          assert all(target['status']=='met' for target in assessment['ddrConstraints'])
+          assert all(assessment['findings'][key]==0 for key in ['trace_overlap','pad_trace','via_trace','via_pad','via_spacing','contiguous','via_in_pad','hole_trace','width'])
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gallery-case-${{ matrix.sample }}
+          name: native-repeat-${{ matrix.repeat }}
           path: results/
-  gallery:
-    needs: route
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          ref: 1ba8039163ceed3a62ee94979911bd30e2f1dfd6
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-      - run: bun install --ignore-scripts --backend=copyfile
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: gallery-case-*
-          path: captures
-      - name: Revalidate all eleven fresh solves before rendering anything
-        run: |
-          cat > render-accepted-gallery.ts <<'TS'
-          import { readFileSync } from 'node:fs'
-          import { am3352SamplePlacements, loadAm3352Sample } from './scripts/am3352-samples'
-          import { exportAm3352RoutedSnapshots } from './scripts/snapshot-routed-am3352'
-          const candidates=[]
-          for(const {name} of am3352SamplePlacements){
-            const captured=JSON.parse(readFileSync(`captures/gallery-case-${name}/${name}.json`,'utf8'))
-            const {metadata}=await loadAm3352Sample(name)
-            candidates.push({metadata,solver:{...captured,getOutput:()=>captured.output}})
-          }
-          const reports=await exportAm3352RoutedSnapshots(candidates,'gallery')
-          await Bun.write('gallery/validation.json',JSON.stringify(reports))
-          TS
-          bun render-accepted-gallery.ts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: accepted-am3352-gallery
-          path: gallery/
