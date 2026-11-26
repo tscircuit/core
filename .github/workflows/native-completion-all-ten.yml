@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
-        solver: [2718df9b52937392f648612ca4a31d6352b585a5, f5826ca6e34cc4c8b99b67fc8e5894936ee1a599]
+        solver: [2718df9b52937392f648612ca4a31d6352b585a5, eae379c83a506c482c71799caf7d358dc60db53d]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -74,7 +74,7 @@ jobs:
           import json
           from pathlib import Path
           p=Path('core/package.json');s=json.loads(p.read_text())
-          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#5c850f63f75796e01efab7c3868760ca3d8f4e52'})
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#b4a283ff077b94441005a334e4f2a3113cdf763f'})
           p.write_text(json.dumps(s,indent=2)+'\n')
           PY
           cd core
