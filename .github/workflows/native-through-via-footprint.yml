@@ -133,7 +133,7 @@ jobs:
               print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
           PY
 
-# Trace anonymized small-net stage transitions.
+# Trace actual selected detailed-router strategy and numerical repair states.
 
 # Probe whole inner carriers before fixing planar sites.
 
