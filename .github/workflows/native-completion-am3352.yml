@@ -28,7 +28,7 @@ jobs:
         id: refs
         env:
           BASE_SHA: 2718df9b52937392f648612ca4a31d6352b585a5
-          HEAD_SHA: eb75b264fac514b63ebaf26c9d54a4b3eaf0f643
+          HEAD_SHA: cce8cf090690a947e12c8ec3065abb946e4f043c
         run: |
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
