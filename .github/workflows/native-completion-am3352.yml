@@ -27,8 +27,8 @@ jobs:
       - name: Pin base and head
         id: refs
         env:
-          BASE_SHA: 2718df9b52937392f648612ca4a31d6352b585a5
-          HEAD_SHA: e71752110cf7f3d6d6039509a1f7c8198c578ab7
+          BASE_SHA: 691799172d19f5fae7ad2ec5ddd85914abfbc412
+          HEAD_SHA: de831539c022c2789df6985ff16da193f81db95d
         run: |
           echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"

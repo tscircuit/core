@@ -16,13 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 5f67a736ff18d6290a06aade9e8576e6da262396
+          ref: 5fa08de6d19ce4bdddf91a3c5378d434821213e3
           path: core
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: e71752110cf7f3d6d6039509a1f7c8198c578ab7
+          ref: de831539c022c2789df6985ff16da193f81db95d
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2

@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
-        solver: [2718df9b52937392f648612ca4a31d6352b585a5, e71752110cf7f3d6d6039509a1f7c8198c578ab7]
+        solver: [691799172d19f5fae7ad2ec5ddd85914abfbc412, de831539c022c2789df6985ff16da193f81db95d]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: c6bbe04498131a8e5b2f90e646cb3246116801d8
+          ref: 5fa08de6d19ce4bdddf91a3c5378d434821213e3
           path: core
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -80,10 +80,6 @@ jobs:
           cd core
           bun install --ignore-scripts --backend=copyfile
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
-          cp ../analysis/lib/components/primitive-components/Bus.ts lib/components/primitive-components/Bus.ts
-          for file in SimpleRouteJson.ts getBusesForSimpleRouteJson.ts get-bus-lanes-length-matching-buses.ts; do
-            cp "../analysis/lib/utils/autorouting/$file" "lib/utils/autorouting/$file"
-          done
           cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
           cp -r ../props/dist/. node_modules/@tscircuit/props/dist/
           cp -r ../checks/dist/. node_modules/@tscircuit/checks/dist/
