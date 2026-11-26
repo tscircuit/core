@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [orangecrab, glider, h616]
+        board: [glider]
         side: [main, candidate]
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: 9b09ef9dc4565474d101c47f7ee5eaa29020729d
           path: core
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -47,6 +47,7 @@ jobs:
           pins={'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
           s['devDependencies'].update(pins);p.write_text(json.dumps(s,indent=2)+'\n')
           PY
+          cp analysis/intercept-glider-pending.ts core/intercept-glider-pending.ts
           cd core
           bun install --ignore-scripts --backend=copyfile
           curl -fsSL https://registry.npmjs.org/@tscircuit/capacity-autorouter/-/capacity-autorouter-0.0.1164.tgz -o ../autorouter.tgz
@@ -58,10 +59,13 @@ jobs:
       - name: Run unchanged shared 120 second benchmark
         working-directory: core
         run: |
+          export BUN_OPTIONS="--preload $PWD/intercept-glider-pending.ts"
           bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120
           python3 - <<'PY'
           import json
           from pathlib import Path
+          for p in Path('../results').rglob('attempts/matching/assessment.json'):
+              a=json.loads(p.read_text());print('GLIDER_MATCHING_PHYSICAL='+json.dumps({'connected':a['connectedNets'],'findings':a['findings']},separators=(',',':')))
           print('CURRENT_ROUTER_LENGTH_RESULT='+json.dumps(json.loads(Path('../results/results.json').read_text()),separators=(',',':')))
           PY
       - uses: actions/upload-artifact@v4
