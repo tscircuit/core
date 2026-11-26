@@ -31,7 +31,8 @@ jobs:
           import json
           from pathlib import Path
           p=Path('package.json');s=json.loads(p.read_text());s['devDependencies']['published-autorouter']='npm:@tscircuit/capacity-autorouter@0.0.1165';s['devDependencies']['@tscircuit/checks']='0.0.282';p.write_text(json.dumps(s,indent=2)+'\n')
-          p=Path('scripts/benchmark/benchmark-run-task.ts');s=p.read_text();needle='import * as autorouterModule from "../../lib"';assert needle in s;p.write_text(s.replace(needle,'import * as autorouterModule from "published-autorouter"'))
+          for name in ['benchmark-run-task.ts','benchmark-solver.ts','index.ts']:
+              p=Path('scripts/benchmark')/name;s=p.read_text();assert 'from "../../lib"' in s;p.write_text(s.replace('from "../../lib"','from "published-autorouter"'))
           PY
           bun install --ignore-scripts --backend=copyfile
           cd ../core
