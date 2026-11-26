@@ -1,4 +1,4 @@
-name: Verify timing-space candidate selection on the full H616 board
+name: Verify pad-safe native timing on exact Core main
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
@@ -50,8 +50,6 @@ jobs:
           bun install --ignore-scripts --backend=copyfile
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
           cp ../analysis/diagnose-native-mean-goals.ts .
-          cp ../analysis/lib/utils/autorouting/getBusesForSimpleRouteJson.ts lib/utils/autorouting/getBusesForSimpleRouteJson.ts
-          cp ../analysis/lib/utils/autorouting/SimpleRouteJson.ts lib/utils/autorouting/SimpleRouteJson.ts
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
       - name: Measure unchanged requirements and budget; export aggregates only
         working-directory: core
