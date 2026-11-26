@@ -67,28 +67,10 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     }
     flushFragment()
   }
-  const enclosedPaths = input.connections.filter(path => path.source_trace_id && path.pointsToConnect.length===2).flatMap(path=>{
-    const net=input.connections.find(net=>!net.source_trace_id&&net.pointsToConnect.length>2&&path.pointsToConnect.every(point=>point.pcb_port_id&&net.pointsToConnect.some(other=>other.pcb_port_id===point.pcb_port_id)))
-    if(!net||input.buses?.some(bus=>bus.connectionNames.includes(net.name)))return[]
-    return[{path,net}]
-  })
-  const uniquePaths = enclosedPaths.filter(({net})=>enclosedPaths.filter(other=>other.net===net).length===1)
-  const connections=input.connections.filter(connection=>!uniquePaths.some(({net})=>net===connection)).map(connection=>{
-    const enclosing=uniquePaths.find(({path})=>path===connection)?.net
-    if(!enclosing)return connection
-    const pointsToConnect=[...connection.pointsToConnect]
-    for(const point of enclosing.pointsToConnect){
-      if(pointsToConnect.some(other=>point.pcb_port_id&&other.pcb_port_id===point.pcb_port_id))continue
-      pointsToConnect.push(point)
-    }
-    return{...enclosing,pointsToConnect}
-  })
-  if(input.connections.length<=4)console.log("COALESCED_REQUEST="+JSON.stringify({before:input.connections.length,after:connections.length,enclosed:enclosedPaths.length,sourceConnections:input.connections.filter(c=>!!c.source_trace_id).length,netMetadata:input.connections.filter(c=>!!c.netConnectionName).length}))
-  const connectionName = (name:string) => uniquePaths.find(({path})=>path.name===name)?.net.name??name
-  const routingInput = { ...input, connections, traces, buses: input.buses?.map(bus=>({...bus,connectionNames:bus.connectionNames.map(connectionName),lengthMatchToConnectionNames:bus.lengthMatchToConnectionNames?.map(connectionName),lengthMatchingPaths:bus.lengthMatchingPaths?.map(path=>({...path,connectionName:connectionName(path.connectionName)}))})), differentialPairs:input.differentialPairs?.map(pair=>({...pair,connectionNames:pair.connectionNames.map(connectionName) as [string,string]})) }
+  const routingInput = { ...input, traces }
   return {
     ...routingInput,
-    buses: routingInput.buses?.flatMap((bus) =>
+    buses: input.buses?.flatMap((bus) =>
       getBusLanesLengthMatchingBuses(bus, routingInput),
     ),
   }

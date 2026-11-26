@@ -43,7 +43,7 @@ jobs:
           import json
           from pathlib import Path
           p=Path('core/package.json');s=json.loads(p.read_text())
-          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#b9fec770c4a6df0876e91939aa3dd03eb01c3201'})
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#2e02e5995596c95c67b847b8d0730416938c4c6d'})
           p.write_text(json.dumps(s,indent=2)+'\n')
           PY
           cd core
@@ -87,3 +87,5 @@ jobs:
 # Assess the complete matching attempt independently of fallback selection.
 
 # Preserve electrical net ownership while coalescing its selected timing path.
+
+# Use net-associated selected paths with the unmodified Core connection adapter.
