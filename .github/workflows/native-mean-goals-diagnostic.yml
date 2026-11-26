@@ -1,4 +1,4 @@
-name: Diagnose literal native H616 mean goals
+name: Compare smaller existing H616 tuning banks
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        benchmark: [d7c37d50600cce61973b1e5c8862a808897bf3a4, b9fec770c4a6df0876e91939aa3dd03eb01c3201]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, e84295b3ec70bb51d6a88c7656055695981bc6c9]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: 01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f
+          ref: ${{ matrix.solver }}
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -43,7 +43,7 @@ jobs:
           import json
           from pathlib import Path
           p=Path('core/package.json');s=json.loads(p.read_text())
-          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#${{ matrix.benchmark }}'})
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#b9fec770c4a6df0876e91939aa3dd03eb01c3201'})
           p.write_text(json.dumps(s,indent=2)+'\n')
           PY
           cd core
@@ -51,27 +51,16 @@ jobs:
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
           cp ../analysis/diagnose-native-mean-goals.ts .
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
-      - name: Capture the unchanged benchmark within its original budget
+      - name: Measure unchanged requirements and budget; export aggregates only
         working-directory: core
         run: |
-          export DDR_CAPTURE_DIR="$PWD/../captures"
           export BUN_OPTIONS="--preload $PWD/diagnose-native-mean-goals.ts"
-          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120 > ../private-run.log 2>&1
           python3 - <<'PY'
           import json
           from pathlib import Path
-          for p in Path('../results').rglob('render.log'):
-              for line in p.read_text().splitlines():
-                  if line.startswith('MATCHING_INPUT='):print(line)
           for c in json.loads(Path('../results/results.json').read_text())['cases']:
-              print('FRESH_SKEW_RESULT='+json.dumps({'board':c['circuit'],'connected':c['assessment']['connectedNets'],'requested':c['assessment']['requestedNets'],'findings':c['assessment']['findings'],'constraints':c['assessment']['ddrConstraints'],'attempts':c['attempts']},separators=(',',':')))
+              a=c['assessment']
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb']},separators=(',',':')))
           PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: literal-mean-${{ matrix.benchmark }}
-          path: |
-            captures
-            results/**/results.json
-            results/**/progress.json
-            results/**/circuit.json
