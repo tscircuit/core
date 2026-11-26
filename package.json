@@ -39,7 +39,7 @@
     "@tsci/tscircuit.ti": "github:tscircuit/ti#57e314be4b2b06bc546d4def7453e619604d1157",
     "@tscircuit/alphabet": "0.0.25",
     "@tscircuit/bga-fanout-solver": "github:tscircuit/bga-fanout-solver#247c835cb8d69b65e53891dcf869731079415b39",
-    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.67.tgz",
+    "@tscircuit/bus-lanes-solver": "https://pkg.pr.new/tscircuit/bus-lanes-solver/@tscircuit/bus-lanes-solver@cf5b863",
     "@tscircuit/cableprinter": "^0.0.6",
     "@tscircuit/capacity-autorouter": "0.0.1156",
     "@tscircuit/checks": "^0.0.283",
@@ -124,7 +124,7 @@
     "dsn-converter": "^0.0.90",
     "easyeda": "^0.0.389",
     "circuit-json-to-pnp-csv": "^0.0.20",
-    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285"
+    "@tscircuit/core-ddr-benchmark": "github:ShiboSoftwareDev/core-ddr-benchmark#de792e7354edf7d3149b6860419420a9ed1f4758"
   },
   "peerDependencies": {
     "@tscircuit/capacity-autorouter": "*",
