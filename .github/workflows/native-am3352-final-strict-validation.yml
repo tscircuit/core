@@ -1,0 +1,59 @@
+name: Final AM3352 independent drill validation
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-am3352-final-strict-validation.yml]
+permissions:
+  contents: read
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        sample: [control, control-inner1, right, left, above, inner-layers, inner-layers-right, inner-layers-left, inner-layers-above, inner-layers-complete-ca, outer-layers]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: de831539c022c2789df6985ff16da193f81db95d
+          path: bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install exact solver dependencies
+        working-directory: bus
+        run: bun install --ignore-scripts --backend=copyfile
+      - name: Fresh unchanged sample and independent drill audit
+        working-directory: bus
+        run: |
+          bun scripts/benchmark.ts --worker ${{ matrix.sample }} --timeout-seconds 3600 --routes-directory ../private-accepted-routes > ../private-am.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lines=Path('../private-am.log').read_text().splitlines()
+          report=json.loads(next(line[7:] for line in lines if line.startswith('REPORT ')))
+          v=report.get('validation') or {}
+          result={k:report.get(k) for k in ['sample','status','solved','iterations','solveMilliseconds','routedSignals','requestedSignals','inputSha256','fixedPowerPreserved','inputUnchanged','failureCode']}
+          result['validation']={k:v.get(k) for k in ['valid','complete','matched','fixedPowerTraces','fixedPowerVias','fixedPowerPadJoins']}
+          print('FINAL_AM3352_STRICT_SOLVE='+json.dumps(result,separators=(',',':')))
+          if not report['solved'] or report['routedSignals'] != 47: raise RuntimeError('The original sample must be completely solved')
+          PY
+          if test -f ../private-accepted-routes/${{ matrix.sample }}.json; then
+            cat > inspect-accepted.ts <<'TS'
+          import {checkViasInPads} from '@tscircuit/checks'
+          const s=await Bun.file('../private-accepted-routes/${{ matrix.sample }}.json').json()
+          const pads=s.input.obstacles.filter((p:any)=>p.componentId).map((p:any,i:number)=>({type:'pcb_smtpad',pcb_smtpad_id:`pad_${i}`,shape:p.shape==='circle'?'circle':'rect',x:p.center.x,y:p.center.y,width:p.width,height:p.height,radius:p.width/2,layer:p.layers[0],layers:[...p.layers],ccw_rotation:p.ccwRotationDegrees??0}))
+          let i=0
+          const vias=s.traces.flatMap((t:any)=>t.route.filter((p:any)=>p.route_type==='via').map((p:any)=>({type:'pcb_via',pcb_via_id:`via_${i++}`,x:p.x,y:p.y,outer_diameter:p.via_diameter,hole_diameter:p.via_hole_diameter,layers:p.layers??['top','inner1','inner2','bottom']})))
+          const errors=checkViasInPads([{type:'pcb_board',pcb_board_id:'board',num_layers:s.input.layerCount,is_via_in_pad_allowed:s.input.allowViaInPad===true},...pads,...vias] as any)
+          if (errors.length) throw Error('Completed native route contains a forbidden via-in-pad');
+          console.log('FINAL_AM3352_STRICT_DRILL='+JSON.stringify({sample:'${{ matrix.sample }}',signals:s.traces.length,viaInPadFindings:errors.length}))
+          TS
+            bun inspect-accepted.ts
+          fi
