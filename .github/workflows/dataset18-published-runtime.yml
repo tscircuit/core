@@ -1,0 +1,54 @@
+name: Verify Dataset18 against the unchanged published autorouter
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/dataset18-published-runtime.yml]
+permissions:
+  contents: read
+jobs:
+  dataset18:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 93818dcfe4b9174c4cf120e72957b5b88c6aed26
+          path: router
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: f619500d8b5a8e1d4b21ded87668cba379328e53
+          path: core
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install the unchanged published router and fixed validator
+        run: |
+          cd router
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json');s=json.loads(p.read_text());s['devDependencies']['published-autorouter']='npm:@tscircuit/capacity-autorouter@0.0.1165';s['devDependencies']['@tscircuit/checks']='0.0.282';p.write_text(json.dumps(s,indent=2)+'\n')
+          p=Path('scripts/benchmark/benchmark-run-task.ts');s=p.read_text();needle='import * as autorouterModule from "../../lib"';assert needle in s;p.write_text(s.replace(needle,'import * as autorouterModule from "published-autorouter"'))
+          PY
+          bun install --ignore-scripts --backend=copyfile
+          cd ../core
+          bun install --ignore-scripts --backend=copyfile
+          cd ..
+          cmp router/node_modules/published-autorouter/dist/index.js core/node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          sha256sum router/node_modules/published-autorouter/dist/index.js core/node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          stat -c '%d:%i %n' router/node_modules/published-autorouter/dist/index.js core/node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Fresh standard Dataset18 run, one sample worker and one routing thread
+        working-directory: router
+        run: |
+          ./benchmark.sh --pipeline 9 --dataset dataset18 --concurrency 1 --threads 1 --effort 1 > ../private-dataset18.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('benchmark-result.json').read_text())
+          rows=[{k:t.get(k) for k in ['sampleNumber','didSolve','didTimeout','relaxedDrcPassed','viaCount','drcErrorCount','elapsedTimeMs','peakRssBytes','traceLintIssueCounts']} for t in r['tests']]
+          print('DATASET18_PUBLISHED_RESULT='+json.dumps({'scenarioCount':r['scenarioCount'],'runtime':r.get('runtime'),'summary':r['summary'],'rows':rows},separators=(',',':')))
+          assert len(rows)==16 and all(t['didSolve'] and t['relaxedDrcPassed'] and not t['didTimeout'] for t in rows)
+          PY
