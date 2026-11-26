@@ -1,0 +1,30 @@
+name: Inspect existing public Core contact snapshot
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/mean-api-core-contact-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: be07431cb3de59ad897e3e4dc05f3ea740c4af40
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --ignore-scripts --backend=copyfile
+      - name: Regenerate the existing public VM contact test only
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-nema8-tvs-sample.test.tsx
+          python3 - <<'PYCODE'
+          import base64,gzip,json,re,subprocess
+          from pathlib import Path
+          name='tests/repros/__snapshots__/repro-nema8-tvs-sample-pcb.snap.svg'
+          before=subprocess.check_output(['git','show','HEAD:'+name]).decode()
+          after=Path(name).read_text()
+          print('CONTACT_LABELS='+json.dumps({'before':re.findall(r'<text[^>]*>(.*?)</text>',before),'after':re.findall(r'<text[^>]*>(.*?)</text>',after)}))
+          print('PUBLIC_CONTACT_SVG_GZIP='+base64.b64encode(gzip.compress(after.encode())).decode())
+          PYCODE
