@@ -125,7 +125,7 @@ jobs:
           const met = goals.filter((rule) => rule.status === "met").length
           const circuit = JSON.parse(readFileSync("../results/h616/circuit.json", "utf8"))
           const svg = convertCircuitJsonToPcbSvg(circuit, { width: 1200, height: 1000, viewport: { minX: -10.5, maxX: 12.5, minY: 1, maxY: 20.5 }, shouldDrawRatsNest: false, showDebugObjects: false })
-          const caption = `<rect x="10" y="10" width="770" height="54" rx="8" fill="white" stroke="#334155"/><text x="24" y="44" font-family="sans-serif" font-size="23" fill="#0f172a">H616: 53/53 connected · ${met}/${goals.length} required skew checks · 0 physical findings</text>`
+          const caption = `<rect x="10" y="10" width="1150" height="54" rx="8" fill="white" stroke="#334155"/><text x="24" y="44" font-family="sans-serif" font-size="23" fill="#0f172a">H616: 53/53 connected · ${met}/${goals.length} required skew checks · 0 physical findings</text>`
           writeFileSync("../accepted-h616.svg", svg.replace("</svg>", caption + "</svg>"))
           TS
           bun render-accepted-h616.ts
