@@ -43,7 +43,7 @@ jobs:
       - name: Fresh standard Dataset18 run, one sample worker and one routing thread
         working-directory: router
         run: |
-          bun -e 'try { await import("./scripts/benchmark/benchmark-run-task.ts"); console.log("DATASET18_IMPORT_PREFLIGHT=passed") } catch(error) { const s=String(error);console.log("DATASET18_IMPORT_PREFLIGHT="+JSON.stringify({missingExport:s.includes("No matching export"),missingModule:s.includes("Cannot find"),nativeBinding:s.includes("binding")||s.includes("native") }));process.exit(1) }'
+          bun -e 'try { await import("./scripts/benchmark/benchmark-run-task.ts"); console.log("DATASET18_IMPORT_PREFLIGHT=passed") } catch(error) { const s=String(error);console.log("DATASET18_IMPORT_PREFLIGHT="+JSON.stringify({missingExport:s.includes("No matching export"),missingModule:s.includes("Cannot find"),nativeBinding:s.includes("binding")||s.includes("native"),errorClass:error?.constructor?.name,frames:[...(error?.stack??"").matchAll(/([A-Za-z0-9_.-]+\.(?:ts|js):[0-9]+:[0-9]+)/g)].map(m=>m[1]).slice(0,5),exportMismatch:s.includes("export")||s.includes("Export"),undefinedGlobal:s.includes("not defined"),undefinedValue:s.includes("undefined"),syntax:s.includes("Syntax") }));process.exit(1) }'
           if ! ./benchmark.sh --pipeline 9 --dataset dataset18 --concurrency 1 --threads 1 --effort 1 > ../private-dataset18.log 2>&1; then
             python3 - <<'PYCODE'
           from pathlib import Path
