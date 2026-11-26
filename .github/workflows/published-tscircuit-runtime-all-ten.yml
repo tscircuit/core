@@ -50,11 +50,14 @@ jobs:
           (cd validator && bun install --ignore-scripts --backend=copyfile)
           ln -s ../runtime/node_modules benchmark/node_modules
           cat > runtime/proof.ts <<'TS'
-          import {createRequire} from "node:module"
+          import {fileURLToPath} from "node:url"
           import {dirname,join} from "node:path"
           import {readFileSync,existsSync} from "node:fs"
           import {createHash} from "node:crypto"
-          const root=createRequire(import.meta.url)
+          function resolvePackage(name:string,from:string):string {
+            let d=dirname(from);
+            for(;;){const p=join(d,"node_modules",name,"package.json");if(existsSync(p)){const m=JSON.parse(readFileSync(p,"utf8"));return join(dirname(p),m.main??"index.js")}const parent=dirname(d);if(parent===d)throw Error("Missing dependency "+name);d=parent}
+          }
           function manifest(entry:string){let d=dirname(entry);while(!existsSync(join(d,"package.json")))d=dirname(d);return JSON.parse(readFileSync(join(d,"package.json"),"utf8"))}
           function record(entry:string){const m=manifest(entry);return {version:m.version,sha256:createHash("sha256").update(readFileSync(entry)).digest("hex"),entry}}
           const tscEntry=root.resolve("tscircuit"),tscRequire=createRequire(tscEntry)
