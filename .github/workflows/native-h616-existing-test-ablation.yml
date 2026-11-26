@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [main, original-working, fresh-conflicts, pending-landings, pending-guides]
+        variant: [minimum-cost-only, main-branches, main-surface, main-strategy, main-pending, main-layer-retry]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 10
     steps:
@@ -29,16 +29,19 @@ jobs:
           from pathlib import Path
           import os,subprocess
           variant=os.environ['VARIANT']
-          if variant in ['main','original-working']:
-              source={'main':'2718df9b52937392f648612ca4a31d6352b585a5','original-working':'0f801c1eca3063e53b7d947c326ba605276596d4'}[variant]
+          sources={
+            'minimum-cost-only': ('01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f',['lib']),
+            'main-branches': ('2718df9b52937392f648612ca4a31d6352b585a5',['lib/route-multi-terminal-buses.ts']),
+            'main-surface': ('2718df9b52937392f648612ca4a31d6352b585a5',['lib/route-surface-bridge.ts']),
+            'main-strategy': ('2718df9b52937392f648612ca4a31d6352b585a5',['lib/bus-lanes-pipeline-solver.ts','lib/route-generated-signal-sites.ts']),
+            'main-pending': ('2718df9b52937392f648612ca4a31d6352b585a5',['lib/pending-lane-certificates.ts','lib/bus-lanes-solver.ts','lib/negotiate-surface-routes.ts']),
+          }
+          if variant in sources:
+              source,paths=sources[variant]
               subprocess.run(['git','fetch','--depth=1','origin',source],check=True)
-              subprocess.run(['git','restore','--source='+source,'lib'],check=True)
-          if variant=='fresh-conflicts':
-              p=Path('lib/route-surface-bridge.ts');s=p.read_text().replace('conflicts.firstConflict(', 'new CopperConflictIndex().firstConflict(');p.write_text(s)
-          if variant=='pending-landings':
-              p=Path('lib/bus-lanes-solver.ts');s=p.read_text().replace('includeViaLandings: hasLengthConstraints(this.input)','includeViaLandings: true');p.write_text(s)
-          if variant=='pending-guides':
-              p=Path('lib/negotiate-surface-routes.ts');s=p.read_text().replace('if (hasLengthConstraints(native)) {','if (true) {');p.write_text(s)
+              subprocess.run(['git','restore','--source='+source,*paths],check=True)
+          if variant=='main-layer-retry':
+              p=Path('lib/bus-lanes-pipeline-solver.ts');s=p.read_text().replace('if (hasExistingHandoff) target = allowed[this.attempt % allowed.length]','if (false) target = allowed[this.attempt % allowed.length]');p.write_text(s)
           PYCODE
           bun install --ignore-scripts --backend=copyfile
       - name: Require successful route and every existing acceptance check
