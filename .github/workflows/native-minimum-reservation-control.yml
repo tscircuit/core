@@ -11,6 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
+        variant: [minimum_reservations, surface_only]
         solver: [f5826ca6e34cc4c8b99b67fc8e5894936ee1a599]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
@@ -53,10 +54,14 @@ jobs:
           bun-version: 1.4.3
       - name: Isolate newly added reservations without changing input or budgets
         working-directory: bus
+        env:
+          VARIANT: ${{ matrix.variant }}
         run: |
           python3 - <<'PYCODE'
           from pathlib import Path
-          p=Path('lib/bus-lanes-solver.ts');s=p.read_text();s=s.replace('includeViaLandings: hasLengthConstraints(this.input)', 'includeViaLandings: (this.input.buses ?? []).some((bus) => (bus.minLength ?? 0) > 0)');p.write_text(s)
+          import os
+          include='false' if os.environ['VARIANT']=='surface_only' else '(this.input.buses ?? []).some((bus) => (bus.minLength ?? 0) > 0)'
+          p=Path('lib/bus-lanes-solver.ts');s=p.read_text();s=s.replace('includeViaLandings: hasLengthConstraints(this.input)', 'includeViaLandings: '+include);p.write_text(s)
           p=Path('lib/negotiate-surface-routes.ts');s=p.read_text().replace('if (hasLengthConstraints(native)) {','if ((native.buses ?? []).some((bus) => (bus.minLength ?? 0) > 0)) {');p.write_text(s)
           PYCODE
           bun install --ignore-scripts --backend=copyfile
