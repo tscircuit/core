@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 3ab212e35a2c34c463edf614730cc70ab5090975]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, c41826a8b5fd0e11555db9429b80e11f3c46e580]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -77,3 +77,5 @@ jobs:
 # Probe whole inner carriers before fixing planar sites.
 
 # Include actual multilayer handoff retry.
+
+# Preserve tuned paths by ending branch copper at the first trunk contact.
