@@ -7,6 +7,9 @@ permissions:
   contents: read
 jobs:
   compare:
+    strategy:
+      matrix:
+        implementation: [base, head]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +19,15 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.5
-      - run: bun install --backend=copyfile
+      - name: Hold preview dependencies fixed for both implementations
+        env:
+          IMPLEMENTATION: ${{ matrix.implementation }}
+        run: |
+          if [ "$IMPLEMENTATION" = base ]; then
+            git fetch --depth=1 origin 2b7e0e1e5e6adcba8cfc2181e73317706c8aae68
+            git restore --source=2b7e0e1e5e6adcba8cfc2181e73317706c8aae68 lib/check-pcb-routing-constraints.ts lib/check-pcb-bus-length-skew.ts
+          fi
+          bun install --backend=copyfile
       - name: Compare only public authored SVG output
         run: |
           cp tests/lib/__snapshots__/ddr-routing-pcb_trace_spacing.snap.svg /tmp/previous.svg
