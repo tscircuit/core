@@ -1,6 +1,9 @@
 name: Unchanged DDR benchmark with declared-length route scoring
 on:
   workflow_dispatch:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/benchmark-ddr.yml]
 permissions:
   contents: read
 jobs:
@@ -18,13 +21,13 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: abe9820189e7a1b83c00afe31a1a5a6a159268ab
+          ref: main
           path: core
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || 'f1acdf839c0054c6aaedc8f5d23fa16aa40b30c8' }}
+          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '7f01092edae3e1df40cedefff0de1a5d1fcccb8e' }}
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -46,6 +49,10 @@ jobs:
           PY
           cd core
           bun install --ignore-scripts --backend=copyfile
+          curl -fsSL https://registry.npmjs.org/@tscircuit/capacity-autorouter/-/capacity-autorouter-0.0.1164.tgz -o ../autorouter.tgz
+          mkdir ../published-autorouter
+          tar -xzf ../autorouter.tgz -C ../published-autorouter
+          cp -r ../published-autorouter/package/dist/. node_modules/@tscircuit/capacity-autorouter/dist/
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
           sha256sum node_modules/@tscircuit/capacity-autorouter/dist/index.js node_modules/@tscircuit/bus-lanes-solver/dist/index.js
       - name: Run unchanged shared 120 second benchmark
@@ -55,7 +62,7 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          print('MINIMUM_LENGTH_RESULT='+json.dumps(json.loads(Path('../results/results.json').read_text()),separators=(',',':')))
+          print('CURRENT_ROUTER_LENGTH_RESULT='+json.dumps(json.loads(Path('../results/results.json').read_text()),separators=(',',':')))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
