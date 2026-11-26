@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 439474e5fd73885c648a5d50a9d2a46121e6b64d]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 3ab212e35a2c34c463edf614730cc70ab5090975]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -75,3 +75,5 @@ jobs:
 # Trace anonymized small-net stage transitions.
 
 # Probe whole inner carriers before fixing planar sites.
+
+# Include actual multilayer handoff retry.
