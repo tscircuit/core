@@ -1,0 +1,79 @@
+name: Verify actual published tscircuit DDR runtimes
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/published-tscircuit-runtime-all-ten.yml]
+permissions:
+  contents: read
+jobs:
+  published:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [0.0.3279, 0.0.3300]
+        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 15
+    env:
+      BUN_JSC_forceRAMSize: "2147483648"
+      BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+      TSCIRCUIT_SAMPLE_WORKER_COUNT: "1"
+      TSCIRCUIT_SAMPLE_THREAD_COUNT: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ShiboSoftwareDev/core-ddr-benchmark
+          ref: 16b6352dc25e951192d88cb99a7cfe96abf62285
+          path: benchmark
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install exact tscircuit release and an independent common validator
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          mkdir runtime validator
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          Path('runtime/package.json').write_text(json.dumps({'name':'published-tscircuit-ddr-runtime','version':os.environ['RELEASE'],'type':'module','dependencies':{'tscircuit':os.environ['RELEASE']}}))
+          Path('validator/package.json').write_text(json.dumps({'private':True,'type':'module','dependencies':{'@tscircuit/checks':'0.0.282'}}))
+          Path('runtime/index.ts').write_text('export * from "tscircuit"\n')
+          Path('runtime/tsconfig.json').write_text(json.dumps({'compilerOptions':{'jsx':'react-jsx','target':'ESNext','module':'ESNext','moduleResolution':'bundler'}}))
+          p=Path('benchmark/scripts/assess.ts');s=p.read_text()
+          old='join(corePath, "node_modules/@tscircuit/checks/dist/index.js")'
+          assert s.count(old)==1
+          p.write_text(s.replace(old,'process.env.DDR_ASSESSMENT_CHECKS!'))
+          PY
+          (cd runtime && bun install --ignore-scripts --backend=copyfile)
+          (cd validator && bun install --ignore-scripts --backend=copyfile)
+          ln -s ../runtime/node_modules benchmark/node_modules
+          cat > runtime/proof.ts <<'TS'
+          import {createRequire} from "node:module"
+          import {dirname,join} from "node:path"
+          import {readFileSync,existsSync} from "node:fs"
+          import {createHash} from "node:crypto"
+          const root=createRequire(import.meta.url)
+          function manifest(entry:string){let d=dirname(entry);while(!existsSync(join(d,"package.json")))d=dirname(d);return JSON.parse(readFileSync(join(d,"package.json"),"utf8"))}
+          function record(entry:string){const m=manifest(entry);return {version:m.version,sha256:createHash("sha256").update(readFileSync(entry)).digest("hex"),entry}}
+          const tscEntry=root.resolve("tscircuit"),tscRequire=createRequire(tscEntry)
+          const coreEntry=tscRequire.resolve("@tscircuit/core"),coreRequire=createRequire(coreEntry)
+          const routerEntry=coreRequire.resolve("@tscircuit/capacity-autorouter")
+          const coreManifest=manifest(coreEntry)
+          console.log("PUBLISHED_RUNTIME_PROOF="+JSON.stringify({tscircuit:record(tscEntry),core:record(coreEntry),autorouter:record(routerEntry),bundledBus:coreManifest.devDependencies?.["@tscircuit/bus-lanes-solver"],bundledFanout:coreManifest.devDependencies?.["@tscircuit/fanout-solver"],validator:"0.0.282"}))
+          TS
+          (cd runtime && bun proof.ts)
+      - name: Run unchanged ten-board native benchmark with the original shared budget
+        run: |
+          export DDR_ASSESSMENT_CHECKS="$PWD/validator/node_modules/@tscircuit/checks/dist/index.js"
+          bun benchmark/scripts/run.ts --core "$PWD/runtime" --out "$PWD/results" --circuit '${{ matrix.board }}' --timeout 120 > private-render.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for c in json.loads(Path('results/results.json').read_text())['cases']:
+              a=c['assessment']
+              if a is None: raise RuntimeError('Published runtime produced no assessment')
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('PUBLISHED_DDR_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb']},separators=(',',':')))
+          PY
