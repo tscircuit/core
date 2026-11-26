@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616, a13]
-        solver: [2718df9b52937392f648612ca4a31d6352b585a5, ef193a1062675ce5cfdec1a5e814a7ddab5ccebe]
+        solver: [2718df9b52937392f648612ca4a31d6352b585a5, 094fbeba5a7fe3bc03470dd3119712809e005dc9]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/checks
-          ref: 9f69a5a19e93a6ea84d26d5a5cb73b0b5670324b
+          ref: 953d212616f978c762898659daf691df18446d96
           path: checks
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -74,7 +74,7 @@ jobs:
           import json
           from pathlib import Path
           p=Path('core/package.json');s=json.loads(p.read_text())
-          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#e14cdf3f568906a88ff70c70d4959e11ad91bf95'})
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#5c850f63f75796e01efab7c3868760ca3d8f4e52'})
           p.write_text(json.dumps(s,indent=2)+'\n')
           PY
           cd core
