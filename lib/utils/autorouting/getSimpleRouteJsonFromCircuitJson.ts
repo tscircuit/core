@@ -662,11 +662,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
         !subcircuit_id || (trace as any).subcircuit_id === subcircuit_id,
     )
     // Net-attached traces contribute their terminals to connectionsFromNets.
-    // Explicit paths, netless traces and plane terminations retain their own connection.
+    // Netless traces, explicit paths, width-constrained paths with physical
+    // endpoints, and plane terminations retain their own connection.
     .filter(
       (sourceTrace) =>
         sourceTrace.connected_source_net_ids.length === 0 ||
         explicitPathSourceTraceIds.has(sourceTrace.source_trace_id) ||
+        (sourceTrace.min_trace_thickness !== undefined &&
+          sourceTrace.connected_source_port_ids.length >= 2) ||
         planeTerminatedSourceTraceLayers.has(sourceTrace.source_trace_id),
     )
     .map((trace) => {
@@ -738,6 +741,14 @@ export const getSimpleRouteJsonFromCircuitJson = ({
       (connection) =>
         sourceTraceById.get(connection.source_trace_id!)!
           .connected_source_port_ids,
+    ),
+  )
+
+  const directWidthConnectionBySourceTraceId = new Map(
+    directTraceConnections.flatMap((connection) =>
+      connection.nominalTraceWidth !== undefined && connection.source_trace_id
+        ? [[connection.source_trace_id, connection] as const]
+        : [],
     ),
   )
 
@@ -849,21 +860,36 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     }
     for (const sourceTrace of connectedSourceTraces) {
       if (sourceTrace.min_trace_thickness === undefined) continue
+      const directWidthConnection = directWidthConnectionBySourceTraceId.get(
+        sourceTrace.source_trace_id,
+      )
+      if (directWidthConnection) {
+        directWidthConnection.netConnectionName = net.source_net_id
+        continue
+      }
+      if (
+        sourceTrace.connected_source_port_ids.length >= 2 &&
+        sourceTraceIdsAlreadyPreservedAsSrjTraces.has(
+          sourceTrace.source_trace_id,
+        )
+      )
+        continue
       nominalTraceWidthForConnection = Math.max(
         nominalTraceWidthForConnection ?? 0,
         sourceTrace.min_trace_thickness,
       )
     }
 
-    // Explicit paths preserve their identity, but still inherit net width rules.
+    // The residual net gets the net width. A direct connection with an
+    // authored width keeps it and records its membership in the same net.
     const connectedSourceTraceIds = new Set(
       connectedSourceTraces.map((trace) => trace.source_trace_id),
     )
     for (const connection of explicitPathConnections) {
       if (!connectedSourceTraceIds.has(connection.source_trace_id!)) continue
       connection.netConnectionName = net.source_net_id
-      connection.nominalTraceWidth = nominalTraceWidthForConnection
-      connection.width = nominalTraceWidthForConnection
+      connection.nominalTraceWidth ??= nominalTraceWidthForConnection
+      connection.width ??= nominalTraceWidthForConnection
     }
 
     const pointsToConnect: SimpleRouteConnection["pointsToConnect"] = []

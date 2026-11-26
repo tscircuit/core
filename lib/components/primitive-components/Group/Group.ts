@@ -63,6 +63,7 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { routeMixedWidthNetConnections } from "lib/utils/autorouting/route-mixed-width-net-connections"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
 import { storePcbDifferentialPairPhaseSkew } from "lib/utils/circuit-json/store-pcb-differential-pair-phase-skew"
@@ -1907,40 +1908,49 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+            if (!autorouter)
+              throw new Error("Failed to create local autorouter")
+            traces = await runAutorouter(autorouter)
           } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
-              busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBounds: routingPhasePlan.fanoutBounds,
-              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
+            const route = (input: SimpleRouteJson) => {
+              autorouter?.stop()
+              autorouter = localAutorouterStrategy.create({
+                simpleRouteJson: input,
+                onSolverEnded: (event) =>
+                  this.root?.emit("solver:ended", {
+                    ...event,
+                    type: "solver:ended",
+                    componentName: this.getString(),
+                  }),
+                commonAutorouterOptions,
+                busFanoutDirections: routingPhasePlan.busFanoutDirections,
+                fanoutBounds: routingPhasePlan.fanoutBounds,
+                fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+                allowBlindAndBuriedVias: input.allowBlindAndBuriedVias,
+                componentNamesById: getPcbComponentNamesById(db),
+                onSolverStarted: ({
                   solverName,
                   solverParams,
                   solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
-            })
+                }) =>
+                  this.root?.emit("solver:started", {
+                    type: "solver:started",
+                    solverName,
+                    solverParams,
+                    solverConstructorArgs,
+                    componentName: this.getString(),
+                  }),
+              })
+              return runAutorouter(autorouter)
+            }
+            traces =
+              !isRegionReroutePhase &&
+              (solverName ===
+                "AutoroutingPipelineSolver9_PreloadedTraceGraph" ||
+                solverName === "AutoroutingPipelineSolver9_Networked")
+                ? await routeMixedWidthNetConnections(simpleRouteJson, route)
+                : await route(simpleRouteJson)
           }
-
-          if (!autorouter) {
-            throw new Error("Failed to create local autorouter")
-          }
-          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =
