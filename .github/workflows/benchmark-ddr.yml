@@ -1,74 +1,46 @@
-name: Verify the final scoped native DDR fix on all ten boards
+name: Verify the native AM3352 timing regression is removed
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  benchmark:
-    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
-    strategy:
-      fail-fast: false
-      max-parallel: 10
-      matrix:
-        mode: [base, head]
-        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
+  control:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 150
+    env:
+      BUN_JSC_forceRAMSize: '2147483648'
+      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
     steps:
       - uses: actions/checkout@v4
         with:
-          path: core
-          ref: abe9820189e7a1b83c00afe31a1a5a6a159268ab
+          repository: tscircuit/bus-lanes-solver
+          path: base
+          ref: d531b3a8c88525872820f51cbe46f1770d46a951
           persist-credentials: false
       - uses: actions/checkout@v4
-        if: matrix.mode == 'head'
         with:
           repository: tscircuit/bus-lanes-solver
-          path: bus
+          path: head
           ref: 1ba8039163ceed3a62ee94979911bd30e2f1dfd6
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
-      - name: Build exact bus implementation
-        if: matrix.mode == 'head'
-        working-directory: bus
+          bun-version: 1.4.0
+      - name: Install both revisions before timing
         run: |
-          bun install --ignore-scripts --backend=copyfile
-          bun run build
-          bun pm pack --filename ../bus.tgz
-          sha256sum dist/index.js
-      - name: Install exact Core and benchmark implementations
-        env:
-          MODE: ${{ matrix.mode }}
+          (cd base && bun install --ignore-scripts --backend=copyfile)
+          (cd head && bun install --ignore-scripts --backend=copyfile)
+      - name: Run base-head-head-base with the original 3600 second case budget
         run: |
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          p=Path('core/package.json'); package=json.loads(p.read_text())
-          benchmark='16b6352dc25e951192d88cb99a7cfe96abf62285'
-          if os.environ['MODE']=='head': benchmark='de792e7354edf7d3149b6860419420a9ed1f4758'
-          pins={'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#'+benchmark}
-          if os.environ['MODE']=='head': pins['@tscircuit/bus-lanes-solver']='file:../bus.tgz'
-          for name,pin in pins.items():
-              package.get('dependencies',{}).pop(name,None)
-              package.setdefault('devDependencies',{})[name]=pin
-          p.write_text(json.dumps(package,indent=2)+'\n')
-          PY
-          cd core
-          bun install --ignore-scripts --backend=copyfile
-          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
-      - name: Run the unchanged official two-attempt shared 120-second budget
-        working-directory: core
-        run: |
-          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core . --out ../results --circuit '${{ matrix.board }}' --timeout 120
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          results=json.loads(Path('../results/results.json').read_text())
-          row=results['cases'][0]
-          print('NATIVE_TOTAL_CASE='+json.dumps(row,separators=(',',':')))
-          PY
+          mkdir -p results
+          iteration=0
+          for side in base head head base; do
+            iteration=$((iteration+1))
+            bun base/scripts/benchmark.ts --worker inner-layers-right --solver "$GITHUB_WORKSPACE/$side/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results/$iteration-$side" > "results/$iteration-$side.log" 2>&1
+            grep '^REPORT ' "results/$iteration-$side.log"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-total-${{ matrix.mode }}-${{ matrix.board }}
+          name: am3352-balanced-inner-layers-right
           path: results/
