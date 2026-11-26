@@ -50,6 +50,7 @@ jobs:
           bun install --ignore-scripts --backend=copyfile
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
           cp ../analysis/diagnose-native-mean-goals.ts .
+          cp ../analysis/lib/utils/autorouting/get-bus-lanes-input-from-srj.ts lib/utils/autorouting/get-bus-lanes-input-from-srj.ts
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
       - name: Measure unchanged requirements and budget; export aggregates only
         working-directory: core

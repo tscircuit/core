@@ -1,3 +1,4 @@
+import { getBusLanesLengthMatchingBuses } from "./get-bus-lanes-length-matching-buses"
 import type {
   SimpleRouteJson as BusLanesInput,
   Trace as BusLanesTrace,
@@ -66,5 +67,25 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     }
     flushFragment()
   }
-  return { ...input, traces }
+  const netNamesWithOneNamedPath = new Set(
+    input.connections.filter(connection => connection.netConnectionName && connection.pointsToConnect.length === 2 && input.connections.filter(other => other.netConnectionName === connection.netConnectionName).length === 1 && !input.buses?.some(bus=>bus.connectionNames.includes(connection.netConnectionName!))).map(connection=>connection.netConnectionName!),
+  )
+  const connections = input.connections.filter(connection=>!netNamesWithOneNamedPath.has(connection.name)).map(connection=>{
+    if (!connection.netConnectionName || !netNamesWithOneNamedPath.has(connection.netConnectionName)) return connection
+    const net = input.connections.find(net=>net.name===connection.netConnectionName)
+    if (!net) return connection
+    const pointsToConnect = [...connection.pointsToConnect]
+    for (const point of net.pointsToConnect) {
+      if (pointsToConnect.some(existing=>point.pcb_port_id && existing.pcb_port_id===point.pcb_port_id)) continue
+      pointsToConnect.push(point)
+    }
+    return {...connection, pointsToConnect}
+  })
+  const routingInput = { ...input, connections, traces }
+  return {
+    ...routingInput,
+    buses: input.buses?.flatMap((bus) =>
+      getBusLanesLengthMatchingBuses(bus, routingInput),
+    ),
+  }
 }
