@@ -77,7 +77,6 @@ test("45 degree rects bug", () => {
           "componentId": "pcb_component_0",
           "connectedTo": [
             "pcb_smtpad_0",
-            "connectivity_net2",
             "source_port_0",
             "pcb_port_0",
           ],

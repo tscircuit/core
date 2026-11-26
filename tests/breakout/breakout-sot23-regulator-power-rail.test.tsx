@@ -55,7 +55,8 @@ test("breakout routes sot23 regulator power rail parts without breakoutpoints", 
         footprint="pinrow2"
         pinLabels={["VOUT", "GND"]}
         pcbX={6}
-        pcbY={-1}
+        // Leave room for the breakout's escape routing.
+        pcbY={-3.2}
       />
       <resistor
         name="RLED"

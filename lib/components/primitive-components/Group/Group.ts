@@ -134,7 +134,10 @@ import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignabl
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
-import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
+import {
+  insertAutoplacedJumpers,
+  validateAutoplacedJumpers,
+} from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -908,16 +911,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
-      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-      db,
-      allowViaInPad: autorouterConfig.allowViaInPad,
-      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-      nominalTraceWidth:
-        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
-      subcircuit_id: this.subcircuit_id,
-      subcircuitComponent: this,
-    })
+    const { simpleRouteJson, connMap: desiredConnMap } =
+      getSimpleRouteJsonFromCircuitJson({
+        pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+        db,
+        allowViaInPad: autorouterConfig.allowViaInPad,
+        minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+        nominalTraceWidth:
+          preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+        subcircuit_id: this.subcircuit_id,
+        subcircuitComponent: this,
+      })
     const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
@@ -945,6 +949,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         },
       ).then((r) => r.json())
+      validateAutoplacedJumpers({
+        db,
+        desiredConnMap,
+        output_jumpers: autorouting_result.output_jumpers ?? [],
+      })
       this._asyncAutoroutingResult = autorouting_result
       this._markDirty("PcbTraceRender")
       return
@@ -1169,7 +1178,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    let { simpleRouteJson: baseSimpleRouteJson } =
+    // Every phase in this run must preserve the same declared source connectivity.
+    const { simpleRouteJson, connMap: desiredConnMap } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
@@ -1179,6 +1189,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
+    let baseSimpleRouteJson = simpleRouteJson
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -2084,7 +2095,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Get jumper output from solver
         const solver = (autorouter as any)?.solver
         if (solver?.getOutputJumpers) {
-          outputJumpers.push(...(solver.getOutputJumpers() || []))
+          const jumpers = solver.getOutputJumpers() ?? []
+          validateAutoplacedJumpers({
+            db,
+            desiredConnMap,
+            output_jumpers: jumpers,
+          })
+          outputJumpers.push(...jumpers)
         }
 
         if (isRegionReroutePhase && rerouteOriginalSrj) {
@@ -2424,6 +2441,13 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
+      // SRJ names identify declared source connections. Copper geometry must
+      // not choose the intended owner when the routed endpoint is wrong.
+      const sourceConnectionId = routedTrace.connection_name
+      const sourceOwnerId = sourceConnectionId
+        ? (db.source_trace.get(sourceConnectionId)?.source_trace_id ??
+          db.source_net.get(sourceConnectionId)?.source_net_id)
+        : undefined
       const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
 
@@ -2446,7 +2470,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
-        // source_trace_id: circuitTrace.source_trace_id!,
+        source_trace_id: sourceOwnerId,
       })
       claimSrjAssignablePcbViasTraversedByRoute({
         db,

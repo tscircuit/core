@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("a saved VM route touching the TVS ground pad currently misses the short", async () => {
+test("a saved VM route touching the TVS ground pad must report a short", async () => {
   const { circuit } = getTestFixture()
 
   circuit.add(
@@ -72,7 +72,7 @@ test("a saved VM route touching the TVS ground pad currently misses the short", 
     shouldDrawErrors: true,
     showErrorsInTextOverlay: true,
   })
-  expect(circuit.db.pcb_trace_error.list()).not.toContainEqual(
+  expect(circuit.db.pcb_trace_error.list()).toContainEqual(
     expect.objectContaining({
       message:
         'PCB trace C_VM_HF1.pin1 to net.VM overlaps with pcb_smtpad "D_VM_TVS.pin2" (accidental contact)',
