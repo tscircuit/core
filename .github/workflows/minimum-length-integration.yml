@@ -1,0 +1,44 @@
+name: Verify the actual Core minimum-length integration
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/minimum-length-integration.yml]
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [glider, a13]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2456bc3498124ca72c8aae8e0c1dddd2fb978610
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install the real preview dependency from the Core PR
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          python3 - <<'PYTHON'
+          import hashlib,json
+          from pathlib import Path
+          packages=['capacity-autorouter','bus-lanes-solver']
+          for package in packages:
+            root=Path('node_modules/@tscircuit')/package
+            print('RUNTIME_PACKAGE='+json.dumps({'name':package,'version':json.loads((root/'package.json').read_text())['version'],'hash':hashlib.sha256((root/'dist/index.js').read_bytes()).hexdigest()}))
+          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='ee21ae2344412d6a01572d1cb1452caa135f47ecec2bd290582cf435099d5719'
+          assert hashlib.sha256(Path('node_modules/@tscircuit/capacity-autorouter/dist/index.js').read_bytes()).hexdigest()=='d720821edbb83bf5df1e53be0601b51056c9bf691a269a122b7cc38dfc9bebf5'
+          PYTHON
+      - name: Run the unchanged native benchmark with its original budget
+        run: |
+          bun scripts/benchmark-ddr/run.ts --out results --circuit '${{ matrix.board }}' --timeout 120
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          for c in json.loads(Path('results/results.json').read_text())['cases']:
+            print('INTEGRATION_RESULT='+json.dumps({'board':c['circuit'],'connected':c['assessment']['connectedNets'],'requested':c['assessment']['requestedNets'],'findings':c['assessment']['findings'],'attempts':c['attempts']},separators=(',',':')))
+          PYTHON
