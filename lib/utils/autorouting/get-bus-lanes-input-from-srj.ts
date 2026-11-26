@@ -81,13 +81,14 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
       if(pointsToConnect.some(other=>point.pcb_port_id&&other.pcb_port_id===point.pcb_port_id))continue
       pointsToConnect.push(point)
     }
-    return{...connection,pointsToConnect}
+    return{...enclosing,pointsToConnect}
   })
   if(input.connections.length<=4)console.log("COALESCED_REQUEST="+JSON.stringify({before:input.connections.length,after:connections.length,enclosed:enclosedPaths.length,sourceConnections:input.connections.filter(c=>!!c.source_trace_id).length,netMetadata:input.connections.filter(c=>!!c.netConnectionName).length}))
-  const routingInput = { ...input, connections, traces }
+  const connectionName = (name:string) => uniquePaths.find(({path})=>path.name===name)?.net.name??name
+  const routingInput = { ...input, connections, traces, buses: input.buses?.map(bus=>({...bus,connectionNames:bus.connectionNames.map(connectionName),lengthMatchToConnectionNames:bus.lengthMatchToConnectionNames?.map(connectionName),lengthMatchingPaths:bus.lengthMatchingPaths?.map(path=>({...path,connectionName:connectionName(path.connectionName)}))})), differentialPairs:input.differentialPairs?.map(pair=>({...pair,connectionNames:pair.connectionNames.map(connectionName) as [string,string]})) }
   return {
     ...routingInput,
-    buses: input.buses?.flatMap((bus) =>
+    buses: routingInput.buses?.flatMap((bus) =>
       getBusLanesLengthMatchingBuses(bus, routingInput),
     ),
   }
