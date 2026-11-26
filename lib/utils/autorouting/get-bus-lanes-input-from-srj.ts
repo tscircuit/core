@@ -67,20 +67,23 @@ export function getBusLanesInputFromSrj(input: SimpleRouteJson): BusLanesInput {
     }
     flushFragment()
   }
-  const netNamesWithOneNamedPath = new Set(
-    input.connections.filter(connection => connection.netConnectionName && connection.pointsToConnect.length === 2 && input.connections.filter(other => other.netConnectionName === connection.netConnectionName).length === 1 && !input.buses?.some(bus=>bus.connectionNames.includes(connection.netConnectionName!))).map(connection=>connection.netConnectionName!),
-  )
-  const connections = input.connections.filter(connection=>!netNamesWithOneNamedPath.has(connection.name)).map(connection=>{
-    if (!connection.netConnectionName || !netNamesWithOneNamedPath.has(connection.netConnectionName)) return connection
-    const net = input.connections.find(net=>net.name===connection.netConnectionName)
-    if (!net) return connection
-    const pointsToConnect = [...connection.pointsToConnect]
-    for (const point of net.pointsToConnect) {
-      if (pointsToConnect.some(existing=>point.pcb_port_id && existing.pcb_port_id===point.pcb_port_id)) continue
+  const enclosedPaths = input.connections.filter(path => path.source_trace_id && path.pointsToConnect.length===2).flatMap(path=>{
+    const net=input.connections.find(net=>!net.source_trace_id&&net.pointsToConnect.length>2&&path.pointsToConnect.every(point=>point.pcb_port_id&&net.pointsToConnect.some(other=>other.pcb_port_id===point.pcb_port_id)))
+    if(!net||input.buses?.some(bus=>bus.connectionNames.includes(net.name)))return[]
+    return[{path,net}]
+  })
+  const uniquePaths = enclosedPaths.filter(({net})=>enclosedPaths.filter(other=>other.net===net).length===1)
+  const connections=input.connections.filter(connection=>!uniquePaths.some(({net})=>net===connection)).map(connection=>{
+    const enclosing=uniquePaths.find(({path})=>path===connection)?.net
+    if(!enclosing)return connection
+    const pointsToConnect=[...connection.pointsToConnect]
+    for(const point of enclosing.pointsToConnect){
+      if(pointsToConnect.some(other=>point.pcb_port_id&&other.pcb_port_id===point.pcb_port_id))continue
       pointsToConnect.push(point)
     }
-    return {...connection, pointsToConnect}
+    return{...connection,pointsToConnect}
   })
+  if(input.connections.length<=4)console.log("COALESCED_REQUEST="+JSON.stringify({before:input.connections.length,after:connections.length,enclosed:enclosedPaths.length,sourceConnections:input.connections.filter(c=>!!c.source_trace_id).length,netMetadata:input.connections.filter(c=>!!c.netConnectionName).length}))
   const routingInput = { ...input, connections, traces }
   return {
     ...routingInput,
