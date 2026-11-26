@@ -10,8 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [orangecrab, h3, a64, stm32mp157, a13, h616, butterstick, glider, imx6, icepi]
-        solver: [2718df9b52937392f648612ca4a31d6352b585a5, be31674b4c7118ffb2e974e1854ea80e8ff68c14]
+        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
+        solver: [2718df9b52937392f648612ca4a31d6352b585a5, 8697e9d79691f095847f9544003f4b768d15c09c]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:

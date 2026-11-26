@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [7f5b6ddfe149efeeec91faed14967bb8c34f1b4d, be31674b4c7118ffb2e974e1854ea80e8ff68c14]
+        solver: [7f5b6ddfe149efeeec91faed14967bb8c34f1b4d, 8697e9d79691f095847f9544003f4b768d15c09c]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
