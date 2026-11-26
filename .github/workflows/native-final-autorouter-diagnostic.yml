@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [c41826a8b5fd0e11555db9429b80e11f3c46e580]
+        solver: [80c7eec]
         repair: [published]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
@@ -147,3 +147,9 @@ jobs:
 # Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
 
 # Quantify contact margins and actual barrel spans without exporting geometry.
+
+      - name: Intercept the exact private reset input and compare existing strategies
+        working-directory: autorouter
+        run: |
+          cp ../analysis/replay-native-reset.ts .
+          bun replay-native-reset.ts
