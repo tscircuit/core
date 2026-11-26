@@ -66,6 +66,16 @@ jobs:
           for p in Path("../results").glob("*/attempts/matching/progress.json"):
               progress=json.loads(p.read_text())
               print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))
+          for p in Path("../results").glob("*/attempts/matching/findings.json"):
+              findings=json.loads(p.read_text())
+              circuit=json.loads((p.parent/'circuit.json').read_text())
+              traces=[row for row in circuit if row['type']=='pcb_trace']
+              sources={row['source_trace_id']:row for row in circuit if row['type']=='source_trace'}
+              for error in findings.get('trace_overlap',[]):
+                  involved=[t for t in traces if t['pcb_trace_id'] in error.get('pcb_trace_error_id','')]
+                  ids=[t.get('source_trace_id') for t in involved]
+                  port_sets=[set(sources.get(i,{}).get('connected_source_port_ids',[])) for i in ids]
+                  print('OVERLAP_CATEGORY='+json.dumps({'keys':list(error),'involvedTraces':len(involved),'sameSource':len(set(ids))==1,'sharedSourcePorts':bool(len(port_sets)==2 and port_sets[0]&port_sets[1]),'routeLayers':[sorted(set(point.get('layer') for point in t['route'] if point.get('layer'))) for t in involved]},separators=(',',':')))
           for p in Path("../results").glob("*/attempts/matching/assessment.json"):
               a=json.loads(p.read_text())
               goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
@@ -89,3 +99,5 @@ jobs:
 # Preserve electrical net ownership while coalescing its selected timing path.
 
 # Use net-associated selected paths with the unmodified Core connection adapter.
+
+# Classify remaining overlap findings without exporting geometry or identifiers.
