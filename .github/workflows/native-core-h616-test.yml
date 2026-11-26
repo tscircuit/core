@@ -1,0 +1,41 @@
+name: Verify unchanged native H616 Core repro
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-core-h616-test.yml]
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    strategy:
+      fail-fast: false
+      matrix:
+        bus: [2718df9b52937392f648612ca4a31d6352b585a5, eb75b264fac514b63ebaf26c9d54a4b3eaf0f643]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ad99aed4c1e32411d54e10f381fa6ec63ebc802d
+          path: core
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ matrix.bus }}
+          path: bus
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install exact isolated runtime
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ../core
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+      - name: Verify whole-circuit repro; export code and aggregate count only
+        working-directory: core
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/repros/repro-h616-native-timing.test.tsx
+          cat tests/repros/repro-h616-native-timing.test.tsx
