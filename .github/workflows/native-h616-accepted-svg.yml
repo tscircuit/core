@@ -1,0 +1,156 @@
+name: Render accepted full native H616 before and after
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-h616-accepted-svg.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [h616]
+        solver: [2718df9b52937392f648612ca4a31d6352b585a5, eb75b264fac514b63ebaf26c9d54a4b3eaf0f643]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: c6bbe04498131a8e5b2f90e646cb3246116801d8
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ matrix.solver }}
+          path: bus
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/props
+          ref: 0fa540f7c4073a006e9eb14bf56c3b197b999668
+          path: props
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/circuit-json
+          ref: ba753381b45e09acc4ca6db77e85bc78003cabf4
+          path: circuit-json
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/checks
+          ref: 9f69a5a19e93a6ea84d26d5a5cb73b0b5670324b
+          path: checks
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Build public skew declarations and validators
+        run: |
+          cd circuit-json
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          cd ../props
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          cd ../checks
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
+          bun run build
+          cd ..
+      - name: Install isolated actual source builds
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ..
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#e14cdf3f568906a88ff70c70d4959e11ad91bf95'})
+          p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+          cp ../analysis/lib/components/primitive-components/Bus.ts lib/components/primitive-components/Bus.ts
+          for file in SimpleRouteJson.ts getBusesForSimpleRouteJson.ts get-bus-lanes-length-matching-buses.ts; do
+            cp "../analysis/lib/utils/autorouting/$file" "lib/utils/autorouting/$file"
+          done
+          cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
+          cp -r ../props/dist/. node_modules/@tscircuit/props/dist/
+          cp -r ../checks/dist/. node_modules/@tscircuit/checks/dist/
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Measure unchanged requirements and budget; export aggregates only
+        working-directory: core
+        run: |
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120 > ../private-run.log 2>&1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path("../results").rglob("render.log"):
+              for line in p.read_text().splitlines():
+                  if line.startswith(("SOLVER_FAILURE=", "SMALL_REQUEST=", "COALESCED_REQUEST=", "CLOCK_PHASE=")): print(line)
+          for p in Path("../results").glob("*/attempts/matching/progress.json"):
+              progress=json.loads(p.read_text())
+              print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))
+          for p in Path("../results").glob("*/attempts/matching/assessment.json"):
+              a=json.loads(p.read_text())
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('MATCHING_ASSESSMENT='+json.dumps({'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'geometryErrorCount':len(a.get('geometryErrors',[]))},separators=(',',':')))
+          for c in json.loads(Path('../results/results.json').read_text())['cases']:
+              a=c['assessment']
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
+          PY
+
+      - name: Render accepted retained copper only; export the approved H616 SVG
+        working-directory: core
+        run: |
+          cat > render-accepted-h616.ts <<'TS'
+          import { readFileSync, writeFileSync } from "node:fs"
+          import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
+          const result = JSON.parse(readFileSync("../results/results.json", "utf8")).cases[0]
+          const assessment = result.assessment
+          const physical = ["trace_overlap", "pad_trace", "via_trace", "via_pad", "via_spacing", "contiguous", "via_in_pad", "hole_trace", "width"]
+          if (assessment.connectedNets !== 53 || assessment.geometryErrors.length || physical.some((name) => assessment.findings[name])) throw Error("Only complete DRC-clean copper can be rendered")
+          const goals = assessment.ddrConstraints.filter((rule) => !rule.assessmentOnly && (rule.severity ?? "error") === "error")
+          const met = goals.filter((rule) => rule.status === "met").length
+          const circuit = JSON.parse(readFileSync("../results/h616/circuit.json", "utf8"))
+          const svg = convertCircuitJsonToPcbSvg(circuit, { width: 1200, height: 1000, viewport: { minX: -10.5, maxX: 12.5, minY: 1, maxY: 20.5 }, shouldDrawRatsNest: false, showDebugObjects: false })
+          const caption = `<rect x="10" y="10" width="770" height="54" rx="8" fill="white" stroke="#334155"/><text x="24" y="44" font-family="sans-serif" font-size="23" fill="#0f172a">H616: 53/53 connected · ${met}/${goals.length} required skew checks · 0 physical findings</text>`
+          writeFileSync("../accepted-h616.svg", svg.replace("</svg>", caption + "</svg>"))
+          TS
+          bun render-accepted-h616.ts
+          python3 - <<'PYCODE'
+          import base64,gzip
+          from pathlib import Path
+          print('APPROVED_H616_SVG_GZIP='+base64.b64encode(gzip.compress(Path('../accepted-h616.svg').read_bytes())).decode())
+          PYCODE
+  bus-test-snapshot:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: eb75b264fac514b63ebaf26c9d54a4b3eaf0f643
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --ignore-scripts --backend=copyfile
+      - name: Regenerate the existing validated full native bus snapshot only
+        run: |
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/h616-declarative-skew.test.ts
+          python3 - <<'PYCODE'
+          import base64,gzip
+          from pathlib import Path
+          print('APPROVED_H616_BUS_TEST_SVG_GZIP='+base64.b64encode(gzip.compress(Path('tests/__snapshots__/h616-declarative-skew-pcb.snap.svg').read_bytes())).decode())
+          PYCODE
