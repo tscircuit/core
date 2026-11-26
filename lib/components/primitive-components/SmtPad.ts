@@ -18,6 +18,7 @@ import type { Port } from "./Port"
 import { selectPortForPcbPrimitive } from "./Port/selectPortForPcbPrimitive"
 import { getAxisAlignedSizeFromRotatedRect } from "lib/utils/pcb/get-axis-aligned-size-from-rotated-rect"
 import { getPolygonSolderPasteContours } from "lib/utils/pcb/get-polygon-solder-paste-contours"
+import { mapSoldermaskSideMargins } from "lib/utils/pcb/map-soldermask-side-margins"
 
 export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
   pcb_smtpad_id: string | null = null
@@ -229,6 +230,11 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          ...mapSoldermaskSideMargins({
+            pad: props,
+            transform: globalTransform,
+            emittedCcwRotationDegrees: finalRotationDegrees,
+          }),
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
           pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
         } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
@@ -245,6 +251,10 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
           port_hints: portHints,
           is_covered_with_solder_mask: isCoveredWithSolderMask,
           soldermask_margin: soldermaskMargin,
+          ...mapSoldermaskSideMargins({
+            pad: props,
+            transform: globalTransform,
+          }),
           x: position.x,
           y: position.y,
           subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
@@ -306,6 +316,12 @@ export class SmtPad extends PrimitiveComponent<typeof smtPadProps> {
         port_hints: portHints,
         is_covered_with_solder_mask: isCoveredWithSolderMask,
         soldermask_margin: soldermaskMargin,
+        ...mapSoldermaskSideMargins({
+          pad: props,
+          transform: globalTransform,
+          padCcwRotationDegrees: baseRotation,
+          emittedCcwRotationDegrees: padRotation,
+        }),
         subcircuit_id: subcircuit?.subcircuit_id ?? undefined,
         pcb_group_id: this.getGroup()?.pcb_group_id ?? undefined,
       } as PcbSmtPadRotatedRect) as PcbSmtPadRotatedRect
