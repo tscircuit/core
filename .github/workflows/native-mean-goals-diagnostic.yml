@@ -1,4 +1,4 @@
-name: Compare smaller existing H616 tuning banks
+name: Verify timing-space candidate selection on the full H616 board
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, e84295b3ec70bb51d6a88c7656055695981bc6c9]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 9db98e9c84cf25e7f4545c8c5c5df31403c71b68]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
