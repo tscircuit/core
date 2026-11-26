@@ -1,75 +1,28 @@
-name: Inspect every completed AM3352 native route
+name: Refresh affected native bus snapshots after numerical reserve
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  route:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 80
-    strategy:
-      fail-fast: false
-      max-parallel: 11
-      matrix:
-        sample: [control, control-inner1, right, left, above, inner-layers, inner-layers-right, inner-layers-left, inner-layers-above, inner-layers-complete-ca, outer-layers]
-    env:
-      BUN_JSC_forceRAMSize: '2147483648'
-      BUN_JSC_miniVMHeapGrowthFactor: '1.05'
+  snapshot:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: tscircuit/bus-lanes-solver
-          ref: cf5b863f49409f9ad49606c1a6e492ff7f91f2f6
+          ref: a3c29d979a8ab96a1536fc1657c4b24fedcde763
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.3
       - run: bun install --ignore-scripts --backend=copyfile
-      - name: Freshly solve and retain only validated completed routes
+      - name: Rerun the complete Core connectivity, timing, coupling and DRC assertions
+        env:
+          BUN_UPDATE_SNAPSHOTS: '1'
         run: |
-          mkdir -p results
-          bun scripts/benchmark.ts --worker '${{ matrix.sample }}' --solver "$GITHUB_WORKSPACE/lib/index.ts" --timeout-seconds 3600 --routes-directory "$GITHUB_WORKSPACE/results" > results/solve.log 2>&1
-          cat results/solve.log
-          test -f 'results/${{ matrix.sample }}.json'
+          bun test tests/features/autorouter-bus-lanes-am3352.test.tsx --timeout 120000
+          git diff --numstat
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gallery-case-${{ matrix.sample }}
-          path: results/
-  gallery:
-    needs: route
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: tscircuit/bus-lanes-solver
-          ref: cf5b863f49409f9ad49606c1a6e492ff7f91f2f6
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-      - run: bun install --ignore-scripts --backend=copyfile
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: gallery-case-*
-          path: captures
-      - name: Revalidate all eleven fresh solves before rendering anything
-        run: |
-          cat > render-accepted-gallery.ts <<'TS'
-          import { readFileSync } from 'node:fs'
-          import { am3352SamplePlacements, loadAm3352Sample } from './scripts/am3352-samples'
-          import { exportAm3352RoutedSnapshots } from './scripts/snapshot-routed-am3352'
-          const candidates=[]
-          for(const {name} of am3352SamplePlacements){
-            const captured=JSON.parse(readFileSync(`captures/gallery-case-${name}/${name}.json`,'utf8'))
-            const {metadata}=await loadAm3352Sample(name)
-            candidates.push({metadata,solver:{...captured,getOutput:()=>captured.output}})
-          }
-          const reports=await exportAm3352RoutedSnapshots(candidates,'gallery')
-          await Bun.write('gallery/validation.json',JSON.stringify(reports))
-          TS
-          bun render-accepted-gallery.ts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: accepted-am3352-gallery
-          path: gallery/
+          name: native-bus-core-snapshots
+          path: tests/features/__snapshots__/autorouter-bus-lanes-am3352-*-pcb.snap.svg
