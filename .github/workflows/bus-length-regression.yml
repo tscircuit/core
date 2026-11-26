@@ -1,0 +1,65 @@
+name: Declared length selection regression controls
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/bus-length-regression.yml]
+permissions:
+  contents: read
+jobs:
+  am3352:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        sample: [control, control-inner1, right, left, above, inner-layers, inner-layers-right, inner-layers-left, inner-layers-above, inner-layers-complete-ca, outer-layers]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 2718df9b52937392f648612ca4a31d6352b585a5
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 9d4287710058810796acb03b8801d6d0ca565991
+          path: head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install independent source trees before timing
+        run: |
+          for side in base head; do
+            (cd "$side" && bun install --ignore-scripts --backend=copyfile)
+          done
+      - name: Fresh paired solves with the unchanged worker and budget
+        env:
+          SAMPLE: ${{ matrix.sample }}
+        run: |
+          mkdir -p results/base results/head
+          for side in base head; do
+            bun base/scripts/benchmark.ts --worker "$SAMPLE" --timeout-seconds 3600 --solver "$PWD/$side/lib/index.ts" --routes-directory "$PWD/results/$side" > "results/$side.log" 2>&1
+            sed -n 's/^REPORT /AM_LENGTH_REPORT=/p' "results/$side.log"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: declared-length-am-${{ matrix.sample }}
+          path: results
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 9d4287710058810796acb03b8801d6d0ca565991
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --ignore-scripts --backend=copyfile
+      - run: bun run typecheck
+      - run: bun run format:check
+      - run: bun run build
