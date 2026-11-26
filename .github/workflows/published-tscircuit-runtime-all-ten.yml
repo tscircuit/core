@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         release: [0.0.3279, 0.0.3300]
-        board: [h616]
+        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 15
     env:
