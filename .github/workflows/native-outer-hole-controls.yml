@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [surface_landing_control, original_native_checker]
+        variant: [original_native_checker]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 75
     env:
@@ -47,6 +47,7 @@ jobs:
               p.write_text(s.replace(old,'nativePadCells.has(cell)'))
           if variant == 'original_native_checker':
               import subprocess
+              subprocess.run(['git','fetch','--depth=1','origin','01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f'],check=True)
               original=subprocess.check_output(['git','show','01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f:lib/native-carrier-router.ts'],text=True)
               Path('lib/native-carrier-router.ts').write_text(original)
           if variant in ['scope_refinement','scope_both']:
