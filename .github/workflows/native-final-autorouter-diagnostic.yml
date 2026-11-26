@@ -1,0 +1,147 @@
+name: Verify public native mean-skew integration
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-final-autorouter-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [h616]
+        solver: [c41826a8b5fd0e11555db9429b80e11f3c46e580]
+        repair: [published]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: c6bbe04498131a8e5b2f90e646cb3246116801d8
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: ${{ matrix.solver }}
+          path: bus
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/props
+          ref: 0fa540f7c4073a006e9eb14bf56c3b197b999668
+          path: props
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/circuit-json
+          ref: ba753381b45e09acc4ca6db77e85bc78003cabf4
+          path: circuit-json
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/checks
+          ref: ff369b0024b56a8570c861708f03c7a1d584a913
+          path: checks
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: 93818dcfe4b9174c4cf120e72957b5b88c6aed26
+          path: autorouter
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Build public skew declarations and validators
+        run: |
+          cd circuit-json
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          cd ../props
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+          cd ../checks
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
+          bun run build
+          cd ..
+      - name: Compare the existing repair with an identical source-built baseline
+        working-directory: autorouter
+        run: |
+          if [ '${{ matrix.repair }}' = 'initial_regional' ]; then
+            git apply ../analysis/existing-initial-regional-repair.patch
+          fi
+          bun install --ignore-scripts --backend=copyfile
+          bun run build
+      - name: Install isolated actual source builds
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ..
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#e14cdf3f568906a88ff70c70d4959e11ad91bf95'})
+          p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+          cp ../analysis/lib/components/primitive-components/Bus.ts lib/components/primitive-components/Bus.ts
+          for file in SimpleRouteJson.ts getBusesForSimpleRouteJson.ts get-bus-lanes-length-matching-buses.ts; do
+            cp "../analysis/lib/utils/autorouting/$file" "lib/utils/autorouting/$file"
+          done
+          cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
+          cp -r ../props/dist/. node_modules/@tscircuit/props/dist/
+          cp -r ../checks/dist/. node_modules/@tscircuit/checks/dist/
+          cp -r ../autorouter/dist/. node_modules/@tscircuit/capacity-autorouter/dist/
+          cp ../analysis/diagnose-native-final-autorouter.ts .
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Measure unchanged requirements and budget; export aggregates only
+        working-directory: core
+        run: |
+          export BUN_OPTIONS="--preload $PWD/diagnose-native-final-autorouter.ts"
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120 > ../private-run.log 2>&1
+          python3 ../analysis/diagnose-native-physical-findings.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path("../results").rglob("render.log"):
+              for line in p.read_text().splitlines():
+                  if line.startswith(("FINAL_AR_STATE=", "SOLVER_FAILURE=", "SMALL_REQUEST=", "COALESCED_REQUEST=", "CLOCK_PHASE=")): print(line)
+          for p in Path("../results").glob("*/attempts/matching/progress.json"):
+              progress=json.loads(p.read_text())
+              print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))
+          for p in Path("../results").glob("*/attempts/matching/assessment.json"):
+              a=json.loads(p.read_text())
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('MATCHING_ASSESSMENT='+json.dumps({'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'geometryErrorCount':len(a.get('geometryErrors',[]))},separators=(',',':')))
+          for c in json.loads(Path('../results/results.json').read_text())['cases']:
+              a=c['assessment']
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('TUNING_BANK_RESULT='+json.dumps({'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
+          PY
+
+# Trace anonymized small-net stage transitions.
+
+# Probe whole inner carriers before fixing planar sites.
+
+# Include actual multilayer handoff retry.
+
+# Preserve tuned paths by ending branch copper at the first trunk contact.
+
+# Assess the complete matching attempt independently of fallback selection.
+
+# Preserve electrical net ownership while coalescing its selected timing path.
+
+# Use net-associated selected paths with the unmodified Core connection adapter.
+
+# Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
