@@ -63,7 +63,7 @@
     "@tscircuit/miniflex": "^0.0.4",
     "@tscircuit/modelprinter": "^0.0.37",
     "@tscircuit/ngspice-spice-engine": "^0.0.30",
-    "@tscircuit/props": "^0.0.746",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@0fa540f",
     "@tscircuit/schematic-match-adapt": "^0.0.18",
     "@tscircuit/schematic-trace-solver": "https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/0.0.246.tgz",
     "@tscircuit/solver-utils": "^0.0.16",
@@ -79,7 +79,7 @@
     "bun-match-svg": "0.0.16",
     "calculate-elbow": "^0.0.12",
     "chokidar-cli": "^3.0.0",
-    "circuit-json": "0.0.562",
+    "circuit-json": "https://pkg.pr.new/circuit-json@ba75338",
     "circuit-json-to-bom-csv": "^0.0.28",
     "circuit-json-to-bpc": "^0.0.13",
     "circuit-json-to-connectivity-map": "0.0.38",
@@ -171,8 +171,9 @@
   },
   "overrides": {
     "graphics-debug": "$graphics-debug",
+    "circuit-json": "$circuit-json",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
-    "@tscircuit/props": "^0.0.746",
+    "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@0fa540f",
     "@tscircuit/cableprinter": "^0.0.6"
   },
   "browser": {
