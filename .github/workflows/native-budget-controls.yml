@@ -1,0 +1,89 @@
+name: Compare native routing budgets in balanced order
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-budget-controls.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [icepi, a64]
+        order: [base_head, head_base]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2157320455220af3c0547ea5e746d2c1bf69f7a0
+          path: core-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2157320455220af3c0547ea5e746d2c1bf69f7a0
+          path: core-head
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 2718df9b52937392f648612ca4a31d6352b585a5
+          path: bus-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: f5826ca6e34cc4c8b99b67fc8e5894936ee1a599
+          path: bus-head
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install and fingerprint both independent runtimes before timing
+        run: |
+          for mode in base head; do
+            cd "bus-$mode"
+            bun install --ignore-scripts --backend=copyfile
+            bunx tsup
+            cd "../core-$mode"
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('package.json');s=json.loads(p.read_text());s['devDependencies']['@tscircuit/core-ddr-benchmark']='github:ShiboSoftwareDev/core-ddr-benchmark#5c850f63f75796e01efab7c3868760ca3d8f4e52';p.write_text(json.dumps(s,indent=2)+'\n')
+          for name,needle,label in [('BusLanesAutorouter.ts','    this.solver = new BusLanesPipelineSolver(getBusLanesInputFromSrj(input))','BUS_CONTROL_INPUT'),('CapacityMeshAutorouter.ts','  constructor(input: SimpleRouteJson, options: AutorouterOptions = {}) {','AR_CONTROL_INPUT')]:
+              p=Path('lib/utils/autorouting')/name;s=p.read_text();assert needle in s
+              s='import { createHash } from "node:crypto"\n'+s
+              line='console.log("'+label+'="+JSON.stringify({hash:createHash("sha256").update(JSON.stringify(input)).digest("hex"),connections:input.connections.length}))'
+              s=s.replace(needle,needle+'\n    '+line)
+              if name=='BusLanesAutorouter.ts':
+                  needle='        if (this.solver.failed) {'
+                  s=s.replace(needle,'        if(this.solver.solved) console.log("BUS_CONTROL_COPPER="+JSON.stringify({hash:createHash("sha256").update(JSON.stringify(this.solver.traces)).digest("hex"),connections:this.solver.traces.length}))\n'+needle)
+              p.write_text(s)
+          PY
+            bun install --ignore-scripts --backend=copyfile
+            cp -r "../bus-$mode/dist/." node_modules/@tscircuit/bus-lanes-solver/dist/
+            sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+            stat -c '%d:%i %n' node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+            cd ..
+          done
+      - name: Run both unchanged boards in balanced order with the shared 120-second budget
+        env:
+          ORDER: ${{ matrix.order }}
+          BOARD: ${{ matrix.board }}
+        run: |
+          for mode in ${ORDER//_/ }; do
+            cd "core-$mode"
+            bun scripts/benchmark-ddr/run.ts --out ../results-$mode --circuit "$BOARD" --timeout 120 > ../private-$mode.log 2>&1
+            cd ..
+            MODE="$mode" python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          mode=os.environ['MODE']
+          for p in Path('results-'+mode).rglob('render.log'):
+              for line in p.read_text().splitlines():
+                  if line.startswith(('BUS_CONTROL_INPUT=','BUS_CONTROL_COPPER=','AR_CONTROL_INPUT=')): print('MODE='+mode+' '+line)
+          for c in json.loads(Path('results-'+mode+'/results.json').read_text())['cases']:
+              a=c['assessment'];print('BUDGET_CONTROL_RESULT='+json.dumps({'mode':mode,'board':c['circuit'],'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'phases':[{'solver':p.get('solver'),'status':p.get('status'),'connections':p.get('connections'),'durationMs':p.get('durationMs')}for p in c.get('progress',{}).get('phases',[])]},separators=(',',':')))
+          PY
+          done
