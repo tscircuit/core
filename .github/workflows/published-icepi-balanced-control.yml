@@ -1,0 +1,90 @@
+name: Balanced actual published iCEPi budget control
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/published-icepi-balanced-control.yml]
+permissions:
+  contents: read
+jobs:
+  balanced:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    env:
+      BUN_JSC_forceRAMSize: "2147483648"
+      BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+      TSCIRCUIT_SAMPLE_WORKER_COUNT: "1"
+      TSCIRCUIT_SAMPLE_THREAD_COUNT: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 0bd1c1c
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ShiboSoftwareDev/core-ddr-benchmark
+          ref: 16b6352dc25e951192d88cb99a7cfe96abf62285
+          path: benchmark
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Reuse the verified published-runtime setup without changing routing
+        env:
+          RELEASE: "0.0.3279"
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('analysis/.github/workflows/published-tscircuit-runtime-all-ten.yml').read_text()
+          block=text.split('      - name: Install exact tscircuit release and an independent common validator\n',1)[1].split('      - name: Run unchanged ten-board native benchmark',1)[0]
+          script=block.split('        run: |\n',1)[1]
+          assert all(not line.strip() or line.startswith('          ') for line in script.splitlines())
+          Path('prepare-published.sh').write_text('\n'.join(line[10:] if line.startswith('          ')else line for line in script.splitlines())+'\n')
+          PY
+          bash -e prepare-published.sh
+          mv runtime base
+          mkdir head
+          cp base/index.ts base/proof.ts base/tsconfig.json head/
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          Path('head/package.json').write_text(json.dumps({'private':True,'type':'module','dependencies':{'tscircuit':'0.0.3300'}}))
+          PY
+          (cd head && bun install --ignore-scripts --backend=copyfile && bun proof.ts)
+          python3 - <<'PY'
+          import json,os,re,urllib.request
+          from pathlib import Path
+          for side in ['base','head']:
+              proof=json.loads(Path(side+'/runtime-proof.json').read_text())
+              m=json.load(urllib.request.urlopen('https://registry.npmjs.org/@tscircuit/core/'+proof['core']['version']))
+              deps={'@tscircuit/capacity-autorouter':proof['autorouter']['version'],'@tscircuit/bus-lanes-solver':re.search(r'/([0-9]+\.[0-9]+\.[0-9]+)\.tgz$',proof['bundledBus']).group(1),'@tscircuit/fanout-solver':proof['bundledFanout'],'@tscircuit/checks':proof['runtimeChecks']['version'],'@tscircuit/props':proof['props']['version'],'circuit-json':proof['circuitJson']['version']}
+              Path(side+'/stack-env.json').write_text(json.dumps({'coreCommit':m['gitHead'],'dependencies':deps}))
+          for package in ['@tscircuit/core','@tscircuit/capacity-autorouter']:
+              a=Path('base/node_modules/'+package+'/dist/index.js')
+              b=Path('head/node_modules/'+package+'/dist/index.js')
+              assert a.stat().st_ino!=b.stat().st_ino
+          PY
+      - name: Base head head base with the unchanged shared 120-second budget
+        run: |
+          export DDR_ASSESSMENT_CHECKS="$PWD/validator/node_modules/@tscircuit/checks/dist/index.js"
+          index=0
+          for side in base head head base; do
+            index=$((index+1))
+            ln -sfn "../$side/node_modules" benchmark/node_modules
+            export DDR_RUNTIME_CORE_COMMIT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["coreCommit"])' "$side/stack-env.json")
+            export DDR_RUNTIME_DEPENDENCIES=$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["dependencies"],separators=(",",":")))' "$side/stack-env.json")
+            bun benchmark/scripts/run.ts --core "$PWD/$side" --out "$PWD/results/$index-$side" --circuit icepi --timeout 120 > "private-$index.log" 2>&1 || run_status=$?
+            python3 - "$index" "$side" <<'PY'
+          import json,sys,hashlib
+          from pathlib import Path
+          index,side=sys.argv[1:]
+          root=Path('results/'+index+'-'+side)
+          data=json.loads((root/'results.json').read_text())
+          for c in data['cases']:
+              a=c['assessment']
+              if a is None: raise RuntimeError('Missing published runtime assessment')
+              traces=[e for e in json.loads((root/'icepi/circuit.json').read_text())if e['type']=='pcb_trace']
+              copper=hashlib.sha256(json.dumps(sorted(traces,key=lambda t:t['pcb_trace_id']),sort_keys=True,separators=(',',':')).encode()).hexdigest()
+              print('PUBLISHED_BALANCED_CONTROL='+json.dumps({'index':int(index),'side':side,'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'attempts':c['attempts'],'wallMs':c['wallMs'],'peakRssMb':c['peakRssMb'],'copperHash':copper,'cacheStates':[p.get('cacheStatus')for p in(c.get('progress')or{}).get('phases',[])]},separators=(',',':')))
+          PY
+          done
