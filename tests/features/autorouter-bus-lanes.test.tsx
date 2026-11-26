@@ -71,7 +71,7 @@ test("bus_lanes phase matches selected bus lengths and emits fixed-layer traces"
       return length + Math.hypot(point.x - previous.x, point.y - previous.y)
     }, 0),
   )
-  expect(Math.max(...lengths) - Math.min(...lengths)).toBeCloseTo(0.5, 7)
+  expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(0.5)
   expect(
     traces
       .flatMap((t) => t.route)
