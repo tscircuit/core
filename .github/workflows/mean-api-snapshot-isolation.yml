@@ -1,0 +1,31 @@
+name: Check mean API snapshot isolation
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/mean-api-snapshot-isolation.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/checks
+          ref: 7acf1d0f482d0a2eba269b5e5174ee4eaea2be03
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.5
+      - run: bun install --backend=copyfile
+      - name: Compare only public authored SVG output
+        run: |
+          cp tests/lib/__snapshots__/ddr-routing-pcb_trace_spacing.snap.svg /tmp/previous.svg
+          BUN_UPDATE_SNAPSHOTS=1 bun test tests/lib/check-pcb-routing-constraints-ddr-visual.test.ts --test-name-pattern pcb_trace_spacing
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import difflib
+          before=Path('/tmp/previous.svg').read_text().splitlines()
+          after=Path('tests/lib/__snapshots__/ddr-routing-pcb_trace_spacing.snap.svg').read_text().splitlines()
+          print('PUBLIC_AUTHORED_SVG_DIFF')
+          for line in difflib.unified_diff(before,after):print(line)
+          PYCODE
