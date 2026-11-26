@@ -27,7 +27,7 @@ jobs:
           python3 - <<'PY'
           import json,hashlib
           from pathlib import Path
-          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='4374e5d26a1607dae71a049cefab5b54b65b42695d100611f0da9fe71b76a100'
+          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='00953e196fcadcc85efa5ddd3816a3b0dbffc7e5e7f35c1932b225076229265a'
           print('EXACT_PACKAGE_VERIFIED')
           PY
       - name: Rerun the official shared 120 second benchmark
@@ -48,4 +48,49 @@ jobs:
         if: always()
         with:
           name: native-repeat-${{ matrix.repeat }}
+          path: results/
+  cache:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          path: base
+          ref: 7f71524bc8d7d82e31528d8533226d03ec33e9e8
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          path: head
+          ref: edbcad227ce06ac4f6a6c78629d906ab34c5bcc6
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install independent source files before timing
+        run: |
+          (cd base && bun install --ignore-scripts --backend=copyfile)
+          (cd head && bun install --ignore-scripts --backend=copyfile)
+      - name: Compare the unchanged real control phase in balanced order
+        run: |
+          mkdir -p results
+          iteration=0
+          for side in base head head base; do
+            iteration=$((iteration+1))
+            (cd "$side" && bun test tests/orangecrab-native-control.test.ts) > "results/$iteration-$side.log" 2>&1
+            cat "results/$iteration-$side.log"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[]
+          for p in sorted(Path('results').glob('*.log')):
+              row=next(json.loads(line) for line in p.read_text().splitlines() if line.startswith('{"seconds":'))
+              row['file']=p.name; rows.append(row)
+          assert len(rows)==4 and len({r['copperSha256'] for r in rows})==1 and len({r['iterations'] for r in rows})==1
+          print('CACHE_BALANCED='+json.dumps(rows,separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-cache-timing
           path: results/
