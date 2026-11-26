@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bus: [094fbeba5a7fe3bc03470dd3119712809e005dc9]
+        bus: [f5826ca6e34cc4c8b99b67fc8e5894936ee1a599]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
