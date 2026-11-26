@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [h616]
-        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 507e32f]
+        solver: [01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f, 507e32f4ff3ed081cd13c8f19904faeae24bd9c5]
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     timeout-minutes: 12
     steps:
@@ -50,6 +50,8 @@ jobs:
           bun install --ignore-scripts --backend=copyfile
           cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
           cp ../analysis/diagnose-native-mean-goals.ts .
+          cp ../analysis/lib/utils/autorouting/getBusesForSimpleRouteJson.ts lib/utils/autorouting/getBusesForSimpleRouteJson.ts
+          cp ../analysis/lib/utils/autorouting/SimpleRouteJson.ts lib/utils/autorouting/SimpleRouteJson.ts
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
       - name: Measure unchanged requirements and budget; export aggregates only
         working-directory: core
