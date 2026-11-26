@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '9d4287710058810796acb03b8801d6d0ca565991' }}
+          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '8f0559ff709f851e346866a8aa14e72e9f0834b6' }}
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -44,9 +44,8 @@ jobs:
           import json
           from pathlib import Path
           p=Path('core/package.json');s=json.loads(p.read_text())
-          s['dependencies']['@tscircuit/capacity-autorouter']='0.0.1164'
           pins={'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'}
-          s['dependencies']['@tscircuit/capacity-autorouter']='0.0.1164';s['devDependencies'].update(pins);p.write_text(json.dumps(s,indent=2)+'\n')
+          s['devDependencies'].update(pins);p.write_text(json.dumps(s,indent=2)+'\n')
           PY
           cd core
           bun install --ignore-scripts --backend=copyfile
