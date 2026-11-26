@@ -1,0 +1,82 @@
+name: Balanced iMX6 declared-length control
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/bus-length-controls.yml]
+permissions:
+  contents: read
+jobs:
+  control:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9b09ef9dc4565474d101c47f7ee5eaa29020729d
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 9b09ef9dc4565474d101c47f7ee5eaa29020729d
+          path: head
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 2718df9b52937392f648612ca4a31d6352b585a5
+          path: base-bus
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 8f0559ff709f851e346866a8aa14e72e9f0834b6
+          path: head-bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Prepare independently installed published stacks before timing
+        run: |
+          for side in base head; do
+            (cd "$side-bus" && bun install --ignore-scripts --backend=copyfile && bunx tsup)
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for side in ['base','head']:
+              p=Path(side)/'package.json';s=json.loads(p.read_text())
+              s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'})
+              p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          for side in base head; do
+            (cd "$side" && bun install --ignore-scripts --backend=copyfile)
+            cp -r "$side-bus/dist/." "$side/node_modules/@tscircuit/bus-lanes-solver/dist/"
+            sha256sum "$side/node_modules/@tscircuit/capacity-autorouter/dist/index.js" "$side/node_modules/@tscircuit/bus-lanes-solver/dist/index.js"
+          done
+          python3 - <<'PY'
+          import os
+          for package in ['capacity-autorouter','bus-lanes-solver']:
+              assert os.stat('base/node_modules/@tscircuit/'+package+'/dist/index.js').st_ino != os.stat('head/node_modules/@tscircuit/'+package+'/dist/index.js').st_ino
+          PY
+      - name: Base head head base with the original shared 120 second budget
+        run: |
+          index=0
+          for side in base head head base; do
+            index=$((index+1))
+            (cd "$side" && bun scripts/benchmark-ddr/run.ts --out "../results/$index-$side" --circuit imx6 --timeout 120)
+            python3 - "$index" "$side" <<'PY'
+          import json,sys
+          from pathlib import Path
+          index,side=sys.argv[1:]
+          result=json.loads(Path('results/'+index+'-'+side+'/results.json').read_text())
+          print('BALANCED_LENGTH_RESULT='+json.dumps({'index':index,'side':side,'result':result},separators=(',',':')))
+          PY
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: balanced-imx6-declared-length
+          path: |
+            results/**/results.json
+            results/**/progress.json
+            results/**/render.log
