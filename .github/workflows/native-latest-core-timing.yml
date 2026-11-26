@@ -57,6 +57,7 @@ jobs:
         run: |
           export BUN_OPTIONS="--preload $PWD/diagnose-native-mean-goals.ts"
           bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120 > ../private-run.log 2>&1
+          python3 ../analysis/diagnose-native-physical-findings.py
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -106,3 +107,5 @@ jobs:
 # Classify remaining overlap findings without exporting geometry or identifiers.
 
 # Resolve exact trace identities and error kind without disclosing them.
+
+# Locate the remaining physical findings in the original pipeline phases.
