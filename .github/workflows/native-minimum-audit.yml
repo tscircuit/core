@@ -1,0 +1,76 @@
+name: Audit original matching against explicit source lengths
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/native-minimum-audit.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [glider]
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: a46f1fcd25e11275ddc47c6109ee3c5f2d3eb614
+          path: core
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/bus-lanes-solver
+          ref: 01212d0e75d7a2cf865e81e79ab0b77beb8b1e4f
+          path: bus
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install isolated actual source builds
+        run: |
+          cd bus
+          bun install --ignore-scripts --backend=copyfile
+          bunx tsup
+          cd ..
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#d3807237b90c5faebc8c3bff22b45e12822566f5'})
+          p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          cp -r ../bus/dist/. node_modules/@tscircuit/bus-lanes-solver/dist/
+          cp ../analysis/capture-matching-inputs.ts .
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+      - name: Capture the unchanged benchmark within its original budget
+        working-directory: core
+        run: |
+          export DDR_CAPTURE_DIR="$PWD/../captures"
+          export BUN_OPTIONS="--preload $PWD/capture-matching-inputs.ts"
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('../results').rglob('render.log'):
+              for line in p.read_text().splitlines():
+                  if line.startswith('MATCHING_INPUT='):print(line)
+          for c in json.loads(Path('../results/results.json').read_text())['cases']:
+              print('FRESH_SKEW_RESULT='+json.dumps({'board':c['circuit'],'connected':c['assessment']['connectedNets'],'requested':c['assessment']['requestedNets'],'findings':c['assessment']['findings'],'attempts':c['attempts']},separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-length-audit-${{ matrix.board }}
+          path: |
+            captures
+            results/**/results.json
+            results/**/progress.json
+            results/**/circuit.json
