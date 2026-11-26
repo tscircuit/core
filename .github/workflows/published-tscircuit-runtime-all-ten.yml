@@ -100,7 +100,20 @@ jobs:
       - name: Run unchanged ten-board native benchmark with the original shared budget
         run: |
           export DDR_ASSESSMENT_CHECKS="$PWD/validator/node_modules/@tscircuit/checks/dist/index.js"
-          bun benchmark/scripts/run.ts --core "$PWD/runtime" --out "$PWD/results" --circuit '${{ matrix.board }}' --timeout 120 > private-render.log 2>&1
+          bun benchmark/scripts/run.ts --core "$PWD/runtime" --out "$PWD/results" --circuit '${{ matrix.board }}' --timeout 120 > private-render.log 2>&1 || run_status=$?
+          python3 - <<'PYCODE'
+          import json,re
+          from pathlib import Path
+          for p in [Path('private-render.log'),*Path('results').rglob('render.log'),*Path('results').rglob('validation.log')]:
+              if not p.exists(): continue
+              for line in p.read_text(errors='replace').splitlines():
+                  if re.search(r'^(?:error:|Error:|TypeError:|ReferenceError:)|Cannot find module|already registered',line):
+                      print('PUBLISHED_CODE_DIAGNOSTIC='+line[:250])
+          p=Path('results/results.json')
+          if p.exists():
+              for row in json.loads(p.read_text())['cases']:
+                  print('PUBLISHED_RUNTIME_STATUS='+json.dumps({'board':row['circuit'],'status':row['status'],'attempts':row.get('attempts'),'assessmentPresent':row.get('assessment')is not None,'renderCompleted':(row.get('progress')or{}).get('renderCompleted')}))
+          PYCODE
           python3 - <<'PY'
           import json
           from pathlib import Path
