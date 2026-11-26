@@ -3,6 +3,7 @@ import {
   convertCircuitJsonToInputProblem,
   initializeManifoldGeometry,
 } from "@tscircuit/copper-pour-solver"
+import type { PcbCopperPour } from "circuit-json"
 import type { ISubcircuit } from "../Group/Subcircuit/ISubcircuit"
 import type { Net } from "../Net"
 import type { CopperPour } from "./CopperPour"
@@ -118,6 +119,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     const coveredWithSolderMask = isOuterLayer
       ? (props.coveredWithSolderMask ?? false)
       : false
+    const renderedPourIds = new Set<PcbCopperPour["pcb_copper_pour_id"]>()
 
     for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
       const insertedPour = db.pcb_copper_pour.insert({
@@ -128,11 +130,23 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         subcircuit_id: subcircuit.subcircuit_id ?? undefined,
         covered_with_solder_mask: coveredWithSolderMask,
       })
+      renderedPourIds.add(insertedPour.pcb_copper_pour_id)
 
       markTraceSegmentsInsideCopperPour({
         db,
         copperPour: insertedPour,
       })
+    }
+
+    if (!copperPour._isImplicitCopperPour) {
+      if (renderedPourIds.size > 0) {
+        boardComponent?._authoredCopperPourIdGroups?.set(
+          copperPour,
+          renderedPourIds,
+        )
+      } else {
+        boardComponent?._authoredCopperPourIdGroups?.delete(copperPour)
+      }
     }
   }
 }

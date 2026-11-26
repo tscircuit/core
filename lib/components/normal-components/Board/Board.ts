@@ -7,6 +7,7 @@ import type {
   AnyCircuitElement,
   LayerRef,
   PcbBoard,
+  PcbCopperPour,
   PcbVia,
 } from "circuit-json"
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
@@ -705,6 +706,10 @@ export class Board
   }
 
   _generatedStitchingViaIds = new Set<PcbVia["pcb_via_id"]>()
+  _authoredCopperPourIdGroups = new Map<
+    object,
+    Set<PcbCopperPour["pcb_copper_pour_id"]>
+  >()
 
   doInitialPcbCopperPourCleanup() {
     Board_doInitialPcbCopperPourCleanup(this)
