@@ -1,3 +1,4 @@
+import type { BusLengthMatchingPath } from "@tscircuit/bus-lanes-solver"
 import type {
   SimpleRouteJson as AutorouterSimpleRouteJson,
   SimplifiedPcbTrace as AutorouterSimplifiedPcbTrace,
@@ -125,6 +126,9 @@ export type SimpleRouteBusTermination =
     }
 
 export type SimpleRouteBus = {
+  lengthMatchingPaths?: BusLengthMatchingPath[]
+  /** Additional TSX lengthMatchTo members, resolved before invoking the router. */
+  lengthMatchToConnectionNames?: SrjConnectionName[]
   busId: string
   name?: string
   connectionNames: SrjConnectionName[]
@@ -137,6 +141,7 @@ export type SimpleRouteBus = {
     Record<SrjConnectionName, { x: number; y: number; layer?: string }>
   >
   maxLengthSkew?: number
+  skewReference?: "mean"
   /** Pad-to-pad planar copper limits per member, including fixed fanouts, in mm. */
   minLength?: number
   maxLength?: number
