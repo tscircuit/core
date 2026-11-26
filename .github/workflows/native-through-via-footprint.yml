@@ -150,3 +150,5 @@ jobs:
 # Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
 
 # Quantify contact margins and actual barrel spans without exporting geometry.
+
+# Keep the native via raster for copper outside wire routing layers.

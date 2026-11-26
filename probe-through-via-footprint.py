@@ -8,6 +8,6 @@ needle='if (layer === undefined) {\n            return `Obstacle ${obstacleIndex
 needle='segmentEnd,\n            layer,\n            obstacleRootId,';assert needle in s;s=s.replace(needle,'segmentEnd,\n            layer: obstacle.viaOnly ? -1 : layer!,\n            obstacleRootId,')
 needle='this.addObstacleRootId({\n          rootIdsByCell: this.obstacleTraceRootIdsFlat,';assert s.count(needle)>=1
 # A via-only route still enters the existing primitive index and shared via raster.
-needle='const gridSegmentStart = this.transformBoundsPointToGrid(';p=s.index(needle,s.index('private rasterizeObstacleTraceSegment'));q=s.index('this.forEachCellNearSegment(',p);e=s.index('\n\n    this.forEachCellNearSegment(',q+1)
+needle='const gridSegmentStart = this.transformBoundsPointToGrid(';p=s.index(needle,s.index('private rasterizeObstacleTraceSegment'));q=s.index('this.forEachCellNearSegment(',p);e=s.index('    this.forEachCellNearSegment(',q+1)
 s=s[:q]+'if (params.layer >= 0) {\n    '+s[q:e]+'\n    }'+s[e:];b01.write_text(s)
 t=Path('node_modules/@tscircuit/high-density-b01/lib/obstacle-dataset-types.ts');s=t.read_text().replace('export type HighDensityRouteObstacle = {','export type HighDensityRouteObstacle = {\n  viaOnly?: boolean');t.write_text(s)
