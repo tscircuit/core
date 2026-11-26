@@ -50,7 +50,6 @@ jobs:
           path: checks
           persist-credentials: false
       - uses: actions/checkout@v4
-        if: matrix.repair == 'initial_regional'
         with:
           repository: tscircuit/tscircuit-autorouter
           ref: 93818dcfe4b9174c4cf120e72957b5b88c6aed26
@@ -72,11 +71,12 @@ jobs:
           cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
           bun run build
           cd ..
-      - name: Build existing initial regional repair against the exact published source
-        if: matrix.repair == 'initial_regional'
+      - name: Compare the existing repair with an identical source-built baseline
         working-directory: autorouter
         run: |
-          git apply ../analysis/existing-initial-regional-repair.patch
+          if [ '${{ matrix.repair }}' = 'initial_regional' ]; then
+            git apply ../analysis/existing-initial-regional-repair.patch
+          fi
           bun install --ignore-scripts --backend=copyfile
           bun run build
       - name: Install isolated actual source builds
@@ -102,9 +102,7 @@ jobs:
           cp -r ../circuit-json/dist/. node_modules/circuit-json/dist/
           cp -r ../props/dist/. node_modules/@tscircuit/props/dist/
           cp -r ../checks/dist/. node_modules/@tscircuit/checks/dist/
-          if [ '${{ matrix.repair }}' = 'initial_regional' ]; then
-            cp -r ../autorouter/dist/. node_modules/@tscircuit/capacity-autorouter/dist/
-          fi
+          cp -r ../autorouter/dist/. node_modules/@tscircuit/capacity-autorouter/dist/
           sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
       - name: Measure unchanged requirements and budget; export aggregates only
         working-directory: core
@@ -143,3 +141,5 @@ jobs:
 # Preserve electrical net ownership while coalescing its selected timing path.
 
 # Use net-associated selected paths with the unmodified Core connection adapter.
+
+# Both variants compile the same pinned AR source and dependencies; only the existing PR patch differs.
