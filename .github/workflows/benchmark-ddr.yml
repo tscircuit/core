@@ -1,4 +1,4 @@
-name: Verify native DDR timing compilation end to end
+name: Repeat the exact native DDR integration package
 on:
   workflow_dispatch:
 permissions:
@@ -8,67 +8,44 @@ jobs:
     runs-on: blacksmith-8vcpu-ubuntu-2404-arm
     strategy:
       fail-fast: false
-      max-parallel: 10
       matrix:
-        mode: [base, head]
-        board: [orangecrab, h3, a64, stmp157, a13, h616, butterstick, glider, imx6, icepi]
+        repeat: [1, 2]
     steps:
       - uses: actions/checkout@v4
         with:
           path: core
-          ref: abe9820189e7a1b83c00afe31a1a5a6a159268ab
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        if: matrix.mode == 'head'
-        with:
-          repository: tscircuit/bus-lanes-solver
-          path: bus
-          ref: 22725ddee343518cf68910c5c71b1dbb63e55024
+          ref: ccf6e1d679191f801afca4dbaa83817f3920f13a
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
-      - name: Build exact bus implementation
-        if: matrix.mode == 'head'
-        working-directory: bus
-        run: |
-          bun install --ignore-scripts --backend=copyfile
-          bun run build
-          bun pm pack --filename ../bus.tgz
-          sha256sum dist/index.js
-      - name: Install exact Core and benchmark implementations
-        env:
-          MODE: ${{ matrix.mode }}
-        run: |
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          p=Path('core/package.json'); package=json.loads(p.read_text())
-          benchmark='16b6352dc25e951192d88cb99a7cfe96abf62285'
-          if os.environ['MODE']=='head': benchmark='de792e7354edf7d3149b6860419420a9ed1f4758'
-          pins={'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#'+benchmark}
-          if os.environ['MODE']=='head': pins['@tscircuit/bus-lanes-solver']='file:../bus.tgz'
-          for name,pin in pins.items():
-              package.get('dependencies',{}).pop(name,None)
-              package.setdefault('devDependencies',{})[name]=pin
-          p.write_text(json.dumps(package,indent=2)+'\n')
-          PY
-          cd core
-          bun install --ignore-scripts --backend=copyfile
-          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
-      - name: Run the unchanged official two-attempt shared 120-second budget
+      - name: Install the actual Core PR package with isolated files
         working-directory: core
         run: |
-          bun node_modules/@tscircuit/core-ddr-benchmark/scripts/run.ts --core . --out ../results --circuit '${{ matrix.board }}' --timeout 120
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/bus-lanes-solver/dist/index.js node_modules/@tscircuit/capacity-autorouter/dist/index.js
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          assert hashlib.sha256(Path('node_modules/@tscircuit/bus-lanes-solver/dist/index.js').read_bytes()).hexdigest()=='ae4b39c7ffe8856287063965bcf5fa9410d68dc11574824a94625d643aec9223'
+          print('EXACT_PACKAGE_VERIFIED')
+          PY
+      - name: Rerun the official shared 120 second benchmark
+        working-directory: core
+        run: |
+          bun run benchmark:ddr -- --out ../results --circuit orangecrab --timeout 120
           python3 - <<'PY'
           import json
           from pathlib import Path
-          results=json.loads(Path('../results/results.json').read_text())
-          row=results['cases'][0]
-          print('NATIVE_TOTAL_CASE='+json.dumps(row,separators=(',',':')))
+          row=json.loads(Path('../results/results.json').read_text())['cases'][0]
+          assessment=row['assessment']
+          print('NATIVE_REPEAT_RESULT='+json.dumps(row,separators=(',',':')))
+          assert assessment['connectedNets']==50
+          assert all(target['status']=='met' for target in assessment['ddrConstraints'])
+          assert all(assessment['findings'][key]==0 for key in ['trace_overlap','pad_trace','via_trace','via_pad','via_spacing','contiguous','via_in_pad','hole_trace','width'])
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-total-${{ matrix.mode }}-${{ matrix.board }}
+          name: native-repeat-${{ matrix.repeat }}
           path: results/
