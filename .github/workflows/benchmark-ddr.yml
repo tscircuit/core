@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [glider]
-        side: [main, candidate]
+        side: [candidate]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: tscircuit/bus-lanes-solver
-          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '7f01092edae3e1df40cedefff0de1a5d1fcccb8e' }}
+          ref: ${{ matrix.side == 'main' && '2718df9b52937392f648612ca4a31d6352b585a5' || '9d4287710058810796acb03b8801d6d0ca565991' }}
           path: bus
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2

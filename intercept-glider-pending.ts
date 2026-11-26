@@ -3,10 +3,21 @@ import { join } from "node:path"
 const bus = await import(join(process.cwd(), "node_modules/@tscircuit/bus-lanes-solver/dist/index.js"))
 const autorouter = await import(join(process.cwd(), "node_modules/@tscircuit/capacity-autorouter/dist/index.js"))
 let matching = false
+const busCaptures = new WeakSet()
+const busReports = new WeakMap()
 const busStep = bus.BusLanesPipelineSolver.prototype.step
 bus.BusLanesPipelineSolver.prototype.step = function (...args: unknown[]) {
   matching ||= this.input?.buses?.some((b: any) => b.minLength !== undefined || b.maxLengthSkew !== undefined)
-  return busStep.apply(this, args)
+  if (matching && this.input.connections.length > 11 && !busCaptures.has(this)) {
+    busCaptures.add(this)
+    console.log("GLIDER_MATCHING_BUS_INPUT=" + gzipSync(JSON.stringify(this.input)).toString("base64"))
+  }
+  const value = busStep.apply(this, args)
+  if (busCaptures.has(this) && performance.now() > (busReports.get(this) ?? 0)) {
+    busReports.set(this, performance.now() + 3000)
+    console.log("GLIDER_MATCHING_BUS_STAGE=" + JSON.stringify({iterations:this.iterations,phase:this.phase,solved:this.solved,failed:this.failed,error:this.error,stats:this.stats}))
+  }
+  return value
 }
 const captured = new WeakSet()
 const reports = new WeakMap()
