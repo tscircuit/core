@@ -44,9 +44,9 @@ test("exports and routes traces with different widths on a shared net", async ()
   })
   expect(requests).toMatchInlineSnapshot(`
     [
-      "automatic (A.pin1, B.pin1) · 0.8 mm",
-      "automatic (B.pin1, C.pin1) · 0.25 mm",
-      "automatic (A.pin1, B.pin1, C.pin1, D.pin1) · 0.8 mm",
+      "A.pin1 → B.pin1 · 0.8 mm",
+      "B.pin1 → C.pin1 · 0.25 mm",
+      "automatic (A.pin1, D.pin1) · 0.2 mm",
     ]
   `)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
