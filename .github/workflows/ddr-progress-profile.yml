@@ -1,0 +1,53 @@
+name: Profile unused native DDR progress graphics
+on:
+  push:
+    branches: [analysis/ddr-native-constraints-20261125]
+    paths: [.github/workflows/ddr-progress-profile.yml]
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: blacksmith-8vcpu-ubuntu-2404-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: analysis
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 9b09ef9dc4565474d101c47f7ee5eaa29020729d
+          path: core
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install unchanged latest published routing stack
+        run: |
+          cp analysis/profile-progress-graphics.ts core/profile-progress-graphics.ts
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('core/package.json');s=json.loads(p.read_text())
+          s['devDependencies'].update({'@tscircuit/checks':'0.0.283','@tscircuit/props':'0.0.746','circuit-json':'0.0.562','@tscircuit/core-ddr-benchmark':'github:ShiboSoftwareDev/core-ddr-benchmark#16b6352dc25e951192d88cb99a7cfe96abf62285'})
+          p.write_text(json.dumps(s,indent=2)+'\n')
+          PY
+          cd core
+          bun install --ignore-scripts --backend=copyfile
+          sha256sum node_modules/@tscircuit/capacity-autorouter/dist/index.js node_modules/@tscircuit/bus-lanes-solver/dist/index.js
+      - name: Observe the original benchmark and budget
+        working-directory: core
+        run: |
+          export BUN_OPTIONS="--preload $PWD/profile-progress-graphics.ts"
+          bun scripts/benchmark-ddr/run.ts --out ../results --circuit glider --timeout 120
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('../results').rglob('attempts/*/render.log'):
+              print('ATTEMPT='+p.parent.name)
+              for line in p.read_text().splitlines():
+                  if line.startswith('PROGRESS_GRAPHICS_PROFILE='):print(line)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-progress-graphics-profile
+          path: results
