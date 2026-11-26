@@ -1,4 +1,4 @@
-name: Profile existing matching search without changing the benchmark
+name: Unchanged DDR benchmark with requested polyline geometry
 on:
   workflow_dispatch:
 permissions:
@@ -9,7 +9,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [orangecrab, glider, h616]
+        board: [stmp157, icepi]
+        side: [main, candidate]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,12 +21,24 @@ jobs:
           ref: abe9820189e7a1b83c00afe31a1a5a6a159268ab
           path: core
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: tscircuit/tscircuit-autorouter
+          ref: ${{ matrix.side == 'main' && 'dc19141bc92b21a52cb42aced8699e7ddb978924' || '01023a72324802c7db8fc8c7bbb6c4b005c83d40' }}
+          path: autorouter
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
+      - name: Build actual autorouter source for the benchmark
+        working-directory: autorouter
+        run: |
+          bun install --ignore-scripts --backend=copyfile
+          bun scripts/build-solver-workers.ts
+          bunx tsup --minify terser --external @tscircuit/core --external circuit-to-svg --format esm --sourcemap
       - name: Install original benchmark without request or rule changes
         run: |
-          cp analysis/intercept-matching-search.ts core/intercept-matching-search.ts
+          cp analysis/intercept-polyline-dimensions.ts core/intercept-polyline-dimensions.ts
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -35,11 +48,12 @@ jobs:
           PY
           cd core
           bun install --ignore-scripts --backend=copyfile
+          cp -r ../autorouter/dist/. node_modules/@tscircuit/capacity-autorouter/dist/
           sha256sum node_modules/@tscircuit/capacity-autorouter/dist/index.js node_modules/@tscircuit/bus-lanes-solver/dist/index.js
       - name: Run unchanged shared 120 second benchmark
         working-directory: core
         run: |
-          export BUN_OPTIONS="--preload $PWD/intercept-matching-search.ts"
+          export BUN_OPTIONS="--preload $PWD/intercept-polyline-dimensions.ts"
           bun scripts/benchmark-ddr/run.ts --out ../results --circuit '${{ matrix.board }}' --timeout 120
           unset BUN_OPTIONS
           python3 - <<'PY'
@@ -48,12 +62,12 @@ jobs:
           print('UNCHANGED_GEOMETRY_RESULT='+json.dumps(json.loads(Path('../results/results.json').read_text()),separators=(',',':')))
           for p in Path('../results').rglob('render.log'):
               for line in p.read_text().splitlines():
-                  if line.startswith('MATCH_SEARCH_PROFILE='): print(line)
+                  if line.startswith('POLYLINE_DIMENSIONS='): print(line)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: matching-profile-${{ matrix.board }}
+          name: unchanged-geometry-${{ matrix.board }}-${{ matrix.side }}
           path: |
             results/results.json
             results/**/render.log
