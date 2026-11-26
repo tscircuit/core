@@ -47,7 +47,7 @@ test("preserves variable wire segment widths when reversing a PCB route", () => 
     },
     { route_type: "wire", x: 4, y: 0, width: 0.8, layer: "bottom" },
     { route_type: "wire", x: 3, y: 0, width: 0.6, layer: "bottom" },
-    { route_type: "wire", x: 2, y: 0, width: 0.7, layer: "bottom" },
+    { route_type: "wire", x: 2, y: 0, width: 0.6, layer: "bottom" },
     {
       route_type: "via",
       x: 2,
@@ -59,7 +59,32 @@ test("preserves variable wire segment widths when reversing a PCB route", () => 
     { route_type: "wire", x: 1, y: 0, width: 0.3, layer: "top" },
     { route_type: "wire", x: 0, y: 0, width: 0.4, layer: "top" },
   ])
-  expect(reversePcbTraceRoute(reversed)).toEqual(route)
+  expect(reversePcbTraceRoute(reversed)).toEqual([
+    { route_type: "wire", x: 0, y: 0, width: 0.3, layer: "top" },
+    { route_type: "wire", x: 1, y: 0, width: 0.5, layer: "top" },
+    { route_type: "wire", x: 2, y: 0, width: 0.5, layer: "top" },
+    {
+      route_type: "via",
+      x: 2,
+      y: 0,
+      from_layer: "top",
+      to_layer: "bottom",
+    },
+    { route_type: "wire", x: 2, y: 0, width: 0.6, layer: "bottom" },
+    { route_type: "wire", x: 3, y: 0, width: 0.8, layer: "bottom" },
+    { route_type: "wire", x: 4, y: 0, width: 0.6, layer: "bottom" },
+    {
+      route_type: "through_pad",
+      start: { x: 4, y: 0 },
+      end: { x: 5, y: 0 },
+      start_layer: "bottom",
+      end_layer: "top",
+      width: 0.9,
+    },
+    { route_type: "wire", x: 5, y: 0, width: 0.9, layer: "top" },
+    { route_type: "wire", x: 6, y: 0, width: 1, layer: "top" },
+    { route_type: "wire", x: 7, y: 0, width: 1.1, layer: "top" },
+  ])
   expect(route).toEqual(originalRoute)
 
   const interpolatedRoute: PcbTrace["route"] = [

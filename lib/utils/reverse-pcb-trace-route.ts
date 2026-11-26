@@ -68,6 +68,7 @@ export const reversePcbTraceRoute = (
       ) {
         continue
       }
+      if (nextReversedPoint?.route_type === "via") continue
 
       let originalRunEndIndex = route.length - reversedIndex - 1
       while (originalRunEndIndex < route.length - 1) {

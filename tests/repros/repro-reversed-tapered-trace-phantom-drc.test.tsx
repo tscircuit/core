@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { getTestFixture } from "tests/fixtures/get-test-fixture"
 
-test("reversed 0.8mm to 0.35mm power taper into a via reports a phantom clearance error", async () => {
+test("reversed 0.8mm to 0.35mm power taper into a via has no phantom clearance error", async () => {
   const { circuit } = getTestFixture()
   circuit.add(
     <board width={16} height={8} routeRemaining={false} schematicDisabled>
@@ -52,11 +52,7 @@ test("reversed 0.8mm to 0.35mm power taper into a via reports a phantom clearanc
   )
   await circuit.renderUntilSettled()
 
-  expect(
-    circuit.db.pcb_trace_error.list().map((error) => error.message),
-  ).toEqual([
-    "PCB trace S1.1 to S2.1 is too close to P1.1 to J2.pin1 (gap: 0.025mm)",
-  ])
+  expect(circuit.db.pcb_trace_error.list()).toEqual([])
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     shouldDrawErrors: true,
   })
