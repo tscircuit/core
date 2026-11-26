@@ -66,6 +66,81 @@ test("courtyardpill flips to bottom layer when parent chip is on bottom", () => 
   expect(pills[0]!.radius).toBe(1)
 })
 
+test("courtyardpill swaps width and height for 90-degree rotated parent chip", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <chip
+        name="U1"
+        pcbX={-5}
+        pcbY={0}
+        pcbRotation={90}
+        footprint={
+          <footprint>
+            <courtyardpill
+              pcbX={1}
+              pcbY={0}
+              width={8}
+              height={3}
+              radius={1.5}
+            />
+          </footprint>
+        }
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  const pills = circuit.db.pcb_courtyard_pill.list()
+  expect(pills).toHaveLength(1)
+  expect(pills[0]!.center.x).toBeCloseTo(-5, 5)
+  expect(pills[0]!.center.y).toBeCloseTo(1, 5)
+  expect(pills[0]!.width).toBe(3)
+  expect(pills[0]!.height).toBe(8)
+  expect(pills[0]!.radius).toBe(1.5)
+})
+
+test("courtyardpill emits rotated pcb_courtyard_outline for non-90-degree rotation", () => {
+  const { circuit } = getTestFixture()
+
+  circuit.add(
+    <board width="20mm" height="20mm">
+      <chip
+        name="U1"
+        pcbX={0}
+        pcbY={0}
+        pcbRotation={30}
+        footprint={
+          <footprint>
+            <courtyardpill
+              pcbX={0}
+              pcbY={0}
+              width={8}
+              height={3}
+              radius={1.5}
+            />
+          </footprint>
+        }
+      />
+    </board>,
+  )
+
+  circuit.render()
+
+  expect(circuit.db.pcb_courtyard_pill.list()).toHaveLength(0)
+  const outlines = circuit.db.pcb_courtyard_outline.list()
+  expect(outlines).toHaveLength(1)
+  expect(outlines[0]!.outline.length).toBeGreaterThanOrEqual(16)
+  // Verify the outline is actually rotated ~30 degrees (maxY > 1.5, maxX < 4.0)
+  const maxX = Math.max(...outlines[0]!.outline.map((p) => p.x))
+  const maxY = Math.max(...outlines[0]!.outline.map((p) => p.y))
+  expect(maxX).toBeGreaterThan(3.5)
+  expect(maxX).toBeLessThan(3.95)
+  expect(maxY).toBeGreaterThan(2.5)
+})
+
 test("createComponentsFromCircuitJson reconstructs CourtyardPill from pcb_courtyard_pill", () => {
   const components = createComponentsFromCircuitJson(
     { componentName: "U1", componentRotation: "0deg" },
