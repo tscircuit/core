@@ -66,6 +66,10 @@ jobs:
           for p in Path("../results").glob("*/attempts/matching/progress.json"):
               progress=json.loads(p.read_text())
               print('MATCHING_PHASES='+json.dumps([{'solver':phase.get('solver'),'status':phase.get('status'),'connections':phase.get('connections'),'durationMs':phase.get('durationMs')}for phase in progress.get('phases',[])],separators=(',',':')))
+          for p in Path("../results").glob("*/attempts/matching/assessment.json"):
+              a=json.loads(p.read_text())
+              goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
+              print('MATCHING_ASSESSMENT='+json.dumps({'connected':a['connectedNets'],'requested':a['requestedNets'],'findings':a['findings'],'goals':goals,'geometryErrorCount':len(a.get('geometryErrors',[]))},separators=(',',':')))
           for c in json.loads(Path('../results/results.json').read_text())['cases']:
               a=c['assessment']
               goals=[{k:d.get(k) for k in ['name','status','actualSkewMm','maxLengthSkew','marginMm']} for d in a['ddrConstraints'] if not d.get('assessmentOnly') and d.get('severity','error')=='error']
@@ -79,3 +83,5 @@ jobs:
 # Include actual multilayer handoff retry.
 
 # Preserve tuned paths by ending branch copper at the first trunk contact.
+
+# Assess the complete matching attempt independently of fallback selection.
