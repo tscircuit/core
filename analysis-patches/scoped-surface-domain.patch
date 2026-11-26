@@ -1,0 +1,62 @@
+diff --git a/lib/route-generated-signal-sites.ts b/lib/route-generated-signal-sites.ts
+index 933bdd7..c042ed0 100644
+--- a/lib/route-generated-signal-sites.ts
++++ b/lib/route-generated-signal-sites.ts
+@@ -95,13 +95,20 @@ export function* routeGeneratedSurfaceCarriers(
+         signalLayers(request.input, connection).includes(layer),
+       ),
+   )
+-  const views = [
+-    ...commonInnerLayers.map((layer) => ({
+-      ...request.input,
+-      allowedLayers: [layer],
+-    })),
+-    request.input,
+-  ]
++  const views: SimpleRouteJson[] = commonInnerLayers.map((layer) => ({
++    ...request.input,
++    allowedLayers: [layer],
++  }))
++  if (
++    !request.input.allowedLayers &&
++    request.input.connections.every((connection) =>
++      ["top", "bottom"].every((layer) =>
++        signalLayers(request.input, connection).includes(layer),
++      ),
++    )
++  )
++    views.push({ ...request.input, allowedLayers: ["top", "bottom"] })
++  views.push(request.input)
+   for (const native of views) {
+     const surface = yield* runBoundedRouting(
+       negotiateSurfaceRoutes(native, {
+diff --git a/lib/route-surface-bridge.ts b/lib/route-surface-bridge.ts
+index c1888b1..0750662 100644
+--- a/lib/route-surface-bridge.ts
++++ b/lib/route-surface-bridge.ts
+@@ -84,11 +84,7 @@ export function surfaceBridgeEligible(
+ ): boolean {
+   const physical = getCopperLayerNames(input.layerCount),
+     pads = connection.pointsToConnect,
+-    permitted =
+-      input.allowedLayers ??
+-      signalLayers(input, connection).filter(
+-        (layer) => layer === physical[0] || layer === physical.at(-1),
+-      )
++    permitted = input.allowedLayers ?? signalLayers(input, connection)
+   return (
+     physical.length >= 2 &&
+     pads.length === 2 &&
+@@ -120,11 +116,7 @@ export function* routeSurfaceBridge(
+     inner = innerCarrier(input),
+     bridge =
+       inner ?? (surface === physical[0] ? physical.at(-1)! : physical[0]),
+-    permitted =
+-      input.allowedLayers ??
+-      signalLayers(input, connection).filter(
+-        (layer) => layer === physical[0] || layer === physical.at(-1),
+-      )
++    permitted = input.allowedLayers ?? signalLayers(input, connection)
+   if (
+     pads[1].layer !== surface ||
+     ![physical[0], physical.at(-1)!].includes(surface) ||

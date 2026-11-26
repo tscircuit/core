@@ -2,7 +2,7 @@ name: Verify explicit surface domains in minimum routing
 on:
   push:
     branches: [analysis/ddr-native-constraints-20261125]
-    paths: [.github/workflows/native-scoped-surface-control.yml]
+    paths: [.github/workflows/native-scoped-surface-control.yml, analysis-patches/scoped-surface-domain.patch]
 permissions:
   contents: read
 jobs:
