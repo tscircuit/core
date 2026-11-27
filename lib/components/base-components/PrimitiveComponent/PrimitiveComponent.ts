@@ -164,6 +164,27 @@ export abstract class PrimitiveComponent<
     return this.lowercaseComponentName === "group"
   }
 
+  /** Group descendants may inherit a physical PCB side reflection. */
+  get isPcbLayerGroup(): boolean {
+    return false
+  }
+
+  /** True when ancestor groups contribute an odd number of PCB side flips. */
+  _isPcbLayerFlippedByAncestorGroup(): boolean {
+    let flipped = false
+    let ancestor = this.parent
+    while (ancestor) {
+      if (
+        ancestor.isPcbLayerGroup &&
+        ancestor._parsedProps.layer === "bottom"
+      ) {
+        flipped = !flipped
+      }
+      ancestor = ancestor.parent
+    }
+    return flipped
+  }
+
   get isRoutingDirective() {
     return false
   }
@@ -780,7 +801,23 @@ export abstract class PrimitiveComponent<
     const container = this.getPrimitiveContainer()
     const footprint =
       this.componentName === "Footprint" ? this : this._getEnclosingFootprint()
-    const componentLayer = container?._getPcbComponentLayer()
+    // The enclosing group already mirrors PCB coordinates, whereas an
+    // individual component's footprint flip happens inside that frame.
+    // Keep these reflections separate to avoid mirroring pads twice.
+    const groupFlipped = this._isPcbLayerFlippedByAncestorGroup()
+    const containerLayer = container?._getPcbComponentLayer()
+    const containerGroupFlipped =
+      container?._isPcbLayerFlippedByAncestorGroup() ?? false
+    const componentLayer =
+      !container || container.isPcbLayerGroup
+        ? undefined
+        : containerGroupFlipped
+          ? containerLayer === "bottom"
+            ? "top"
+            : containerLayer === "top"
+              ? "bottom"
+              : containerLayer
+          : containerLayer
     const isFlipped = !container
       ? false
       : isFootprintFlipped({
@@ -788,7 +825,7 @@ export abstract class PrimitiveComponent<
           originalLayer: footprint?._parsedProps.originalLayer,
         })
     const maybeFlipLayer = (layer: LayerRef) => {
-      if (isFlipped) {
+      if (isFlipped !== groupFlipped) {
         return layer === "top" ? "bottom" : "top"
       }
       return layer

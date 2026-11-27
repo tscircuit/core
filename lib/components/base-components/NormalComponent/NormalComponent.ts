@@ -1293,7 +1293,13 @@ export class NormalComponent<
 
   protected getGlobalTransformRotation(): number {
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
-    const decomposedTransform = decomposeTSR(globalTransform)
+    // A group side flip is a reflection, not a 180-degree in-plane
+    // rotation. Remove it before extracting the component's PCB angle.
+    const decomposedTransform = decomposeTSR(
+      globalTransform,
+      false,
+      this._isPcbLayerFlippedByAncestorGroup(),
+    )
     return (decomposedTransform.rotation.angle * 180) / Math.PI
   }
 
@@ -1382,10 +1388,15 @@ export class NormalComponent<
   }
 
   protected _getPcbComponentLayer(): LayerRef {
-    return (
+    const localLayer =
       this._parsedProps.layer ??
       (this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top")
-    )
+    if (!this._isPcbLayerFlippedByAncestorGroup()) return localLayer
+    return localLayer === "top"
+      ? "bottom"
+      : localLayer === "bottom"
+        ? "top"
+        : localLayer
   }
 
   _getFootprintOriginalLayer(): LayerRef | undefined {
@@ -2143,7 +2154,7 @@ export class NormalComponent<
           : 0
         : 0
 
-    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
+    const computedLayer = this._getPcbComponentLayer()
 
     const pcbComponent = db.pcb_component.get(this.pcb_component_id)
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()

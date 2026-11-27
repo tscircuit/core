@@ -78,6 +78,7 @@ import { getSimpleRouteJsonFromCircuitJson } from "lib/utils/public-exports"
 import { reversePcbTraceRoute } from "lib/utils/reverse-pcb-trace-route"
 import { getPinsFromPortArrangement } from "lib/utils/schematic/getSizeOfSidesFromPortArrangement"
 import { z } from "zod"
+import { compose, flipY } from "transformation-matrix"
 import { NormalComponent } from "../../base-components/NormalComponent/NormalComponent"
 import { Port } from "../Port/Port"
 import { Net } from "../Net"
@@ -321,6 +322,21 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       zodProps: groupProps as unknown as Props,
       componentName: "Group",
     }
+  }
+
+  override get isPcbLayerGroup(): boolean {
+    return true
+  }
+
+  override _computePcbGlobalTransformBeforeLayout() {
+    const transform = super._computePcbGlobalTransformBeforeLayout()
+    // Reflect in the group's local coordinate system. Appending flipY keeps
+    // the group origin in place while mirroring all child positions, rotations
+    // and footprint geometry. Each normal component resolves its output layer
+    // separately; do not also reflect its footprint for the same group flip.
+    return this._parsedProps.layer === "bottom"
+      ? compose(transform, flipY())
+      : transform
   }
 
   override initPorts(opts: Parameters<NormalComponent["initPorts"]>[0] = {}) {
