@@ -42,6 +42,94 @@ type NestedGroupMatchpackProxy = {
   size: Point
 }
 
+type NestedGroupSchematicElements = {
+  rootSchematicGroup: SchematicGroup
+  descendantSchematicGroups: SchematicGroup[]
+  schematicComponents: SchematicComponent[]
+}
+
+/**
+ * Collect the schematic_group and schematic_component elements owned by a
+ * nested group node within the active sheet-scoped layout tree (schematic
+ * world coordinates, mm, +X right, +Y up).
+ *
+ * Walking `groupTreeNode` includes components inside deeper descendant groups
+ * (e.g. schematic groups nested under PCB wrapper groups) while staying scoped
+ * to the active sheet and stopping at collapsed `showAsSchematicBox` groups.
+ */
+function collectNestedGroupSchematicElements({
+  db,
+  groupTreeNode,
+  schematicSheetId,
+}: {
+  db: CircuitJsonUtilObjects
+  groupTreeNode: CircuitJsonTreeNode
+  schematicSheetId?: SchematicSheetId
+}): NestedGroupSchematicElements | null {
+  const rootSourceGroupId = groupTreeNode.sourceGroup?.source_group_id
+  if (!rootSourceGroupId) return null
+
+  const rootSchematicGroup = db.schematic_group?.getWhere?.({
+    source_group_id: rootSourceGroupId,
+  })
+  if (!rootSchematicGroup) return null
+
+  const descendantSchematicGroups: SchematicGroup[] = []
+  const schematicComponents: SchematicComponent[] = []
+  const seenSchematicGroupIds = new Set<SchematicGroup["schematic_group_id"]>()
+  const seenSchematicComponentIds = new Set<
+    SchematicComponent["schematic_component_id"]
+  >()
+
+  const appendGroupComponents = (schematicGroup: SchematicGroup) => {
+    const components = db.schematic_component.list({
+      schematic_group_id: schematicGroup.schematic_group_id,
+      ...(schematicSheetId ? { schematic_sheet_id: schematicSheetId } : {}),
+    })
+    for (const component of components) {
+      if (seenSchematicComponentIds.has(component.schematic_component_id)) {
+        continue
+      }
+      seenSchematicComponentIds.add(component.schematic_component_id)
+      schematicComponents.push(component)
+    }
+  }
+
+  const visitGroupNode = (
+    node: CircuitJsonTreeNode,
+    schematicGroup: SchematicGroup,
+    isRootGroup: boolean,
+  ) => {
+    if (seenSchematicGroupIds.has(schematicGroup.schematic_group_id)) return
+    seenSchematicGroupIds.add(schematicGroup.schematic_group_id)
+
+    if (!isRootGroup) {
+      descendantSchematicGroups.push(schematicGroup)
+    }
+
+    appendGroupComponents(schematicGroup)
+
+    if (schematicGroup.show_as_schematic_box) return
+
+    for (const childNode of node.childNodes) {
+      if (childNode.nodeType !== "group" || !childNode.sourceGroup) continue
+      const childSchematicGroup = db.schematic_group?.getWhere?.({
+        source_group_id: childNode.sourceGroup.source_group_id,
+      })
+      if (!childSchematicGroup) continue
+      visitGroupNode(childNode, childSchematicGroup, false)
+    }
+  }
+
+  visitGroupNode(groupTreeNode, rootSchematicGroup, true)
+
+  return {
+    rootSchematicGroup,
+    descendantSchematicGroups,
+    schematicComponents,
+  }
+}
+
 const ROTATION_TO_PLACE_SIDE_ON_TOP: Record<AxisDirection, MatchpackRotation> =
   {
     "y+": 0,
@@ -480,21 +568,23 @@ function convertTreeToMatchPackInputProblem(
       const groupId = getTreeChildChipId(child, index)!
       debug(`[${group.name}] Processing nested group: ${groupId}`)
 
-      const schematicGroup = db.schematic_group?.getWhere?.({
-        source_group_id: child.sourceGroup.source_group_id,
+      const nestedGroupElements = collectNestedGroupSchematicElements({
+        db,
+        groupTreeNode: child,
+        schematicSheetId: opts.schematicSheetId,
       })
 
       debug(
         `[${group.name}] Found schematic_group for ${groupId}:`,
-        schematicGroup,
+        nestedGroupElements?.rootSchematicGroup,
       )
 
-      if (schematicGroup) {
+      if (nestedGroupElements) {
+        const {
+          rootSchematicGroup: schematicGroup,
+          schematicComponents: groupComponents,
+        } = nestedGroupElements
         debug(`[${group.name}] Treating group ${groupId} as composite chip`)
-
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
-        })
 
         debug(
           `[${group.name}] Group ${groupId} has ${groupComponents.length} components:`,
@@ -577,16 +667,14 @@ function convertTreeToMatchPackInputProblem(
       })
 
       if (treeNode?.nodeType === "group" && treeNode.sourceGroup) {
-        const schematicGroup = db.schematic_group?.getWhere?.({
-          source_group_id: treeNode.sourceGroup.source_group_id,
+        const nestedGroupElements = collectNestedGroupSchematicElements({
+          db,
+          groupTreeNode: treeNode,
+          schematicSheetId: opts.schematicSheetId,
         })
 
-        if (schematicGroup) {
-          const groupComponents = db.schematic_component.list({
-            schematic_group_id: schematicGroup.schematic_group_id,
-          })
-
-          for (const comp of groupComponents) {
+        if (nestedGroupElements) {
+          for (const comp of nestedGroupElements.schematicComponents) {
             const sourcePorts = db.source_port.list({
               source_component_id: comp.source_component_id,
             })
@@ -1025,18 +1113,22 @@ export function applySchematicMatchPackLayoutToTree<
         }
       }
     } else if (treeNode.nodeType === "group" && treeNode.sourceGroup) {
-      const schematicGroup = db.schematic_group?.getWhere?.({
-        source_group_id: treeNode.sourceGroup.source_group_id,
+      const nestedGroupElements = collectNestedGroupSchematicElements({
+        db,
+        groupTreeNode: treeNode,
+        schematicSheetId: opts.schematicSheetId,
       })
 
-      if (schematicGroup) {
+      if (nestedGroupElements) {
+        const {
+          rootSchematicGroup: schematicGroup,
+          descendantSchematicGroups,
+          schematicComponents: groupComponents,
+        } = nestedGroupElements
+
         debug(
           `Moving group ${chipId} to (${newCenter.x}, ${newCenter.y}) from (${schematicGroup.center?.x}, ${schematicGroup.center?.y})`,
         )
-
-        const groupComponents = db.schematic_component.list({
-          schematic_group_id: schematicGroup.schematic_group_id,
-        })
 
         debug(
           `Group ${chipId} has ${groupComponents.length} components to move`,
@@ -1091,6 +1183,15 @@ export function applySchematicMatchPackLayoutToTree<
               deltaX: positionDelta.x,
               deltaY: positionDelta.y,
             })
+          }
+        }
+
+        for (const descendantGroup of descendantSchematicGroups) {
+          if (descendantGroup.center) {
+            descendantGroup.center = {
+              x: descendantGroup.center.x + positionDelta.x,
+              y: descendantGroup.center.y + positionDelta.y,
+            }
           }
         }
 
