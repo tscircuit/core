@@ -34,7 +34,7 @@ function Pair() {
   )
 }
 
-test.failing("isolated-differential-pair", async () => {
+test("isolated-differential-pair", async () => {
   const { circuit } = getTestFixture({ platform: { routingDisabled: true } })
   circuit.add(
     <board width={16} height={12}>

@@ -120,7 +120,7 @@ function getStatusLines({
   }
 }
 
-test.failing("isolated-bus-max-length-skew", async () => {
+test("isolated-bus-max-length-skew", async () => {
   const blank = { result: "", reason: "" }
   const firstPass = await renderBoard({
     boardText: { headline: "", Normal: blank, Isolated: blank },
