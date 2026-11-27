@@ -2957,7 +2957,6 @@ export default function H616CompleteBoard(): ReactElement {
               name={"pad0"}
               pcbX={-2.89}
               pcbY={1.45}
-              portHints={[]}
               shape={"circle"}
               diameter={0.6}
             />
@@ -2965,7 +2964,6 @@ export default function H616CompleteBoard(): ReactElement {
               name={"pad1"}
               pcbX={2.89}
               pcbY={1.45}
-              portHints={[]}
               shape={"circle"}
               diameter={0.6}
             />
@@ -3229,7 +3227,6 @@ export default function H616CompleteBoard(): ReactElement {
               name={"pad0"}
               pcbX={1.45}
               pcbY={2.89}
-              portHints={[]}
               shape={"circle"}
               diameter={0.6}
             />
@@ -3237,7 +3234,6 @@ export default function H616CompleteBoard(): ReactElement {
               name={"pad1"}
               pcbX={1.45}
               pcbY={-2.89}
-              portHints={[]}
               shape={"circle"}
               diameter={0.6}
             />
