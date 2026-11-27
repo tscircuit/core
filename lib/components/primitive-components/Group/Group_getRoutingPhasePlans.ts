@@ -1,3 +1,6 @@
+import { getLocalAutorouterStrategy } from "lib/utils/autorouting/local-autorouter-strategies"
+import { getPlaneTerminatedSourceTraceLayers } from "lib/utils/autorouting/getBusesForSimpleRouteJson"
+import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { getBoundsFromPoints } from "@tscircuit/math-utils"
 import type {
   AutorouterProp,
@@ -495,15 +498,41 @@ export function Group_getRoutingPhasePlans(
     if (connectionSelectors.length > 0) {
       const plan = getOrCreateRoutingPhasePlan(plansByPhaseIndex, phaseIndex)
       plan.connectionSelectors = connectionSelectors
+      const autorouterConfig = phaseProps.autorouter
+        ? getPresetAutoroutingConfig(
+            phaseProps.autorouter,
+            group.root?.platform,
+          )
+        : group._getAutorouterConfig()
+      const planeLayerBySourceTraceId =
+        getLocalAutorouterStrategy(autorouterConfig.preset)
+          .acceptsPlaneTerminations && group.root
+          ? getPlaneTerminatedSourceTraceLayers({
+              fanoutPourNetMap: Group_getFanoutPourNetMap(group, [
+                {
+                  fanoutPourNetMap:
+                    phaseProps.fanoutPourNetMap ??
+                    groupFanoutProps.fanoutPourNetMap,
+                },
+              ]),
+              sourceNets: group.root.db.source_net.list(),
+              sourceTraces: group.root.db.source_trace.list(),
+              subcircuitId: group.subcircuit_id,
+            })
+          : undefined
 
       for (const trace of traces) {
         if (breakoutByTrace.has(trace)) continue
         if (selectedTracesByPhaseIndex.get(phaseIndex)!.has(trace)) {
           // A pin-to-net leg contributes a port to a single SRJ net connection.
-          // Move that routing target with its selected trace; multi-port traces
-          // (e.g. explicit differential-pair sections) retain path ownership.
+          // A plane drop already has its own routing target. Keep the other
+          // pads on that net in their original phase.
           const connectedNets =
-            trace._findConnectedPorts().ports?.length === 1
+            trace._findConnectedPorts().ports?.length === 1 &&
+            !(
+              trace.source_trace_id &&
+              planeLayerBySourceTraceId?.has(trace.source_trace_id)
+            )
               ? nets.filter(
                   (net) =>
                     !breakoutByNet.has(net) &&

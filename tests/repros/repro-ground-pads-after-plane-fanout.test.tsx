@@ -89,7 +89,9 @@ test("a BGA ground fanout leaves the other ground pads for ordinary routing", as
     stages[1]?.startSimpleRouteJson?.connections.map(
       (connection) => connection.pointsToConnect.length,
     ),
-  ).toEqual([1, 1])
-  expect(circuit.db.pcb_trace.list()).toHaveLength(1)
+  ).toEqual([2])
+  expect(circuit.db.pcb_trace.list()).toHaveLength(2)
+  expect(circuit.db.pcb_autorouting_error.list()).toHaveLength(0)
+  expect(circuit.db.pcb_trace_error.list()).toHaveLength(0)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path)
 })

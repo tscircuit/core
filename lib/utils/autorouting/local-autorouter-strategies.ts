@@ -41,6 +41,7 @@ export interface LocalAutorouterStrategyContext {
 export interface LocalAutorouterStrategy {
   /** Keep completed copper fixed in subsequent routing stages. */
   preserveOutputTraces?: boolean
+  acceptsPlaneTerminations?: boolean
   name: string
   cacheable: boolean
   followUpAutorouter?: AutorouterProp
@@ -87,6 +88,7 @@ const createFanoutAutorouterStrategy = (
   mode: FanoutAutorouterMode,
 ): LocalAutorouterStrategy => ({
   name: mode,
+  acceptsPlaneTerminations: true,
   cacheable: false,
   followUpAutorouter: "default",
   getSolverName: () => "FanoutSolver",
@@ -122,6 +124,7 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
       name: "dogbone",
       preserveOutputTraces: true,
       followUpAutorouter: "default",
+      acceptsPlaneTerminations: true,
       cacheable: false,
       getSolverName: () => "DogboneFanoutSolver",
       create: ({

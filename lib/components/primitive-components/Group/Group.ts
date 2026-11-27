@@ -1170,14 +1170,20 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       implicitPhaseLabelOrdinals.set(label, ordinal)
       routingPhaseDebugLabels.set(plan, `${label} ${ordinal}`)
     }
-    const hasFanoutStage = routingStages.some(({ autorouterConfig }) =>
-      ["fanout", "single_layer_fanout", "dogbone"].includes(
-        autorouterConfig.preset ?? "",
+    const fanoutStages = routingStages.filter(
+      ({ strategy }) => strategy.acceptsPlaneTerminations,
+    )
+    const fanoutPourNetMap =
+      fanoutStages.length > 0
+        ? Group_getFanoutPourNetMap(this, routingPhasePlans)
+        : undefined
+    const fanoutSourceTraceIds = new Set(
+      fanoutStages.flatMap(({ routingPhasePlan }) =>
+        routingPhasePlan.traces.flatMap((trace) =>
+          trace.source_trace_id ? [trace.source_trace_id] : [],
+        ),
       ),
     )
-    const fanoutPourNetMap = hasFanoutStage
-      ? Group_getFanoutPourNetMap(this, routingPhasePlans)
-      : undefined
     // Every phase in this run must preserve the same declared source connectivity.
     const { simpleRouteJson, connMap: desiredConnMap } =
       getSimpleRouteJsonFromCircuitJson({
@@ -1188,6 +1194,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id,
         subcircuitComponent: this,
         fanoutPourNetMap,
+        fanoutSourceTraceIds,
       })
     let baseSimpleRouteJson = simpleRouteJson
 
@@ -1536,6 +1543,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             subcircuitComponent: this,
             routingPcbGroupId: activeCustomBreakoutRoutingGroupId,
             fanoutPourNetMap,
+            fanoutSourceTraceIds,
           }).simpleRouteJson
           const activeGroupCopperPourObstacles =
             activeGroupSimpleRouteJson.obstacles.filter(
