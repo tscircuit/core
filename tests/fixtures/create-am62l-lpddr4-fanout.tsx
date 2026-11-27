@@ -3590,11 +3590,6 @@ export const renderAm62lLpddr4Fanout = async ({
   }
   const globalPhaseInput = autoroutingPhaseIoStack[2]!.startSimpleRouteJson!
   const globalPhaseInputTraces = globalPhaseInput.traces ?? []
-  // Hand-authored decoupling copper is fixed obstacle geometry in the global
-  // routing phase, not editable preloaded traces.
-  expect(globalPhaseInputTraces).toHaveLength(
-    signalConnections.length * 2 + planeDrops.length,
-  )
   const fixedDecouplingTraceNames = [
     ...decouplingPlaneDrops.map((drop) => drop.traceName),
     ...(includeDirectDecouplingNetworkInInitialRender
@@ -3604,12 +3599,17 @@ export const renderAm62lLpddr4Fanout = async ({
         ])
       : []),
   ]
-  const obstacleConnectionIds = new Set(
-    globalPhaseInput.obstacles.flatMap((obstacle) => obstacle.connectedTo),
+  expect(globalPhaseInputTraces).toHaveLength(
+    signalConnections.length * 2 +
+      planeDrops.length +
+      fixedDecouplingTraceNames.length,
   )
   for (const name of fixedDecouplingTraceNames) {
     const sourceTrace = circuit.db.source_trace.getWhere({ name })!
-    expect(obstacleConnectionIds.has(sourceTrace.source_trace_id)).toBe(true)
+    const fixedTrace = globalPhaseInputTraces.find(
+      (trace) => trace.connection_name === sourceTrace.source_trace_id,
+    )!
+    expect(fixedTrace.isFixed).toBe(true)
   }
   expect(
     new Set(globalPhaseInputTraces.map((trace) => trace.pcb_trace_id)).size,

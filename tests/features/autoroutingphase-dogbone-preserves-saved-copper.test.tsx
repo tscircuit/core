@@ -12,7 +12,7 @@ beforeAll(async () => {
   expect(circuit.db.pcb_port_not_connected_error.list()).toEqual([])
   expect(circuit.db.pcb_trace_missing_error.list()).toEqual([])
 
-  // Saved S1-S2 is already fixed as an obstacle. The distinct custom M1-M2 wire
+  // Saved S1-S2 is already a fixed trace. The distinct custom M1-M2 wire
   // exposes the dogbone handoff loss; both physical wires must remain once.
   const savedSourceTraceId =
     phaseIo[0]!.startSimpleRouteJson!.connections[0]!.source_trace_id
@@ -52,13 +52,11 @@ beforeAll(async () => {
       }
     }),
   ).toEqual(earlierRoute)
-  expect(
-    phaseIo[3]!.startSimpleRouteJson!.obstacles.some(
-      (obstacle) =>
-        Math.abs(obstacle.center.x + 5) < 1e-6 &&
-        Math.abs(obstacle.center.y - 3) < 1e-6,
-    ),
-  ).toBe(true)
+  const fixedSavedTrace = phaseIo[3]!.startSimpleRouteJson!.traces!.find(
+    (trace) => trace.connection_name === savedSourceTraceId,
+  )!
+  expect(fixedSavedTrace.isFixed).toBe(true)
+  expect(fixedSavedTrace.route).toMatchObject(savedRoute)
 
   // This is an actual PCB snapshot: the buggy SIGNAL crosses M1-M2, while the
   // fixed continuation detours. Notes and fixture geometry are identical.
@@ -74,12 +72,12 @@ test("saved copper stays fixed while native SIGNAL avoids earlier custom copper"
     phaseIo[2]!.endSimpleRouteJson!.traces?.filter(
       (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
     ),
-  ).toEqual([earlierTrace])
+  ).toEqual([{ ...earlierTrace, isFixed: true }])
   expect(
     phaseIo[3]!.startSimpleRouteJson!.traces?.filter(
       (trace) => trace.pcb_trace_id === earlierTrace.pcb_trace_id,
     ),
-  ).toEqual([earlierTrace])
+  ).toEqual([{ ...earlierTrace, isFixed: true }])
   expect(
     circuit
       .getCircuitJson()

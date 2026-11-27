@@ -2,25 +2,32 @@ import { selectAll } from "css-select"
 import { cssSelectPrimitiveComponentAdapter } from "lib/components/base-components/PrimitiveComponent/cssSelectPrimitiveComponentAdapter"
 import { preprocessSelector } from "lib/components/base-components/PrimitiveComponent/preprocessSelector"
 import type { AssemblyDrawingPage } from "lib/components/primitive-components/AssemblyDrawingPage"
-import { isAssemblyDrawingView, type AssemblyDrawingView } from "./drawing-view"
+import {
+  isAssemblyDrawingPlacedView,
+  type AssemblyDrawingPlacedView,
+} from "./drawing-view"
 
 /** Paper-space points in mm, +X right and +Y up. Viewport centers are independent
  * of the right-handed CAD world frame (+Z up); they never transform model points.
  * Resolve axes independently so cross-axis dependencies do not create false cycles.
  */
 export function resolveDrawingViewCenters(page: AssemblyDrawingPage) {
-  const views = page.children.filter((child): child is AssemblyDrawingView =>
-    isAssemblyDrawingView(child),
+  const views = page.children.filter(
+    (child): child is AssemblyDrawingPlacedView =>
+      isAssemblyDrawingPlacedView(child),
   )
   const centers = {
-    x: new Map<AssemblyDrawingView, number>(),
-    y: new Map<AssemblyDrawingView, number>(),
+    x: new Map<AssemblyDrawingPlacedView, number>(),
+    y: new Map<AssemblyDrawingPlacedView, number>(),
   }
   const resolving = {
-    x: new Set<AssemblyDrawingView>(),
-    y: new Set<AssemblyDrawingView>(),
+    x: new Set<AssemblyDrawingPlacedView>(),
+    y: new Set<AssemblyDrawingPlacedView>(),
   }
-  const resolveAxis = (view: AssemblyDrawingView, axis: "x" | "y"): number => {
+  const resolveAxis = (
+    view: AssemblyDrawingPlacedView,
+    axis: "x" | "y",
+  ): number => {
     if (centers[axis].has(view)) return centers[axis].get(view)!
     if (resolving[axis].has(view))
       throw new Error(
@@ -35,8 +42,8 @@ export function resolveDrawingViewCenters(page: AssemblyDrawingPage) {
     if (selector) {
       const matches = selectAll(preprocessSelector(selector, view), page, {
         adapter: cssSelectPrimitiveComponentAdapter,
-      }).filter((child): child is AssemblyDrawingView =>
-        views.includes(child as AssemblyDrawingView),
+      }).filter((child): child is AssemblyDrawingPlacedView =>
+        views.includes(child as AssemblyDrawingPlacedView),
       )
       if (matches.length !== 1)
         throw new Error(

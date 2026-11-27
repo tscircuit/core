@@ -52,24 +52,24 @@ test("repro duplicate obstacle connectivity aliases on shared power nets", async
     })),
   ).toEqual([
     {
-      entries: 10,
-      uniqueEntries: 10,
+      entries: 9,
+      uniqueEntries: 9,
+    },
+    {
+      entries: 9,
+      uniqueEntries: 9,
+    },
+    {
+      entries: 9,
+      uniqueEntries: 9,
+    },
+    {
+      entries: 9,
+      uniqueEntries: 9,
     },
     {
       entries: 10,
       uniqueEntries: 10,
-    },
-    {
-      entries: 10,
-      uniqueEntries: 10,
-    },
-    {
-      entries: 10,
-      uniqueEntries: 10,
-    },
-    {
-      entries: 11,
-      uniqueEntries: 11,
     },
   ])
 })

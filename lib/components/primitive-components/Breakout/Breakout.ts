@@ -86,7 +86,10 @@ export class Breakout extends Group<typeof breakoutProps> {
     // checking only direct board children misses valid boundary crossings.
     const allTraces = this.getSubcircuit().selectAll("trace") as Trace[]
 
+    this.getSubcircuit().updateOptimizeSelectorCache()
+
     const autoPlacedPorts = new Set<Port>()
+    const pendingBreakoutPoints: AutoplacedBreakoutPoint[] = []
 
     for (const trace of allTraces) {
       const result = trace._findConnectedPorts()
@@ -108,9 +111,10 @@ export class Breakout extends Group<typeof breakoutProps> {
         const breakoutPoint = new AutoplacedBreakoutPoint({})
         breakoutPoint.matchedPort = port
         breakoutPoint.matchedSourceTraceId = trace.source_trace_id
-        this.add(breakoutPoint)
+        pendingBreakoutPoints.push(breakoutPoint)
       }
     }
+    this.addAll(pendingBreakoutPoints)
   }
 
   doInitialPcbAutoplaceBreakoutPoints(): void {

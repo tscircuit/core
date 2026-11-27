@@ -71,6 +71,7 @@ export const orderedRenderPhases = [
   "PcbTraceRender",
   "PcbRouteNetIslands",
   "PcbTraceTeardropRender",
+  "PcbDifferentialPairPhaseSkewRender",
   "PcbCopperPourRender",
   "PcbViaStitchRender",
   "PcbCopperPourCleanup",
@@ -147,7 +148,13 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
   PcbBoardAutoSize: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbTraceHintRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   PcbManualTraceRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
-  PcbTraceTeardropRender: ["PcbTraceRender", "PcbRouteNetIslands"],
+  PcbTraceTeardropRender: [
+    "PcbTraceRender",
+    "PcbRouteNetIslands",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+  ],
   PcbCopperPourRender: [
     "PcbFootprintStringRender",
     "FetchPartFootprint",
@@ -182,6 +189,13 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "PcbPlacementDesignRuleChecks",
+  ],
+  PcbDifferentialPairPhaseSkewRender: [
+    "RenderIsolatedSubcircuits",
+    "PcbFootprintStringRender",
+    "FetchPartFootprint",
+    "PcbPlacementDesignRuleChecks",
+    "PcbTraceRender",
   ],
   PcbDesignRuleChecks: [
     "PcbFootprintStringRender",
@@ -234,6 +248,7 @@ const asyncPhaseDependencies: Partial<Record<RenderPhase, RenderPhase[]>> = {
     "PcbFootprintStringRender",
     "FetchPartFootprint",
     "CadModelRender",
+    "CadAssemblyBomRender",
   ],
   PartsEngineRender: ["PcbFootprintStringRender", "FetchPartFootprint"],
   MissingManufacturerPartNumberWarning: [

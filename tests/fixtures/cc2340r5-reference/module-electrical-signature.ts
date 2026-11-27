@@ -1,9 +1,15 @@
+import { inductance } from "circuit-json"
 import published from "./published-electrical-signature.json"
 
 // Preserve the published support circuit and add only these eight GPIO nets.
 // These are RGE package pin numbers, not labels invented for the fixture.
 export default {
-  ...published,
+  // The published JSON uses SI strings. Core emits inductance in henries.
+  components: published.components.map((component) =>
+    component.inductance === undefined
+      ? component
+      : { ...component, inductance: inductance.parse(component.inductance) },
+  ),
   nets: {
     ...published.nets,
     DIO8: ["U1.3"],

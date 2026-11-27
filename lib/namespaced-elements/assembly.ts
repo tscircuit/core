@@ -7,6 +7,10 @@ import type {
   AssemblyDrawingPageProps,
   AssemblyDrawingPartViewProps,
   AssemblyDrawingTitleBlockProps,
+  AssemblyDrawingHarnessViewProps,
+  AssemblyDrawingWiringTableProps,
+  AssemblyDrawingBomTableProps,
+  AssemblyCableWireProps,
   AssemblyExplosionStagePropsInput,
   AssemblyExplosionMovePropsInput,
   AssemblyCablePropsInput,
@@ -42,7 +46,9 @@ export interface AssemblySubassemblyJsxProps
   extends AssemblySubassemblyPropsInput {}
 export type AssemblyCadAssemblyJsxProps = AssemblySubassemblyJsxProps
 
-export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {}
+export interface AssemblyCableJsxProps extends AssemblyCablePropsInput {
+  children?: ReactNode
+}
 
 export const assembly = {
   drawing: {
@@ -71,6 +77,15 @@ export const assembly = {
     titleblock: createNamespacedElement<AssemblyDrawingTitleBlockProps>(
       "assembly.drawing.titleblock",
     ),
+    harnessview: createNamespacedElement<AssemblyDrawingHarnessViewProps>(
+      "assembly.drawing.harnessview",
+    ),
+    wiringtable: createNamespacedElement<AssemblyDrawingWiringTableProps>(
+      "assembly.drawing.wiringtable",
+    ),
+    bomtable: createNamespacedElement<AssemblyDrawingBomTableProps>(
+      "assembly.drawing.bomtable",
+    ),
   },
   explosion: {
     stage: createNamespacedElement<AssemblyExplosionStagePropsInput>(
@@ -86,6 +101,8 @@ export const assembly = {
   bolt: createNamespacedElement<AssemblyBoltPropsInput>("assembly.bolt"),
   part: createNamespacedElement<AssemblyPartJsxProps>("assembly.part"),
   cable: createNamespacedElement<AssemblyCableJsxProps>("assembly.cable"),
+  cablewire:
+    createNamespacedElement<AssemblyCableWireProps>("assembly.cablewire"),
   printedpart: createNamespacedElement<AssemblyPrintedPartJsxProps>(
     "assembly.printedpart",
   ),

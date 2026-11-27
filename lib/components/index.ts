@@ -132,6 +132,7 @@ export { PcbSoldermaskOpening } from "./primitive-components/PcbSoldermaskOpenin
 export { AssemblyPrintedPart } from "./primitive-components/AssemblyPrintedPart"
 
 export { AssemblyCable } from "./primitive-components/AssemblyCable"
+export { AssemblyCableWire } from "./primitive-components/AssemblyCableWire"
 
 export { AssemblyDrawingPage } from "./primitive-components/AssemblyDrawingPage"
 export { AssemblyDrawingPartView } from "./primitive-components/AssemblyDrawingPartView"
@@ -157,3 +158,7 @@ export { AssemblyDrawingStage } from "./primitive-components/AssemblyDrawingStag
 export { AssemblyDrawingPartLabel } from "./primitive-components/AssemblyDrawingPartLabel"
 
 export { AssemblyDrawingNote } from "./primitive-components/AssemblyDrawingNote"
+
+export { AssemblyDrawingHarnessView } from "./primitive-components/AssemblyDrawingHarnessView"
+export { AssemblyDrawingWiringTable } from "./primitive-components/AssemblyDrawingWiringTable"
+export { AssemblyDrawingBomTable } from "./primitive-components/AssemblyDrawingBomTable"

@@ -15,6 +15,11 @@ export abstract class AssemblyComponent<
 > extends PrimitiveComponent<ZodProps> {
   private cadAssemblyBomItemId?: CadAssemblyBomItemId
 
+  /** This material's BOM record, once BOM rendering has allocated it. */
+  get cad_assembly_bom_item_id(): CadAssemblyBomItemId | undefined {
+    return this.cadAssemblyBomItemId
+  }
+
   protected get shouldRenderAssemblyBom() {
     return true
   }
