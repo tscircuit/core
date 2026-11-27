@@ -8,7 +8,7 @@ test("route the complete iCE/Pi CM0 SBC with its DDR timing rules", async () => 
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_component.list()).toHaveLength(280)
-  expect(circuit.db.source_net.list()).toHaveLength(466)
+  expect(circuit.db.source_net.list()).toHaveLength(247)
   expect(circuit.db.source_bus.list()).toHaveLength(18)
   await expect(circuit).toMatchPcbSnapshot(import.meta.path, {
     width: 1200,
