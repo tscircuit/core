@@ -347,9 +347,7 @@ export class NormalComponent<
           ? getNumericPinLabels(propsPinLabels)
           : undefined
     const existingChildPorts = this._getAllPortsFromChildren()
-    const hasCustomSymbolPorts = existingChildPorts.some(
-      (port) => port._getSymbolAncestor() !== null,
-    )
+    const hasCustomSymbolPorts = this._hasCustomSymbolPorts()
     const hasExistingOrQueuedPortWithPinNumber = (pinNumber: number) =>
       existingChildPorts.some((p) => p._parsedProps.pinNumber === pinNumber) ||
       portsToCreate.some((p) => p._parsedProps.pinNumber === pinNumber)
@@ -1993,14 +1991,20 @@ export class NormalComponent<
     return undefined
   }
 
+  _hasCustomSymbolPorts(): boolean {
+    return this._getAllPortsFromChildren().some(
+      (port) => port._getSymbolAncestor() !== null,
+    )
+  }
+
   _getSchematicBoxDimensions(): SchematicBoxDimensions | null {
     if (this.schematicBoxDimensions) return this.schematicBoxDimensions
     return this._computeSchematicBoxDimensions()
   }
 
   _computeSchematicBoxDimensions(): SchematicBoxDimensions | null {
-    // Only valid if we don't have a schematic symbol
-    if (this.getSchematicSymbol()) return null
+    // Only valid if we don't have a schematic symbol or custom symbol ports
+    if (this.getSchematicSymbol() || this._hasCustomSymbolPorts()) return null
     if (
       !this.config.shouldRenderAsSchematicBox &&
       !this._parsedProps?.showAsSchematicBox

@@ -204,6 +204,10 @@ export class Port extends PrimitiveComponent<typeof portProps> {
       return true
     }
 
+    if (parentNormalComponent?._hasCustomSymbolPorts?.()) {
+      return false
+    }
+
     const symbol = parentNormalComponent?.getSchematicSymbol()
     if (symbol) {
       if (this.schematicSymbolPortDef) return true
