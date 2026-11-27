@@ -12,6 +12,23 @@ import { markTraceSegmentsInsideCopperPour } from "./utils/mark-trace-segments-i
 // subcircuit together. Share that batch across the component-owned effects.
 const pendingCopperPourRenders = new WeakMap<ISubcircuit, Promise<void>>()
 const DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM = 0.3
+// @tscircuit/copper-pour-solver quantizes geometry to a 1e-6 mm grid, which can
+// shorten point-to-segment distance on non-axis-aligned polygon edges by ~1.4e-6 mm.
+const SOLVER_GRID_POLYGON_EDGE_MARGIN_PADDING_MM = 2e-6
+
+const hasNonAxisAlignedEdge = (
+  outline: Array<{ x: number; y: number }> | undefined,
+): boolean => {
+  if (!outline || outline.length < 2) return false
+  for (let i = 0; i < outline.length; i++) {
+    const current = outline[i]!
+    const next = outline[(i + 1) % outline.length]!
+    if (current.x !== next.x && current.y !== next.y) {
+      return true
+    }
+  }
+  return false
+}
 
 const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
@@ -67,6 +84,14 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     resolvedCopperPours.map(({ copperPour, sourceNetId }) => {
       const { _parsedProps: props } = copperPour
       const clearance = props.clearance ?? 0.2
+      const pourOutline = props.outline ?? resolvedPcbBoardOutline
+      const baseBoardEdgeMargin = props.boardEdgeMargin ?? clearance
+      const boardEdgeMargin =
+        baseBoardEdgeMargin > 0 &&
+        (hasNonAxisAlignedEdge(resolvedPcbBoardOutline) ||
+          hasNonAxisAlignedEdge(pourOutline))
+          ? baseBoardEdgeMargin + SOLVER_GRID_POLYGON_EDGE_MARGIN_PADDING_MM
+          : baseBoardEdgeMargin
       return {
         pcb_board_id: pcbBoard?.pcb_board_id,
         layer: props.layer,
@@ -78,7 +103,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         pad_margin: props.padMargin ?? clearance,
         trace_margin: props.traceMargin ?? clearance,
         pour_margin: clearance,
-        board_edge_margin: props.boardEdgeMargin ?? clearance,
+        board_edge_margin: boardEdgeMargin,
         board_edge_outline: copperPour._isImplicitCopperPour
           ? resolvedPcbBoardOutline
           : undefined,
@@ -89,7 +114,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
               thermal_relief_spoke_width: DEFAULT_THERMAL_RELIEF_SPOKE_WIDTH_MM,
             }
           : {}),
-        outline: props.outline ?? resolvedPcbBoardOutline,
+        outline: pourOutline,
       }
     }),
   )
