@@ -10,6 +10,37 @@ import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
 
 type SchematicSheetId = SchematicSheet["schematic_sheet_id"]
 
+function doesSegmentIntersectBounds(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  bounds: Bounds,
+): boolean {
+  let t0 = 0
+  let t1 = 1
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) < 1e-12) return q >= 0
+    const r = q / p
+    if (p < 0) {
+      if (r > t1) return false
+      if (r > t0) t0 = r
+    } else {
+      if (r < t0) return false
+      if (r < t1) t1 = r
+    }
+    return true
+  }
+
+  return (
+    clip(-dx, from.x - bounds.minX) &&
+    clip(dx, bounds.maxX - from.x) &&
+    clip(-dy, from.y - bounds.minY) &&
+    clip(dy, bounds.maxY - from.y)
+  )
+}
+
 export class SchematicSection extends PrimitiveComponent<
   typeof schematicSectionProps
 > {
@@ -173,6 +204,10 @@ export class SchematicSection extends PrimitiveComponent<
     const vDividers = dividers.filter(
       (l) => Math.abs(l.start.x - l.end.x) < TOL,
     )
+    const sheetTraceEdges = db.schematic_trace
+      .list()
+      .filter((trace) => trace.schematic_sheet_id === schematicSheetId)
+      .flatMap((trace) => trace.edges)
 
     for (const sectionWithBounds of allSectionsWithBounds) {
       const { displayName, sectionTitleFontSize, rawBounds, cell } =
@@ -203,18 +238,54 @@ export class SchematicSection extends PrimitiveComponent<
       }
 
       const fontSize = sectionTitleFontSize ?? 0.18
+      const titleX = leftBoundary + LABEL_PADDING
+      const minTitleY = rawBounds.maxY + LABEL_PADDING + fontSize
+      let titleY = Math.max(topBoundary - LABEL_PADDING, minTitleY)
+      const maxTitleY =
+        dividersAbove.length > 0
+          ? Math.min(...dividersAbove) - LABEL_PADDING
+          : Infinity
+
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const titleBounds = getSchematicTextBounds({
+          text: displayName,
+          position: { x: titleX, y: titleY },
+          anchor: "top_left",
+          fontSize,
+        })
+        const crossingEdges = sheetTraceEdges.filter(({ from, to }) =>
+          doesSegmentIntersectBounds(from, to, titleBounds),
+        )
+        if (crossingEdges.length === 0) break
+
+        const highestCrossingY = Math.max(
+          ...crossingEdges.map(({ from, to }) => Math.max(from.y, to.y)),
+        )
+        const raisedY = highestCrossingY + LABEL_PADDING + fontSize
+        if (raisedY > titleY && raisedY <= maxTitleY) {
+          titleY = raisedY
+          continue
+        }
+
+        const lowestCrossingY = Math.min(
+          ...crossingEdges.map(({ from, to }) => Math.min(from.y, to.y)),
+        )
+        const loweredY = lowestCrossingY - LABEL_PADDING
+        if (loweredY < titleY && loweredY >= minTitleY) {
+          titleY = loweredY
+          continue
+        }
+        break
+      }
+
       db.schematic_text.insert({
         anchor: "top_left",
         text: displayName,
         font_size: fontSize,
         color: "#000000",
         position: {
-          x: leftBoundary + LABEL_PADDING,
-          // A top-left anchor extends downwards by the title's font size.
-          y: Math.max(
-            topBoundary - LABEL_PADDING,
-            rawBounds.maxY + LABEL_PADDING + fontSize,
-          ),
+          x: titleX,
+          y: titleY,
         },
         rotation: 0,
         schematic_sheet_id: schematicSheetId,
