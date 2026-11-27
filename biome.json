@@ -13,7 +13,8 @@
       "dist",
       "package.json",
       "benchmarking-dist",
-      "references"
+      "references",
+      "tests/fixtures/usb-c-epaper-rp2354b/source"
     ]
   },
   "javascript": {
