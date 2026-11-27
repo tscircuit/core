@@ -1442,6 +1442,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       },
     ] of routingStages.entries()) {
       if (skippedRemainingPhases.has(routingPhasePlan)) continue
+      const isLastStageInPhase = phaseStageIndex + 1 === phaseStageCount
       if (!usesPreviousStageOutput) {
         previousStageOutputSimpleRouteJson = undefined
       }
@@ -2018,9 +2019,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         for (const trace of traces) {
           if (
             localAutorouterStrategy.preserveOutputTraces ||
-            lengthConstrainedBusConnections.has(
-              trace.connection_name ?? trace.pcb_trace_id,
-            )
+            (isLastStageInPhase &&
+              lengthConstrainedBusConnections.has(
+                trace.connection_name ?? trace.pcb_trace_id,
+              ))
           ) {
             fixedTraceIds.add(trace.pcb_trace_id)
           }
@@ -2169,7 +2171,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Pours need their final clearance render. Generated components and
         // authored assignable vias need one final materialization/ownership pass.
         const acceptedTracePhase =
-          phaseStageIndex + 1 === phaseStageCount &&
+          isLastStageInPhase &&
           routingStageIndex + 1 < routingStages.length &&
           !(this._getBoard() ?? this)
             .getDescendants()
