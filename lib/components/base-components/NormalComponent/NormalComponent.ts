@@ -79,6 +79,10 @@ import {
 } from "react"
 import { type SchSymbol, symbols } from "schematic-symbols"
 import { decomposeTSR } from "transformation-matrix"
+import {
+  reflectPcbGroupMemberX,
+  shouldFlipPcbGroupMember,
+} from "lib/utils/pcb/pcb-group-member-reflection"
 import { ZodType, z } from "zod"
 import { InvalidProps } from "../../../errors/InvalidProps"
 import { CadAssembly } from "../../primitive-components/CadAssembly"
@@ -1145,7 +1149,19 @@ export class NormalComponent<
 
     const bounds = getBoundsOfPcbComponents(this.children)
 
-    if (bounds.width === 0 || bounds.height === 0) return
+    if (bounds.width === 0 || bounds.height === 0) {
+      if (shouldFlipPcbGroupMember(this)) {
+        const footprintOrigin = db.pcb_component.get(
+          this.pcb_component_id,
+        )?.footprint_origin
+        if (footprintOrigin) {
+          db.pcb_component.update(this.pcb_component_id, {
+            center: { ...footprintOrigin },
+          })
+        }
+      }
+      return
+    }
 
     const center = {
       x: (bounds.minX + bounds.maxX) / 2,
@@ -1381,11 +1397,15 @@ export class NormalComponent<
     return undefined
   }
 
-  protected _getPcbComponentLayer(): LayerRef {
-    return (
+  protected _getPcbComponentLayer(defaultLayer?: LayerRef): LayerRef {
+    const layer: LayerRef =
       this._parsedProps.layer ??
+      defaultLayer ??
       (this._getFootprintOriginalLayer() === "bottom" ? "bottom" : "top")
-    )
+    if (!shouldFlipPcbGroupMember(this)) return layer
+    if (layer === "top") return "bottom"
+    if (layer === "bottom") return "top"
+    return layer
   }
 
   _getFootprintOriginalLayer(): LayerRef | undefined {
@@ -2143,9 +2163,11 @@ export class NormalComponent<
           : 0
         : 0
 
-    const computedLayer = this.props.layer === "bottom" ? "bottom" : "top"
-
     const pcbComponent = db.pcb_component.get(this.pcb_component_id)
+    const componentLayer = shouldFlipPcbGroupMember(this)
+      ? pcbComponent?.layer
+      : this.props.layer
+    const computedLayer = componentLayer === "bottom" ? "bottom" : "top"
     const globalTransform = this._computePcbGlobalTransformBeforeLayout()
     const decomposedTransform = decomposeTSR(globalTransform)
     const preLayoutRotation =
@@ -2665,7 +2687,11 @@ export class NormalComponent<
       position_mode: "relative_to_group_anchor",
       positioned_relative_to_pcb_group_id: positionedRelativeToGroupId,
       positioned_relative_to_pcb_board_id: positionedRelativeToBoardId,
-      display_offset_x: formatPcbDisplayOffset(resolvedPcbX),
+      display_offset_x: formatPcbDisplayOffset(
+        resolvedPcbX === undefined
+          ? undefined
+          : reflectPcbGroupMemberX(this, resolvedPcbX),
+      ),
       display_offset_y: formatPcbDisplayOffset(resolvedPcbY),
     })
   }

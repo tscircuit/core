@@ -28,6 +28,10 @@ import {
   extractCalcIdentifiers,
 } from "lib/utils/evaluateCalcString"
 import { getSubcircuitPcbCalcVariables } from "lib/utils/getSubcircuitPcbCalcVariables"
+import {
+  reflectPcbGroupMemberPlacement,
+  shouldFlipPcbGroupMember,
+} from "lib/utils/pcb/pcb-group-member-reflection"
 import { isFootprintFlipped } from "lib/utils/pcb/transform-footprint-insertion-direction"
 import { getResolvedPcbSx } from "lib/utils/pcbSx/get-resolved-pcb-sx"
 import type {
@@ -493,8 +497,8 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Computes a transformation matrix from the props of this component for PCB
-   * components
+   * Maps component-local PCB points to the parent-local frame in mm. Both
+   * frames are right-handed with +X right, +Y toward the top and +Z above.
    */
   computePcbPropsTransform(): Matrix {
     const rotation = this._getPcbRotationBeforeLayout() ?? 0
@@ -505,7 +509,7 @@ export abstract class PrimitiveComponent<
       rotate((rotation * Math.PI) / 180),
     )
 
-    return matrix
+    return reflectPcbGroupMemberPlacement(this, matrix)
   }
 
   /**
@@ -526,12 +530,13 @@ export abstract class PrimitiveComponent<
       this.props.pcbY === undefined
     ) {
       const rotation = this._getPcbRotationBeforeLayout() ?? 0
+      const manualTransform = compose(
+        translate(manualPlacement.x, manualPlacement.y),
+        rotate((rotation * Math.PI) / 180),
+      )
       return compose(
         this.parent?._computePcbGlobalTransformBeforeLayout() ?? identity(),
-        compose(
-          translate(manualPlacement.x, manualPlacement.y),
-          rotate((rotation * Math.PI) / 180),
-        ),
+        reflectPcbGroupMemberPlacement(this, manualTransform),
       )
     }
 
@@ -774,6 +779,7 @@ export abstract class PrimitiveComponent<
    * relative to the top layer
    */
   _getPcbPrimitiveFlippedHelpers(): {
+    componentLayer: LayerRef | undefined
     isFlipped: boolean
     maybeFlipLayer: (layer: LayerRef) => LayerRef
   } {
@@ -793,7 +799,7 @@ export abstract class PrimitiveComponent<
       }
       return layer
     }
-    return { isFlipped, maybeFlipLayer }
+    return { componentLayer, isFlipped, maybeFlipLayer }
   }
 
   /**
@@ -938,8 +944,9 @@ export abstract class PrimitiveComponent<
   }
 
   /**
-   * Subcircuit groups have a prop called "layout" that can include manual
-   * placements for pcb components. These are typically added from an IDE
+   * Returns a right-handed PCB point in mm (+X right, +Y top, +Z above).
+   * Active group flips use the stored subcircuit-local point so reflection
+   * precedes group placement. Other callers receive the board-world point.
    */
   _getPcbManualPlacementForComponent(
     component: PrimitiveComponent,
@@ -959,11 +966,11 @@ export abstract class PrimitiveComponent<
         isMatchingSelector(component, position.selector) ||
         component.props.name === position.selector
       ) {
-        const center = applyToPoint(
+        if (shouldFlipPcbGroupMember(component)) return position.center
+        return applyToPoint(
           this._computePcbGlobalTransformBeforeLayout(),
           position.center as { x: number; y: number },
         )
-        return center
       }
     }
 
