@@ -17,6 +17,8 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (!subcircuit.root) return
 
   const { db } = subcircuit.root
+  const boardComponent = subcircuit._getBoard()
+  const boardLayers = boardComponent?.allLayers
   const copperPours = subcircuit
     .selectAll<CopperPour>("copperpour")
     .filter((copperPour) => copperPour.getSubcircuit() === subcircuit)
@@ -27,6 +29,14 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
 
   for (const copperPour of copperPours) {
     const { _parsedProps: props } = copperPour
+    if (boardLayers && !boardLayers.includes(props.layer)) {
+      db.pcb_placement_error.insert({
+        error_type: "pcb_placement_error",
+        subcircuit_id: subcircuit.subcircuit_id ?? undefined,
+        message: `Copper pour for "${props.connectsTo}" uses layer "${props.layer}", which is not in the board stackup. Available layers: ${boardLayers.join(", ")}.`,
+      })
+      continue
+    }
     const net = subcircuit.selectOne<Net>(props.connectsTo)
     const sourceNetId = net?.source_net_id
     if (!sourceNetId) {
@@ -41,7 +51,6 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
   if (resolvedCopperPours.length === 0) return
 
   const circuitJson = db.toArray()
-  const boardComponent = subcircuit._getBoard()
   const pcbBoard = boardComponent?.pcb_board_id
     ? db.pcb_board.get(boardComponent.pcb_board_id)
     : undefined
