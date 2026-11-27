@@ -34,6 +34,7 @@ import {
 } from "circuit-json"
 import Debug from "debug"
 import type { GraphicsObject } from "graphics-debug"
+import { getLengthConstrainedBusConnectionNames } from "lib/utils/autorouting/get-length-constrained-bus-connection-names"
 import { withFixedTraces } from "lib/utils/autorouting/with-fixed-traces"
 import { assignSchematicNetLabelSuperscripts } from "lib/utils/schematic/assign-schematic-net-label-superscripts"
 
@@ -1424,6 +1425,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         .map((trace) => trace.pcb_trace_id),
     )
     const fixedTraceIds = new Set(manualPcbTraceIds)
+    const lengthConstrainedBusConnections =
+      getLengthConstrainedBusConnectionNames(baseSimpleRouteJson.buses ?? [])
     let previousStageOutputSimpleRouteJson: SimpleRouteJson | undefined
     const skippedRemainingPhases = new Set<RoutingPhasePlan>()
 
@@ -2010,10 +2013,17 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             })
           }
         }
-        // A transformed routing problem hands completed copper to the next
-        // stage; preserve it instead of treating it as a rerouting seed.
-        if (localAutorouterStrategy.preserveOutputTraces) {
-          for (const trace of traces) fixedTraceIds.add(trace.pcb_trace_id)
+        // Later phases can move ordinary copper, but they do not receive the
+        // completed bus's length and skew constraints.
+        for (const trace of traces) {
+          if (
+            localAutorouterStrategy.preserveOutputTraces ||
+            lengthConstrainedBusConnections.has(
+              trace.connection_name ?? trace.pcb_trace_id,
+            )
+          ) {
+            fixedTraceIds.add(trace.pcb_trace_id)
+          }
         }
         let stageOutputTraces = traces
         if (transformedSimpleRouteJson?.traces) {
