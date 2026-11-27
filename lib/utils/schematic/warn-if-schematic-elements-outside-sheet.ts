@@ -7,8 +7,11 @@ type Point = { x: number; y: number }
 
 type CheckedSchematicElement = SchematicElementWithBounds
 
-const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
-const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
+export const SCHEMATIC_UNIT_TO_MM = 10.16 / 1.1
+export const SCHEMATIC_SHEET_INNER_MARGIN = 5 / SCHEMATIC_UNIT_TO_MM
+
+export const getSchematicSheetContentWidth = (sheetWidthMm: number): number =>
+  sheetWidthMm / SCHEMATIC_UNIT_TO_MM - SCHEMATIC_SHEET_INNER_MARGIN * 2
 
 const BOUNDS_EPSILON = 1e-6
 
