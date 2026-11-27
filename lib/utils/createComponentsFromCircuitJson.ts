@@ -12,6 +12,7 @@ import type { NormalComponent } from "lib/components/base-components/NormalCompo
 import { CopperText } from "lib/components/primitive-components/CopperText"
 import { CourtyardCircle } from "lib/components/primitive-components/CourtyardCircle"
 import { CourtyardOutline } from "lib/components/primitive-components/CourtyardOutline"
+import { CourtyardPill } from "lib/components/primitive-components/CourtyardPill"
 import { CourtyardRect } from "lib/components/primitive-components/CourtyardRect"
 import { Cutout } from "lib/components/primitive-components/Cutout"
 import { FabricationNoteDimension } from "lib/components/primitive-components/FabricationNoteDimension"
@@ -946,6 +947,17 @@ export const createComponentsFromCircuitJson = (
         new CourtyardCircle({
           pcbX: elm.center.x,
           pcbY: elm.center.y,
+          radius: elm.radius,
+          layer: elm.layer,
+        }),
+      )
+    } else if (elm.type === "pcb_courtyard_pill") {
+      components.push(
+        new CourtyardPill({
+          pcbX: elm.center.x,
+          pcbY: elm.center.y,
+          width: elm.width,
+          height: elm.height,
           radius: elm.radius,
           layer: elm.layer,
         }),
