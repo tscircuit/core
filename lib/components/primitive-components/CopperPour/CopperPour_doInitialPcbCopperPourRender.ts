@@ -118,6 +118,7 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
     const coveredWithSolderMask = isOuterLayer
       ? (props.coveredWithSolderMask ?? false)
       : false
+    copperPour.pcb_copper_pour_ids = []
 
     for (const brepShape of brep_shapes_by_region[regionIndex] ?? []) {
       const insertedPour = db.pcb_copper_pour.insert({
@@ -133,6 +134,10 @@ const renderAllCopperPoursForSubcircuit = async (subcircuit: ISubcircuit) => {
         db,
         copperPour: insertedPour,
       })
+
+      if (!copperPour._isImplicitCopperPour) {
+        copperPour.pcb_copper_pour_ids.push(insertedPour.pcb_copper_pour_id)
+      }
     }
   }
 }
