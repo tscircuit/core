@@ -102,6 +102,17 @@ test("stores signed phase skew for a routed differential pair", async () => {
     phaseSkew.negative_trace.pcb_trace_id,
   )
 
+  // The positive trace has five straight pieces. The negative trace needs
+  // one segment before the bump, one across it, and one after it.
+  expect(phaseSkew.positive_trace.segments).toHaveLength(5)
+  expect(phaseSkew.negative_trace.segments).toHaveLength(3)
+  const negativeRamp = phaseSkew.negative_trace.segments[1]!
+  expect(negativeRamp.start_length_difference_mm).toBe(0)
+  expect(negativeRamp.end_length_difference_mm).toBeCloseTo(
+    -TUNING_BUMP_EXTRA_LENGTH_MM,
+    5,
+  )
+
   const positiveRun = phaseSkew.positive_trace.segments.at(-1)!
   const negativeRun = phaseSkew.negative_trace.segments.at(-1)!
   expect(positiveRun.start.x).toBeCloseTo(negativeRun.start.x, 9)
