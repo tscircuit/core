@@ -35,7 +35,7 @@ const toFanoutPourNetMap = (
  */
 export const Group_getFanoutPourNetMap = (
   group: Group<any>,
-  routingPhasePlans: RoutingPhasePlan[],
+  routingPhasePlans: ReadonlyArray<Pick<RoutingPhasePlan, "fanoutPourNetMap">>,
 ): FanoutPourNetMap | undefined => {
   const explicitMaps = routingPhasePlans
     .map((plan) => plan.fanoutPourNetMap)

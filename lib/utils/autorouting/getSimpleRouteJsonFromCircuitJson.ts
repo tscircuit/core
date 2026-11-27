@@ -129,6 +129,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
   routingPcbGroupId,
   pcb_panel_id,
   fanoutPourNetMap,
+  fanoutSourceTraceIds,
   ignoreExistingTopLevelPcbRouteState = false,
 }: {
   db?: CircuitJsonUtilObjects
@@ -161,6 +162,7 @@ export const getSimpleRouteJsonFromCircuitJson = ({
    * are mapped here become internal plane-terminated buses in SRJ.
    */
   fanoutPourNetMap?: FanoutPourNetMap
+  fanoutSourceTraceIds?: ReadonlySet<SourceTrace["source_trace_id"]>
   /**
    * Excludes existing root-level PCB route state from a fresh routing problem.
    * Routed child-subcircuit traces and vias remain fixed routing geometry.
@@ -651,6 +653,8 @@ export const getSimpleRouteJsonFromCircuitJson = ({
     // Emitting plane terminations too would duplicate them without a source pad.
     sourceTraces: sourceTraces.filter(
       (sourceTrace) =>
+        (!fanoutSourceTraceIds ||
+          fanoutSourceTraceIds.has(sourceTrace.source_trace_id)) &&
         !sourceTrace.connected_source_port_ids.some((sourcePortId) =>
           sourcePortIdToBreakoutPoint.has(sourcePortId),
         ),
