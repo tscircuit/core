@@ -26,27 +26,20 @@ beforeAll(async () => {
   )
 }, 60_000)
 
-test.failing(
-  "the real e-paper board exposes every via layer and resolves its display bus",
-  () => {
-    expect(fixture.renderError).toBeNull()
-    for (const via of fixture.viaPorts) {
-      expect(via.sourcePorts.map((port) => port.name)).toEqual(
-        via.expectedLayers,
-      )
-    }
-    expect(fixture.circuit.db.source_trace_not_connected_error.list()).toEqual(
-      [],
-    )
-    const bus = fixture.circuit.db.source_bus
+test("the real e-paper board exposes every via layer and resolves its display bus", () => {
+  expect(fixture.renderError).toBeNull()
+  for (const via of fixture.viaPorts) {
+    expect(via.sourcePorts.map((port) => port.name)).toEqual(via.expectedLayers)
+  }
+  expect(fixture.circuit.db.source_trace_not_connected_error.list()).toEqual([])
+  const bus = fixture.circuit.db.source_bus
+    .list()
+    .find((bus) => bus.name === "DISPLAY_INTERCONNECT")
+  expect(bus?.source_trace_ids).toHaveLength(7)
+  expect(fixture.circuit.db.pcb_via.list()).toHaveLength(84)
+  expect(
+    fixture.circuit.db.pcb_via
       .list()
-      .find((bus) => bus.name === "DISPLAY_INTERCONNECT")
-    expect(bus?.source_trace_ids).toHaveLength(7)
-    expect(fixture.circuit.db.pcb_via.list()).toHaveLength(84)
-    expect(
-      fixture.circuit.db.pcb_via
-        .list()
-        .every((via) => via.pcb_port_ids?.length === 4),
-    ).toBe(true)
-  },
-)
+      .every((via) => via.pcb_port_ids?.length === 4),
+  ).toBe(true)
+})
