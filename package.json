@@ -85,7 +85,7 @@
     "circuit-json-to-connectivity-map": "0.0.38",
     "circuit-json-to-spice": "^0.0.52",
     "circuit-to-svg": "^0.0.463",
-    "compute-differential-pair-phase-skew": "github:tscircuit/compute-differential-pair-phase-skew#8232c839f662a6043e99b025696420ca727fa0c0",
+    "compute-differential-pair-phase-skew": "github:tscircuit/compute-differential-pair-phase-skew#ba2c1bddf82d70bba5b09e3ab1d32cc492b9d4d5",
     "concurrently": "^9.1.2",
     "connectivity-map": "^1.0.1",
     "debug": "^4.3.6",
