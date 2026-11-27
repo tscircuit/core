@@ -4,6 +4,7 @@ import type { PrimitiveComponent } from "lib/components/base-components/Primitiv
 import type { CopperPour } from "lib/components/primitive-components/CopperPour/CopperPour"
 import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
 import type { Net } from "lib/components/primitive-components/Net"
+import type { Trace } from "lib/components/primitive-components/Trace/Trace"
 
 type SourcePortId = SourcePort["source_port_id"]
 type PcbEndpoint = Pick<PcbPort, "pcb_port_id" | "source_port_id" | "x" | "y">
@@ -202,6 +203,53 @@ export const getStraightLineTraceLengthViolations = ({
   return violations
 }
 
+/**
+ * A trace without its own maxLength inherits the decoupling limit of a
+ * capacitor it touches (see getMaxLengthFromConnectedComponents). That limit
+ * is usually automatic, so name the capacitor and the props that change it.
+ */
+const getInheritedCapacitorLimitHint = ({
+  component,
+  subcircuit,
+  violation,
+}: {
+  component: PrimitiveComponent
+  subcircuit: Pick<ISubcircuit, "subcircuit_id" | "selectAll">
+  violation: StraightLineTraceLengthViolation
+}): string => {
+  const { db } = component.root!
+  const sourceTrace = db.source_trace.get(violation.sourceTraceId)
+  if (!sourceTrace || sourceTrace.connected_source_port_ids.length > 2)
+    return ""
+
+  const traceHasOwnMaxLength = subcircuit
+    .selectAll<Trace>("trace")
+    .some(
+      (trace) =>
+        trace.source_trace_id === violation.sourceTraceId &&
+        trace._parsedProps.maxLength !== undefined,
+    )
+  if (traceHasOwnMaxLength) return ""
+
+  for (const sourcePortId of sourceTrace.connected_source_port_ids) {
+    const sourceComponentId =
+      db.source_port.get(sourcePortId)?.source_component_id
+    if (!sourceComponentId) continue
+    const sourceComponent = db.source_component.get(sourceComponentId)
+    if (
+      sourceComponent?.ftype !== "simple_capacitor" ||
+      sourceComponent.max_decoupling_trace_length !==
+        violation.maximumTraceLength
+    )
+      continue
+
+    const capacitorName = sourceComponent.name
+    return ` The limit is the decoupling trace limit of capacitor ${capacitorName} (maxDecouplingTraceLength, 1mm by default for a capacitor between a chip power pin and ground). Move ${capacitorName} closer, raise maxDecouplingTraceLength on ${capacitorName}, or set maxLength on the trace.`
+  }
+
+  return ""
+}
+
 export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
   component,
   subcircuit,
@@ -230,12 +278,17 @@ export const shouldSkipAutoroutingBecauseOfTraceLengthViolations = ({
       additionalViolationCount > 0
         ? ` (${additionalViolationCount} additional violation${additionalViolationCount === 1 ? "" : "s"})`
         : ""
+    const inheritedCapacitorLimitHint = getInheritedCapacitorLimitHint({
+      component,
+      subcircuit,
+      violation: firstViolation,
+    })
 
     db.pcb_autorouting_error.insert({
       pcb_error_id: pcbErrorId,
       error_type: "pcb_autorouting_error",
       subcircuit_id: subcircuit.subcircuit_id ?? undefined,
-      message: `Autorouting was skipped because the ${firstViolation.maximumTraceLength}mm maximum length for ${traceName} cannot be satisfied: its endpoints are ${firstViolation.straightLineDistance.toFixed(2)}mm apart${additionalViolationMessage}.`,
+      message: `Autorouting was skipped because the ${firstViolation.maximumTraceLength}mm maximum length for ${traceName} cannot be satisfied: its endpoints are ${firstViolation.straightLineDistance.toFixed(2)}mm apart${additionalViolationMessage}.${inheritedCapacitorLimitHint}`,
     })
   }
 
