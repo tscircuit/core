@@ -38,6 +38,7 @@ export type TransistorPorts =
   | "emitter"
   | "collector"
   | "base"
+export type MosfetPorts = "pin1" | "pin2" | "pin3" | "drain" | "source" | "gate"
 
 export type { BaseSymbolName }
 
