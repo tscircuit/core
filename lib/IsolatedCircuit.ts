@@ -70,6 +70,9 @@ export class IsolatedCircuit {
 
   platform?: PlatformConfig
 
+  /** Maximum spacing in mm for stored planar phase-skew samples, if requested. */
+  readonly pcbPhaseSkewSampleSpacingMm?: number
+
   /**
    * Optional URL pointing to where this project is hosted or documented.
    * When provided it is stored in the source_project_metadata.project_url field
@@ -96,11 +99,13 @@ export class IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
+    pcbPhaseSkewSampleSpacingMm,
     cachedSubcircuits,
     pendingSubcircuitRenders,
   }: {
     platform?: PlatformConfig
     projectUrl?: string
+    pcbPhaseSkewSampleSpacingMm?: number
     cachedSubcircuits?: Map<string, AnyCircuitElement[]>
     pendingSubcircuitRenders?: Map<string, Promise<AnyCircuitElement[]>>
   } = {}) {
@@ -108,6 +113,7 @@ export class IsolatedCircuit {
     this.db = createCircuitJsonDatabase()
     this.platform = platform
     this.projectUrl = projectUrl
+    this.pcbPhaseSkewSampleSpacingMm = pcbPhaseSkewSampleSpacingMm
     this.pcbDisabled = platform?.pcbDisabled ?? false
     this.pcbRoutingDisabled = platform?.routingDisabled ?? false
     this.cachedSubcircuits = cachedSubcircuits

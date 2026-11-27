@@ -3127,7 +3127,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const { root } = this
     if (!root || root.pcbDisabled || this.getTopLevelRenderable() !== this)
       return
-    storePcbDifferentialPairPhaseSkew(root.db)
+    storePcbDifferentialPairPhaseSkew({
+      db: root.db,
+      sampleSpacingMm: root.pcbPhaseSkewSampleSpacingMm,
+    })
   }
 
   /** Recomputes stored phase skew when the routing phases run again. */
