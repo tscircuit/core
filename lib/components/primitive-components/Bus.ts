@@ -50,6 +50,7 @@ export class Bus extends PrimitiveComponent<typeof busProps> {
         busSourceTraces,
       }),
       max_length_skew: this._parsedProps.maxLengthSkew,
+      length_skew_reference: this._parsedProps.lengthSkewReference,
       min_length: getSourceBusRouteLength({
         bus: this,
         busSourceTraces,

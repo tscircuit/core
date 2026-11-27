@@ -36,6 +36,16 @@ export function getBusLanesLengthMatchingBuses(
       ...new Set([...bus.connectionNames, ...pendingReferences]),
     ],
   }
+  if (bus.skewReference === "mean") {
+    return [
+      ownedRoutingBus,
+      {
+        ...pendingBus,
+        skewReference: "mean",
+        referenceConnectionNames: fixedReferences,
+      },
+    ]
+  }
   if (!fixedReferences.length) return [ownedRoutingBus, pendingBus]
   const [fixedReport] = busLengthReports(
     {

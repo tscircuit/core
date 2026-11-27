@@ -277,6 +277,9 @@ export const getBusesForSimpleRouteJson = ({
       ...(bus._parsedProps.maxLengthSkew !== undefined
         ? { maxLengthSkew: bus._parsedProps.maxLengthSkew }
         : {}),
+      ...(bus._parsedProps.lengthSkewReference === "mean"
+        ? { skewReference: "mean" as const }
+        : {}),
       ...(bus._parsedProps.pcbTraceWidth !== undefined
         ? { traceWidth: bus._parsedProps.pcbTraceWidth }
         : {}),
