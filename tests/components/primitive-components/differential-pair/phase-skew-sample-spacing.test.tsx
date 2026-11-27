@@ -2,11 +2,10 @@ import { expect, test } from "bun:test"
 import { RootCircuit } from "lib/RootCircuit"
 import "lib/register-catalogue"
 
-test("stores opt-in phase skew samples in the rendered Circuit JSON", async () => {
-  const sampleSpacingMm = 0.5
+test("stores phase skew samples at most 0.1 mm apart in the rendered Circuit JSON", async () => {
+  const sampleSpacingMm = 0.1
   const circuit = new RootCircuit({
     platform: { drcChecksDisabled: true },
-    pcbPhaseSkewSampleSpacingMm: sampleSpacingMm,
   })
   circuit.add(
     <board width={12} height={5} routeRemaining={false}>
@@ -45,7 +44,7 @@ test("stores opt-in phase skew samples in the rendered Circuit JSON", async () =
     phaseSkews[0].positive_trace,
     phaseSkews[0].negative_trace,
   ]) {
-    expect(segments).toHaveLength(16)
+    expect(segments).toHaveLength(80)
     expect(
       Math.max(
         ...segments.map(({ start, end }) =>

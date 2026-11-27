@@ -8,17 +8,10 @@ export class RootCircuit extends IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
-    pcbPhaseSkewSampleSpacingMm,
-  }: {
-    platform?: PlatformConfig
-    projectUrl?: string
-    /** Opt in to storing planar phase-skew samples no farther apart than this many mm. */
-    pcbPhaseSkewSampleSpacingMm?: number
-  } = {}) {
+  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
     super({
       platform,
       projectUrl,
-      pcbPhaseSkewSampleSpacingMm,
       cachedSubcircuits: new Map<string, AnyCircuitElement[]>(),
       pendingSubcircuitRenders: new Map<string, Promise<AnyCircuitElement[]>>(),
     })
