@@ -21,6 +21,7 @@ import type {
   AssemblyReferenceSurfacePropsInput,
   AssemblyPrintedPartPropsInput,
   AssemblyScreenPropsInput,
+  AssemblyStickerPropsInput,
   AssemblySubassemblyPropsInput,
 } from "@tscircuit/props"
 import type { ReactNode } from "react"
@@ -114,4 +115,6 @@ export const assembly = {
   ),
   device: createNamespacedElement<AssemblyDeviceJsxProps>("assembly.device"),
   screen: createNamespacedElement<AssemblyScreenJsxProps>("assembly.screen"),
+  sticker:
+    createNamespacedElement<AssemblyStickerPropsInput>("assembly.sticker"),
 } as const
