@@ -1992,8 +1992,12 @@ export class NormalComponent<
   }
 
   _hasCustomSymbolPorts(): boolean {
-    return this._getAllPortsFromChildren().some(
-      (port) => port._getSymbolAncestor() !== null,
+    const hasPort = (component: PrimitiveComponent): boolean =>
+      component.componentName === "Port" ||
+      component.children.some((child) => hasPort(child))
+
+    return this.children.some(
+      (child) => child.componentName === "Symbol" && hasPort(child),
     )
   }
 
