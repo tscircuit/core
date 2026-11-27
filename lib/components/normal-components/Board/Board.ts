@@ -12,7 +12,7 @@ import type {
 import { getBoardAvailableLayers } from "lib/utils/getViaSpanLayers"
 import { getViaTenting } from "lib/utils/getViaTenting"
 import { type Matrix, compose, translate } from "transformation-matrix"
-import type { z } from "zod"
+import { z } from "zod"
 import { getDescendantSubcircuitIds } from "../../../utils/autorouting/getAncestorSubcircuitIds"
 import { getBoardCenterFromAnchor } from "../../../utils/boards/get-board-center-from-anchor"
 import { inflateCircuitJson } from "../../../utils/circuit-json/inflate-circuit-json"
@@ -33,6 +33,13 @@ import { BoardCastellatedHole } from "./board-castellated-hole"
 
 const MIN_EFFECTIVE_BORDER_RADIUS_MM = 0.01
 const DEFAULT_VIA_PAD_DIAMETER_OVER_HOLE_DIAMETER_MM = 0.15
+
+const boardZodProps = boardProps.extend({
+  jlcpcbStackup: z
+    .string()
+    .transform((value) => value.trim() || undefined)
+    .optional(),
+})
 
 /**
  * Return board-local outline points in mm, centered at the origin in the
@@ -106,7 +113,7 @@ const getRoundedRectOutline = (
 }
 
 export class Board
-  extends Group<typeof boardProps>
+  extends Group<typeof boardZodProps>
   implements BoardI, SubcircuitI
 {
   pcbFold: PcbFold | undefined
@@ -124,7 +131,7 @@ export class Board
     super.doInitialCadModelRender()
   }
 
-  constructor(props: z.input<typeof boardProps>) {
+  constructor(props: z.input<typeof boardZodProps>) {
     super(props)
     this._castellatedHoles = BoardCastellatedHole.fromBoardOutline(
       this._parsedProps.outline,
@@ -176,7 +183,7 @@ export class Board
   get config() {
     return {
       componentName: "Board",
-      zodProps: boardProps,
+      zodProps: boardZodProps,
     }
   }
 
