@@ -1,4 +1,3 @@
-import { warnIfAutorouterTraceClearanceIsSet } from "lib/utils/autorouting/warn-if-autorouter-trace-clearance-is-set"
 import { formatPcbDisplayOffset } from "lib/utils/format-pcb-display-offset"
 import { getOwningPanel } from "lib/utils/panels/get-owning-panel"
 import { TestPointAutorouter } from "lib/utils/autorouting/TestPointAutorouter"
@@ -63,9 +62,9 @@ import {
   getPresetAutoroutingConfig,
 } from "lib/utils/autorouting/getPresetAutoroutingConfig"
 import { getLocalAutoroutingStages } from "lib/utils/autorouting/local-autorouter-strategies"
+import { partitionSimpleRouteJsonConnectionsByTraceWidth } from "lib/utils/autorouting/partitionSimpleRouteJsonConnectionsByTraceWidth"
 import { shouldSkipAutoroutingBecauseOfPlacementErrors } from "lib/utils/autorouting/should-skip-autorouting-because-of-placement-errors"
 import { shouldSkipAutoroutingBecauseOfTraceLengthViolations } from "lib/utils/autorouting/should-skip-autorouting-because-of-trace-length-violations"
-import { storePcbDifferentialPairPhaseSkew } from "lib/utils/circuit-json/store-pcb-differential-pair-phase-skew"
 import { getBoundsOfPcbComponents } from "lib/utils/get-bounds-of-pcb-components"
 import { getAutoroutedViaLayers } from "lib/utils/getViaSpanLayers"
 import {
@@ -97,11 +96,8 @@ import {
 import { Group_doInitialSchematicLayoutFlex } from "./Group_doInitialSchematicLayoutFlex"
 import { Group_doInitialSchematicLayoutGrid } from "./Group_doInitialSchematicLayoutGrid"
 import { Group_doInitialSchematicLayoutMatchAdapt } from "./Group_doInitialSchematicLayoutMatchAdapt"
-import { getSchematicLayoutChildren } from "./getSchematicLayoutChildren"
-import {
-  layoutSchematicGroupBySheet,
-  hasSchematicSections,
-} from "./layoutSchematicGroupBySheet"
+import { Group_doInitialSchematicLayoutMatchPack } from "./Group_doInitialSchematicLayoutMatchPack"
+import { Group_doInitialSchematicLayoutSections } from "./Group_doInitialSchematicLayoutSections"
 import {
   Group_doInitialSchematicSheetRender,
   Group_updateSchematicSheetRender,
@@ -134,10 +130,7 @@ import { claimSrjAssignablePcbViasTraversedByRoute } from "./claim-srj-assignabl
 import { findFanoutPhaseSeparationConflict } from "./find-fanout-phase-separation-conflict"
 import { getAccumulatedPcbTracesWithStageOutputReplacements } from "./get-accumulated-pcb-traces-with-stage-output-replacements"
 import { getSourceTraceIdForRoutedTrace } from "./get-source-trace-id-for-routed-trace"
-import {
-  insertAutoplacedJumpers,
-  validateAutoplacedJumpers,
-} from "./insert-autoplaced-jumpers"
+import { insertAutoplacedJumpers } from "./insert-autoplaced-jumpers"
 import {
   deleteExistingPcbTracesReplacedBy,
   getExistingPcbTracesForReroute,
@@ -146,28 +139,6 @@ import {
 } from "./region-replacement"
 import { splitPcbTracesOnJumperSegments } from "./split-pcb-traces-on-jumper-segments"
 import { computeCenterFromAnchorPosition } from "./utils/computeCenterFromAnchorPosition"
-
-type PcbTraceId = PcbTrace["pcb_trace_id"]
-type AutoroutedPcbTrace = (PcbTrace | SimplifiedPcbTrace) &
-  Partial<Pick<PcbTrace, "subcircuit_id" | "route_thickness_mode">>
-
-type GroupAutoroutingResult = {
-  output_test_points?: ConnectedRoutedTestPoint[]
-  output_simple_route_json?: SimpleRouteJson
-  output_pcb_traces?: (AutoroutedPcbTrace | PcbVia)[]
-  pcb_trace_ids_to_be_replaced?: PcbTraceId[]
-  output_jumpers?: Array<{
-    jumper_footprint: string
-    center: { x: number; y: number }
-    orientation: string
-    pads: Array<{
-      center: { x: number; y: number }
-      width: number
-      height: number
-      layer: string
-    }>
-  }>
-}
 
 const getDistanceToPoint = (
   routePoint: PcbTrace["route"][number],
@@ -311,10 +282,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     return nameMap
   }
 
-  _asyncAutoroutingResult: GroupAutoroutingResult | null = null
-  private _acceptedAutoroutingPhaseResult: GroupAutoroutingResult | null = null
-  private _renderedAutoroutingResult: GroupAutoroutingResult | null = null
-  private _renderedAutoroutingPcbTraceIds: PcbTraceId[] = []
+  _asyncAutoroutingResult: {
+    output_test_points?: ConnectedRoutedTestPoint[]
+    output_simple_route_json?: SimpleRouteJson
+    output_pcb_traces?: (PcbTrace | PcbVia)[]
+    // PCB traces that are being re-routed
+    pcb_trace_ids_to_be_replaced?: string[]
+    output_jumpers?: Array<{
+      jumper_footprint: string
+      center: { x: number; y: number }
+      orientation: string
+      pads: Array<{
+        center: { x: number; y: number }
+        width: number
+        height: number
+        layer: string
+      }>
+    }>
+  } | null = null
 
   get config() {
     return {
@@ -490,11 +475,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id!,
       })
     }
-  }
-
-  override doInitialSourceComponentPropertyValidation(): void {
-    super.doInitialSourceComponentPropertyValidation()
-    warnIfAutorouterTraceClearanceIsSet(this, this._parsedProps.autorouter)
   }
 
   doInitialSourceRender() {
@@ -911,17 +891,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // remote requests with plane reservations can carry that intent.
     const preferredTraceWidth =
       props.defaultTraceWidth ?? props.nominalTraceWidth
-    const { simpleRouteJson, connMap: desiredConnMap } =
-      getSimpleRouteJsonFromCircuitJson({
-        pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
-        db,
-        allowViaInPad: autorouterConfig.allowViaInPad,
-        minTraceWidth: Number(props.minTraceWidth ?? 0.15),
-        nominalTraceWidth:
-          preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
-        subcircuit_id: this.subcircuit_id,
-        subcircuitComponent: this,
-      })
+    const { simpleRouteJson } = getSimpleRouteJsonFromCircuitJson({
+      pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
+      db,
+      allowViaInPad: autorouterConfig.allowViaInPad,
+      minTraceWidth: Number(props.minTraceWidth ?? 0.15),
+      nominalTraceWidth:
+        preferredTraceWidth != null ? Number(preferredTraceWidth) : undefined,
+      subcircuit_id: this.subcircuit_id,
+      subcircuitComponent: this,
+    })
     const unbrokenPlaneRouteJson = simpleRouteJson.obstacles.some(
       (obstacle) => obstacle.isCopperPour,
     )
@@ -949,11 +928,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           },
         },
       ).then((r) => r.json())
-      validateAutoplacedJumpers({
-        db,
-        desiredConnMap,
-        output_jumpers: autorouting_result.output_jumpers ?? [],
-      })
       this._asyncAutoroutingResult = autorouting_result
       this._markDirty("PcbTraceRender")
       return
@@ -1178,8 +1152,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     const fanoutPourNetMap = hasFanoutStage
       ? Group_getFanoutPourNetMap(this, routingPhasePlans)
       : undefined
-    // Every phase in this run must preserve the same declared source connectivity.
-    const { simpleRouteJson, connMap: desiredConnMap } =
+    let { simpleRouteJson: baseSimpleRouteJson } =
       getSimpleRouteJsonFromCircuitJson({
         pcb_panel_id: getOwningPanel(this)?.pcb_panel_id ?? undefined,
         db,
@@ -1189,7 +1162,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuitComponent: this,
         fanoutPourNetMap,
       })
-    let baseSimpleRouteJson = simpleRouteJson
 
     const emitFanoutBoundsConflictWarning = (
       routingPhasePlan: RoutingPhasePlan,
@@ -1509,7 +1481,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           baseSimpleRouteJson,
           routingPhasePlan,
         )
-        // Preserve routed geometry as SRJ traces for hypergraph preloading.
+        // Preserve routed geometry as SRJ traces. The autorouter owns
+        // converting traces to obstacles and approximating diagonal segments.
         simpleRouteJson = {
           ...phaseInput,
           traces: [
@@ -1558,10 +1531,28 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           }),
         }
       }
-      // Keep completed phases and manual paths immutable without losing
-      // their trace topology in subsequent routing phases.
-      if (!isTestPointPhase) {
-        simpleRouteJson = withFixedTraces(simpleRouteJson, fixedTraceIds)
+      // bus_lanes preserves prior traces verbatim and checks their exact copper
+      // geometry. Rasterizing diagonal fanout traces can bury a legal exit in
+      // an enlarged rectangular obstacle before the lane search even starts.
+      if (phaseAutorouterConfig.preset !== "bus_lanes" && !isTestPointPhase) {
+        // FanoutSolver preserves supplied trace routes and checks their exact
+        // copper geometry (build-output.ts / get-routed-trace-copper.ts).
+        // Keep manual copper in that representation: rectangular approximations
+        // can change fanout via placement even though the path itself is fixed.
+        const preservesManualTraceGeometry =
+          !phaseAutorouterConfig.algorithmFn &&
+          (phaseAutorouterConfig.preset === "fanout" ||
+            phaseAutorouterConfig.preset === "single_layer_fanout")
+        simpleRouteJson = withFixedTraces(
+          simpleRouteJson,
+          preservesManualTraceGeometry
+            ? new Set(
+                [...fixedTraceIds].filter(
+                  (pcbTraceId) => !manualPcbTraceIds.has(pcbTraceId),
+                ),
+              )
+            : fixedTraceIds,
+        )
       }
       simpleRouteJson = Group_applyDrcTolerancesToSimpleRouteJson(
         simpleRouteJson,
@@ -1918,40 +1909,111 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
           if (phaseAutorouterConfig.algorithmFn) {
             autorouter =
               await phaseAutorouterConfig.algorithmFn(simpleRouteJson)
+            if (!autorouter) {
+              throw new Error("Failed to create local autorouter")
+            }
+            traces = await runAutorouter(autorouter)
           } else {
-            autorouter = localAutorouterStrategy.create({
-              simpleRouteJson,
-              onSolverEnded: (event) =>
-                this.root?.emit("solver:ended", {
-                  ...event,
-                  type: "solver:ended",
-                  componentName: this.getString(),
-                }),
-              commonAutorouterOptions,
-              busFanoutDirections: routingPhasePlan.busFanoutDirections,
-              fanoutBounds: routingPhasePlan.fanoutBounds,
-              fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
-              allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
-              componentNamesById: getPcbComponentNamesById(db),
-              onSolverStarted: ({
-                solverName,
-                solverParams,
-                solverConstructorArgs,
-              }) =>
-                this.root?.emit("solver:started", {
-                  type: "solver:started",
+            const widthConnectionPasses =
+              localAutorouterStrategy.name === "tscircuit"
+                ? partitionSimpleRouteJsonConnectionsByTraceWidth(
+                    simpleRouteJson,
+                  )
+                : [simpleRouteJson.connections]
+
+            const createStrategyAutorouter = (passSrj: SimpleRouteJson) =>
+              localAutorouterStrategy.create({
+                simpleRouteJson: passSrj,
+                onSolverEnded: (event) =>
+                  this.root?.emit("solver:ended", {
+                    ...event,
+                    type: "solver:ended",
+                    componentName: this.getString(),
+                  }),
+                commonAutorouterOptions,
+                busFanoutDirections: routingPhasePlan.busFanoutDirections,
+                fanoutBounds: routingPhasePlan.fanoutBounds,
+                fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+                allowBlindAndBuriedVias: passSrj.allowBlindAndBuriedVias,
+                componentNamesById: getPcbComponentNamesById(db),
+                onSolverStarted: ({
                   solverName,
                   solverParams,
                   solverConstructorArgs,
-                  componentName: this.getString(),
-                }),
-            })
-          }
+                }) =>
+                  this.root?.emit("solver:started", {
+                    type: "solver:started",
+                    solverName,
+                    solverParams,
+                    solverConstructorArgs,
+                    componentName: this.getString(),
+                  }),
+              })
 
-          if (!autorouter) {
-            throw new Error("Failed to create local autorouter")
+            if (widthConnectionPasses.length <= 1) {
+              autorouter = createStrategyAutorouter(simpleRouteJson)
+              if (!autorouter) {
+                throw new Error("Failed to create local autorouter")
+              }
+              traces = await runAutorouter(autorouter)
+            } else {
+              const pinnedSubPassTraceIds = new Set<string>()
+              let accumulatedSubPassTraces: SimplifiedPcbTrace[] = [
+                ...(simpleRouteJson.traces ?? []),
+              ]
+              for (const passConnections of widthConnectionPasses) {
+                const passConnectionNames = new Set(
+                  passConnections.map((conn) => conn.name),
+                )
+                const passSrj: SimpleRouteJson = {
+                  ...simpleRouteJson,
+                  connections: passConnections,
+                  differentialPairs: simpleRouteJson.differentialPairs?.filter(
+                    (pair) =>
+                      pair.connectionNames.every((name) =>
+                        passConnectionNames.has(name),
+                      ),
+                  ),
+                  buses: simpleRouteJson.buses?.filter((bus) =>
+                    bus.connectionNames.every((name) =>
+                      passConnectionNames.has(name),
+                    ),
+                  ),
+                  traces: accumulatedSubPassTraces.map((trace) =>
+                    pinnedSubPassTraceIds.has(trace.pcb_trace_id)
+                      ? { ...trace, isFixed: true }
+                      : trace,
+                  ),
+                }
+                autorouter = createStrategyAutorouter(passSrj)
+                if (!autorouter) {
+                  throw new Error("Failed to create local autorouter")
+                }
+                const passOutputTraces = await runAutorouter(autorouter)
+                for (const trace of passOutputTraces) {
+                  if (
+                    !trace.isFixed &&
+                    !accumulatedSubPassTraces.some(
+                      (existing) =>
+                        existing.pcb_trace_id === trace.pcb_trace_id,
+                    )
+                  ) {
+                    pinnedSubPassTraceIds.add(trace.pcb_trace_id)
+                  }
+                }
+                accumulatedSubPassTraces =
+                  getAccumulatedPcbTracesWithStageOutputReplacements({
+                    accumulatedPcbTraces: accumulatedSubPassTraces,
+                    stageOutputPcbTraces: passOutputTraces,
+                  })
+              }
+              traces = accumulatedSubPassTraces.map((trace) => {
+                if (!pinnedSubPassTraceIds.has(trace.pcb_trace_id)) return trace
+                const { isFixed: _ignored, ...rest } = trace
+                return rest
+              })
+            }
           }
-          traces = await runAutorouter(autorouter)
         }
 
         let transformedSimpleRouteJson =
@@ -2077,6 +2139,22 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             phaseAutorouterConfig.preset ?? "",
           ),
         })
+        this.root?.emit("autorouting:end", {
+          ...savedPhasePaths,
+          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
+          type: "autorouting:end",
+          subcircuit_id: this.subcircuit_id,
+          componentDisplayName: this.getString(),
+          ...(routingPhasePlan.phaseName !== undefined
+            ? {
+                phaseName: routingPhasePlan.phaseName,
+                phaseStageIndex,
+                phaseStageCount,
+              }
+            : {}),
+          ...autoroutingMetadata,
+          simpleRouteJson: outputSimpleRouteJson,
+        })
 
         // Create source_traces for interconnect ports that were connected via
         // off-board paths during routing. This allows DRC to understand that
@@ -2095,13 +2173,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         // Get jumper output from solver
         const solver = (autorouter as any)?.solver
         if (solver?.getOutputJumpers) {
-          const jumpers = solver.getOutputJumpers() ?? []
-          validateAutoplacedJumpers({
-            db,
-            desiredConnMap,
-            output_jumpers: jumpers,
-          })
-          outputJumpers.push(...jumpers)
+          outputJumpers.push(...(solver.getOutputJumpers() || []))
         }
 
         if (isRegionReroutePhase && rerouteOriginalSrj) {
@@ -2137,7 +2209,8 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         } else {
           if (preservesExistingTraceInput) {
             for (const existingTrace of existingRerouteSeedTraces) {
-              // Fixed copper remains unchanged in the database.
+              // Fixed copper was excluded from the simplifier's input traces,
+              // so it has no replacement in the solver output.
               if (
                 !isTestPointPhase &&
                 fixedTraceIds.has(existingTrace.pcb_trace_id)
@@ -2154,56 +2227,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               stageOutputPcbTraces: stageOutputTraces,
             }),
           )
-        }
-
-        // Pours need their final clearance render. Generated components and
-        // authored assignable vias need one final materialization/ownership pass.
-        const acceptedTracePhase =
-          phaseStageIndex + 1 === phaseStageCount &&
-          routingStageIndex + 1 < routingStages.length &&
-          !(this._getBoard() ?? this)
-            .getDescendants()
-            .some((component) => component.componentName === "CopperPour") &&
-          db.pcb_copper_pour.list().length === 0 &&
-          !db.pcb_via.list().some((via) => via.net_is_assignable) &&
-          outputJumpers.length === 0 &&
-          outputTestPoints.length === 0 &&
-          !outputTraces.some((trace) =>
-            trace.route.some((point) => point.route_type === "jumper"),
-          )
-        if (acceptedTracePhase) {
-          // Saved paths can complete inside the render that starts this effect.
-          // Publish after that render has finished clearing its dirty flags.
-          await Promise.resolve()
-          // Rendering normalizes routes. Later solvers must keep the untouched
-          // accepted SRJ, and parent subcircuits must still wait for the final result.
-          this._acceptedAutoroutingPhaseResult = {
-            output_pcb_traces: structuredClone(outputTraces),
-            pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
-          }
-          this._markDirty("PcbTraceRender")
-        }
-
-        this.root?.emit("autorouting:end", {
-          ...savedPhasePaths,
-          ...(computeCostSummary !== undefined ? { computeCostSummary } : {}),
-          type: "autorouting:end",
-          subcircuit_id: this.subcircuit_id,
-          componentDisplayName: this.getString(),
-          ...(routingPhasePlan.phaseName !== undefined
-            ? {
-                phaseName: routingPhasePlan.phaseName,
-                phaseStageIndex,
-                phaseStageCount,
-              }
-            : {}),
-          ...autoroutingMetadata,
-          simpleRouteJson: outputSimpleRouteJson,
-        })
-        if (acceptedTracePhase) {
-          // Let the normal render loop publish accepted copper before the next
-          // solver starts work. The routing async effect remains pending.
-          await new Promise<void>((resolve) => setTimeout(resolve, 0))
         }
       } catch (error) {
         const { db } = this.root!
@@ -2246,7 +2269,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
     // Store the result
     this._asyncAutoroutingResult = {
-      output_pcb_traces: outputTraces,
+      output_pcb_traces: outputTraces as any,
       output_jumpers: outputJumpers,
       output_test_points: outputTestPoints,
       pcb_trace_ids_to_be_replaced: [...pcbTraceIdsToDelete],
@@ -2398,32 +2421,24 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return
     }
 
-    const autoroutingResult =
-      this._asyncAutoroutingResult ?? this._acceptedAutoroutingPhaseResult
-    if (
-      !autoroutingResult ||
-      autoroutingResult === this._renderedAutoroutingResult
-    )
-      return
+    if (!this._asyncAutoroutingResult) return
     if (this._shouldUseTraceByTraceRouting()) return
 
-    if (autoroutingResult.output_simple_route_json) {
+    const { db } = this.root!
+
+    if (this._asyncAutoroutingResult.output_simple_route_json) {
       debug(
-        `[${this.getString()}] updating PCB traces from simple route json (${autoroutingResult.output_simple_route_json.traces?.length} traces)`,
+        `[${this.getString()}] updating PCB traces from simple route json (${this._asyncAutoroutingResult.output_simple_route_json.traces?.length} traces)`,
       )
       this._updatePcbTraceRenderFromSimpleRouteJson()
-      this._renderedAutoroutingResult = autoroutingResult
       return
     }
 
-    if (autoroutingResult.output_pcb_traces) {
+    if (this._asyncAutoroutingResult.output_pcb_traces) {
       debug(
-        `[${this.getString()}] updating PCB traces from ${autoroutingResult.output_pcb_traces.length} traces`,
+        `[${this.getString()}] updating PCB traces from ${this._asyncAutoroutingResult.output_pcb_traces.length} traces`,
       )
-      this._renderedAutoroutingPcbTraceIds =
-        this._updatePcbTraceRenderFromPcbTraces(autoroutingResult)
-      this._renderedAutoroutingResult = autoroutingResult
-      this._acceptedAutoroutingPhaseResult = null
+      this._updatePcbTraceRenderFromPcbTraces()
       return
     }
   }
@@ -2441,13 +2456,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Apply each routed trace to the corresponding circuit trace
     // const circuitTraces = this.selectAll("trace") as Trace[]
     for (const routedTrace of routedTraces) {
-      // SRJ names identify declared source connections. Copper geometry must
-      // not choose the intended owner when the routed endpoint is wrong.
-      const sourceConnectionId = routedTrace.connection_name
-      const sourceOwnerId = sourceConnectionId
-        ? (db.source_trace.get(sourceConnectionId)?.source_trace_id ??
-          db.source_net.get(sourceConnectionId)?.source_net_id)
-        : undefined
       const cjRoute = routedTrace.route.map((point) => {
         if (point.route_type !== "through_obstacle") return point
 
@@ -2470,7 +2478,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       const pcb_trace = db.pcb_trace.insert({
         subcircuit_id: this.subcircuit_id!,
         route: getCircuitJsonPcbTraceRoute(cjRoute as any),
-        source_trace_id: sourceOwnerId,
+        // source_trace_id: circuitTrace.source_trace_id!,
       })
       claimSrjAssignablePcbViasTraversedByRoute({
         db,
@@ -2497,19 +2505,16 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _updatePcbTraceRenderFromPcbTraces(
-    autoroutingResult: GroupAutoroutingResult,
-  ) {
+  _updatePcbTraceRenderFromPcbTraces() {
     const { output_pcb_traces, output_jumpers, pcb_trace_ids_to_be_replaced } =
-      autoroutingResult
-    const emittedPcbTraceIds: PcbTraceId[] = []
-    if (!output_pcb_traces) return emittedPcbTraceIds
+      this._asyncAutoroutingResult!
+    if (!output_pcb_traces) return
 
     const { db } = this.root!
-    const testPoints = autoroutingResult.output_test_points
+    const testPoints = this._asyncAutoroutingResult!.output_test_points
     if (testPoints?.length) {
       materializeRoutedTestPoints(db, testPoints, this.subcircuit_id!)
-      autoroutingResult.output_test_points = []
+      this._asyncAutoroutingResult!.output_test_points = []
     }
 
     // Delete any previously created traces
@@ -2537,10 +2542,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     deleteExistingPcbTracesReplacedBy({
       group: this,
       outputPcbTraces: output_pcb_traces,
-      pcbTraceIdsToReplace: [
-        ...(pcb_trace_ids_to_be_replaced ?? []),
-        ...this._renderedAutoroutingPcbTraceIds,
-      ],
+      pcbTraceIdsToReplace: pcb_trace_ids_to_be_replaced,
     })
 
     // Preserve one Circuit JSON via per physical same-net transition even when
@@ -2617,7 +2619,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
             source_trace_id: sourceTraceId,
             route: circuitJsonSegment,
           })
-          emittedPcbTraceIds.push(insertedPcbTrace.pcb_trace_id)
           claimSrjAssignablePcbViasTraversedByRoute({
             db,
             pcbTrace: insertedPcbTrace,
@@ -2709,7 +2710,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         }
       }
     }
-    return emittedPcbTraceIds
   }
 
   doInitialSchematicComponentRender() {
@@ -2745,9 +2745,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     }
   }
 
-  _getSchematicLayoutMode(
-    layoutChildren = getSchematicLayoutChildren(this.children),
-  ): "match-adapt" | "flex" | "grid" | "relative" {
+  _getSchematicLayoutMode(): "match-adapt" | "flex" | "grid" | "relative" {
     const props = this._parsedProps as SubcircuitGroupProps
     const schAutoLayoutEnabled = props.schAutoLayoutEnabled ?? false
     if (props.schLayout?.layoutMode === "none") return "relative"
@@ -2767,10 +2765,11 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // unless any direct layout child defines schX or schY.
     // Schematic primitives (e.g. schematictext) can have explicit coordinates
     // without opting the entire group out of auto layout.
-    const anyLayoutChildHasSchCoords = layoutChildren.some((child) => {
-      const cProps = child._parsedProps
+    const anyLayoutChildHasSchCoords = this.children.some((child) => {
+      const cProps = (child as any)._parsedProps
       const participatesInAutoLayout =
-        child.source_component_id !== null || child.source_group_id !== null
+        (child as any).source_component_id !== null ||
+        (child as any).source_group_id !== null
       return (
         participatesInAutoLayout &&
         (cProps?.schX !== undefined || cProps?.schY !== undefined)
@@ -2792,36 +2791,48 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
 
   doInitialSchematicLayout(): void {
     // The schematic_components are rendered in our children
-    const explicitMode = this._parsedProps.schLayout?.layoutMode
-    if (
-      this._parsedProps.showAsSchematicBox ||
-      explicitMode === "none" ||
-      explicitMode === "relative"
-    ) {
+    if (this._parsedProps.showAsSchematicBox) {
       this._insertSchematicBorder()
       return
     }
 
-    const layoutChildren = getSchematicLayoutChildren(this.children)
-    const hasSections = hasSchematicSections(layoutChildren)
-    const mode = this._getSchematicLayoutMode(layoutChildren)
-    if (!hasSections && mode === "grid") {
+    const hasAnySectionName = this.children.some(
+      (c) =>
+        c.source_component_id !== null &&
+        c._parsedProps?.schSectionName !== undefined,
+    )
+    const hasSections = hasAnySectionName
+    if (hasSections) {
+      this._doInitialSchematicLayoutSections()
+      this._insertSchematicBorder()
+      return
+    }
+
+    const schematicLayoutMode = this._getSchematicLayoutMode()
+
+    if (schematicLayoutMode === "match-adapt") {
+      this._doInitialSchematicLayoutMatchpack()
+    }
+    if (schematicLayoutMode === "grid") {
       this._doInitialSchematicLayoutGrid()
-    } else if (!hasSections && mode === "flex") {
+    }
+    if (schematicLayoutMode === "flex") {
       this._doInitialSchematicLayoutFlex()
-    } else if (
-      hasSections ||
-      mode === "match-adapt" ||
-      this.root!.db.schematic_sheet.list().length > 1
-    ) {
-      layoutSchematicGroupBySheet(this, layoutChildren)
     }
 
     this._insertSchematicBorder()
   }
 
+  _doInitialSchematicLayoutSections(): void {
+    Group_doInitialSchematicLayoutSections(this as any)
+  }
+
   _doInitialSchematicLayoutMatchAdapt(): void {
     Group_doInitialSchematicLayoutMatchAdapt(this as any)
+  }
+
+  _doInitialSchematicLayoutMatchpack(): void {
+    Group_doInitialSchematicLayoutMatchPack(this as any)
   }
 
   _doInitialSchematicLayoutGrid(): void {
@@ -3120,19 +3131,6 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     // Inherit from parent if not set by props
     const autorouter = this._getAutorouterConfig()
     return autorouter.groupMode === "sequential-trace"
-  }
-
-  /** Stores phase skew after routing and trace teardrops are complete. */
-  doInitialPcbDifferentialPairPhaseSkewRender(): void {
-    const { root } = this
-    if (!root || root.pcbDisabled || this.getTopLevelRenderable() !== this)
-      return
-    storePcbDifferentialPairPhaseSkew(root.db)
-  }
-
-  /** Recomputes stored phase skew when the routing phases run again. */
-  updatePcbDifferentialPairPhaseSkewRender(): void {
-    this.doInitialPcbDifferentialPairPhaseSkewRender()
   }
 
   doInitialPcbDesignRuleChecks() {
