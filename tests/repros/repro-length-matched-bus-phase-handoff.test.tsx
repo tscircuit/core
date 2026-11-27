@@ -43,6 +43,7 @@ test("route a crossing signal after matching a two-trace bus", async () => {
   await circuit.renderUntilSettled()
 
   expect(circuit.db.pcb_trace.list()).toHaveLength(3)
+  expect(circuit.db.pcb_bus_length_skew_error.list()).toHaveLength(0)
   await expect(phases).toMatchAutoroutingPhaseIoStackSnapshot(
     import.meta.path,
     "length-matched-bus-phase-handoff",
