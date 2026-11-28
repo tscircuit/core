@@ -34,7 +34,7 @@ test("via directions on the routed four-axis motor carrier", async () => {
   }
 
   expect(routedVias).toBe(37)
-  expect(backwardVias).toBe(14)
+  expect(backwardVias).toBe(0)
 
   circuit.db.pcb_note_text.insert({
     text: `${backwardVias} of ${routedVias} routed vias have backward directions`,
