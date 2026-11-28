@@ -1,15 +1,34 @@
 import {
-  pinHeaderProps,
   type SchematicPortArrangement,
+  pinHeaderProps,
   resolveManufacturerPartNumber,
 } from "@tscircuit/props"
-import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
-import { Port } from "../primitive-components/Port"
 import type { SourceSimplePinHeader } from "circuit-json"
 import type { BaseSymbolName } from "lib/utils/constants"
+import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { getSingleColumnSchematicBoxWidth } from "lib/utils/schematic/getSingleColumnSchematicBoxWidth"
+import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
+import { Port } from "../primitive-components/Port"
 
 export class PinHeader extends NormalComponent<typeof pinHeaderProps> {
+  resolveFootprint() {
+    const footprint = super.resolveFootprint()
+    if (typeof footprint !== "string") return footprint
+    const gender = this._parsedProps?.gender ?? this.props.gender
+    if (gender !== "female") return footprint
+    const parsed = parseFootprinterDefinition(footprint)
+    if (
+      !parsed ||
+      (parsed.parameters.fn !== "pinrow" &&
+        parsed.parameters.fn !== "headermodule") ||
+      parsed.parameters.female ||
+      parsed.parameters.male
+    ) {
+      return footprint
+    }
+    return `${parsed.definition}_female`
+  }
+
   _getPcbRotationBeforeLayout(): number | null {
     const orientationRotation =
       this.props.pcbOrientation === "vertical" ? -90 : 0
