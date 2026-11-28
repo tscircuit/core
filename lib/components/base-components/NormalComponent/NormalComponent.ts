@@ -7,6 +7,7 @@ import {
   type ResolvedPinLabel,
 } from "lib/utils/schematic/resolvePinLabels"
 import { resolveManufacturerPartNumber } from "@tscircuit/props"
+import { addSourceDatasheet } from "lib/utils/circuit-json/add-source-datasheet"
 import { composeCadModelRotation } from "lib/utils/cad/compose-cad-model-rotation"
 import { getFoldedCadComponentPlacement } from "lib/utils/cad/get-folded-cad-component-placement"
 import { fp } from "@tscircuit/footprinter"
@@ -2519,6 +2520,19 @@ export class NormalComponent<
 
   doInitialSourceComponentPropertyValidation(): void {
     this._insertInvalidFootprintPropErrors()
+
+    const { datasheetUrl } = this._parsedProps
+    if (!datasheetUrl || !this.source_component_id) return
+
+    const { db } = this.root!
+    const sourceComponent = db.source_component.get(this.source_component_id)
+    const manufacturerPartNumber = sourceComponent?.manufacturer_part_number
+    if (!manufacturerPartNumber) return
+
+    addSourceDatasheet(db, {
+      manufacturer_part_number: manufacturerPartNumber,
+      datasheet_pdf_urls: [datasheetUrl],
+    })
   }
 
   doInitialValidatePcbCoordinates(): void {
