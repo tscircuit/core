@@ -7,8 +7,10 @@
   "module": "dist/index.js",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -24,7 +26,7 @@
     "format": "biome format . --write",
     "measure-bundle": "howfat -r table .",
     "pkg-pr-new-release": "bunx pkg-pr-new publish --comment=off --peerDeps",
-    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-assembly-bom.tsx && bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/check-dist-collision-runtime.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx && node scripts/smoke-tests/test-dist-node-explosion-collisions.mjs",
+    "smoke-test:dist": "bun run scripts/smoke-tests/test-dist-assembly-bom.tsx && bun run scripts/smoke-tests/test-dist-simple-circuit.tsx && bun run scripts/smoke-tests/check-dist-bundled-schematic-solver.ts && bun run scripts/smoke-tests/test-dist-drawing-dimensions.tsx && bun run scripts/smoke-tests/check-dist-bundled-test-point-rerouter.ts && bun run scripts/smoke-tests/check-dist-collision-runtime.ts && bun run scripts/smoke-tests/test-dist-explosion-collisions.tsx && node scripts/smoke-tests/test-dist-node-explosion-collisions.mjs && bun scripts/smoke-tests/test-dist-cjs-require.cjs && node scripts/smoke-tests/test-dist-cjs-require.cjs",
     "build:benchmarking": "bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist",
     "build:benchmarking:watch": "chokidar \"./{benchmarking,lib}/**/*.{ts,tsx}\" -c 'bun build --experimental-html ./benchmarking/website/index.html --outdir ./benchmarking-dist'",
     "start:benchmarking": "concurrently \"bun run build:benchmarking:watch\" \"live-server ./benchmarking-dist\"",
