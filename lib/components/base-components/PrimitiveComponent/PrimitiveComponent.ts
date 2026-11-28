@@ -288,9 +288,7 @@ export abstract class PrimitiveComponent<
     const { rawValue, axis, propertyName = axis } = params
     if (typeof rawValue !== "string") return
 
-    const isNormalComponent = (this as any)._isNormalComponent === true
-    const allowComponentVariables =
-      !isNormalComponent && !this._isInsideFootprint()
+    const allowComponentVariables = !this._isInsideFootprint()
 
     let calcIdentifiers: string[] = []
     try {
