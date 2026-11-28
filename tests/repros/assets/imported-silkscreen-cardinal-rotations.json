@@ -1,0 +1,282 @@
+[
+  {
+    "type": "source_component",
+    "source_component_id": "source_T0",
+    "name": "T0",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_T0",
+    "source_component_id": "source_T0",
+    "center": {
+      "x": -9,
+      "y": 4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 0,
+    "layer": "top"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_T0",
+    "pcb_component_id": "pcb_T0",
+    "anchor_position": {
+      "x": -9,
+      "y": 4
+    },
+    "anchor_alignment": "center",
+    "text": "T0",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "top"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_T90",
+    "name": "T90",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_T90",
+    "source_component_id": "source_T90",
+    "center": {
+      "x": -3,
+      "y": 4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 90,
+    "layer": "top"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_T90",
+    "pcb_component_id": "pcb_T90",
+    "anchor_position": {
+      "x": -3,
+      "y": 4
+    },
+    "anchor_alignment": "center",
+    "text": "T90",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "top"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_T180",
+    "name": "T180",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_T180",
+    "source_component_id": "source_T180",
+    "center": {
+      "x": 3,
+      "y": 4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 180,
+    "layer": "top"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_T180",
+    "pcb_component_id": "pcb_T180",
+    "anchor_position": {
+      "x": 3,
+      "y": 4
+    },
+    "anchor_alignment": "center",
+    "text": "T180",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "top"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_T270",
+    "name": "T270",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_T270",
+    "source_component_id": "source_T270",
+    "center": {
+      "x": 9,
+      "y": 4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 270,
+    "layer": "top"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_T270",
+    "pcb_component_id": "pcb_T270",
+    "anchor_position": {
+      "x": 9,
+      "y": 4
+    },
+    "anchor_alignment": "center",
+    "text": "T270",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "top"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_B0",
+    "name": "B0",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_B0",
+    "source_component_id": "source_B0",
+    "center": {
+      "x": -9,
+      "y": -4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 0,
+    "layer": "bottom"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_B0",
+    "pcb_component_id": "pcb_B0",
+    "anchor_position": {
+      "x": -9,
+      "y": -4
+    },
+    "anchor_alignment": "center",
+    "text": "B0",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "bottom"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_B90",
+    "name": "B90",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_B90",
+    "source_component_id": "source_B90",
+    "center": {
+      "x": -3,
+      "y": -4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 90,
+    "layer": "bottom"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_B90",
+    "pcb_component_id": "pcb_B90",
+    "anchor_position": {
+      "x": -3,
+      "y": -4
+    },
+    "anchor_alignment": "center",
+    "text": "B90",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "bottom"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_B180",
+    "name": "B180",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_B180",
+    "source_component_id": "source_B180",
+    "center": {
+      "x": 3,
+      "y": -4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 180,
+    "layer": "bottom"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_B180",
+    "pcb_component_id": "pcb_B180",
+    "anchor_position": {
+      "x": 3,
+      "y": -4
+    },
+    "anchor_alignment": "center",
+    "text": "B180",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "bottom"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_B270",
+    "name": "B270",
+    "ftype": "simple_resistor",
+    "resistance": 1000
+  },
+  {
+    "type": "pcb_component",
+    "pcb_component_id": "pcb_B270",
+    "source_component_id": "source_B270",
+    "center": {
+      "x": 9,
+      "y": -4
+    },
+    "width": 2,
+    "height": 1,
+    "rotation": 270,
+    "layer": "bottom"
+  },
+  {
+    "type": "pcb_silkscreen_text",
+    "pcb_silkscreen_text_id": "text_B270",
+    "pcb_component_id": "pcb_B270",
+    "anchor_position": {
+      "x": 9,
+      "y": -4
+    },
+    "anchor_alignment": "center",
+    "text": "B270",
+    "font": "tscircuit2024",
+    "font_size": 0.8,
+    "ccw_rotation": 0,
+    "layer": "bottom"
+  }
+]
