@@ -739,16 +739,31 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       return undefined
     }
 
-    const generalPadding = getPaddingValue("padding") ?? 0
+    const generalPadding =
+      getPaddingValue("pcbPadding") ?? getPaddingValue("padding") ?? 0
     const paddingX = getPaddingValue("paddingX")
     const paddingY = getPaddingValue("paddingY")
 
-    const padLeft = getPaddingValue("paddingLeft") ?? paddingX ?? generalPadding
+    const padLeft =
+      getPaddingValue("pcbPaddingLeft") ??
+      getPaddingValue("paddingLeft") ??
+      paddingX ??
+      generalPadding
     const padRight =
-      getPaddingValue("paddingRight") ?? paddingX ?? generalPadding
-    const padTop = getPaddingValue("paddingTop") ?? paddingY ?? generalPadding
+      getPaddingValue("pcbPaddingRight") ??
+      getPaddingValue("paddingRight") ??
+      paddingX ??
+      generalPadding
+    const padTop =
+      getPaddingValue("pcbPaddingTop") ??
+      getPaddingValue("paddingTop") ??
+      paddingY ??
+      generalPadding
     const padBottom =
-      getPaddingValue("paddingBottom") ?? paddingY ?? generalPadding
+      getPaddingValue("pcbPaddingBottom") ??
+      getPaddingValue("paddingBottom") ??
+      paddingY ??
+      generalPadding
 
     return { padLeft, padRight, padTop, padBottom }
   }
