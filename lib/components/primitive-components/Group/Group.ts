@@ -112,6 +112,10 @@ import { Group_doInitialSourceAddConnectivityMapKey } from "./Group_doInitialSou
 import { Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks } from "./Group_doInitialStandaloneSubcircuitPcbDesignRuleChecks"
 import { Group_getFanoutPourNetMap } from "./Group_getFanoutPourNetMap"
 import { Group_getRoutingPhasePlans } from "./Group_getRoutingPhasePlans"
+import {
+  getPendingRoutingAccessFromSrj,
+  withPendingRoutingAccessOnSrj,
+} from "./get-pending-routing-access"
 import { RoutingPhasePreparationError } from "lib/utils/autorouting/routing-phase-preparation-error"
 import {
   cacheLocalAutoroutingPhaseResult,
@@ -1095,6 +1099,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         subcircuit_id: this.subcircuit_id ?? undefined,
       })
     }
+    const autorouterConfigByPhasePlan = new Map<
+      RoutingPhasePlan,
+      NormalizedAutorouterConfig
+    >()
     const routingStages = routingPhasePlans.flatMap((routingPhasePlan) => {
       const resolvedPhaseAutorouterConfig: NormalizedAutorouterConfig =
         routingPhasePlan.autorouter
@@ -1142,6 +1150,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               }
             : phaseAutorouterConfig,
         this.root?.platform,
+      )
+      autorouterConfigByPhasePlan.set(
+        routingPhasePlan,
+        stages[0]!.autorouterConfig,
       )
       return stages.map((stage, phaseStageIndex) => ({
         ...stage,
@@ -1569,6 +1581,14 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
       )
       simpleRouteJson.allowViaInPad =
         phaseAutorouterConfig.allowViaInPad ?? simpleRouteJson.allowViaInPad
+      simpleRouteJson = withPendingRoutingAccessOnSrj(
+        simpleRouteJson,
+        getPendingRoutingAccessFromSrj(baseSimpleRouteJson, {
+          phasePlan: routingPhasePlan,
+          routingPhasePlans,
+          autorouterConfigByPhasePlan,
+        }),
+      )
 
       const getPrecomputedRoutingResult = usesPreviousStageOutput
         ? undefined

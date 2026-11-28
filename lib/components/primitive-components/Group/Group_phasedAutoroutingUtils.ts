@@ -10,11 +10,22 @@ import type {
   RoutingPhaseDrcTolerances,
   RoutingPhasePlan,
 } from "./GroupRoutingPhasePlan"
+import type { Trace } from "../Trace/Trace"
+import type { Net } from "../Net"
 import { getPairedBreakoutExitTarget } from "./getPairedBreakoutExitTarget"
+
+/** The phase filter only needs emitted source ownership, not component behavior. */
+export type RoutingPhaseSrjTargets = Pick<
+  RoutingPhasePlan,
+  "routingPcbGroupId" | "routingBounds"
+> & {
+  traces: ReadonlyArray<Pick<Trace, "source_trace_id">>
+  nets: ReadonlyArray<Pick<Net, "source_net_id">>
+}
 
 export function connectionIsInRoutingPhase(
   connection: SimpleRouteConnection,
-  phasePlan: RoutingPhasePlan,
+  phasePlan: RoutingPhaseSrjTargets,
 ): boolean {
   if (connection.routingPcbGroupId) {
     return connection.routingPcbGroupId === phasePlan.routingPcbGroupId
@@ -50,7 +61,67 @@ export function Group_hasPhasedAutorouting(
 
 export function Group_filterSimpleRouteJsonForPhase(
   simpleRouteJson: SimpleRouteJson,
-  phasePlan: RoutingPhasePlan,
+  phasePlan: RoutingPhaseSrjTargets,
+): SimpleRouteJson {
+  const phaseSimpleRouteJson = selectSimpleRouteJsonForPhase(
+    simpleRouteJson,
+    phasePlan,
+  )
+  const includedConnectionNames = new Set(
+    phaseSimpleRouteJson.connections.map((connection) => connection.name),
+  )
+
+  // Validate matching only when this phase actually starts. Future terminal
+  // access selection must not prevent earlier phases from completing.
+  for (const differentialPair of simpleRouteJson.differentialPairs ?? []) {
+    const positiveConnectionIncluded = includedConnectionNames.has(
+      differentialPair.connectionNames[0],
+    )
+    const negativeConnectionIncluded = includedConnectionNames.has(
+      differentialPair.connectionNames[1],
+    )
+    if (positiveConnectionIncluded !== negativeConnectionIncluded) {
+      throw new Error(
+        `Differential pair "${differentialPair.connectionNames.join("/")}" cannot be split across autorouting phases`,
+      )
+    }
+  }
+
+  const srjConnectionByName = new Map(
+    simpleRouteJson.connections.map((connection) => [
+      connection.name,
+      connection,
+    ]),
+  )
+  for (const bus of simpleRouteJson.buses ?? []) {
+    const connectionNames = bus.connectionNames.filter((connectionName) =>
+      includedConnectionNames.has(connectionName),
+    )
+    // A breakout splits each member into local escapes and a global bridge.
+    // Match only members of the same physical routing cohort.
+    const cohortConnectionNames = bus.connectionNames.filter(
+      (connectionName) =>
+        srjConnectionByName.get(connectionName)?.routingPcbGroupId ===
+        phasePlan.routingPcbGroupId,
+    )
+    if (
+      bus.maxLengthSkew !== undefined &&
+      connectionNames.length > 0 &&
+      connectionNames.length !== cohortConnectionNames.length
+    ) {
+      throw new RoutingPhasePreparationError(
+        `Length-matched bus "${bus.name || "unnamed bus"}" cannot be split across autorouting phases. Assign the complete bus to one routingPhaseIndex.`,
+      )
+    }
+  }
+
+  return phaseSimpleRouteJson
+}
+
+/** Select physical phase intent without entering its route-preparation checks. */
+export function selectSimpleRouteJsonForPhase(
+  simpleRouteJson: SimpleRouteJson,
+  phasePlan: RoutingPhaseSrjTargets,
 ): SimpleRouteJson {
   const connections: SimpleRouteConnection[] = []
   for (const connection of simpleRouteJson.connections) {
@@ -72,12 +143,9 @@ export function Group_filterSimpleRouteJsonForPhase(
     const negativeConnectionIncluded: boolean = includedConnectionNames.has(
       differentialPair.connectionNames[1],
     )
-    if (positiveConnectionIncluded !== negativeConnectionIncluded) {
-      throw new Error(
-        `Differential pair "${differentialPair.connectionNames.join("/")}" cannot be split across autorouting phases`,
-      )
+    if (positiveConnectionIncluded && negativeConnectionIncluded) {
+      differentialPairs.push(differentialPair)
     }
-    if (positiveConnectionIncluded) differentialPairs.push(differentialPair)
   }
 
   const srjConnectionByName = new Map(
@@ -92,23 +160,6 @@ export function Group_filterSimpleRouteJsonForPhase(
       const connectionNames = bus.connectionNames.filter((connectionName) =>
         includedConnectionNames.has(connectionName),
       )
-      // A breakout splits each member into local escapes and a global bridge.
-      // Compare within the same physical routing cohort, as differential-pair
-      // conversion does in getDifferentialPairSrjConnectionNamesByCohortOrThrow.
-      const cohortConnectionNames = bus.connectionNames.filter(
-        (connectionName) =>
-          srjConnectionByName.get(connectionName)?.routingPcbGroupId ===
-          phasePlan.routingPcbGroupId,
-      )
-      if (
-        bus.maxLengthSkew !== undefined &&
-        connectionNames.length > 0 &&
-        connectionNames.length !== cohortConnectionNames.length
-      ) {
-        throw new RoutingPhasePreparationError(
-          `Length-matched bus "${bus.name || "unnamed bus"}" cannot be split across autorouting phases. Assign the complete bus to one routingPhaseIndex.`,
-        )
-      }
       const connectionExitTargets = Object.fromEntries(
         connectionNames.flatMap((connectionName) => {
           const connection = srjConnectionByName.get(connectionName)

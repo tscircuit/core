@@ -29,6 +29,7 @@ import type {
   SimplifiedPcbTrace,
 } from "./SimpleRouteJson"
 import { getFanoutSharedBoundary } from "./get-fanout-shared-boundary"
+import { getFanoutBusAllowedLayers } from "./get-fanout-bus-allowed-layers"
 import { getFanoutSpaceErrorMessage } from "./get-fanout-space-error-message"
 
 export type FanoutAutorouterMode = "single_layer_fanout" | "fanout"
@@ -117,20 +118,10 @@ export const getFanoutSolverBuses = (
           ? { exitPosition }
           : {}),
     }
-    const requestedFanoutLayers = [
-      ...(preferredLayer === undefined ? [] : [preferredLayer]),
-      ...(preferredLayers ?? []),
-    ].filter((layer, index, layers) => layers.indexOf(layer) === index)
-    if (requestedFanoutLayers.length === 0) {
+    const allowedLayers = getFanoutBusAllowedLayers(bus)
+    if (allowedLayers === undefined) {
       return fanoutBus
     }
-    const busAllowedLayers = bus.allowedLayers
-    const allowedLayers =
-      busAllowedLayers === undefined
-        ? requestedFanoutLayers
-        : requestedFanoutLayers.filter((layer) =>
-            busAllowedLayers.includes(layer),
-          )
     return {
       ...fanoutBus,
       allowedLayers,
