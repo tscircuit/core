@@ -17,6 +17,8 @@ export type Nums16 =
   | "15"
   | "16"
 
+export type Nums = Nums40 | `${number}`
+
 export type Nums40 =
   | "0"
   | "1"
