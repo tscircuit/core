@@ -1,21 +1,17 @@
 import type {
-  AnyCircuitElement,
-  PcbBoard,
-  PcbHole,
-  PcbPlatedHole,
-} from "circuit-json"
+  CrossSection,
+  Manifold,
+  ManifoldToplevel,
+  Vec2,
+} from "@tscircuit/manifold-2d"
+import type { AnyCircuitElement, PcbBoard } from "circuit-json"
 import {
   applyToPoint,
   compose,
   rotateDEG,
   translate,
 } from "transformation-matrix"
-import type {
-  ManifoldToplevel,
-  Manifold,
-  CrossSection,
-  Vec2,
-} from "@tscircuit/manifold-2d"
+import { getBoardDrillLoop } from "./get-board-drill-loop"
 
 const ellipse = (width: number, height: number): Vec2[] =>
   Array.from({ length: 64 }, (_, i) => [
@@ -53,26 +49,7 @@ const place = (loop: Vec2[], x: number, y: number, rotation = 0) => {
   return loop.map((point) => applyToPoint(transform, point) as Vec2)
 }
 
-function drillLoop(hole: PcbHole | PcbPlatedHole): Vec2[] | undefined {
-  const shape = "hole_shape" in hole ? hole.hole_shape : hole.shape
-  const diameter = "hole_diameter" in hole ? hole.hole_diameter : undefined
-  const width = "hole_width" in hole ? hole.hole_width : diameter
-  const height = "hole_height" in hole ? hole.hole_height : diameter
-  if (!width || !height) return undefined
-  let loop: Vec2[]
-  if (shape === "circle" || shape === "oval") loop = ellipse(width, height)
-  else if (shape === "rect" || shape === "square")
-    loop = rectangle(width, height)
-  else if (shape === "pill" || shape === "rotated_pill")
-    loop = roundedRectangle(width, height, Math.min(width, height) / 2)
-  else return undefined
-  return place(
-    loop,
-    hole.x + ("hole_offset_x" in hole ? (hole.hole_offset_x ?? 0) : 0),
-    hole.y + ("hole_offset_y" in hole ? (hole.hole_offset_y ?? 0) : 0),
-    "ccw_rotation" in hole ? (hole.ccw_rotation ?? 0) : 0,
-  )
-}
+const drillShapeBuilders = { ellipse, rectangle, roundedRectangle, place }
 
 /** PCB substrate solid in circuit-world mm (+X right, +Y top, +Z above),
  * centered through Z=0, with physical drills and cutouts removed. Coordinates
@@ -109,7 +86,7 @@ export function createBoardCollisionSolid(
       if (record.subcircuit_id !== board.subcircuit_id) continue
     }
     if (record.type === "pcb_hole" || record.type === "pcb_plated_hole") {
-      const loop = drillLoop(record)
+      const loop = getBoardDrillLoop(record, drillShapeBuilders)
       if (!loop) return undefined
       drills.push(loop)
     } else if (record.type === "pcb_via") {
