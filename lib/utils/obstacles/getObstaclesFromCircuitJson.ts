@@ -276,12 +276,17 @@ export const getObstaclesFromCircuitJson = (
           connectedTo: [],
         })
       } else if (element.shape === "circle") {
+        // Cap the sampling band to the circle's vertical extent so that small
+        // cutouts (diameter < rectHeight) still produce at least one obstacle
+        // rect. Otherwise the first scanline midpoint falls outside the shape
+        // and the cutout silently disappears from the autorouter input.
+        const rectHeight = Math.min(0.6, element.radius * 2)
         const approximatingRects = fillCircleWithRects(
           {
             center: element.center,
             radius: element.radius,
           },
-          { rectHeight: 0.6 },
+          { rectHeight },
         )
 
         for (const rect of approximatingRects) {
@@ -296,8 +301,15 @@ export const getObstaclesFromCircuitJson = (
           })
         }
       } else if (element.shape === "polygon") {
+        // Cap the sampling band to the polygon's vertical extent so that thin
+        // slots (height < rectHeight) still produce at least one obstacle rect.
+        // Otherwise the first scanline midpoint falls outside the shape and the
+        // cutout silently disappears from the autorouter input.
+        const ys = element.points.map((p) => p.y)
+        const verticalExtent = Math.max(...ys) - Math.min(...ys)
+        const rectHeight = Math.min(0.6, verticalExtent)
         const approximatingRects = fillPolygonWithRects(element.points, {
-          rectHeight: 0.6,
+          rectHeight,
         })
 
         for (const rect of approximatingRects) {
