@@ -8,7 +8,10 @@ export class RootCircuit extends IsolatedCircuit {
   constructor({
     platform,
     projectUrl,
-  }: { platform?: PlatformConfig; projectUrl?: string } = {}) {
+  }: {
+    platform?: PlatformConfig & { schematicTraceRoutingDisabled?: boolean }
+    projectUrl?: string
+  } = {}) {
     super({
       platform,
       projectUrl,
