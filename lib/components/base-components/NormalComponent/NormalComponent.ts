@@ -98,6 +98,7 @@ import {
 import {
   NormalComponent_doInitialPartOrientationAnalysis,
   NormalComponent_updatePartOrientationAnalysis,
+  type SupplierAssemblyRotationOffsetMap,
 } from "./NormalComponent_doInitialPartOrientationAnalysis"
 import { NormalComponent_doInitialPcbComponentAnchorAlignment } from "./NormalComponent_doInitialPcbComponentAnchorAlignment"
 import { NormalComponent_doInitialPcbFootprintStringRender } from "./NormalComponent_doInitialPcbFootprintStringRender"
@@ -191,6 +192,7 @@ export class NormalComponent<
   _hasStartedFootprintUrlLoad = false
   _hasStartedPartOrientationAnalysis = false
   _asyncSupplierPin1LocationMap?: import("circuit-json").SupplierPin1LocationMap
+  _asyncSupplierAssemblyRotationOffsetMap?: SupplierAssemblyRotationOffsetMap
   _hasStartedSupplierFootprintMismatchWarningCheck = false
   _hasInflatedCircuitJsonSymbol = false
   private _invalidFootprintPropMessages: string[] = []
