@@ -1,20 +1,14 @@
-import { type PcbTraceRoutePoint, pcb_trace_route_point } from "circuit-json"
+import type { PcbTraceRoutePoint } from "circuit-json"
 import { applyToPoint } from "transformation-matrix"
-import { z } from "zod"
 import { getViaSpanLayers } from "lib/utils/getViaSpanLayers"
 import { getViaDiameterDefaults } from "lib/utils/pcbStyle/getViaDiameterDefaults"
 import { PrimitiveComponent } from "../base-components/PrimitiveComponent"
+import { pcbTraceCircuitJsonInput } from "./PcbTrace/pcb-trace-circuit-json-input"
+import { getPcbTraceRouteBounds } from "lib/utils/pcb/get-pcb-trace-route-bounds"
 
-export const pcbTraceProps = z.object({
-  route: z.array(pcb_trace_route_point),
-  // If this primitive PcbTrace needs to be associated with a source_trace_id
-  // it can be added as a prop here. For footprints, it's often not needed.
-  source_trace_id: z.string().optional(),
-})
-
-export type PcbTraceProps = z.infer<typeof pcbTraceProps>
-
-export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
+export class PcbTrace extends PrimitiveComponent<
+  typeof pcbTraceCircuitJsonInput
+> {
   pcb_trace_id: string | null = null
   // Imported footprints can already supply the physical via as a pcb_via.
   _materializedRouteViaIndices = new Set<number>()
@@ -25,7 +19,7 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
   get config() {
     return {
       componentName: "PcbTrace",
-      zodProps: pcbTraceProps,
+      zodProps: pcbTraceCircuitJsonInput,
     }
   }
 
@@ -133,72 +127,6 @@ export class PcbTrace extends PrimitiveComponent<typeof pcbTraceProps> {
     top: number
     bottom: number
   } {
-    const { _parsedProps: props } = this
-    if (!props.route || props.route.length === 0) {
-      return { left: 0, right: 0, top: 0, bottom: 0 }
-    }
-
-    let minX = Infinity
-    let maxX = -Infinity
-    let minY = Infinity
-    let maxY = -Infinity
-
-    for (const point of props.route) {
-      if (point.route_type === "through_pad") {
-        minX = Math.min(minX, point.start.x, point.end.x)
-        maxX = Math.max(maxX, point.start.x, point.end.x)
-        minY = Math.min(minY, point.start.y, point.end.y)
-        maxY = Math.max(maxY, point.start.y, point.end.y)
-      } else {
-        minX = Math.min(minX, point.x)
-        maxX = Math.max(maxX, point.x)
-        minY = Math.min(minY, point.y)
-        maxY = Math.max(maxY, point.y)
-      }
-
-      if (point.route_type === "wire") {
-        minX = Math.min(minX, point.x - point.width / 2)
-        maxX = Math.max(maxX, point.x + point.width / 2)
-        minY = Math.min(minY, point.y - point.width / 2)
-        maxY = Math.max(maxY, point.y + point.width / 2)
-      } else if (point.route_type === "through_pad") {
-        minX = Math.min(
-          minX,
-          point.start.x - point.width / 2,
-          point.end.x - point.width / 2,
-        )
-        maxX = Math.max(
-          maxX,
-          point.start.x + point.width / 2,
-          point.end.x + point.width / 2,
-        )
-        minY = Math.min(
-          minY,
-          point.start.y - point.width / 2,
-          point.end.y - point.width / 2,
-        )
-        maxY = Math.max(
-          maxY,
-          point.start.y + point.width / 2,
-          point.end.y + point.width / 2,
-        )
-      }
-    }
-
-    if (
-      minX === Infinity ||
-      maxX === -Infinity ||
-      minY === Infinity ||
-      maxY === -Infinity
-    ) {
-      return { left: 0, right: 0, top: 0, bottom: 0 }
-    }
-
-    return {
-      left: minX,
-      right: maxX,
-      top: maxY,
-      bottom: minY,
-    }
+    return getPcbTraceRouteBounds(this._parsedProps.route)
   }
 }
