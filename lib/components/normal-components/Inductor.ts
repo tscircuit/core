@@ -18,9 +18,7 @@ const VALID_INDUCTANCE_UNIT_PATTERN = /^(?:[fpnuµμmkMGT]|[fpnuµμmkMGT]?[Hh])
 
 const parseInductanceValue = (raw: string | number): number | null => {
   if (typeof raw === "number") {
-    return Number.isFinite(raw) && raw > 0
-      ? Number.parseFloat(raw.toPrecision(12))
-      : null
+    return Number.isFinite(raw) && raw > 0 ? raw : null
   }
 
   const trimmed = raw.trim()
@@ -29,7 +27,7 @@ const parseInductanceValue = (raw: string | number): number | null => {
   if (NUMERIC_LITERAL_PATTERN.test(trimmed)) {
     const numericValue = Number(trimmed)
     return Number.isFinite(numericValue) && numericValue > 0
-      ? Number.parseFloat(numericValue.toPrecision(12))
+      ? numericValue
       : null
   }
 
@@ -54,7 +52,7 @@ const parseInductanceValue = (raw: string | number): number | null => {
       Number.isFinite(value) &&
       value > 0
     ) {
-      return Number.parseFloat(value.toPrecision(12))
+      return value
     }
   } catch {
     return null
