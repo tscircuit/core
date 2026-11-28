@@ -780,6 +780,10 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     Group_doInitialAssignSchematicSheetToConnectedComponents(this)
   }
 
+  updateSourceAddConnectivityMapKey(): void {
+    Group_doInitialSourceAddConnectivityMapKey(this)
+  }
+
   _areChildSubcircuitsRouted(): boolean {
     const subcircuitChildren = this._findDirectChildSubcircuits()
     for (const subcircuitChild of subcircuitChildren) {

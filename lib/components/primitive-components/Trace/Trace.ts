@@ -87,6 +87,10 @@ export class Trace
     this._portsRoutedOnPcb = []
   }
 
+  override onPropsChange(): void {
+    this._markDirty("SourceTraceRender")
+  }
+
   /**
    * Get the explicit trace thickness, supporting 'width' as an alias for 'thickness'
    */
@@ -335,6 +339,62 @@ export class Trace
         warning_type: "source_unnamed_trace_warning",
       })
     }
+  }
+
+  updateSourceTraceRender(): void {
+    if (!this.source_trace_id) {
+      this.doInitialSourceTraceRender()
+      return
+    }
+
+    const { db } = this.root!
+    const { _parsedProps: props, parent } = this
+    if (!parent) return
+
+    let allPortsFound: boolean
+    let ports: Array<{ selector: string; port: Port }>
+
+    try {
+      const result = this._findConnectedPorts()
+      allPortsFound = result.allPortsFound
+      ports = result.portsWithSelectors ?? []
+    } catch (error) {
+      if (error instanceof TraceConnectionError) {
+        db.source_trace_not_connected_error.insert({
+          ...error.errorData,
+          error_type: "source_trace_not_connected_error",
+        })
+        this._couldNotFindPort = true
+        return
+      }
+      throw error
+    }
+
+    if (!allPortsFound) return
+
+    this._couldNotFindPort = false
+    this._traceConnectionHash = this._computeTraceConnectionHash()
+
+    const nets = this._findConnectedNets().nets
+    for (const connectedViaNet of getNetsConnectedThroughViaPorts(ports)) {
+      if (!nets.includes(connectedViaNet)) nets.push(connectedViaNet)
+    }
+    const displayName = getTraceDisplayName({ ports, nets })
+
+    db.source_trace.update(this.source_trace_id, {
+      connected_source_port_ids: ports.map((p) => p.port.source_port_id!),
+      connected_source_net_ids: nets.map((n) => n.source_net_id!),
+      name: props.name,
+      max_length:
+        props.maxLength ??
+        getMaxLengthFromConnectedComponents(
+          ports.map((p) => p.port),
+          { db },
+        ),
+      max_via_count: props.maxViaCount,
+      display_name: props.displayName ?? displayName,
+      min_trace_thickness: this._getExplicitTraceThickness(),
+    })
   }
   _insertErrorIfTraceIsOutsideBoard(
     mergedRoute: PcbTraceRoutePoint[],
