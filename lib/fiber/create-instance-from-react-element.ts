@@ -171,15 +171,16 @@ const hostConfig: HostConfig<
 
 const reconciler = ReactReconciler(hostConfig as any)
 
-export const createInstanceFromReactElement = (
+export const createInstancesFromReactElement = (
   reactElm: React.JSX.Element,
-): NormalComponent => {
+): NormalComponent[] => {
   const rootContainer = {
-    children: [] as any[],
+    children: [] as NormalComponent[],
     props: {
       name: "$root",
     },
     add(instance: any) {
+      if (typeof instance?.__text === "string") return
       instance.parent = this
       this.children.push(instance)
     },
@@ -218,9 +219,17 @@ export const createInstanceFromReactElement = (
     throw containerErrors[0]
   }
 
+  if (rootContainer.children.length > 0) {
+    return rootContainer.children
+  }
   const rootInstance = reconciler.getPublicRootInstance(
     container,
-  ) as NormalComponent
-  if (rootInstance) return rootInstance
-  return rootContainer.children[0] as NormalComponent
+  ) as NormalComponent | null
+  return rootInstance ? [rootInstance] : []
+}
+
+export const createInstanceFromReactElement = (
+  reactElm: React.JSX.Element,
+): NormalComponent => {
+  return createInstancesFromReactElement(reactElm)[0] as NormalComponent
 }
