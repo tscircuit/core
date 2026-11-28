@@ -814,7 +814,39 @@ export abstract class PrimitiveComponent<
    */
   computeSchematicPropsTransform(): Matrix {
     const { _parsedProps: props } = this
-    return compose(translate(props.schX ?? 0, props.schY ?? 0))
+    return compose(
+      translate(
+        this._resolveSchematicCoordinate(props.schX, "schX"),
+        this._resolveSchematicCoordinate(props.schY, "schY"),
+      ),
+    )
+  }
+
+  /**
+   * Resolves a parsed schematic coordinate (schX/schY) into a finite number.
+   *
+   * The `schX`/`schY` props are parsed with the `distance` schema, which does
+   * not understand `calc(...)` expressions and silently returns `NaN` for them.
+   * Passing that `NaN` through to the schematic transform produces a
+   * `schematic_component.center` of `{ x: NaN, y: NaN }` with no error, which
+   * serializes to `null` in JSON. Instead, surface a readable validation error
+   * and fall back to `0` so the emitted center stays finite.
+   */
+  private _resolveSchematicCoordinate(
+    value: number | undefined,
+    propertyName: "schX" | "schY",
+  ): number {
+    if (value === undefined) return 0
+    if (typeof value === "number" && Number.isFinite(value)) return value
+
+    const rawValue = (this.props as Record<string, unknown>)[propertyName]
+    this._reportInvalidComponentPropertyError(
+      propertyName,
+      `Invalid ${propertyName} value for ${this.componentName}: ${String(
+        rawValue,
+      )}. Schematic coordinates must resolve to a finite number; calc() expressions are not supported for ${propertyName}.`,
+    )
+    return 0
   }
 
   /**
