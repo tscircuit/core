@@ -1,0 +1,9 @@
+{
+  "supplier_part_number": "C916374",
+  "retrieved_date": "2026-11-23",
+  "source": "JLCEDA/EasyEDA Official Library",
+  "source_homepages": ["https://lceda.cn/", "https://easyeda.com/"],
+  "component_url": "https://easyeda.com/api/components/4ac5454d45b7425584a4f05138dfd071?version=6.4.7&uuid=4ac5454d45b7425584a4f05138dfd071&datastrid=",
+  "conversion": "JlcPcbPartsEngine.fetchPartCircuitJson, without orientation or assembly-offset edits",
+  "contains_factory_assembly_zero": false
+}
