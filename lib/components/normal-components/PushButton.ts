@@ -4,13 +4,14 @@ import {
 } from "@tscircuit/props"
 import type { SourceSimplePushButton } from "circuit-json"
 import {
-  FTYPE,
   type BaseSymbolName,
+  FTYPE,
   type PassivePorts,
 } from "lib/utils/constants"
+import { isValidElement } from "react"
+import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { Port } from "../primitive-components/Port"
-import { symbols } from "schematic-symbols"
 
 export class PushButton extends NormalComponent<
   typeof pushButtonProps,
@@ -31,6 +32,21 @@ export class PushButton extends NormalComponent<
   }
 
   override initPorts() {
+    const hasPendingReactSymbol =
+      isValidElement(this.props.symbol) &&
+      !this.children.some((child) => child.componentName === "Symbol")
+    if (hasPendingReactSymbol) return
+
+    const existingChildPorts = this._getAllPortsFromChildren()
+    const hasCustomSymbolPorts = existingChildPorts.some(
+      (port) => port._getSymbolAncestor() !== null,
+    )
+
+    if (hasCustomSymbolPorts) {
+      super.initPorts()
+      return
+    }
+
     super.initPorts({
       pinCount: 2,
       ignoreSymbolPorts: true,
@@ -43,6 +59,7 @@ export class PushButton extends NormalComponent<
 
     const ports = this.selectAll<Port>("port")
     const pin1Port = ports.find((port) => port.props.pinNumber === 1)!
+    if (!pin1Port) return
     pin1Port.schematicSymbolPortDef = symPort1!
 
     // Each symbol terminal has one physical owner. Other pads inherit that
