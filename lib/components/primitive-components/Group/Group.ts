@@ -1246,6 +1246,15 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
     ] of fanoutConfigByPhasePlan) {
       const fanoutRegionPcbGroupId = routingPhasePlan.fanoutRegionPcbGroupId
       if (!fanoutRegionPcbGroupId) continue
+      const sourcePcbComponents = db.pcb_component
+        .list()
+        .filter(
+          (component) => component.pcb_group_id === fanoutRegionPcbGroupId,
+        )
+      routingPhasePlan.fanoutSourceComponentId =
+        sourcePcbComponents.length === 1
+          ? sourcePcbComponents[0]!.pcb_component_id
+          : undefined
       let phaseSimpleRouteJson = Group_filterSimpleRouteJsonForPhase(
         baseSimpleRouteJson,
         routingPhasePlan,
@@ -1266,6 +1275,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
         phaseSimpleRouteJson,
         {
           mode: fanoutMode,
+          sourceComponentId: routingPhasePlan.fanoutSourceComponentId,
           busFanoutDirections: routingPhasePlan.busFanoutDirections,
           fanoutBounds: routingPhasePlan.fanoutBounds,
           fanoutBoundaryPadding: routingPhasePlan.fanoutBoundaryPadding,
@@ -1931,6 +1941,7 @@ export class Group<Props extends z.ZodType<any, any, any> = typeof groupProps>
               busFanoutDirections: routingPhasePlan.busFanoutDirections,
               fanoutBounds: routingPhasePlan.fanoutBounds,
               fanoutRoutingLayers: routingPhasePlan.fanoutRoutingLayers,
+              fanoutSourceComponentId: routingPhasePlan.fanoutSourceComponentId,
               allowBlindAndBuriedVias: simpleRouteJson.allowBlindAndBuriedVias,
               componentNamesById: getPcbComponentNamesById(db),
               onSolverStarted: ({

@@ -3,6 +3,7 @@ import type {
   TestPointRequest,
 } from "@tscircuit/test-point-rerouter"
 import type { AutorouterProp, AutoroutingPhaseProps } from "@tscircuit/props"
+import type { PcbComponentId } from "lib/utils/circuit-json/circuit-json-id-types"
 import type {
   PcbGroupId,
   SimpleRouteJson,
@@ -43,6 +44,7 @@ export interface RoutingPhasePlan {
   routingPcbGroupId?: PcbGroupId
   /** Stable physical breakout region owning this fanout phase. */
   fanoutRegionPcbGroupId?: PcbGroupId
+  fanoutSourceComponentId?: PcbComponentId
   routingBounds?: SimpleRouteBounds
   /** The single breakout/fanout boundary; breakout points may expand it. */
   fanoutBounds?: SimpleRouteBounds
