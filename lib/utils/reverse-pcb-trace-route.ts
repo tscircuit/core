@@ -14,11 +14,22 @@ export const reversePcbTraceRoute = (
   const reversedRoute = route
     .slice()
     .reverse()
-    .map((point) => {
+    .map((point, reversedIndex) => {
       if (point.route_type === "wire") {
         const { start_width, end_width, width_interpolation_mode, ...wire } =
           point
         return wire
+      }
+      if (
+        point.route_type === "via" &&
+        reversedIndex > 0 &&
+        reversedIndex < route.length - 1
+      ) {
+        return {
+          ...point,
+          from_layer: point.to_layer,
+          to_layer: point.from_layer,
+        }
       }
       if (point.route_type !== "through_pad") return { ...point }
 
