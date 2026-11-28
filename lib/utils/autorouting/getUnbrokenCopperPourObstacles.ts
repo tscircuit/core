@@ -1,38 +1,17 @@
-import type { LayerRef, PcbBoard, PcbGroup } from "circuit-json"
+import type { LayerRef, PcbBoard, PcbGroup, Point } from "circuit-json"
 import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
-import type { Obstacle } from "lib/utils/obstacles/types"
+import type { CopperPour } from "lib/components/primitive-components/CopperPour/CopperPour"
+import type { ISubcircuit } from "lib/components/primitive-components/Group/Subcircuit/ISubcircuit"
+import type { Net } from "lib/components/primitive-components/Net"
 import { fillPolygonWithRects } from "lib/utils/obstacles/fillPolygonWithRects"
+import type { Obstacle } from "lib/utils/obstacles/types"
 
-type Point = { x: number; y: number }
-
-type NetLike = {
-  source_net_id?: string
-  subcircuit_connectivity_map_key?: string | null
-}
-
-type CopperPourLike = {
-  _parsedProps: {
-    layer: LayerRef | { name: string }
-    connectsTo: string
-    unbroken?: boolean
-    outline?: Point[]
-  }
-  getSubcircuit(): {
-    selectOne<T = unknown>(selector: string): T | null
-  }
-}
-
-type CopperPourContainerLike = {
-  selectAll(selector: string): unknown[]
-}
+type CopperPourContainer = Pick<ISubcircuit, "selectAll">
 
 const COPPER_POUR_RECT_HEIGHT = 0.5
 
 const dedupeStrings = (values: Array<string | null | undefined>): string[] =>
   Array.from(new Set(values.filter((value): value is string => Boolean(value))))
-
-const getLayerName = (layer: LayerRef | { name: string }): string =>
-  typeof layer === "string" ? layer : layer.name
 
 const createCopperPourObstacle = ({
   layer,
@@ -41,9 +20,9 @@ const createCopperPourObstacle = ({
   width,
   height,
 }: {
-  layer: string
+  layer: LayerRef
   connectedTo: string[]
-  center: { x: number; y: number }
+  center: Point
   width: number
   height: number
 }): Obstacle => ({
@@ -102,7 +81,7 @@ const getCopperPourBoundsRect = ({
 }
 
 const getCopperPourConnectedTo = (
-  net: NetLike,
+  net: Pick<Net, "source_net_id" | "subcircuit_connectivity_map_key">,
   connMap: ConnectivityMap,
 ): string[] =>
   dedupeStrings([
@@ -118,30 +97,28 @@ export const getUnbrokenCopperPourObstacles = ({
   group,
 }: {
   connMap: ConnectivityMap
-  subcircuitComponent?: CopperPourContainerLike
+  subcircuitComponent?: CopperPourContainer
   board?: PcbBoard | null
   group?: PcbGroup | null
 }): Obstacle[] => {
   if (!subcircuitComponent) return []
 
   const obstacles: Obstacle[] = []
-  const copperPours = subcircuitComponent.selectAll(
-    "copperpour",
-  ) as CopperPourLike[]
+  const copperPours = subcircuitComponent.selectAll<CopperPour>("copperpour")
 
   for (const copperPour of copperPours) {
     const props = copperPour._parsedProps
     if (!props.unbroken) continue
 
-    const net = copperPour.getSubcircuit().selectOne<NetLike>(props.connectsTo)
+    const net = copperPour.getSubcircuit().selectOne<Net>(props.connectsTo)
     if (!net?.source_net_id) continue
 
-    const layer = getLayerName(props.layer)
+    const layer = copperPour.resolvePcbLayer()
     const connectedTo = getCopperPourConnectedTo(net, connMap)
     if (connectedTo.length === 0) continue
 
     const boundary = getCopperPourBoundary({
-      outline: props.outline,
+      outline: copperPour.resolveBoardWorldOutline(),
       group,
       board,
     })
