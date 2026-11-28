@@ -165,11 +165,12 @@
     "zod": "^3.25.67",
     "jscad-planner": "^0.0.21",
     "jscad-fiber": "^0.0.93",
-    "poppygl": "0.0.38",
+    "poppygl": "0.0.40",
     "@jscad/modeling": "^2.13.0",
     "@dagrejs/dagre": "^2.0.4"
   },
   "overrides": {
+    "poppygl": "$poppygl",
     "graphics-debug": "$graphics-debug",
     "@tscircuit/graphics-debug-3d": "https://jscdn.tscircuit.com/@tscircuit/graphics-debug-3d/0.0.1.tgz",
     "@tscircuit/props": "^0.0.746",
