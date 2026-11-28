@@ -1,3 +1,4 @@
+import { AutorouterError } from "lib/errors/AutorouterError"
 import { DogboneAutorouter } from "@tscircuit/dogbone-solver"
 import type { SolverEndedEvent } from "lib/events"
 import { BusLanesAutorouter } from "./BusLanesAutorouter"
@@ -159,8 +160,27 @@ const localAutorouterStrategies = new Map<string, LocalAutorouterStrategy>([
 
 export const getLocalAutorouterStrategy = (
   preset: NormalizedAutorouterConfig["preset"],
-): LocalAutorouterStrategy =>
-  localAutorouterStrategies.get(preset ?? "") ?? defaultLocalAutorouterStrategy
+): LocalAutorouterStrategy => {
+  const strategy =
+    localAutorouterStrategies.get(preset ?? "") ??
+    defaultLocalAutorouterStrategy
+  if (
+    strategy === defaultLocalAutorouterStrategy ||
+    strategy === simplificationLocalAutorouterStrategy
+  )
+    return strategy
+  return {
+    ...strategy,
+    create: (context) => {
+      if (context.simpleRouteJson.viaKeepouts?.length) {
+        throw new AutorouterError(
+          `The ${strategy.name} autorouter does not support via-only keepouts; use the default autorouter`,
+        )
+      }
+      return strategy.create(context)
+    },
+  }
+}
 
 export const getLocalAutoroutingStages = (
   autorouterConfig: NormalizedAutorouterConfig,
