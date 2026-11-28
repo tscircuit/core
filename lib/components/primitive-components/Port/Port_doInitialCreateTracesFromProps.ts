@@ -1,3 +1,4 @@
+import { createSynthesizedTrace } from "../Trace/createSynthesizedTrace"
 import { Trace } from "../Trace/Trace"
 import type { Port } from "./Port"
 
@@ -43,6 +44,6 @@ export function Port_doInitialCreateTracesFromProps(port: Port): void {
     })
     if (traceAlreadyExists) continue
 
-    parent.add(new Trace({ from, to: target }))
+    parent.add(createSynthesizedTrace({ from, to: target }))
   }
 }

@@ -11,7 +11,7 @@ import { symbols } from "schematic-symbols"
 import { NormalComponent } from "../base-components/NormalComponent/NormalComponent"
 import { parseFootprinterDefinition } from "lib/utils/footprints/parse-footprinter-definition"
 import { resolveTwoTerminalPinMapping } from "lib/utils/footprints/resolve-two-terminal-pin-mapping"
-import { Trace } from "../primitive-components/Trace/Trace"
+import { createSynthesizedTrace } from "../primitive-components/Trace/createSynthesizedTrace"
 import { Capacitor_getAutomaticMaxDecouplingTraceLength } from "./Capacitor_getAutomaticMaxDecouplingTraceLength"
 
 export class Capacitor extends NormalComponent<
@@ -163,13 +163,13 @@ export class Capacitor extends NormalComponent<
   doInitialCreateTracesFromProps() {
     if (this.props.decouplingFor && this.props.decouplingTo) {
       this.add(
-        new Trace({
+        createSynthesizedTrace({
           from: `${this.getSubcircuitSelector()} > port.1`,
           to: this.props.decouplingFor,
         }),
       )
       this.add(
-        new Trace({
+        createSynthesizedTrace({
           from: `${this.getSubcircuitSelector()} > port.2`,
           to: this.props.decouplingTo,
         }),

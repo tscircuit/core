@@ -38,7 +38,7 @@ import {
   source_part_not_found_warning,
 } from "circuit-json"
 import Debug from "debug"
-import { Trace } from "lib/components/primitive-components/Trace/Trace"
+import { createSynthesizedTrace } from "lib/components/primitive-components/Trace/createSynthesizedTrace"
 import {
   type ReactSubtree,
   createInstanceFromReactElement,
@@ -2498,7 +2498,7 @@ export class NormalComponent<
         const targets = Array.isArray(target) ? target : [target]
         for (const targetPath of targets) {
           this.add(
-            new Trace({
+            createSynthesizedTrace({
               from: `.${this.name} > .${pinName}`,
               to: String(targetPath),
             }),
