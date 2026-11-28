@@ -42,7 +42,13 @@ export class PushButton extends NormalComponent<
     const symPort2 = symbol.ports.find((p) => p.labels.includes("2"))
 
     const ports = this.selectAll<Port>("port")
-    const pin1Port = ports.find((port) => port.props.pinNumber === 1)!
+    const pin1Port = ports.find((port) => port.props.pinNumber === 1)
+
+    // A custom JSX <symbol> prop can declare its own ports (e.g. pin 3 / pin 7).
+    // In that case there is no pin 1 port to attach the built-in symbol
+    // terminals to, so skip the built-in terminal wiring entirely rather than
+    // crashing on `undefined`.
+    if (!pin1Port) return
     pin1Port.schematicSymbolPortDef = symPort1!
 
     // Each symbol terminal has one physical owner. Other pads inherit that
